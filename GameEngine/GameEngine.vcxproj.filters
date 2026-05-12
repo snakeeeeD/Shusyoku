@@ -1,0 +1,312 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="ソース ファイル">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="ヘッダー ファイル">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="リソース ファイル">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="ソース ファイル\Input">
+      <UniqueIdentifier>{0d24911b-b633-412b-8461-6f07d4c5dbe3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連">
+      <UniqueIdentifier>{52090197-e8c9-4069-b67e-00af71744414}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\00-Main">
+      <UniqueIdentifier>{4b9f5537-0990-4581-889b-cf60d02857a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\GridMap">
+      <UniqueIdentifier>{6bd813c5-9d33-442f-b52a-415d625fc040}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene">
+      <UniqueIdentifier>{f213dff4-c5f6-4226-97c3-ee18d7bb8238}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\00-Scene">
+      <UniqueIdentifier>{323b73c5-edcd-4bbf-9aaf-047b71a195bb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\01-SceneManager">
+      <UniqueIdentifier>{a43506bd-0a27-44be-9f22-08b6052748f5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene">
+      <UniqueIdentifier>{b013f4dd-58b5-4c37-a875-b23a05cd4c99}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\10-TitleScene">
+      <UniqueIdentifier>{e8e4cb65-6e89-4b43-b34b-5d624599577c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="シェーダーファイル">
+      <UniqueIdentifier>{e020c500-05a8-4349-a6d1-6dab103cd28a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\03-TextureManager">
+      <UniqueIdentifier>{9feff797-3b2e-4c27-bef7-ee5aaeca9d9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\02-Renderer3D">
+      <UniqueIdentifier>{5657cf09-e192-4b0a-a1b6-69435804f8cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\01-SpriteRenderer">
+      <UniqueIdentifier>{06cb58aa-a2e6-4ab7-a4e6-96f58934de9e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\04-TextureLoader">
+      <UniqueIdentifier>{48d2a529-45e3-4ba3-bb37-a96e7147bb39}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連">
+      <UniqueIdentifier>{047d90de-8994-4750-ae4e-79bd9d275e4d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\01-GameObject">
+      <UniqueIdentifier>{5d6b1b86-42e4-4711-a057-cca56b209957}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\10-Player">
+      <UniqueIdentifier>{0b2f92f9-7761-4a38-966b-576ce23fb334}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\20-Enemy">
+      <UniqueIdentifier>{e18c9824-374b-4f97-b043-80bacac3c874}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\00-Enemy">
+      <UniqueIdentifier>{2d2ab87c-0a06-4d2e-8490-e5992234c2bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\01-EnemyData">
+      <UniqueIdentifier>{b82e2446-c963-45e1-9dc7-0625b5df0a9f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\02-EnemyDataBase">
+      <UniqueIdentifier>{877a9f23-0e27-4b11-828d-1fa1821fb071}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\05-TextRenderer">
+      <UniqueIdentifier>{092683ca-7026-4313-8315-740b71412248}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\04-Game内関連">
+      <UniqueIdentifier>{a7fa4f72-5cfc-4d9c-b41e-026d5c463697}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\04-Game内関連\01-Game">
+      <UniqueIdentifier>{aa5d1098-c81e-489f-99e8-a23a812a23dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\04-Game内関連\10-TurnManager">
+      <UniqueIdentifier>{cfc23fd1-eb82-4d12-98fc-042e290b9473}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card">
+      <UniqueIdentifier>{b14737de-82bf-4d98-b184-b70a52bd0906}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\00-Card">
+      <UniqueIdentifier>{3db19e9d-61d3-44fb-8f6c-3b6fd362d1ac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\01-CardData">
+      <UniqueIdentifier>{7791d9dd-04b0-43c2-8af5-88803d91a3f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\02-CardDataBase">
+      <UniqueIdentifier>{e563ef26-085d-44c4-b93c-d51035d78491}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\03-CardType">
+      <UniqueIdentifier>{d5e10f1c-4703-47e2-aef9-9caf4e1257c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\10-Hand">
+      <UniqueIdentifier>{ab75d25e-a784-4dad-8e66-6c8698bc9527}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\20-Deck">
+      <UniqueIdentifier>{37f43bd4-1723-4690-9621-0992e8ecdf1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\03-EnemyActionType">
+      <UniqueIdentifier>{c4f83080-b102-4cbd-aa13-c50a578f082f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\04-EnemyAction">
+      <UniqueIdentifier>{c215bf98-a6ef-4960-96d3-e482707daa7e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Json">
+      <UniqueIdentifier>{b6b947cf-179c-4981-83f8-b268c53c536a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="framework.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="GameEngine.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="SpriteRenderer.h">
+      <Filter>ソース ファイル\01-描画関連\01-SpriteRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureLoader.h">
+      <Filter>ソース ファイル\01-描画関連\04-TextureLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="input.h">
+      <Filter>ソース ファイル\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="GridMap.h">
+      <Filter>ソース ファイル\GridMap</Filter>
+    </ClInclude>
+    <ClInclude Include="GameObject.h">
+      <Filter>ソース ファイル\03-Object関連\01-GameObject</Filter>
+    </ClInclude>
+    <ClInclude Include="BattleScene.h">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene.h">
+      <Filter>ソース ファイル\02-Scene\00-Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneManager.h">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClInclude>
+    <ClInclude Include="TitleScene.h">
+      <Filter>ソース ファイル\02-Scene\10-TitleScene</Filter>
+    </ClInclude>
+    <ClInclude Include="Scenetype.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer3D.h">
+      <Filter>ソース ファイル\01-描画関連\02-Renderer3D</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureManager.h">
+      <Filter>ソース ファイル\01-描画関連\03-TextureManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Player.h">
+      <Filter>ソース ファイル\03-Object関連\10-Player</Filter>
+    </ClInclude>
+    <ClInclude Include="Enemy.h">
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="EnemyDataBase.h">
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\02-EnemyDataBase</Filter>
+    </ClInclude>
+    <ClInclude Include="Enemydata.h">
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\01-EnemyData</Filter>
+    </ClInclude>
+    <ClInclude Include="TextRenderer.h">
+      <Filter>ソース ファイル\01-描画関連\05-TextRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Game.h">
+      <Filter>ソース ファイル\04-Game内関連\01-Game</Filter>
+    </ClInclude>
+    <ClInclude Include="TurnManager.h">
+      <Filter>ソース ファイル\04-Game内関連\10-TurnManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Card.h">
+      <Filter>ソース ファイル\03-Object関連\30-Card\00-Card</Filter>
+    </ClInclude>
+    <ClInclude Include="CardData.h">
+      <Filter>ソース ファイル\03-Object関連\30-Card\01-CardData</Filter>
+    </ClInclude>
+    <ClInclude Include="CardType.h">
+      <Filter>ソース ファイル\03-Object関連\30-Card\03-CardType</Filter>
+    </ClInclude>
+    <ClInclude Include="CardDataBase.h">
+      <Filter>ソース ファイル\03-Object関連\30-Card\02-CardDataBase</Filter>
+    </ClInclude>
+    <ClInclude Include="Hand.h">
+      <Filter>ソース ファイル\03-Object関連\30-Card\10-Hand</Filter>
+    </ClInclude>
+    <ClInclude Include="Deck.h">
+      <Filter>ソース ファイル\03-Object関連\30-Card\20-Deck</Filter>
+    </ClInclude>
+    <ClInclude Include="EnemyActionType.h">
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\03-EnemyActionType</Filter>
+    </ClInclude>
+    <ClInclude Include="EnemyAction.h">
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\04-EnemyAction</Filter>
+    </ClInclude>
+    <ClInclude Include="External\nlohmann\json.hpp">
+      <Filter>ヘッダー ファイル\Json</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="SpriteRenderer.cpp">
+      <Filter>ソース ファイル\01-描画関連\01-SpriteRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureLoader.cpp">
+      <Filter>ソース ファイル\01-描画関連\04-TextureLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="input.cpp">
+      <Filter>ソース ファイル\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>ソース ファイル\00-Main</Filter>
+    </ClCompile>
+    <ClCompile Include="GridMap.cpp">
+      <Filter>ソース ファイル\GridMap</Filter>
+    </ClCompile>
+    <ClCompile Include="GameObject.cpp">
+      <Filter>ソース ファイル\03-Object関連\01-GameObject</Filter>
+    </ClCompile>
+    <ClCompile Include="BattleScene.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene</Filter>
+    </ClCompile>
+    <ClCompile Include="SceneManager.cpp">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClCompile>
+    <ClCompile Include="TitleScene.cpp">
+      <Filter>ソース ファイル\02-Scene\10-TitleScene</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer3D.cpp">
+      <Filter>ソース ファイル\01-描画関連\02-Renderer3D</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureManager.cpp">
+      <Filter>ソース ファイル\01-描画関連\03-TextureManager</Filter>
+    </ClCompile>
+    <ClCompile Include="Player.cpp">
+      <Filter>ソース ファイル\03-Object関連\10-Player</Filter>
+    </ClCompile>
+    <ClCompile Include="Enemy.cpp">
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy</Filter>
+    </ClCompile>
+    <ClCompile Include="EnemyDataBase.cpp">
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\02-EnemyDataBase</Filter>
+    </ClCompile>
+    <ClCompile Include="TextRenderer.cpp">
+      <Filter>ソース ファイル\01-描画関連\05-TextRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Game.cpp">
+      <Filter>ソース ファイル\04-Game内関連\01-Game</Filter>
+    </ClCompile>
+    <ClCompile Include="TurnManager.cpp">
+      <Filter>ソース ファイル\04-Game内関連\10-TurnManager</Filter>
+    </ClCompile>
+    <ClCompile Include="Card.cpp">
+      <Filter>ソース ファイル\03-Object関連\30-Card\00-Card</Filter>
+    </ClCompile>
+    <ClCompile Include="CardDataBase.cpp">
+      <Filter>ソース ファイル\03-Object関連\30-Card\02-CardDataBase</Filter>
+    </ClCompile>
+    <ClCompile Include="Hand.cpp">
+      <Filter>ソース ファイル\03-Object関連\30-Card\10-Hand</Filter>
+    </ClCompile>
+    <ClCompile Include="Deck.cpp">
+      <Filter>ソース ファイル\03-Object関連\30-Card\20-Deck</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="GameEngine.rc">
+      <Filter>リソース ファイル</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="small.ico">
+      <Filter>リソース ファイル</Filter>
+    </Image>
+    <Image Include="GameEngine.ico">
+      <Filter>リソース ファイル</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shaders\Sprite2D_VS.hlsl">
+      <Filter>シェーダーファイル</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Sprite2D_PS.hlsl">
+      <Filter>シェーダーファイル</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\3D_VS.hlsl">
+      <Filter>シェーダーファイル</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\3D_PS.hlsl">
+      <Filter>シェーダーファイル</Filter>
+    </FxCompile>
+  </ItemGroup>
+</Project>

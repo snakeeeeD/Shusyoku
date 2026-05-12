@@ -1,0 +1,90 @@
+{
+  "enemies": [
+    {
+      "id": "slime",
+      "texture": "enemy_slime",
+      "hp": 20,
+      "attack": 3,
+      "width": 1.0,
+      "height": 1.0,
+      "actions": [
+        {
+          "type": "Attack",
+          "value": 3,
+          "range": 1,
+          "chance": 70,
+          "description": "3ダメージ"
+        },
+        {
+          "type": "Move",
+          "value": 0,
+          "range": 0,
+          "chance": 30,
+          "description": "移動"
+        }
+      ]
+    },
+    {
+      "id": "goblin",
+      "texture": "enemy_goblin",
+      "hp": 40,
+      "attack": 8,
+      "width": 1.0,
+      "height": 1.0,
+      "actions": [
+        {
+          "type": "Attack",
+          "value": 8,
+          "range": 1,
+          "chance": 60,
+          "description": "8ダメージ"
+        },
+        {
+          "type": "Defend",
+          "value": 5,
+          "range": 0,
+          "chance": 20,
+          "description": "5ブロック"
+        },
+        {
+          "type": "Move",
+          "value": 0,
+          "range": 0,
+          "chance": 20,
+          "description": "移動"
+        }
+      ]
+    },
+    {
+      "id": "orc",
+      "texture": "enemy_orc",
+      "hp": 60,
+      "attack": 12,
+      "width": 1.2,
+      "height": 1.2,
+      "actions": [
+        {
+          "type": "Attack",
+          "value": 12,
+          "range": 1,
+          "chance": 50,
+          "description": "12ダメージ"
+        },
+        {
+          "type": "Attack",
+          "value": 6,
+          "range": 5,
+          "chance": 30,
+          "description": "遠距離6ダメージ"
+        },
+        {
+          "type": "Defend",
+          "value": 8,
+          "range": 0,
+          "chance": 20,
+          "description": "8ブロック"
+        }
+      ]
+    }
+  ]
+}
