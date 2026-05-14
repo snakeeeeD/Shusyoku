@@ -17,6 +17,13 @@
 #include <vector>
 #include <utility>
 
+enum class BattleResult
+{
+    None,   // 進行中
+    Win,    // 勝利
+    Lose,   // 敗北
+};
+
 class BattleScene : public Scene
 {
 public:
@@ -57,6 +64,8 @@ private:
 
     TurnManager m_turnManager;
 
+    BattleResult m_battleResult;
+
     HWND m_hWnd;
     int m_screenWidth;
     int m_screenHeight;
@@ -65,7 +74,18 @@ private:
     std::vector<Enemy*> m_enemies;
 
     Hand m_hand;
-    int m_selectedCardIndex;    // 選択中のカード
+    int m_selectedCardIndex;    // 選択中のカードのインデックス
+    int m_hoveredCardIndex;     // マウスが乗っているカードのインデックス
+
+    // カード表示定数
+    static constexpr float CARD_WIDTH = 100.0f;
+    static constexpr float CARD_HEIGHT = 110.0f;
+    static constexpr float CARD_HIDE_Y_OFFSET = 30.0f;
+    static constexpr float CARD_HOVER_Y_OFFSET = 60.0f;
+    static constexpr float CARD_HOVER_W = 110.0f;
+    static constexpr float CARD_HOVER_H = 140.0f;
+
+    int m_prevHoveredCardIndex; // 前フレームのホバー状態
 
     Deck m_deck;
     static constexpr int HAND_SIZE = 7; // 毎ターン引く枚数
@@ -82,4 +102,6 @@ private:
     // ハイライト計算関数
     void UpdateHighlight(int centerCol, int centerRow, const CardData* data);
     void ClearHighlight();
+
+    float m_highlightTimer;  // ハイライト明滅用タイマー
 };

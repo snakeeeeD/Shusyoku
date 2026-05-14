@@ -20,6 +20,8 @@
       "rangeType": "Area",
       "description": "周囲の敵に10ダメージ"
     },
+
+
     {
       "id": "defend",
       "name": "防御",
@@ -30,6 +32,8 @@
       "rangeType": "None",
       "description": "5ブロックを得る"
     },
+
+
     {
       "id": "move",
       "name": "ステップ",

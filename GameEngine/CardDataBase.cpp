@@ -64,7 +64,7 @@ void CardDataBase::Init()
             data.value = c["value"];
             data.range = c["range"];
             data.rangeType = StringToRangeType(c["rangeType"]);
-            data.description = c["description"];
+            data.description = ToWString(c["description"]);
 
             m_data[data.id] = data;
 
@@ -86,9 +86,9 @@ void CardDataBase::Init()
 
 void CardDataBase::LoadHardcodedData()
 {
-    m_data["strike"] = { "strike", L"ストライク",   CardType::Attack, 1, 6, 1, RangeType::Adjacent, "隣接した敵に6ダメージ" };
-    m_data["defend"] = { "defend", L"ディフェンド", CardType::Skill,  1, 5, 0, RangeType::None,     "5ブロックを得る" };
-    m_data["move"] = { "move",   L"ステップ",     CardType::Move,   1, 2, 1, RangeType::Adjacent, "隣接したマスに移動" };
+    m_data["strike"] = { "strike", L"ストライク",   CardType::Attack, 1, 6, 1, RangeType::Adjacent, L"隣接した敵に6ダメージ" };
+    m_data["defend"] = { "defend", L"ディフェンド", CardType::Skill,  1, 5, 0, RangeType::None,     L"5ブロックを得る" };
+    m_data["move"] = { "move",   L"ステップ",     CardType::Move,   1, 2, 1, RangeType::Adjacent, L"隣接したマスに移動" };
 }
 
 const CardData* CardDataBase::Get(const std::string& id)

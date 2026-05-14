@@ -10,6 +10,7 @@ BattleScene::BattleScene()
     , m_playerRow(0)
     , m_player(nullptr)
     , m_renderer3D(nullptr)
+    , m_highlightTimer(0.0f)
 {
 }
 
@@ -35,20 +36,15 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
     m_selectedCardIndex = -1;
 
+    m_hoveredCardIndex  = -1;
+
+    m_prevHoveredCardIndex = -1;
+
     m_enemyTurnTimer = ENEMY_TURN_DELAY;
 
     m_hoveredCell = { -1, -1 };
 
-    // デッキ構築(仮)
-   /* m_deck.AddCard("strike");
-    m_deck.AddCard("strike");
-    m_deck.AddCard("strike");
-    m_deck.AddCard("strike");
-    m_deck.AddCard("defend");
-    m_deck.AddCard("defend");
-    m_deck.AddCard("move");
-    m_deck.AddCard("move");
-    m_deck.AddCard("move");*/
+    m_battleResult = BattleResult::None;
 
     // PlayerDataManagerからデッキを取得
     auto& playerData = PlayerDataManager::GetData();
@@ -196,19 +192,36 @@ void BattleScene::Update(float deltaTime)
 {
     m_input.Update();
 
+    // ハイライト明滅タイマーを更新
+    m_highlightTimer += deltaTime * 0.1f;
+
+    if (m_highlightTimer > 3.14159f)
+    {
+        m_highlightTimer = 0.0f;
+    }
+
+
+    if (m_battleResult != BattleResult::None) return;   // 勝敗決定後は何もしない
+
     // 勝利判定
     if (m_enemies.empty())
     {
+        m_battleResult = BattleResult::Win;
         OutputDebugStringW(L"★ バトル勝利！\n");
+
         // TODO: カード選択画面へ
+
         return;
     }
 
     // 敗北判定
     if (m_player->GetHp() <= 0)
     {
+        m_battleResult = BattleResult::Lose;
         OutputDebugStringW(L"★ ゲームオーバー\n");
+
         // TODO: タイトルへ
+
         return;
     }
 
@@ -233,6 +246,13 @@ void BattleScene::Update(float deltaTime)
 
 void BattleScene::Draw()
 {
+
+    // カード表示
+    const float cardHideY = m_screenHeight - CARD_HIDE_Y_OFFSET;
+    const float cardHoverY = m_screenHeight - CARD_HEIGHT - CARD_HOVER_Y_OFFSET;
+
+    const auto& cards = m_hand.GetCards();
+
     // 3D描画（深度テストあり）
     m_renderer3D->Begin();
 
@@ -283,34 +303,139 @@ void BattleScene::Draw()
     for (auto enemy : m_enemies)
         DrawEnemyHPBar(enemy);
 
-    // カード表示
-    const float cardWidth = 80.0f;
-    const float cardHeight = 110.0f;
-    const float cardY = m_screenHeight - cardHeight - 20.0f;
-    const auto& cards = m_hand.GetCards();
-
-    // 手札描画
+    // ホバー中または選択中のカードを最後に描画
+    int frontCardIndex = (m_hoveredCardIndex >= 0) ? m_hoveredCardIndex : m_selectedCardIndex;
+    // ホバーしていないカードを先に描画
     for (int i = 0; i < (int)cards.size(); i++)
     {
-        float cardX = m_screenWidth / 2.0f
-            - (cards.size() * (cardWidth + 10.0f)) / 2.0f
-            + i * (cardWidth + 10.0f);
+        if (i == m_hoveredCardIndex) continue;
+        if (i == m_selectedCardIndex) continue;
 
-        // 選択中は少し上に
-        float offsetY = (i == m_selectedCardIndex) ? -20.0f : 0.0f;
+        float cardX = m_screenWidth / 2.0f
+            - (cards.size() * (CARD_WIDTH + 10.0f)) / 2.0f
+            + i * (CARD_WIDTH + 10.0f);
+
+        float drawY = (i == m_selectedCardIndex)
+            ? m_screenHeight - CARD_HEIGHT - 20.0f
+            : cardHideY;
 
         XMFLOAT4 color = (i == m_selectedCardIndex)
-            ? XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f)  // 選択中は黄色
-            : XMFLOAT4(0.2f, 0.4f, 0.8f, 1.0f); // 通常は青
+            ? XMFLOAT4(1.0f, 1.0f, 0.0f, 0.5f)
+            : XMFLOAT4(0.2f, 0.4f, 0.8f, 1.0f);
 
-        m_spriteRenderer->DrawSprite(m_whiteTexture, cardX, cardY + offsetY,
-            cardWidth, cardHeight, 0.0f, color);
+        m_spriteRenderer->DrawSprite(m_whiteTexture, cardX, drawY,
+            CARD_WIDTH, CARD_HEIGHT, 0.0f, color);
+    }
+
+    // ホバー中のカードを描画
+    if (m_hoveredCardIndex >= 0 && m_hoveredCardIndex < (int)cards.size())
+    {
+        int i = m_hoveredCardIndex;
+        float cardX = m_screenWidth / 2.0f
+            - (cards.size() * (CARD_WIDTH + 10.0f)) / 2.0f
+            + i * (CARD_WIDTH + 10.0f);
+
+        float drawX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
+
+        // 選択中かつホバー中 → ホバー位置
+        // 選択中だけ → 少し下の位置
+        float drawY = cardHoverY; // ホバー時は通常のホバー位置
+
+        XMFLOAT4 color = (i == m_selectedCardIndex)
+            ? XMFLOAT4(0.8f, 0.8f, 0.0f, 0.7f)
+            : XMFLOAT4(0.2f, 0.4f, 0.8f, 1.0f);
+
+        m_spriteRenderer->DrawSprite(m_whiteTexture, drawX, drawY,
+            CARD_HOVER_W, CARD_HOVER_H, 0.0f, color);
+    }
+
+    // 選択中だがホバーしていないカードを描画
+    if (m_selectedCardIndex >= 0 && m_selectedCardIndex != m_hoveredCardIndex
+        && m_selectedCardIndex < (int)cards.size())
+    {
+        int i = m_selectedCardIndex;
+        float cardX = m_screenWidth / 2.0f
+            - (cards.size() * (CARD_WIDTH + 10.0f)) / 2.0f
+            + i * (CARD_WIDTH + 10.0f);
+
+        float drawX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
+        float drawY = cardHoverY + 40.0f; // ← ホバー位置より少し下
+
+        m_spriteRenderer->DrawSprite(m_whiteTexture, drawX, drawY,
+            CARD_HOVER_W, CARD_HOVER_H, 0.0f,
+            XMFLOAT4(0.8f, 0.8f, 0.0f, 0.7f));
     }
 
     m_spriteRenderer->End();
 
     // テキスト描画
     m_textRenderer->Begin();
+
+    // 通常カードの名前（ホバー中と選択中以外）
+    for (int i = 0; i < (int)cards.size(); i++)
+    {
+        if (i == m_hoveredCardIndex) continue;
+        if (i == m_selectedCardIndex) continue; // 選択中も別で描画
+
+        float cardX = m_screenWidth / 2.0f
+            - (cards.size() * (CARD_WIDTH + 10.0f)) / 2.0f
+            + i * (CARD_WIDTH + 10.0f);
+
+        m_textRenderer->DrawText(cards[i]->GetData()->name.c_str(),
+            cardX, cardHideY + 5.0f, 12.0f,
+            D2D1::ColorF(D2D1::ColorF::White));
+    }
+
+    // 選択中だがホバーしていないカードの詳細
+    if (m_selectedCardIndex >= 0 && m_selectedCardIndex != m_hoveredCardIndex
+        && m_selectedCardIndex < (int)cards.size())
+    {
+        int i = m_selectedCardIndex;
+        float cardX = m_screenWidth / 2.0f
+            - (cards.size() * (CARD_WIDTH + 10.0f)) / 2.0f
+            + i * (CARD_WIDTH + 10.0f);
+        float drawX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
+        float drawY = cardHoverY + 40.0f;
+
+        m_textRenderer->DrawText(cards[i]->GetData()->name.c_str(),
+            drawX + 5.0f, drawY + 10.0f, 16.0f,
+            D2D1::ColorF(D2D1::ColorF::White));
+
+        wchar_t costText[32];
+        swprintf_s(costText, L"Cost: %d", cards[i]->GetData()->cost);
+        m_textRenderer->DrawText(costText,
+            drawX + 5.0f, drawY + 32.0f, 13.0f,
+            D2D1::ColorF(D2D1::ColorF::Yellow));
+
+        m_textRenderer->DrawText(cards[i]->GetData()->description.c_str(),
+            drawX + 5.0f, drawY + 55.0f, 12.0f,
+            D2D1::ColorF(D2D1::ColorF::LightGray));
+    }
+
+    // ホバー中のカードは詳細表示
+    if (m_hoveredCardIndex >= 0 && m_hoveredCardIndex < (int)cards.size())
+    {
+        int i = m_hoveredCardIndex;
+        float cardX = m_screenWidth / 2.0f
+            - (cards.size() * (CARD_WIDTH + 10.0f)) / 2.0f
+            + i * (CARD_WIDTH + 10.0f);
+        float drawX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
+        float drawY = cardHoverY;
+
+        m_textRenderer->DrawText(cards[i]->GetData()->name.c_str(),
+            drawX + 5.0f, drawY + 10.0f, 16.0f,
+            D2D1::ColorF(D2D1::ColorF::White));
+
+        wchar_t costText[32];
+        swprintf_s(costText, L"Cost: %d", cards[i]->GetData()->cost);
+        m_textRenderer->DrawText(costText,
+            drawX + 5.0f, drawY + 32.0f, 13.0f,
+            D2D1::ColorF(D2D1::ColorF::Yellow));
+
+        m_textRenderer->DrawText(cards[i]->GetData()->description.c_str(),
+            drawX + 5.0f, drawY + 55.0f, 12.0f,
+            D2D1::ColorF(D2D1::ColorF::LightGray));
+    }
 
     // プレイヤーHP数字
     wchar_t hpText[64];
@@ -399,19 +524,39 @@ void BattleScene::Draw()
             D2D1::ColorF(D2D1::ColorF::Red));
 
  
-    // カード名をテキストで表示
-    for (int i = 0; i < (int)cards.size(); i++)
-    {
-        float cardX = m_screenWidth / 2.0f
-            - (cards.size() * (cardWidth + 10.0f)) / 2.0f
-            + i * (cardWidth + 10.0f);
-        float offsetY = (i == m_selectedCardIndex) ? -20.0f : 0.0f;
+    //// カード名をテキストで表示
+    //for (int i = 0; i < (int)cards.size(); i++)
+    //{
+    //    float cardX = m_screenWidth / 2.0f
+    //        - (cards.size() * (cardWidth + 10.0f)) / 2.0f
+    //        + i * (cardWidth + 10.0f);
+    //    float offsetY = (i == m_selectedCardIndex) ? -20.0f : 0.0f;
 
-        std::wstring name(cards[i]->GetData()->name.begin(),
-            cards[i]->GetData()->name.end());
-        m_textRenderer->DrawText(cards[i]->GetData()->name.c_str(),
-            cardX, cardY + offsetY + 10.0f, 14.0f,
-            D2D1::ColorF(D2D1::ColorF::White));
+    //    std::wstring name(cards[i]->GetData()->name.begin(),
+    //        cards[i]->GetData()->name.end());
+    //    m_textRenderer->DrawText(cards[i]->GetData()->name.c_str(),
+    //        cardX, cardY + offsetY + 10.0f, 14.0f,
+    //        D2D1::ColorF(D2D1::ColorF::White));
+    //}
+
+    // 勝敗表示
+    if (m_battleResult == BattleResult::Win)
+    {
+        m_textRenderer->DrawText(L"Victory!",
+            m_screenWidth / 2.0f - 80.0f, m_screenHeight / 2.0f - 30.0f,
+            60.0f, D2D1::ColorF(D2D1::ColorF::Gold));
+        m_textRenderer->DrawText(L"Enterキーで次へ",
+            m_screenWidth / 2.0f - 80.0f, m_screenHeight / 2.0f + 40.0f,
+            24.0f, D2D1::ColorF(D2D1::ColorF::White));
+    }
+    else if (m_battleResult == BattleResult::Lose)
+    {
+        m_textRenderer->DrawText(L"Game Over...",
+            m_screenWidth / 2.0f - 100.0f, m_screenHeight / 2.0f - 30.0f,
+            60.0f, D2D1::ColorF(D2D1::ColorF::Red));
+        m_textRenderer->DrawText(L"Enterキーでタイトルへ",
+            m_screenWidth / 2.0f - 100.0f, m_screenHeight / 2.0f + 40.0f,
+            24.0f, D2D1::ColorF(D2D1::ColorF::White));
     }
 
 
@@ -421,6 +566,11 @@ void BattleScene::Draw()
 void BattleScene::HandleInput()
 {
     if (!m_turnManager.IsPlayerTurn()) return; // プレイヤーターン以外は無視
+
+    const float cardHideY = m_screenHeight - CARD_HIDE_Y_OFFSET;
+    const float cardHoverY = m_screenHeight - CARD_HEIGHT - CARD_HOVER_Y_OFFSET;
+
+    const auto& cards = m_hand.GetCards();
 
     // カード選択中はマウスのマスにハイライト
     if (m_selectedCardIndex >= 0)
@@ -596,36 +746,104 @@ void BattleScene::HandleInput()
         }
     }
 
-    // カードのクリック判定
-    const float cardWidth = 80.0f;
-    const float cardHeight = 110.0f;
-    const float cardY = m_screenHeight - cardHeight - 20.0f;
-    const auto& cards = m_hand.GetCards();
-
     POINT mousePos = m_input.GetMousePos();
 
     for (int i = 0; i < (int)cards.size(); i++)
     {
         float cardX = m_screenWidth / 2.0f
-            - (cards.size() * (cardWidth + 10.0f)) / 2.0f
-            + i * (cardWidth + 10.0f);
-        float offsetY = (i == m_selectedCardIndex) ? -20.0f : 0.0f;
+            - (cards.size() * (CARD_WIDTH + 10.0f)) / 2.0f
+            + i * (CARD_WIDTH + 10.0f);
 
-        bool hover = mousePos.x >= cardX && mousePos.x <= cardX + cardWidth
-            && mousePos.y >= cardY + offsetY && mousePos.y <= cardY + offsetY + cardHeight;
+        float hitX, hitY, hitW, hitH;
+
+        if (i == m_selectedCardIndex)
+        {
+            hitX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
+            hitY = cardHoverY + 40.0f;
+            hitW = CARD_HOVER_W;
+            hitH = CARD_HOVER_H;
+        }
+        else if (i == m_prevHoveredCardIndex)
+        {
+            hitX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
+            hitY = cardHoverY;
+            hitW = CARD_HOVER_W;
+            hitH = CARD_HOVER_H;
+        }
+        else
+        {
+            hitX = cardX;
+            hitY = cardHideY;
+            hitW = CARD_WIDTH;
+            hitH = CARD_HEIGHT;
+        }
+
+        bool hover = mousePos.x >= hitX && mousePos.x <= hitX + hitW
+            && mousePos.y >= hitY && mousePos.y <= hitY + hitH;
 
         if (hover && m_input.GetMouseButtonTrigger(0))
         {
             if (m_selectedCardIndex == i)
-                m_selectedCardIndex = -1; // 選択解除
+                m_selectedCardIndex = -1;
             else
-                m_selectedCardIndex = i;  // 選択
+                m_selectedCardIndex = i;
             break;
         }
     }
 
+    m_prevHoveredCardIndex = m_hoveredCardIndex;
+    m_hoveredCardIndex = -1;
+
+    for (int i = 0; i < (int)cards.size(); i++)
+    {
+        float cardX = m_screenWidth / 2.0f
+            - (cards.size() * (CARD_WIDTH + 10.0f)) / 2.0f
+            + i * (CARD_WIDTH + 10.0f);
+
+        // 通常位置の判定
+        bool hoverNormal = mousePos.x >= cardX && mousePos.x <= cardX + CARD_WIDTH
+            && mousePos.y >= cardHideY && mousePos.y <= cardHideY + CARD_HEIGHT;
+
+        // 大きいカードの位置の判定
+        float hoverDrawX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
+        bool hoverBig = mousePos.x >= hoverDrawX && mousePos.x <= hoverDrawX + CARD_HOVER_W
+            && mousePos.y >= cardHoverY && mousePos.y <= cardHoverY + CARD_HOVER_H;
+
+        // 選択中の判定
+        float selectedDrawX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
+        bool hoverSelected = (i == m_selectedCardIndex)
+            && mousePos.x >= selectedDrawX && mousePos.x <= selectedDrawX + CARD_HOVER_W
+            && mousePos.y >= cardHoverY + 40.0f && mousePos.y <= cardHoverY + 40.0f + CARD_HOVER_H;
+
+        if (hoverNormal || hoverBig || hoverSelected)
+        {
+            m_hoveredCardIndex = i;
+            break;
+        }
+    }
+    
     if (m_input.GetKeyTrigger(VK_RETURN))
         m_turnManager.EndTurn();
+
+    // 勝敗後の入力
+    if (m_battleResult == BattleResult::Win)
+    {
+        if (m_input.GetKeyTrigger(VK_RETURN))
+        {
+            // TODO: カード選択画面へ
+            OutputDebugStringW(L"★ 次のシーンへ\n");
+        }
+        return;
+    }
+    if (m_battleResult == BattleResult::Lose)
+    {
+        if (m_input.GetKeyTrigger(VK_RETURN))
+        {
+            // TODO: タイトルへ
+            OutputDebugStringW(L"★ タイトルへ\n");
+        }
+        return;
+    }
 }
 
 void BattleScene::DrawHPBar(float x, float y, float width, float height,
@@ -720,25 +938,51 @@ void BattleScene::UpdateHighlight(int centerCol, int centerRow, const CardData* 
         break;
     case RangeType::Area:
         for (int dr = -data->range; dr <= data->range; dr++)
+        {
             for (int dc = -data->range; dc <= data->range; dc++)
+            {
                 if (max(abs(dc), abs(dr)) <= data->range)
+                {
                     candidates.push_back({ centerCol + dc, centerRow + dr });
+                }
+            }
+        }
         break;
     case RangeType::Diamond:
         for (int dr = -data->range; dr <= data->range; dr++)
+        {
             for (int dc = -data->range; dc <= data->range; dc++)
+            {
                 if (abs(dc) + abs(dr) <= data->range && (dc != 0 || dr != 0))
                 {
                     candidates.push_back({ centerCol + dc, centerRow + dr });
-                    // デバッグ
-                    wchar_t buf[64];
-                    swprintf_s(buf, L"★ Diamond候補: %d, %d\n", centerCol + dc, centerRow + dr);
-                    OutputDebugStringW(buf);
                 }
+            }
+        }
         break;
     case RangeType::None:
+        candidates.push_back({ centerCol, centerRow });
     default:
         return;
+    }
+
+    // ゆっくりした明滅の計算（ホバー中のマス用）
+    float pulse = sin(m_highlightTimer);
+    float hoverBrightness = 0.5f + 0.5f * pulse;
+
+    bool isAreaHovered = false;
+
+    if (data->rangeType == RangeType::Area)
+    {
+        for (auto& [col, row] : candidates)
+        {
+            if (col == m_hoveredCell.first &&
+                row == m_hoveredCell.second)
+            {
+                isAreaHovered = true;
+                break;
+            }
+        }
     }
 
     for (auto& [col, row] : candidates)
@@ -754,29 +998,63 @@ void BattleScene::UpdateHighlight(int centerCol, int centerRow, const CardData* 
 
         m_highlightCells.push_back({ col, row });
 
-        int dc = abs(col - centerCol);
-        int dr = abs(row - centerRow);
-        int dist = (data->rangeType == RangeType::Area)
-            ? max(dc, dr)
-            : dc + dr;
+        // マウスが乗っているマスかどうか
+        bool isHovered = (col == m_hoveredCell.first && row == m_hoveredCell.second);
 
-        // 近いほど薄め、遠いほどさらに薄く
-        float alpha = 0.6f - (float)(dist - 1) / (float)max(1, data->range) * 0.25f;
-        alpha = max(0.25f, min(0.6f, alpha));
+        bool isEnemy = (cell.type == CellType::Enemy);
 
-        if (col == m_hoveredCell.first && row == m_hoveredCell.second)
+        if (data->rangeType == RangeType::Area)
         {
-            if (data->type == CardType::Attack)
-                cell.gameObject.color = XMFLOAT4(1.0f, 0.2f, 0.2f, 1.0f);
-            else if (data->type == CardType::Move)
-                cell.gameObject.color = XMFLOAT4(0.2f, 1.0f, 0.2f, 1.0f);
+            // Enemyマスは常に最大輝度
+            if (isEnemy)
+            {
+                if (data->type == CardType::Attack)
+                    cell.gameObject.color = XMFLOAT4(1.0f, 0.2f, 0.2f, 1.0f);
+                else if (data->type == CardType::Move)
+                    cell.gameObject.color = XMFLOAT4(0.2f, 1.0f, 0.4f, 1.0f);
+            }
+            else
+            {
+                // Area内すべて点滅
+                if (data->type == CardType::Attack)
+                {
+                    float brightness = isAreaHovered ? hoverBrightness : 0.6f;
+                    cell.gameObject.color = XMFLOAT4(brightness, 0.2f, 0.2f, 1.0f);
+                }
+                else if (data->type == CardType::Move)
+                {
+                    float brightness = isAreaHovered ? hoverBrightness : 0.6f;
+                    cell.gameObject.color = XMFLOAT4(0.2f, brightness, 0.4f, 1.0f);
+                }
+            }
         }
         else
         {
-            if (data->type == CardType::Attack)
-                cell.gameObject.color = XMFLOAT4(alpha, 0.2f, 0.2f, 1.0f);
-            else if (data->type == CardType::Move)
-                cell.gameObject.color = XMFLOAT4(0.2f, alpha, 0.4f, 1.0f);
+            if (isHovered)
+            {
+                if (data->type == CardType::Attack)
+                    cell.gameObject.color = XMFLOAT4(hoverBrightness, 0.2f, 0.2f, 1.0f);
+                else if (data->type == CardType::Move)
+                    cell.gameObject.color = XMFLOAT4(0.2f, hoverBrightness, 0.2f, 1.0f);
+                else if (data->type == CardType::Skill)
+                    cell.gameObject.color = XMFLOAT4(0.2f, hoverBrightness, 0.2f, 1.0f);
+            }
+            else
+            {
+                int dc = abs(col - centerCol);
+                int dr = abs(row - centerRow);
+                int dist = dc + dr;
+
+                float brightness = 0.7f - (float)(dist - 1) / (float)max(1, data->range) * 0.3f;
+                brightness = max(0.4f, min(0.7f, brightness));
+
+                if (data->type == CardType::Attack)
+                    cell.gameObject.color = XMFLOAT4(brightness, 0.2f, 0.2f, 1.0f);
+                else if (data->type == CardType::Move)
+                    cell.gameObject.color = XMFLOAT4(0.2f, brightness, 0.4f, 1.0f);
+                else if (data->type == CardType::Skill)
+                    cell.gameObject.color = XMFLOAT4(0.2f, hoverBrightness, 0.2f, 1.0f);
+            }
         }
     }
 }

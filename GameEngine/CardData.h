@@ -12,6 +12,6 @@ struct CardData
 	int			value;			// ƒ_ƒ[ƒW‚âŒø‰Ê—Ê
 	int			range;			// Ë’ö
 	RangeType rangeType;
-	std::string description;
+	std::wstring description;
 };
 
