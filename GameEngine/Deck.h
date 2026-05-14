@@ -7,19 +7,22 @@
 class Deck
 {
 public:
-	Deck();
+    Deck();
 
-	void AddCard(const std::string& id);	 // デッキにカードを追加
-	std::string DrawCard();					 // 山札から一枚引く
-	void DiscardCard(const std::string& id); // 捨て札に追加
-	void ShuffleDrawPile();					 // 山札をシャッフル
-	void Reset();							 // 捨て札を山札に戻してシャッフル
+    void AddCard(const std::string& id);
+    std::string DrawCard();
+    std::string DrawSpecificCard(const std::string& id);
+    void DiscardCard(const std::string& id);
+    void ShuffleDrawPile();
+    void Reset();
 
-	int GetDrawPileCount()    const { return (int)m_drawPile.size(); }
-	int GetDiscardPileCount() const { return (int)m_discardPile.size(); }
+    int GetDrawPileCount()    const { return (int)m_drawPile.size(); }
+    int GetDiscardPileCount() const { return (int)m_discardPile.size(); }
+
+    const std::vector<std::string>& GetDrawPile()    const { return m_drawPile; }    // ← 追加
+    const std::vector<std::string>& GetDiscardPile() const { return m_discardPile; } // ← 追加
 
 private:
-	std::vector < std::string> m_drawPile;	// 山札
-	std::vector<std::string> m_discardPile; // 捨て札
+    std::vector<std::string> m_drawPile;
+    std::vector<std::string> m_discardPile;
 };
-

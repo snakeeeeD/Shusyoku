@@ -39,3 +39,26 @@ void Deck::Reset()
     m_discardPile.clear();
     ShuffleDrawPile();
 }
+
+std::string Deck::DrawSpecificCard(const std::string& id)
+{
+    // ŽRŽD‚©‚ç’T‚·
+    for (int i = (int)m_drawPile.size() - 1; i >= 0; i--)
+    {
+        if (m_drawPile[i] == id)
+        {
+            m_drawPile.erase(m_drawPile.begin() + i);
+            return id;
+        }
+    }
+    // ŽÌ‚ÄŽD‚©‚ç’T‚·
+    for (int i = (int)m_discardPile.size() - 1; i >= 0; i--)
+    {
+        if (m_discardPile[i] == id)
+        {
+            m_discardPile.erase(m_discardPile.begin() + i);
+            return id;
+        }
+    }
+    return "";
+}

@@ -153,6 +153,8 @@
     <ClInclude Include="Hand.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="Player.h" />
+    <ClInclude Include="PlayerData.h" />
+    <ClInclude Include="PlayerDataManager.h" />
     <ClInclude Include="Renderer3D.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Scene.h" />
@@ -180,6 +182,7 @@
     <ClCompile Include="input.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Player.cpp" />
+    <ClCompile Include="PlayerDataManager.cpp" />
     <ClCompile Include="Renderer3D.cpp" />
     <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="SpriteRenderer.cpp" />

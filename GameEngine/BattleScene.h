@@ -7,10 +7,12 @@
 #include"Texturemanager.h"
 #include "TextRenderer.h"
 #include "Player.h"
+#include "PlayerDataManager.h"
 #include"Enemy.h"
 #include "TurnManager.h"
 #include "Hand.h"
 #include "Deck.h"
+#include "CardDataBase.h"
 
 #include <vector>
 #include <utility>

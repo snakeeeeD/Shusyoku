@@ -118,6 +118,15 @@
     <Filter Include="ヘッダー ファイル\Json">
       <UniqueIdentifier>{b6b947cf-179c-4981-83f8-b268c53c536a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\10-Player\00-Player">
+      <UniqueIdentifier>{1c34b617-5e49-4a4f-a127-0b84268f8da5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\10-Player\10-PlayerData">
+      <UniqueIdentifier>{483e1fda-3e19-4cfe-a87b-5495bd88bd04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\10-Player\PlayerDataManager">
+      <UniqueIdentifier>{664f2f83-73e3-4de9-9a61-e835ef657559}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -168,9 +177,6 @@
     <ClInclude Include="TextureManager.h">
       <Filter>ソース ファイル\01-描画関連\03-TextureManager</Filter>
     </ClInclude>
-    <ClInclude Include="Player.h">
-      <Filter>ソース ファイル\03-Object関連\10-Player</Filter>
-    </ClInclude>
     <ClInclude Include="Enemy.h">
       <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy</Filter>
     </ClInclude>
@@ -216,6 +222,15 @@
     <ClInclude Include="External\nlohmann\json.hpp">
       <Filter>ヘッダー ファイル\Json</Filter>
     </ClInclude>
+    <ClInclude Include="Player.h">
+      <Filter>ソース ファイル\03-Object関連\10-Player\00-Player</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerData.h">
+      <Filter>ソース ファイル\03-Object関連\10-Player\10-PlayerData</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerDataManager.h">
+      <Filter>ソース ファイル\03-Object関連\10-Player\PlayerDataManager</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SpriteRenderer.cpp">
@@ -251,9 +266,6 @@
     <ClCompile Include="TextureManager.cpp">
       <Filter>ソース ファイル\01-描画関連\03-TextureManager</Filter>
     </ClCompile>
-    <ClCompile Include="Player.cpp">
-      <Filter>ソース ファイル\03-Object関連\10-Player</Filter>
-    </ClCompile>
     <ClCompile Include="Enemy.cpp">
       <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy</Filter>
     </ClCompile>
@@ -280,6 +292,12 @@
     </ClCompile>
     <ClCompile Include="Deck.cpp">
       <Filter>ソース ファイル\03-Object関連\30-Card\20-Deck</Filter>
+    </ClCompile>
+    <ClCompile Include="Player.cpp">
+      <Filter>ソース ファイル\03-Object関連\10-Player\00-Player</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerDataManager.cpp">
+      <Filter>ソース ファイル\03-Object関連\10-Player\PlayerDataManager</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

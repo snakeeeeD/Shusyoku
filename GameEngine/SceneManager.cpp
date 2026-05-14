@@ -1,6 +1,7 @@
 #include "SceneManager.h"
 #include "EnemyDataBase.h"
 #include "CardDataBase.h"
+#include "PlayerDataManager.h"
 
 #include "TitleScene.h"
 #include "BattleScene.h"
@@ -29,6 +30,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	TextureManager::Init(device);
 	EnemyDataBase::Init();
 	CardDataBase::Init();
+	PlayerDataManager::Init();
 
 	// テクスチャ読み込み
 	TextureManager::Load("white", L"Assets/White.png");

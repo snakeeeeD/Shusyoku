@@ -1,0 +1,54 @@
+{
+  "cards": [
+    {
+      "id": "strike",
+      "name": "ストライク",
+      "type": "Attack",
+      "cost": 1,
+      "value": 6,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "敵単体に6ダメージ"
+    },
+    {
+      "id": "Spin Slash",
+      "name": "回転切り",
+      "type": "Attack",
+      "cost": 2,
+      "value": 10,
+      "range": 1,
+      "rangeType": "Area",
+      "description": "周囲の敵に10ダメージ"
+    },
+    {
+      "id": "defend",
+      "name": "防御",
+      "type": "Skill",
+      "cost": 1,
+      "value": 5,
+      "range": 0,
+      "rangeType": "None",
+      "description": "5ブロックを得る"
+    },
+    {
+      "id": "move",
+      "name": "ステップ",
+      "type": "Move",
+      "cost": 1,
+      "value": 2,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "隣接するマスに移動"
+    },
+    {
+      "id": "dash",
+      "name": "ダッシュ",
+      "type": "Move",
+      "cost": 2,
+      "value": 2,
+      "range": 3,
+      "rangeType": "Diamond",
+      "description": "3マス先まで移動"
+    }
+  ]
+}
