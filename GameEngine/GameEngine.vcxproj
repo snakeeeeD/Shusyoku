@@ -137,6 +137,7 @@
     <ClInclude Include="Card.h" />
     <ClInclude Include="CardData.h" />
     <ClInclude Include="CardDataBase.h" />
+    <ClInclude Include="CardSelectScene.h" />
     <ClInclude Include="CardType.h" />
     <ClInclude Include="Deck.h" />
     <ClInclude Include="Enemy.h" />
@@ -172,6 +173,7 @@
     <ClCompile Include="BattleScene.cpp" />
     <ClCompile Include="Card.cpp" />
     <ClCompile Include="CardDataBase.cpp" />
+    <ClCompile Include="CardSelectScene.cpp" />
     <ClCompile Include="Deck.cpp" />
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="EnemyDataBase.cpp" />

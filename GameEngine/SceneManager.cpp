@@ -5,6 +5,7 @@
 
 #include "TitleScene.h"
 #include "BattleScene.h"
+#include "CardSelectScene.h"
 //#include "FieldScene.h"
 
 SceneManager::SceneManager() : m_currentScene(nullptr)
@@ -60,16 +61,32 @@ void SceneManager::ChangeScene(SceneType type)
 	// V‚µ‚¢ƒV[ƒ“‚ðì¬
 	switch (type)
 	{
-	case SceneType::Title:
-	{
-		auto scene = new TitleScene();
-		scene->onChangeScene = [this](SceneType type) {ChangeScene(type); };
-		m_currentScene = scene;
-		break;
+		case SceneType::Title:
+		{
+			auto scene = new TitleScene();
+			scene->onChangeScene = [this](SceneType type) {ChangeScene(type); };
+			m_currentScene = scene;
+			break;
+		}
+		case SceneType::Battle:
+		{
+			auto scene = new BattleScene();
+			scene->onChangeScene = [this](SceneType type) { ChangeScene(type); };
+			m_currentScene = scene;
+			break;
+		}
+		//case SceneType::Field:  m_currentScene = new FieldScene();  break;
+		case SceneType::CardSelect:
+		{
+			auto scene = new CardSelectScene();
+			scene->onChangeScene = [this](SceneType type) {ChangeScene(type); };
+			m_currentScene = scene;
+			break;
+		}
+
+		
 	}
-	case SceneType::Battle: m_currentScene = new BattleScene(); break;
-	//case SceneType::Field:  m_currentScene = new FieldScene();  break;
-	}
+
 
 	if (m_currentScene)
 	{

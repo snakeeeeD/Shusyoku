@@ -127,6 +127,9 @@
     <Filter Include="ソース ファイル\03-Object関連\10-Player\PlayerDataManager">
       <UniqueIdentifier>{664f2f83-73e3-4de9-9a61-e835ef657559}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\02-Scene\30-CardSelectScene">
+      <UniqueIdentifier>{94ce6886-9d61-4d15-9223-00694f2846c5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -231,6 +234,9 @@
     <ClInclude Include="PlayerDataManager.h">
       <Filter>ソース ファイル\03-Object関連\10-Player\PlayerDataManager</Filter>
     </ClInclude>
+    <ClInclude Include="CardSelectScene.h">
+      <Filter>ソース ファイル\02-Scene\30-CardSelectScene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SpriteRenderer.cpp">
@@ -298,6 +304,9 @@
     </ClCompile>
     <ClCompile Include="PlayerDataManager.cpp">
       <Filter>ソース ファイル\03-Object関連\10-Player\PlayerDataManager</Filter>
+    </ClCompile>
+    <ClCompile Include="CardSelectScene.cpp">
+      <Filter>ソース ファイル\02-Scene\30-CardSelectScene</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

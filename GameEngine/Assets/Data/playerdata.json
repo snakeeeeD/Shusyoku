@@ -1,0 +1,16 @@
+{
+  "deck": [
+    "strike",
+    "strike",
+    "strike",
+    "Spin Slash",
+    "defend",
+    "defend",
+    "move",
+    "move",
+    "dash",
+    "Spin Slash"
+  ],
+  "hp": 50,
+  "maxHp": 50
+}

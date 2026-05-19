@@ -177,8 +177,8 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         };
 
     addEnemy(2, 1, "slime");
-    addEnemy(6, 4, "goblin");
-    addEnemy(0, 0, "orc");
+    //addEnemy(6, 4, "goblin");
+    //addEnemy(0, 0, "orc");
 
     for (auto enemy : m_enemies)
         enemy->DecideNextAction();
@@ -274,24 +274,6 @@ void BattleScene::Draw()
         enemy->Draw3D(m_renderer3D);
 
     m_renderer3D->End();
-
-    //左上UI仮
-    {
-        // 2D描画（深度テストなし）
-        //m_spriteRenderer->Begin();
-        //DrawHPBar(20.0f, 20.0f, 200.0f, 20.0f, m_player->GetHp(), m_player->GetMaxHp());
-        //for (auto enemy : m_enemies)
-        //    DrawEnemyHPBar(enemy);
-        //m_spriteRenderer->End();
-
-        //// テキスト描画
-        //m_textRenderer->Begin();
-        //wchar_t hpText[64];
-        //swprintf_s(hpText, L"HP: %d / %d", m_player->GetHp(), m_player->GetMaxHp());
-        //m_textRenderer->DrawText(hpText, 20.0f, 44.0f, 20.0f,
-        //    D2D1::ColorF(D2D1::ColorF::White));
-        //m_textRenderer->End();
-    }
 
     // 2D描画
     m_spriteRenderer->Begin();
@@ -588,8 +570,6 @@ void BattleScene::HandleInput()
 
         if (result.cell)
             m_hoveredCell = { result.col, result.row };
-        else
-            m_hoveredCell = { -1, -1 };
 
         // プレイヤー位置を基準にハイライト
         UpdateHighlight(m_playerCol, m_playerRow, data);
@@ -627,7 +607,6 @@ void BattleScene::HandleInput()
                     {
                         // 範囲内の全敵にダメージ
                         bool hit = false;
-                        std::vector<Enemy*> toDelete;
 
                         for (auto enemy : m_enemies)
                         {
@@ -636,9 +615,7 @@ void BattleScene::HandleInput()
                             if (max(dc, dr) <= data->range)
                             {
                                 hit = true;
-                                enemy->TakeDamage(data->value);
-                                if (enemy->GetHp() <= 0)
-                                    toDelete.push_back(enemy);
+                                break;
                             }
                         }
 
@@ -646,9 +623,28 @@ void BattleScene::HandleInput()
                         {
                             if (!m_player->UseEnergy(data->cost)) return;
 
+                            std::vector<Enemy*> toDelete;
+
+                            for (auto enemy : m_enemies)
+                            {
+                                int dc = abs(m_playerCol - enemy->gridCol);
+                                int dr = abs(m_playerRow - enemy->gridRow);
+
+                                if (max(dc, dr) <= data->range)
+                                {
+                                    enemy->TakeDamage(data->value);
+
+                                    if (enemy->GetHp() <= 0)
+                                        toDelete.push_back(enemy);
+
+                                }
+
+                            }
+
                             for (auto enemy : toDelete)
                             {
                                 m_gridMap->SetCellType(enemy->gridCol, enemy->gridRow, CellType::Empty);
+
                                 m_enemies.erase(
                                     std::remove(m_enemies.begin(), m_enemies.end(), enemy),
                                     m_enemies.end()
@@ -830,7 +826,8 @@ void BattleScene::HandleInput()
     {
         if (m_input.GetKeyTrigger(VK_RETURN))
         {
-            // TODO: カード選択画面へ
+            if (onChangeScene)
+                onChangeScene(SceneType::CardSelect);
             OutputDebugStringW(L"★ 次のシーンへ\n");
         }
         return;
@@ -960,8 +957,11 @@ void BattleScene::UpdateHighlight(int centerCol, int centerRow, const CardData* 
             }
         }
         break;
+
     case RangeType::None:
         candidates.push_back({ centerCol, centerRow });
+        break;
+
     default:
         return;
     }
@@ -1037,7 +1037,7 @@ void BattleScene::UpdateHighlight(int centerCol, int centerRow, const CardData* 
                 else if (data->type == CardType::Move)
                     cell.gameObject.color = XMFLOAT4(0.2f, hoverBrightness, 0.2f, 1.0f);
                 else if (data->type == CardType::Skill)
-                    cell.gameObject.color = XMFLOAT4(0.2f, hoverBrightness, 0.2f, 1.0f);
+                    cell.gameObject.color = XMFLOAT4(0.2f, 0.2f, hoverBrightness, 1.0f);
             }
             else
             {
@@ -1053,7 +1053,7 @@ void BattleScene::UpdateHighlight(int centerCol, int centerRow, const CardData* 
                 else if (data->type == CardType::Move)
                     cell.gameObject.color = XMFLOAT4(0.2f, brightness, 0.4f, 1.0f);
                 else if (data->type == CardType::Skill)
-                    cell.gameObject.color = XMFLOAT4(0.2f, hoverBrightness, 0.2f, 1.0f);
+                    cell.gameObject.color = XMFLOAT4(0.2f, 0.2f, hoverBrightness, 1.0f);
             }
         }
     }

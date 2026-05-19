@@ -5,5 +5,6 @@ enum class SceneType
     Title,
     Field,
     Battle,
+    CardSelect,
     Result,
 };

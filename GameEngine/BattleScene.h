@@ -13,9 +13,11 @@
 #include "Hand.h"
 #include "Deck.h"
 #include "CardDataBase.h"
+#include "SceneType.h"
 
 #include <vector>
 #include <utility>
+#include <functional>
 
 enum class BattleResult
 {
@@ -46,6 +48,8 @@ public:
         int currentHP, int maxHP);
 
     void DrawEnemyHPBar(Enemy* enemy);
+
+    std::function<void(SceneType)> onChangeScene;
 
 private:
     SpriteRenderer* m_spriteRenderer;
