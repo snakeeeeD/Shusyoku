@@ -8,7 +8,7 @@
       "value": 6,
       "range": 1,
       "rangeType": "Adjacent",
-      "description": "敵単体に6ダメージ"
+      "description": "敵単体に{value}ダメージ"
     },
     {
       "id": "Spin Slash",
@@ -18,7 +18,17 @@
       "value": 10,
       "range": 1,
       "rangeType": "Area",
-      "description": "周囲の敵に10ダメージ"
+      "description": "周囲の敵に{value}ダメージ"
+    },
+    {
+      "id": "poison_blade",
+      "name": "毒刃",
+      "type": "Attack",
+      "cost": 1,
+      "value": 4,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "敵に{value}ダメージ、毒2を付与"
     },
 
 
@@ -30,7 +40,7 @@
       "value": 5,
       "range": 0,
       "rangeType": "None",
-      "description": "5ブロックを得る"
+      "description": "{value}ブロックを得る"
     },
 
 
@@ -52,7 +62,28 @@
       "value": 2,
       "range": 3,
       "rangeType": "Diamond",
-      "description": "3マス先まで移動"
+      "description": "{value}マス先まで移動"
+    },
+
+    {
+      "id": "power_attack",
+      "name": "戦士の誓い",
+      "type": "Power",
+      "cost": 2,
+      "value": 3,
+      "range": 0,
+      "rangeType": "None",
+      "description": "攻撃力を永続で+3"
+    },
+    {
+      "id": "buff_defense",
+      "name": "鉄の意志",
+      "type": "Power",
+      "cost": 1,
+      "value": 2,
+      "range": 0,
+      "rangeType": "None",
+      "description": "2ターン間、受けるダメージを2軽減"
     }
   ]
 }

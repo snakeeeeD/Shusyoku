@@ -134,6 +134,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="BattleScene.h" />
+    <ClInclude Include="Buff.h" />
+    <ClInclude Include="BuffManager.h" />
+    <ClInclude Include="BuffType.h" />
     <ClInclude Include="Card.h" />
     <ClInclude Include="CardData.h" />
     <ClInclude Include="CardDataBase.h" />
@@ -171,6 +174,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BattleScene.cpp" />
+    <ClCompile Include="BuffManager.cpp" />
     <ClCompile Include="Card.cpp" />
     <ClCompile Include="CardDataBase.cpp" />
     <ClCompile Include="CardSelectScene.cpp" />

@@ -4,6 +4,7 @@
 #include "Enemydata.h"
 #include "EnemyDataBase.h"
 #include "EnemyAction.h"
+#include "BuffManager.h"
 
 // < --- Enemyクラス --- >(仮で作成、ステータスは適当)
 class Enemy : public GameObject
@@ -25,13 +26,19 @@ public:
 	void TakeDamage(int damage);
 
 	void DecideNextAction();                    // 次の行動を決定
-	const EnemyAction* GetNextAction() const { return m_nextAction; }
+	const EnemyAction* GetNextAction() const
+	{
+		return m_hasNextAction ? &m_nextAction : nullptr;
+	}
 
 	void MoveToward(int playerCol, int playerRow, class GridMap* gridMap);
 
 	void AddBlock(int amount);
 	void ResetBlock();
 	int GetBlock() const { return m_block; }
+
+	BuffManager& GetBuffManager() { return m_buffManager; }
+
 
 private:
 	bool IsAdjacentTo(int playerCol, int playerRow);
@@ -43,6 +50,9 @@ private:
 
 	std::string m_textureName;
 	std::string m_id;
-	const EnemyAction* m_nextAction;
+	EnemyAction m_nextAction;
+	bool m_hasNextAction;
+
+	BuffManager m_buffManager;
 };
 

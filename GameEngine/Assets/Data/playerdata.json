@@ -9,6 +9,8 @@
     "move",
     "move",
     "dash",
+    "power_attack",
+    "buff_defense",
     "Spin Slash"
   ],
   "hp": 50,

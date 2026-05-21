@@ -130,6 +130,18 @@
     <Filter Include="ソース ファイル\02-Scene\30-CardSelectScene">
       <UniqueIdentifier>{94ce6886-9d61-4d15-9223-00694f2846c5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\30-Buff">
+      <UniqueIdentifier>{7a2e3057-9058-4193-b6b2-0f8d211fb7a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\30-Buff\01-BuffType">
+      <UniqueIdentifier>{6fdd4546-b25e-47cf-8372-f0f01baef324}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\30-Buff\00-Buff">
+      <UniqueIdentifier>{69aaf097-2bd3-4a0e-bcf3-773219f8f504}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\30-Buff\10-BuffManager">
+      <UniqueIdentifier>{a85b35fe-4d3e-4773-ade9-35a4d231d7ca}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -237,6 +249,15 @@
     <ClInclude Include="CardSelectScene.h">
       <Filter>ソース ファイル\02-Scene\30-CardSelectScene</Filter>
     </ClInclude>
+    <ClInclude Include="BuffType.h">
+      <Filter>ソース ファイル\03-Object関連\30-Card\30-Buff\01-BuffType</Filter>
+    </ClInclude>
+    <ClInclude Include="Buff.h">
+      <Filter>ソース ファイル\03-Object関連\30-Card\30-Buff\00-Buff</Filter>
+    </ClInclude>
+    <ClInclude Include="BuffManager.h">
+      <Filter>ソース ファイル\03-Object関連\30-Card\30-Buff\10-BuffManager</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SpriteRenderer.cpp">
@@ -307,6 +328,9 @@
     </ClCompile>
     <ClCompile Include="CardSelectScene.cpp">
       <Filter>ソース ファイル\02-Scene\30-CardSelectScene</Filter>
+    </ClCompile>
+    <ClCompile Include="BuffManager.cpp">
+      <Filter>ソース ファイル\03-Object関連\30-Card\30-Buff\10-BuffManager</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -108,4 +108,7 @@ private:
     void ClearHighlight();
 
     float m_highlightTimer;  // ハイライト明滅用タイマー
+
+    std::wstring GetCardEffectText(const CardData* data) const;
+    bool IsCardBoosted(const CardData* data) const;
 };

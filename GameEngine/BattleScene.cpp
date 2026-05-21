@@ -117,6 +117,15 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         {
             m_player->RestoreEnergy();
             m_player->ResetBlock();
+            m_player->GetBuffManager().OnTurnEnd();
+
+            // 毒ダメージ
+            int poison = m_player->GetBuffManager().GetPoisonValue();
+            if (poison > 0)
+            {
+                m_player->TakeDamage(poison);
+                OutputDebugStringW(L"毒ダメージ\n");
+            }
 
             for (auto enemy : m_enemies)
                 enemy->DecideNextAction();
@@ -161,6 +170,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             for (auto enemy : m_enemies) {
                 enemy->ResetBlock();
             }
+
         };
 
     // 敵の初期配置
@@ -234,10 +244,20 @@ void BattleScene::Update(float deltaTime)
             OutputDebugStringW(L"★ 敵ターン実行\n");
             for (auto enemy : m_enemies)
             {
+                // 毒ダメージ
+                int poison = enemy->GetBuffManager().GetPoisonValue();
+                if (poison > 0)
+                    enemy->TakeDamage(poison);
+
                 int damage = enemy->Think(m_playerCol, m_playerRow, m_gridMap);
                 if (damage > 0)
                     m_player->TakeDamage(damage);
             }
+
+            // 敵のバフ更新
+            for (auto enemy : m_enemies)
+                enemy->GetBuffManager().OnTurnEnd();
+
             m_enemyTurnTimer = ENEMY_TURN_DELAY;
             m_turnManager.EndTurn();
         }
@@ -389,9 +409,15 @@ void BattleScene::Draw()
             drawX + 5.0f, drawY + 32.0f, 13.0f,
             D2D1::ColorF(D2D1::ColorF::Yellow));
 
-        m_textRenderer->DrawText(cards[i]->GetData()->description.c_str(),
+  
+        D2D1_COLOR_F descColor = IsCardBoosted(cards[i]->GetData())
+            ? D2D1::ColorF(0.4f, 1.0f, 0.4f)
+            : D2D1::ColorF(D2D1::ColorF::LightGray);
+
+        m_textRenderer->DrawText(
+            GetCardEffectText(cards[i]->GetData()).c_str(),
             drawX + 5.0f, drawY + 55.0f, 12.0f,
-            D2D1::ColorF(D2D1::ColorF::LightGray));
+            descColor);
     }
 
     // ホバー中のカードは詳細表示
@@ -414,9 +440,15 @@ void BattleScene::Draw()
             drawX + 5.0f, drawY + 32.0f, 13.0f,
             D2D1::ColorF(D2D1::ColorF::Yellow));
 
-        m_textRenderer->DrawText(cards[i]->GetData()->description.c_str(),
+     
+        D2D1_COLOR_F descColor = IsCardBoosted(cards[i]->GetData())
+            ? D2D1::ColorF(0.4f, 1.0f, 0.4f)
+            : D2D1::ColorF(D2D1::ColorF::LightGray);
+
+        m_textRenderer->DrawText(
+            GetCardEffectText(cards[i]->GetData()).c_str(),
             drawX + 5.0f, drawY + 55.0f, 12.0f,
-            D2D1::ColorF(D2D1::ColorF::LightGray));
+            descColor);
     }
 
     // プレイヤーHP数字
@@ -493,6 +525,17 @@ void BattleScene::Draw()
                     16.0f,
                     D2D1::ColorF(D2D1::ColorF::LightBlue));
             }
+            // 敵のデバフ表示
+            if (enemy->GetBuffManager().HasBuff(BuffType::Poison))
+            {
+                wchar_t poisonText[32];
+                swprintf_s(poisonText, L"毒%d", enemy->GetBuffManager().GetPoisonValue());
+                m_textRenderer->DrawText(poisonText,
+                    screenX - barWidth / 2.0f,
+                    screenY - barHeight - 60.0f,
+                    14.0f,
+                    D2D1::ColorF(0.5f, 0.0f, 0.8f)); // 紫
+            }
         }
 
     }
@@ -504,6 +547,22 @@ void BattleScene::Draw()
     else
         m_textRenderer->DrawText(L"敵ターン", 500.0f, 20.0f, 24.0f,
             D2D1::ColorF(D2D1::ColorF::Red));
+
+    // バフ表示
+    const auto& buffs = m_player->GetBuffManager().GetBuffs();
+    float buffY = 155.0f;
+    for (auto& buff : buffs)
+    {
+        wchar_t buffText[64];
+        if (buff.isPermanent())
+            swprintf_s(buffText, L"%s +%d (永続)", buff.name.c_str(), buff.value);
+        else
+            swprintf_s(buffText, L"%s +%d (%dターン)", buff.name.c_str(), buff.value, buff.duration);
+
+        m_textRenderer->DrawText(buffText, 20.0f, buffY, 16.0f,
+            D2D1::ColorF(D2D1::ColorF::LightGreen));
+        buffY += 22.0f;
+    }
 
  
     //// カード名をテキストで表示
@@ -632,7 +691,9 @@ void BattleScene::HandleInput()
 
                                 if (max(dc, dr) <= data->range)
                                 {
-                                    enemy->TakeDamage(data->value);
+                                    enemy->TakeDamage(
+                                        m_player->GetBuffManager().GetFinalAttack(data->value)
+                                    );
 
                                     if (enemy->GetHp() <= 0)
                                         toDelete.push_back(enemy);
@@ -678,7 +739,20 @@ void BattleScene::HandleInput()
                             {
                                 if (!m_player->UseEnergy(data->cost)) return; // エネルギー不足
 
-                                targetEnemy->TakeDamage(data->value);
+                                int finalDamage = m_player->GetBuffManager().GetFinalAttack(data->value);
+                                targetEnemy->TakeDamage(finalDamage);
+
+                                // 毒刃カードの場合は毒を付与
+                                if (data->id == "poison_blade")
+                                {
+                                    Buff poisonBuff;
+                                    poisonBuff.type = BuffType::Poison;
+                                    poisonBuff.value = 2;
+                                    poisonBuff.duration = 3;
+                                    poisonBuff.name = L"毒";
+                                    poisonBuff.description = L"毎ターン{value}ダメージ";
+                                    targetEnemy->GetBuffManager().AddBuff(poisonBuff);
+                                }
 
                                 if (targetEnemy->GetHp() <= 0)
                                 {
@@ -728,13 +802,44 @@ void BattleScene::HandleInput()
                 {
                     if (!m_player->UseEnergy(data->cost)) return;
 
-                    m_player->AddBlock(data->value);
+                    // バフ適用後のブロック量
+                    int blockAmount = m_player->GetBuffManager().ApplyBlockBuff(data->value);
+                    m_player->GetBuffManager().GetFinalBlock(data->value);
 
                     m_deck.DiscardCard(card->GetId());
                     m_hand.RemoveCard(m_selectedCardIndex);
                     m_selectedCardIndex = -1;
-                }
+}
+                else if (data->type == CardType::Power)
+                {
+                    if (!m_player->UseEnergy(data->cost)) return;
+
+                    Buff buff;
+                    buff.value = data->value;
+
+                    if (data->id == "power_attack")
+                    {
+                        buff.type = BuffType::AttackUp;
+                        buff.duration = -1; // 永続
+                        buff.name = L"攻撃力UP";
+                        buff.description = L"攻撃力+" + std::to_wstring(data->value);
+                    }
+                    else if (data->id == "buff_defense")
+                    {
+                        buff.type = BuffType::DefenseUp;
+                        buff.duration = 2; // 2ターン
+                        buff.name = L"防御UP";
+                        buff.description = L"ダメージ-" + std::to_wstring(data->value);
+                    }
+
+                    m_player->GetBuffManager().AddBuff(buff);
+
+                    // 捨て札に入れず消滅（m_deck.DiscardCardを呼ばない）
+                    m_hand.RemoveCard(m_selectedCardIndex);
+                    m_selectedCardIndex = -1;
+}
             }
+
             else
             {
              
@@ -1038,6 +1143,8 @@ void BattleScene::UpdateHighlight(int centerCol, int centerRow, const CardData* 
                     cell.gameObject.color = XMFLOAT4(0.2f, hoverBrightness, 0.2f, 1.0f);
                 else if (data->type == CardType::Skill)
                     cell.gameObject.color = XMFLOAT4(0.2f, 0.2f, hoverBrightness, 1.0f);
+                else if (data->type == CardType::Power)
+                    cell.gameObject.color = XMFLOAT4(hoverBrightness, 0.2f, hoverBrightness, 1.0f);
             }
             else
             {
@@ -1054,7 +1161,48 @@ void BattleScene::UpdateHighlight(int centerCol, int centerRow, const CardData* 
                     cell.gameObject.color = XMFLOAT4(0.2f, brightness, 0.4f, 1.0f);
                 else if (data->type == CardType::Skill)
                     cell.gameObject.color = XMFLOAT4(0.2f, 0.2f, hoverBrightness, 1.0f);
+                else if (data->type == CardType::Power)
+                    cell.gameObject.color = XMFLOAT4(hoverBrightness, 0.2f, hoverBrightness, 1.0f);
             }
         }
     }
+}
+
+std::wstring BattleScene::GetCardEffectText(const CardData* data) const
+{
+    if (!data) return L"";
+
+    // 実際の値を計算
+    int actualValue = data->value;
+    bool isBoosted = false;
+
+    if (data->type == CardType::Attack)
+    {
+        actualValue = m_player->GetBuffManager().ApplyAttackBuff(data->value);
+        isBoosted = m_player->GetBuffManager().HasBuff(BuffType::AttackUp);
+    }
+    else if (data->type == CardType::Skill)
+    {
+        actualValue = m_player->GetBuffManager().ApplyBlockBuff(data->value);
+        isBoosted = m_player->GetBuffManager().HasBuff(BuffType::DefenseUp);
+    }
+
+    // {value} を実際の数値に置換
+    std::wstring result = data->description;
+    std::wstring placeholder = L"{value}";
+    size_t pos = result.find(placeholder);
+    if (pos != std::wstring::npos)
+        result.replace(pos, placeholder.size(), std::to_wstring(actualValue));
+
+    return result;
+}
+
+bool BattleScene::IsCardBoosted(const CardData* data) const
+{
+    if (!data) return false;
+    if (data->type == CardType::Attack)
+        return m_player->GetBuffManager().HasBuff(BuffType::AttackUp);
+    if (data->type == CardType::Skill)
+        return m_player->GetBuffManager().HasBuff(BuffType::DefenseUp);
+    return false;
 }

@@ -81,9 +81,10 @@ void PlayerDataManager::Load()
 		m_data.hp = 50;
 		m_data.maxHp = 50;
 		m_data.deck = {
-	   "strike", "strike", "strike", "Spin Slash",
+	   "strike", "strike", "strike", "Spin Slash", "poison_blade",
 	   "defend", "defend",
-	   "move",   "move",   "dash"
+	   "move",   "move",   "dash",
+	   "power_attack", "buff_defense"
 		};
 	}
 }

@@ -3,17 +3,14 @@
 #include "TextureManager.h"
 
 Enemy::Enemy()
-	:m_HP(30),
-	m_maxHP(30),
-	m_attack(5)
+    : m_HP(30), m_maxHP(30), m_attack(5)
     , m_block(0)
-    , m_nextAction(nullptr)
+    , m_hasNextAction(false)
 {
-	width = 1.0f;
-	height = 1.0f;
-	worldY = 0.5f;
+    width = 1.0f;
+    height = 1.0f;
+    worldY = 0.5f;
 }
-
 void Enemy::Init(const std::string& id)
 {
 	const EnemyData* data = EnemyDataBase::Get(id);
@@ -57,18 +54,18 @@ bool Enemy::IsAdjacentTo(int playerCol, int playerRow)
 
 int Enemy::Think(int playerCol, int playerRow, GridMap* gridMap)
 {
-    if (!m_nextAction) return 0;
+    if (!m_hasNextAction) return 0;
 
     int dc = abs(gridCol - playerCol);
     int dr = abs(gridRow - playerRow);
     int dist = dc + dr;
 
-    if (m_nextAction->type == EnemyActionType::Attack)
+    if (m_nextAction.type == EnemyActionType::Attack)
     {
-        if (dist <= m_nextAction->range)
+        if (dist <= m_nextAction.range)
         {
             // 攻撃
-            return m_nextAction->value;
+            return m_nextAction.value;
         }
         else
         {
@@ -77,14 +74,14 @@ int Enemy::Think(int playerCol, int playerRow, GridMap* gridMap)
             return 0;
         }
     }
-    else if (m_nextAction->type == EnemyActionType::Move)
+    else if (m_nextAction.type == EnemyActionType::Move)
     {
         MoveToward(playerCol, playerRow, gridMap);
         return 0;
     }
-    else if (m_nextAction->type == EnemyActionType::Defend)
+    else if (m_nextAction.type == EnemyActionType::Defend)
     {
-        AddBlock(m_nextAction->value);
+        AddBlock(m_nextAction.value);
         return 0;
     }
 
@@ -141,9 +138,12 @@ void Enemy::ResetBlock()
 void Enemy::DecideNextAction()
 {
     const EnemyData* data = EnemyDataBase::Get(m_id);
-    if (!data || data->actions.empty()) return;
+    if (!data || data->actions.empty())
+    {
+        m_hasNextAction = false;
+        return;
+    }
 
-    // 確率に基づいて行動を選ぶ
     int roll = rand() % 100;
     int cumulative = 0;
     for (auto& action : data->actions)
@@ -151,9 +151,11 @@ void Enemy::DecideNextAction()
         cumulative += action.chance;
         if (roll < cumulative)
         {
-            m_nextAction = &action;
+            m_nextAction = action; // コピー
+            m_hasNextAction = true;
             return;
         }
     }
-    m_nextAction = &data->actions.back();
+    m_nextAction = data->actions.back(); // コピー
+    m_hasNextAction = true;
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include "GameObject.h"
+#include "BuffManager.h"
 
 class Player : public GameObject
 {
@@ -23,6 +24,8 @@ public:
 
     void ResetBlock() { m_block = 0; }
 
+    BuffManager& GetBuffManager() { return m_buffManager; }
+
 private:
 
     int m_hp;
@@ -31,4 +34,6 @@ private:
     int m_maxEnergy;
     int m_block;
     float m_BillboardRotation = 0.0;
+
+    BuffManager m_buffManager;
 };
