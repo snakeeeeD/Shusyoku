@@ -142,6 +142,9 @@
     <Filter Include="ソース ファイル\03-Object関連\30-Card\30-Buff\10-BuffManager">
       <UniqueIdentifier>{a85b35fe-4d3e-4773-ade9-35a4d231d7ca}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\04-CardVisual">
+      <UniqueIdentifier>{1a3a7043-20ab-4700-974f-e6e810a8e064}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -258,6 +261,18 @@
     <ClInclude Include="BuffManager.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\30-Buff\10-BuffManager</Filter>
     </ClInclude>
+    <ClInclude Include="FieldNode.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="FieldNodeType.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="FieldScene.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="CardVisual.h">
+      <Filter>ソース ファイル\03-Object関連\30-Card\04-CardVisual</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SpriteRenderer.cpp">
@@ -331,6 +346,9 @@
     </ClCompile>
     <ClCompile Include="BuffManager.cpp">
       <Filter>ソース ファイル\03-Object関連\30-Card\30-Buff\10-BuffManager</Filter>
+    </ClCompile>
+    <ClCompile Include="FieldScene.cpp">
+      <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -13,6 +13,7 @@
 #include "Hand.h"
 #include "Deck.h"
 #include "CardDataBase.h"
+#include "CardVisual.h"
 #include "SceneType.h"
 
 #include <vector>
@@ -111,4 +112,12 @@ private:
 
     std::wstring GetCardEffectText(const CardData* data) const;
     bool IsCardBoosted(const CardData* data) const;
+
+    // Enemy‚ÌŽ€–S”»’è—p
+    void ProcessDeadEnemies();
+
+    
+    std::vector<std::pair<int, int>> m_enemyHighlightCells;
+    void UpdateEnemyIntentHighlight();
+    void ClearEnemyHighlight();
 };

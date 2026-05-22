@@ -11,6 +11,9 @@ public:
 
     static bool HasSaveData();
 
+    static void SaveFieldProgress(int nodeIndex, const std::vector<bool>& clearedNodes);
+    static void StartNewGame();
+
     static PlayerData& GetData() { return m_data; }
 
 private:

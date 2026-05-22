@@ -63,9 +63,19 @@ void TitleScene::Draw()
 
 void TitleScene::HandleInput()
 {
+    // ニューゲーム開始時
     if (m_input.GetMouseButtonTrigger(0))
     {
+        PlayerDataManager::StartNewGame();
         if (onChangeScene)
-            onChangeScene(SceneType::Battle);
+            onChangeScene(SceneType::Field);
+    }
+
+    // コンティニュー
+    if (m_input.GetMouseButtonTrigger(1))
+    {
+        PlayerDataManager::Load();
+        if (onChangeScene)
+            onChangeScene(SceneType::Field);
     }
 }

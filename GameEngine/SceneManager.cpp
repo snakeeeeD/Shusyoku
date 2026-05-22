@@ -3,11 +3,6 @@
 #include "CardDataBase.h"
 #include "PlayerDataManager.h"
 
-#include "TitleScene.h"
-#include "BattleScene.h"
-#include "CardSelectScene.h"
-//#include "FieldScene.h"
-
 SceneManager::SceneManager() : m_currentScene(nullptr)
 {
 
@@ -75,7 +70,6 @@ void SceneManager::ChangeScene(SceneType type)
 			m_currentScene = scene;
 			break;
 		}
-		//case SceneType::Field:  m_currentScene = new FieldScene();  break;
 		case SceneType::CardSelect:
 		{
 			auto scene = new CardSelectScene();
@@ -83,7 +77,13 @@ void SceneManager::ChangeScene(SceneType type)
 			m_currentScene = scene;
 			break;
 		}
-
+		case SceneType::Field:
+		{
+			auto scene = new FieldScene();
+			scene->onChangeScene = [this](SceneType type) { ChangeScene(type); };
+			m_currentScene = scene;
+			break;
+		}
 		
 	}
 

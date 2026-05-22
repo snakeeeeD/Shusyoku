@@ -4,6 +4,11 @@
 #include "Scenetype.h"
 #include "TextRenderer.h"
 
+#include "TitleScene.h"
+#include "BattleScene.h"
+#include "CardSelectScene.h"
+#include "FieldScene.h"
+
 
 class SceneManager
 {

@@ -28,10 +28,13 @@ void PlayerDataManager::Init()
 		m_data.maxHp = 50;
 		m_data.deck =
 		{
-			"strike", "strike", "strike", "Spin Slash",
-			"defend", "defend",
-			"move", "move", "move"
+		   "strike", "strike", "strike", "Spin Slash", "poison_blade",
+	   "defend", "defend",
+	   "move",   "move",   "dash",
+	   "power_attack", "buff_defense"
 		};
+		m_data.currentNodeIndex = 0;	// スタート地点
+		m_data.clearedNodes.clear();	// クリア済みノードなし
 		OutputDebugStringW(L" 初期データ作成\N");
 	}
 }
@@ -42,6 +45,8 @@ void PlayerDataManager::Save()
 	j["hp"] = m_data.hp;
 	j["maxHp"] = m_data.maxHp;
 	j["deck"] = m_data.deck;
+	j["currentNodeIndex"] = m_data.currentNodeIndex;
+	j["clearedNodes"] = m_data.clearedNodes;
 
 	std::ofstream file(SAVE_PATH);
 	if (file.is_open())
@@ -70,6 +75,17 @@ void PlayerDataManager::Load()
 		m_data.hp = j["hp"];
 		m_data.maxHp = j["maxhp"];
 		m_data.deck = j["deck"].get<std::vector<std::string >>();
+
+		// フィールド進行状況の読み込み
+		if (j.contains("currentNodeIndex"))
+			m_data.currentNodeIndex = j["currentNodeIndex"];
+		else
+			m_data.currentNodeIndex = 0;
+
+		if (j.contains("clearedNodes"))
+			m_data.clearedNodes = j["clearedNodes"].get<std::vector<bool>>();
+		else
+			m_data.clearedNodes.clear();
 	}
 	catch (const json::exception& e)
 	{
@@ -93,4 +109,28 @@ void PlayerDataManager::AddCard(const std::string& id)
 {
 	m_data.deck.push_back(id);
 	Save();		// カード追加したら即セーブ
+}
+
+// フィールド進行を保存
+void PlayerDataManager::SaveFieldProgress(int nodeIndex, const std::vector<bool>& clearedNodes)
+{
+	m_data.currentNodeIndex = nodeIndex;
+	m_data.clearedNodes = clearedNodes;
+	Save();
+}
+
+// 新規ゲーム開始
+void PlayerDataManager::StartNewGame()
+{
+	m_data.hp = 50;
+	m_data.maxHp = 50;
+	m_data.deck = {
+	   "strike", "strike", "strike", "Spin Slash", "poison_blade",
+	   "defend", "defend",
+	   "move",   "move",   "dash",
+	   "power_attack", "buff_defense"
+	};
+	m_data.currentNodeIndex = 0;
+	m_data.clearedNodes.clear();
+	Save();
 }

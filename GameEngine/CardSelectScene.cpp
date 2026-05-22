@@ -79,12 +79,16 @@ void CardSelectScene::Draw()
 
     for (int i = 0; i < (int)m_choices.size(); i++)
     {
+        const CardData* data = CardDataBase::Get(m_choices[i]);
+        if (!data) continue;
+
         float cardX = startX + i * (CARD_W + 30.0f);
         float drawY = (i == m_hoveredIndex) ? cardY - 20.0f : cardY;
 
-        XMFLOAT4 color = (i == m_hoveredIndex)
-            ? XMFLOAT4(1.0f, 1.0f, 0.0f, 0.5f)
-            : XMFLOAT4(0.2f, 0.4f, 0.8f, 1.0f);
+        XMFLOAT4 color = CardVisual::GetCardColor(
+            data->type,
+            i == m_hoveredIndex
+        );
 
         m_spriteRenderer->DrawSprite(m_whiteTexture, cardX, drawY,
             CARD_W, CARD_H, 0.0f, color);
@@ -118,7 +122,8 @@ void CardSelectScene::Draw()
             cardX + 5.0f, drawY + 36.0f, 14.0f,
             D2D1::ColorF(D2D1::ColorF::Yellow));
 
-        m_textRenderer->DrawText(data->description.c_str(),
+        m_textRenderer->DrawText(
+            GetCardEffectText(data).c_str(),
             cardX + 5.0f, drawY + 60.0f, 13.0f,
             D2D1::ColorF(D2D1::ColorF::LightGray));
     }
@@ -159,6 +164,27 @@ void CardSelectScene::HandleInput()
 
         // バトルシーンに戻る（後でフィールドに変更）
         if (onChangeScene)
-            onChangeScene(SceneType::Battle);
+            onChangeScene(SceneType::Field);
     }
+}
+
+std::wstring CardSelectScene::GetCardEffectText(const CardData* data) const
+{
+    if (!data) return L"";
+
+    std::wstring result = data->description;
+
+    std::wstring placeholder = L"{value}";
+    size_t pos = result.find(placeholder);
+
+    if (pos != std::wstring::npos)
+    {
+        result.replace(
+            pos,
+            placeholder.size(),
+            std::to_wstring(data->value)
+        );
+    }
+
+    return result;
 }

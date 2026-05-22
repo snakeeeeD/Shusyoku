@@ -92,23 +92,44 @@ void Enemy::MoveToward(int playerCol, int playerRow, GridMap* gridMap)
 {
     int dc = playerCol - gridCol;
     int dr = playerRow - gridRow;
-    int newCol = gridCol;
-    int newRow = gridRow;
 
+    std::vector<std::pair<int, int>> candidates;
+
+    // —Dæ•ûŒü
     if (abs(dc) >= abs(dr))
-        newCol += (dc > 0) ? 1 : -1;
-    else
-        newRow += (dr > 0) ? 1 : -1;
-
-    auto& cell = gridMap->GetCell(newCol, newRow);
-    if (cell.type == CellType::Empty)
     {
-        gridMap->SetCellType(gridCol, gridRow, CellType::Empty);
-        gridCol = newCol;
-        gridRow = newRow;
-        gridMap->SetCellType(gridCol, gridRow, CellType::Enemy);
-        worldX = (gridCol - gridMap->GetCols() / 2.0f) * 1.1f;
-        worldZ = (gridRow - gridMap->GetRows() / 2.0f) * 1.1f;
+        candidates.push_back({ gridCol + (dc > 0 ? 1 : -1), gridRow });
+        if (dr != 0)
+            candidates.push_back({ gridCol, gridRow + (dr > 0 ? 1 : -1) });
+    }
+    else
+    {
+        candidates.push_back({ gridCol, gridRow + (dr > 0 ? 1 : -1) });
+        if (dc != 0)
+            candidates.push_back({ gridCol + (dc > 0 ? 1 : -1), gridRow });
+    }
+
+    for (auto& [newCol, newRow] : candidates)
+    {
+        if (newCol < 0 || newCol >= gridMap->GetCols()) continue;
+        if (newRow < 0 || newRow >= gridMap->GetRows()) continue;
+
+        auto& cell = gridMap->GetCell(newCol, newRow);
+
+        if (cell.type == CellType::Empty)
+        {
+            gridMap->SetCellType(gridCol, gridRow, CellType::Empty);
+
+            gridCol = newCol;
+            gridRow = newRow;
+
+            gridMap->SetCellType(gridCol, gridRow, CellType::Enemy);
+
+            worldX = (gridCol - gridMap->GetCols() / 2.0f) * 1.1f;
+            worldZ = (gridRow - gridMap->GetRows() / 2.0f) * 1.1f;
+
+            return;
+        }
     }
 }
 

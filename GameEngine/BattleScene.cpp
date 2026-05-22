@@ -112,6 +112,9 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     m_player->worldX = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
     m_player->worldZ = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
 
+    // PlayerDataManagerからHPを引き継ぐ
+    m_player->SetHp(playerData.hp);
+
     // プレイヤーターン開始時にエネルギー回復
     m_turnManager.onPlayerTurnStart = [this]()
         {
@@ -188,7 +191,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
     addEnemy(2, 1, "slime");
     //addEnemy(6, 4, "goblin");
-    //addEnemy(0, 0, "orc");
+    addEnemy(0, 0, "orc");
 
     for (auto enemy : m_enemies)
         enemy->DecideNextAction();
@@ -217,10 +220,10 @@ void BattleScene::Update(float deltaTime)
     if (m_enemies.empty())
     {
         m_battleResult = BattleResult::Win;
-        OutputDebugStringW(L"★ バトル勝利！\n");
 
-        // TODO: カード選択画面へ
-
+        // HPを保存
+        PlayerDataManager::GetData().hp = m_player->GetHp();
+        PlayerDataManager::Save();
         return;
     }
 
@@ -228,15 +231,17 @@ void BattleScene::Update(float deltaTime)
     if (m_player->GetHp() <= 0)
     {
         m_battleResult = BattleResult::Lose;
-        OutputDebugStringW(L"★ ゲームオーバー\n");
 
-        // TODO: タイトルへ
-
+        // HPを0で保存
+        PlayerDataManager::GetData().hp = 0;
+        PlayerDataManager::Save();
         return;
     }
 
     if (m_turnManager.IsEnemyTurn())
     {
+        ClearHighlight();
+        ClearEnemyHighlight();
         m_enemyTurnTimer -= deltaTime;
         OutputDebugStringW(L"★ 敵ターン待機中\n");
         if (m_enemyTurnTimer <= 0.0f)
@@ -244,15 +249,24 @@ void BattleScene::Update(float deltaTime)
             OutputDebugStringW(L"★ 敵ターン実行\n");
             for (auto enemy : m_enemies)
             {
-                // 毒ダメージ
                 int poison = enemy->GetBuffManager().GetPoisonValue();
+
                 if (poison > 0)
+                {
                     enemy->TakeDamage(poison);
+
+                    if (enemy->GetHp() <= 0)
+                        continue;
+                }
 
                 int damage = enemy->Think(m_playerCol, m_playerRow, m_gridMap);
                 if (damage > 0)
+                {
                     m_player->TakeDamage(damage);
+                }
             }
+
+            ProcessDeadEnemies();
 
             // 敵のバフ更新
             for (auto enemy : m_enemies)
@@ -262,6 +276,14 @@ void BattleScene::Update(float deltaTime)
             m_turnManager.EndTurn();
         }
     }
+        UpdateEnemyIntentHighlight();
+        if (m_selectedCardIndex >= 0)
+        {
+            const CardData* data =
+                m_hand.GetCards()[m_selectedCardIndex]->GetData();
+
+            UpdateHighlight(m_playerCol, m_playerRow, data);
+        }
 }
 
 void BattleScene::Draw()
@@ -321,9 +343,10 @@ void BattleScene::Draw()
             ? m_screenHeight - CARD_HEIGHT - 20.0f
             : cardHideY;
 
-        XMFLOAT4 color = (i == m_selectedCardIndex)
-            ? XMFLOAT4(1.0f, 1.0f, 0.0f, 0.5f)
-            : XMFLOAT4(0.2f, 0.4f, 0.8f, 1.0f);
+        XMFLOAT4 color = CardVisual::GetCardColor(
+            cards[i]->GetData()->type,
+            false
+        );
 
         m_spriteRenderer->DrawSprite(m_whiteTexture, cardX, drawY,
             CARD_WIDTH, CARD_HEIGHT, 0.0f, color);
@@ -345,7 +368,10 @@ void BattleScene::Draw()
 
         XMFLOAT4 color = (i == m_selectedCardIndex)
             ? XMFLOAT4(0.8f, 0.8f, 0.0f, 0.7f)
-            : XMFLOAT4(0.2f, 0.4f, 0.8f, 1.0f);
+            : CardVisual::GetCardColor(
+                cards[i]->GetData()->type,
+                false
+            );
 
         m_spriteRenderer->DrawSprite(m_whiteTexture, drawX, drawY,
             CARD_HOVER_W, CARD_HOVER_H, 0.0f, color);
@@ -361,7 +387,7 @@ void BattleScene::Draw()
             + i * (CARD_WIDTH + 10.0f);
 
         float drawX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
-        float drawY = cardHoverY + 40.0f; // ← ホバー位置より少し下
+        float drawY = cardHoverY + 40.0f; // ホバー位置より少し下
 
         m_spriteRenderer->DrawSprite(m_whiteTexture, drawX, drawY,
             CARD_HOVER_W, CARD_HOVER_H, 0.0f,
@@ -702,16 +728,7 @@ void BattleScene::HandleInput()
 
                             }
 
-                            for (auto enemy : toDelete)
-                            {
-                                m_gridMap->SetCellType(enemy->gridCol, enemy->gridRow, CellType::Empty);
-
-                                m_enemies.erase(
-                                    std::remove(m_enemies.begin(), m_enemies.end(), enemy),
-                                    m_enemies.end()
-                                );
-                                delete enemy;
-                            }
+                            ProcessDeadEnemies();
 
                             m_deck.DiscardCard(card->GetId());
                             m_hand.RemoveCard(m_selectedCardIndex);
@@ -754,15 +771,7 @@ void BattleScene::HandleInput()
                                     targetEnemy->GetBuffManager().AddBuff(poisonBuff);
                                 }
 
-                                if (targetEnemy->GetHp() <= 0)
-                                {
-                                    m_gridMap->SetCellType(targetEnemy->gridCol, targetEnemy->gridRow, CellType::Empty);
-                                    m_enemies.erase(
-                                        std::remove(m_enemies.begin(), m_enemies.end(), targetEnemy),
-                                        m_enemies.end()
-                                    );
-                                    delete targetEnemy;
-                                }
+                                ProcessDeadEnemies();
 
                                 m_deck.DiscardCard(card->GetId());
                                 m_hand.RemoveCard(m_selectedCardIndex);
@@ -1107,6 +1116,25 @@ void BattleScene::UpdateHighlight(int centerCol, int centerRow, const CardData* 
         bool isHovered = (col == m_hoveredCell.first && row == m_hoveredCell.second);
 
         bool isEnemy = (cell.type == CellType::Enemy);
+        bool isDangerCell = false;
+
+        for (auto enemy : m_enemies)
+        {
+            const EnemyAction* action = enemy->GetNextAction();
+            if (!action) continue;
+
+            if (action->type != EnemyActionType::Attack)
+                continue;
+
+            int dcEnemy = abs(col - enemy->gridCol);
+            int drEnemy = abs(row - enemy->gridRow);
+
+            if ((dcEnemy + drEnemy) <= action->range)
+            {
+                isDangerCell = true;
+                break;
+            }
+        }
 
         if (data->rangeType == RangeType::Area)
         {
@@ -1156,13 +1184,35 @@ void BattleScene::UpdateHighlight(int centerCol, int centerRow, const CardData* 
                 brightness = max(0.4f, min(0.7f, brightness));
 
                 if (data->type == CardType::Attack)
+                {
                     cell.gameObject.color = XMFLOAT4(brightness, 0.2f, 0.2f, 1.0f);
+                }
                 else if (data->type == CardType::Move)
-                    cell.gameObject.color = XMFLOAT4(0.2f, brightness, 0.4f, 1.0f);
+                {
+                    //float brightness = isAreaHovered ? hoverBrightness : 0.6f;
+                    if (isDangerCell)
+                    {
+                        float blink = 0.6f + 0.4f * sin(m_highlightTimer * 2.0f);
+
+                        // 危険移動マス
+                        cell.gameObject.color =
+                            XMFLOAT4(blink, blink, 0.1f, 1.0f);
+                    }
+                    else
+                    {
+                        // 通常移動マス
+                        cell.gameObject.color =
+                            XMFLOAT4(0.2f, brightness, 0.4f, 1.0f);
+                    }
+                }
                 else if (data->type == CardType::Skill)
+                {
                     cell.gameObject.color = XMFLOAT4(0.2f, 0.2f, hoverBrightness, 1.0f);
+                }
                 else if (data->type == CardType::Power)
+                {
                     cell.gameObject.color = XMFLOAT4(hoverBrightness, 0.2f, hoverBrightness, 1.0f);
+                }
             }
         }
     }
@@ -1205,4 +1255,101 @@ bool BattleScene::IsCardBoosted(const CardData* data) const
     if (data->type == CardType::Skill)
         return m_player->GetBuffManager().HasBuff(BuffType::DefenseUp);
     return false;
+}
+
+void BattleScene::ProcessDeadEnemies()
+{
+    std::vector<Enemy*> toDelete;
+
+    for (auto enemy : m_enemies)
+    {
+        if (enemy->GetHp() <= 0)
+            toDelete.push_back(enemy);
+    }
+
+    for (auto enemy : toDelete)
+    {
+        m_gridMap->SetCellType(enemy->gridCol, enemy->gridRow, CellType::Empty);
+
+        m_enemies.erase(
+            std::remove(m_enemies.begin(), m_enemies.end(), enemy),
+            m_enemies.end()
+        );
+
+        delete enemy;
+    }
+}
+
+void BattleScene::UpdateEnemyIntentHighlight()
+{
+    float pulse = sin(m_highlightTimer * 2.0f);
+    float blink = 0.6f + 0.4f * pulse;
+
+    for (auto enemy : m_enemies)
+    {
+        const EnemyAction* action = enemy->GetNextAction();
+        if (!action) continue;
+
+        // 攻撃系以外は今は無視
+        if (action->type != EnemyActionType::Attack)
+            continue;
+
+        std::vector<std::pair<int, int>> cells;
+
+        int centerCol = enemy->gridCol;
+        int centerRow = enemy->gridRow;
+
+        // ===== 今は Manhattan距離 =====
+        for (int dr = -action->range; dr <= action->range; dr++)
+        {
+            for (int dc = -action->range; dc <= action->range; dc++)
+            {
+                if (abs(dc) + abs(dr) <= action->range
+                    && (dc != 0 || dr != 0))
+                {
+                    cells.push_back({
+                        centerCol + dc,
+                        centerRow + dr
+                        });
+                }
+            }
+        }
+
+        for (auto& [col, row] : cells)
+        {
+            if (col < 0 || col >= m_gridMap->GetCols()) continue;
+            if (row < 0 || row >= m_gridMap->GetRows()) continue;
+
+            auto& cell = m_gridMap->GetCell(col, row);
+
+            bool isPlayer =
+                (col == m_playerCol && row == m_playerRow);
+
+            // プレイヤーが範囲内なら点滅
+            if (isPlayer)
+            {
+                cell.gameObject.color =
+                    XMFLOAT4(blink, blink, 0.1f, 1.0f);
+            }
+            else
+            {
+                // 通常の予告色
+                cell.gameObject.color =
+                    XMFLOAT4(0.8f, 0.8f, 0.2f, 0.5f);
+            }
+
+            m_enemyHighlightCells.push_back({ col, row });
+        }
+    }
+}
+
+void BattleScene::ClearEnemyHighlight()
+{
+    for (auto& [col, row] : m_enemyHighlightCells)
+    {
+        // 元のセルタイプに応じた色に戻す
+        auto& cell = m_gridMap->GetCell(col, row);
+        m_gridMap->SetCellType(col, row, cell.type);
+    }
+    m_enemyHighlightCells.clear();
 }

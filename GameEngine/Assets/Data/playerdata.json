@@ -1,18 +1,28 @@
 {
+  "clearedNodes": [
+    true,
+    true,
+    false,
+    false,
+    false,
+    false,
+    false
+  ],
+  "currentNodeIndex": 1,
   "deck": [
     "strike",
     "strike",
     "strike",
     "Spin Slash",
+    "poison_blade",
     "defend",
     "defend",
     "move",
     "move",
     "dash",
     "power_attack",
-    "buff_defense",
-    "Spin Slash"
+    "buff_defense"
   ],
-  "hp": 50,
+  "hp": 0,
   "maxHp": 50
 }

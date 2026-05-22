@@ -1,22 +1,21 @@
 #pragma once
 #include "Scene.h"
+#include "Scenetype.h"
 #include "SceneManager.h"
 #include "SpriteRenderer.h"
 #include "TextRenderer.h"
 #include "TextureManager.h"
-#include "CardDataBase.h"
-#include "CardVisual.h"
-#include "PlayerDataManager.h"
 #include "input.h"
+#include "FieldNode.h"
+#include "PlayerDataManager.h"
 #include <vector>
-#include <string>
 #include <functional>
 
-class CardSelectScene : public Scene
+class FieldScene : public Scene
 {
 public:
-    CardSelectScene();
-    ~CardSelectScene();
+    FieldScene();
+    ~FieldScene();
 
     bool Init(ID3D11Device* device, ID3D11DeviceContext* context,
         int screenWidth, int screenHeight, HWND hWnd,
@@ -27,8 +26,14 @@ public:
 
     std::function<void(SceneType)> onChangeScene;
 
+    // バトルで使う敵IDを外部から取得できるように
+    const std::string& GetCurrentBattleEnemyId() const { return m_currentEnemyId; }
+
 private:
-    void GenerateChoices();
+    void GenerateMap();
+    void DrawNode(const FieldNode& node, bool isHovered);
+    bool CanMove(int nodeIndex) const;
+    XMFLOAT2 GetNodeScreenPos(const FieldNode& node) const;
 
     SpriteRenderer* m_spriteRenderer;
     TextRenderer* m_textRenderer;
@@ -40,12 +45,13 @@ private:
     int m_screenHeight;
     HWND m_hWnd;
 
-    std::vector<std::string> m_choices; // 選択肢のカードID
-    int m_hoveredIndex;
+    std::vector<FieldNode> m_nodes;
+    int m_currentNodeIndex;   // 現在いるノード
+    int m_hoveredNodeIndex;   // マウスが乗っているノード
 
-    std::wstring GetCardEffectText(const CardData* data) const;
+    std::string m_currentEnemyId;
 
-    static constexpr int   CHOICE_COUNT = 3;
-    static constexpr float CARD_W = 150.0f;
-    static constexpr float CARD_H = 200.0f;
+    void SaveProgress();
+
+    static constexpr float NODE_RADIUS = 30.0f;
 };

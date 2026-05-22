@@ -142,6 +142,7 @@
     <ClInclude Include="CardDataBase.h" />
     <ClInclude Include="CardSelectScene.h" />
     <ClInclude Include="CardType.h" />
+    <ClInclude Include="CardVisual.h" />
     <ClInclude Include="Deck.h" />
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="EnemyAction.h" />
@@ -149,6 +150,9 @@
     <ClInclude Include="Enemydata.h" />
     <ClInclude Include="EnemyDataBase.h" />
     <ClInclude Include="External\nlohmann\json.hpp" />
+    <ClInclude Include="FieldNode.h" />
+    <ClInclude Include="FieldNodeType.h" />
+    <ClInclude Include="FieldScene.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameEngine.h" />
@@ -181,6 +185,7 @@
     <ClCompile Include="Deck.cpp" />
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="EnemyDataBase.cpp" />
+    <ClCompile Include="FieldScene.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="GridMap.cpp" />

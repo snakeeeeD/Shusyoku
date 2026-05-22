@@ -14,17 +14,19 @@ public:
     int GetMaxHp() const { return m_maxHp; }
     int GetEnergy() const { return m_energy; }
     int GetBlock() const { return m_block; }
+    int GetMaxEnergy() const { return m_maxEnergy; }
+    BuffManager& GetBuffManager() { return m_buffManager; }
+
+    // セッター
+    void SetHp(int hp) { m_hp = min(hp, m_maxHp); }
 
     void AddBlock(int amount);
     void TakeDamage(int damage);
 
     void RestoreEnergy();          // ターン開始時に回復
     bool UseEnergy(int cost);      // エネルギー消費（足りなければfalse）
-    int GetMaxEnergy() const { return m_maxEnergy; }
 
     void ResetBlock() { m_block = 0; }
-
-    BuffManager& GetBuffManager() { return m_buffManager; }
 
 private:
 
