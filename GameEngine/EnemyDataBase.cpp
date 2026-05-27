@@ -1,36 +1,5 @@
-
-    // ハードコードされたデータを登録(Json実装前)
-    /*{
-        EnemyData data;
-        data.id = "slime";
-        data.textureName = "enemy_slime";
-        data.hp = 20;
-        data.attack = 3;
-        data.width = 1.0f;
-        data.height = 1.0f;
-        data.actions = {
-            { EnemyActionType::Attack, 3, 1, 70, L" 3ダメージ" },
-            { EnemyActionType::Move,   0, 0, 30, L" 移動" },
-        };
-        m_data["slime"] = data;
-    }
-    {
-        EnemyData data;
-        data.id = "goblin";
-        data.textureName = "enemy_goblin";
-        data.hp = 40;
-        data.attack = 8;
-        data.width = 1.0f;
-        data.height = 1.0f;
-        data.actions = {
-            { EnemyActionType::Attack, 8, 1, 60, L" 8ダメージ" },
-            { EnemyActionType::Defend, 5, 0, 20, L" 5ブロック" },
-            { EnemyActionType::Move,   0, 0, 20, L" 移動" },
-        };
-        m_data["goblin"] = data;
-    }*/
-
 #include "EnemyDataBase.h"
+#include "GameUtils.h"
 #include <windows.h>
 #include <nlohmann/json.hpp>
 #include <fstream>
@@ -40,27 +9,6 @@ using json = nlohmann::json;
 
 std::unordered_map<std::string, EnemyData> EnemyDataBase::m_data;
 
-// 文字列からEnemyActionTypeに変換
-EnemyActionType StringToActionType(const std::string& str)
-{
-    if (str == "Attack") return EnemyActionType::Attack;
-    if (str == "Defend") return EnemyActionType::Defend;
-    if (str == "Move") return EnemyActionType::Move;
-    if (str == "Buf") return EnemyActionType::Buf;
-    if (str == "Debuf") return EnemyActionType::Debuf;
-    return EnemyActionType::Attack; // デフォルト
-}
-
-// std::stringからstd::wstringに変換
-std::wstring StringToWString(const std::string& str)
-{
-    if (str.empty()) return L"";
-
-    int size_needed = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), NULL, 0);
-    std::wstring wstr(size_needed, 0);
-    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), &wstr[0], size_needed);
-    return wstr;
-}
 
 void EnemyDataBase::Init()
 {
@@ -80,8 +28,7 @@ void EnemyDataBase::Init()
    // std::ifstream file("Assets/Data/enemies.json");
     if (!file.is_open())
     {
-        OutputDebugStringW(L"★ enemies.json 読み込み失敗 - ハードコードデータを使用\n");
-        LoadHardcodedData();
+        OutputDebugStringW(L"★ enemies.json 読み込み失敗\n");
         return;
     }
 
@@ -128,19 +75,25 @@ void EnemyDataBase::Init()
 
                         action.value = actionJson["value"];
                         action.range = actionJson["range"];
+                        action.rangeType = StringToRangeType(actionJson.value("rangeType", "Adjacent"));
                         action.chance = actionJson["chance"];
+
+                        // rangeType を読み込む
+                        if (actionJson.contains("rangeType"))
+                        {
+                            std::string rangeTypeStr = actionJson["rangeType"];
+                            action.rangeType = StringToRangeType(rangeTypeStr);
+                        }
+                        else
+                        {
+                            action.rangeType = RangeType::Adjacent;  // デフォルト
+                        }
 
                         // descriptionをUTF-8からwstringに変換
                         std::string descStr = actionJson["description"];
-                        action.description = StringToWString(descStr);
+                        action.description = ToWString(descStr);
 
                         data.actions.push_back(action);
-
-                        // デバッグ出力
-                        char buf[256];
-                        sprintf_s(buf, "  - 行動: type=%s, value=%d, chance=%d%%\n",
-                            typeStr.c_str(), action.value, action.chance);
-                        OutputDebugStringA(buf);
                     }
                 }
 
@@ -157,8 +110,7 @@ void EnemyDataBase::Init()
         }
         else
         {
-            OutputDebugStringW(L"★ JSON構造エラー - ハードコードデータを使用\n");
-            LoadHardcodedData();
+            OutputDebugStringW(L"★ JSON構造エラー\n");
         }
     }
     catch (const json::parse_error& e)
@@ -166,58 +118,17 @@ void EnemyDataBase::Init()
         char buf[512];
         sprintf_s(buf, "★ JSONパースエラー: %s (位置: %d)\n", e.what(), (int)e.byte);
         OutputDebugStringA(buf);
-        LoadHardcodedData();
     }
     catch (const json::exception& e)
     {
         char buf[512];
         sprintf_s(buf, "★ JSONエラー: %s\n", e.what());
         OutputDebugStringA(buf);
-        LoadHardcodedData();
     }
     catch (...)
     {
-        OutputDebugStringW(L"★ 不明なエラー - ハードコードデータを使用\n");
-        LoadHardcodedData();
+        OutputDebugStringW(L"★ 不明なエラー\n");
     }
-}
-
-// Json読み込み失敗時のフォールバック
-void EnemyDataBase::LoadHardcodedData()
-{
-    OutputDebugStringW(L"★ ハードコードデータを登録中...\n");
-
-    //{
-    //    EnemyData data;
-    //    data.id = "slime";
-    //    data.textureName = "enemy_slime";
-    //    data.hp = 20;
-    //    data.attack = 3;
-    //    data.width = 1.0f;
-    //    data.height = 1.0f;
-    //    data.actions = {
-    //        { EnemyActionType::Attack, 3, 1, 70, L"3ダメージ" },
-    //        { EnemyActionType::Move,   0, 0, 30, L"移動" },
-    //    };
-    //    m_data["slime"] = data;
-    //}
-    //{
-    //    EnemyData data;
-    //    data.id = "goblin";
-    //    data.textureName = "enemy_goblin";
-    //    data.hp = 40;
-    //    data.attack = 8;
-    //    data.width = 1.0f;
-    //    data.height = 1.0f;
-    //    data.actions = {
-    //        { EnemyActionType::Attack, 8, 1, 60, L"8ダメージ" },
-    //        { EnemyActionType::Defend, 5, 0, 20, L"5ブロック" },
-    //        { EnemyActionType::Move,   0, 0, 20, L"移動" },
-    //    };
-    //    m_data["goblin"] = data;
-    //}
-
-    OutputDebugStringW(L"★ ハードコードデータ登録完了\n");
 }
 
 const EnemyData* EnemyDataBase::Get(const std::string& id)

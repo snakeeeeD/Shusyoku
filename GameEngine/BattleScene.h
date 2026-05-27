@@ -118,6 +118,6 @@ private:
 
     
     std::vector<std::pair<int, int>> m_enemyHighlightCells;
-    void UpdateEnemyIntentHighlight();
+    void UpdateEnemyHighlight();
     void ClearEnemyHighlight();
 };

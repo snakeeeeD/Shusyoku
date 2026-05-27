@@ -1,4 +1,5 @@
 #include "CardDataBase.h"
+#include "GameUtils.h"
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <windows.h>
@@ -6,36 +7,6 @@
 using json = nlohmann::json;
 
 std::unordered_map<std::string, CardData> CardDataBase::m_data;
-
-// •¶Žš—ñ‚©‚çCardType‚É•ÏŠ·
-static CardType StringToCardType(const std::string& str)
-{
-    if (str == "Attack") return CardType::Attack;
-    if (str == "Skill")  return CardType::Skill;
-    if (str == "Move")   return CardType::Move;
-    if (str == "Power")  return CardType::Power;
-    return CardType::Attack;
-}
-
-// •¶Žš—ñ‚©‚çRangeType‚É•ÏŠ·
-static RangeType StringToRangeType(const std::string& str)
-{
-    if (str == "Adjacent") return RangeType::Adjacent;
-    if (str == "Cross")    return RangeType::Cross;
-    if (str == "Area")     return RangeType::Area;
-    if (str == "Diamond")  return RangeType::Diamond;
-    return RangeType::None;
-}
-
-// UTF-8‚©‚çwstring‚É•ÏŠ·
-static std::wstring ToWString(const std::string& str)
-{
-    if (str.empty()) return L"";
-    int size = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), NULL, 0);
-    std::wstring wstr(size, 0);
-    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), &wstr[0], size);
-    return wstr;
-}
 
 void CardDataBase::Init()
 {

@@ -23,6 +23,6 @@
     "power_attack",
     "buff_defense"
   ],
-  "hp": 0,
+  "hp": 50,
   "maxHp": 50
 }

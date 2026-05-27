@@ -52,6 +52,39 @@ bool Enemy::IsAdjacentTo(int playerCol, int playerRow)
     return (dc + dr) == 1; // 上下左右1マス
 }
 
+bool Enemy::IsInRange(int targetCol, int targetRow, int range, RangeType rangeType) const
+{
+    int dc = abs(gridCol - targetCol);
+    int dr = abs(gridRow - targetRow);
+
+    switch (rangeType)
+    {
+    case RangeType::None:
+        return false;
+
+    case RangeType::Adjacent:
+        // 隣接1マス
+        return (dc + dr) == 1;
+
+    case RangeType::Cross:
+        // 十字（縦横のみ）
+        if (dc == 0 && dr > 0 && dr <= range) return true;  // 縦
+        if (dr == 0 && dc > 0 && dc <= range) return true;  // 横
+        return false;
+
+    case RangeType::Area:
+        // 正方形範囲
+        return max(dc, dr) <= range;
+
+    case RangeType::Diamond:
+        // ひし形範囲
+        return (dc + dr) <= range;
+
+    default:
+        return false;
+    }
+}
+
 int Enemy::Think(int playerCol, int playerRow, GridMap* gridMap)
 {
     if (!m_hasNextAction) return 0;
@@ -62,7 +95,8 @@ int Enemy::Think(int playerCol, int playerRow, GridMap* gridMap)
 
     if (m_nextAction.type == EnemyActionType::Attack)
     {
-        if (dist <= m_nextAction.range)
+        // 範囲内にいるかチェック
+        if (IsInRange(playerCol, playerRow, m_nextAction.range, m_nextAction.rangeType))
         {
             // 攻撃
             return m_nextAction.value;

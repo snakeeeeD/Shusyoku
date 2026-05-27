@@ -22,9 +22,6 @@
     <Filter Include="ソース ファイル\00-Main">
       <UniqueIdentifier>{4b9f5537-0990-4581-889b-cf60d02857a4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\GridMap">
-      <UniqueIdentifier>{6bd813c5-9d33-442f-b52a-415d625fc040}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ソース ファイル\02-Scene">
       <UniqueIdentifier>{f213dff4-c5f6-4226-97c3-ee18d7bb8238}</UniqueIdentifier>
     </Filter>
@@ -145,6 +142,12 @@
     <Filter Include="ソース ファイル\03-Object関連\30-Card\04-CardVisual">
       <UniqueIdentifier>{1a3a7043-20ab-4700-974f-e6e810a8e064}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\04-Game内関連\02-GameUtils">
+      <UniqueIdentifier>{9ecad49a-b04d-4fd1-9494-21e5b47821e5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\04-Game内関連\20-GridMap">
+      <UniqueIdentifier>{6bd813c5-9d33-442f-b52a-415d625fc040}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -169,7 +172,7 @@
       <Filter>ソース ファイル\Input</Filter>
     </ClInclude>
     <ClInclude Include="GridMap.h">
-      <Filter>ソース ファイル\GridMap</Filter>
+      <Filter>ソース ファイル\04-Game内関連\20-GridMap</Filter>
     </ClInclude>
     <ClInclude Include="GameObject.h">
       <Filter>ソース ファイル\03-Object関連\01-GameObject</Filter>
@@ -273,6 +276,9 @@
     <ClInclude Include="CardVisual.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\04-CardVisual</Filter>
     </ClInclude>
+    <ClInclude Include="GameUtils.h">
+      <Filter>ソース ファイル\04-Game内関連\02-GameUtils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SpriteRenderer.cpp">
@@ -288,7 +294,7 @@
       <Filter>ソース ファイル\00-Main</Filter>
     </ClCompile>
     <ClCompile Include="GridMap.cpp">
-      <Filter>ソース ファイル\GridMap</Filter>
+      <Filter>ソース ファイル\04-Game内関連\20-GridMap</Filter>
     </ClCompile>
     <ClCompile Include="GameObject.cpp">
       <Filter>ソース ファイル\03-Object関連\01-GameObject</Filter>

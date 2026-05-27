@@ -52,6 +52,7 @@ private:
 	std::string m_id;
 	EnemyAction m_nextAction;
 	bool m_hasNextAction;
+	bool IsInRange(int targetCol, int targetRow, int range, RangeType rangeType) const;
 
 	BuffManager m_buffManager;
 };

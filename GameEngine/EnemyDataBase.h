@@ -9,6 +9,5 @@ public:
     static const EnemyData* Get(const std::string& id);
 
 private:
-    static void LoadHardcodedData();
     static std::unordered_map<std::string, EnemyData> m_data;
 };

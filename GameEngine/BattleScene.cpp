@@ -206,15 +206,14 @@ void BattleScene::Update(float deltaTime)
     m_input.Update();
 
     // ハイライト明滅タイマーを更新
-    m_highlightTimer += deltaTime * 0.1f;
-
-    if (m_highlightTimer > 3.14159f)
-    {
+    m_highlightTimer += deltaTime * 0.1f; // 点滅速度調整
+    if (m_highlightTimer > 3.14159f * 2.0f)
         m_highlightTimer = 0.0f;
-    }
+
 
 
     if (m_battleResult != BattleResult::None) return;   // 勝敗決定後は何もしない
+    UpdateEnemyHighlight();
 
     // 勝利判定
     if (m_enemies.empty())
@@ -276,7 +275,7 @@ void BattleScene::Update(float deltaTime)
             m_turnManager.EndTurn();
         }
     }
-        UpdateEnemyIntentHighlight();
+
         if (m_selectedCardIndex >= 0)
         {
             const CardData* data =
@@ -809,12 +808,16 @@ void BattleScene::HandleInput()
                 }
                 else if (data->type == CardType::Skill)
                 {
+                    // エネルギーチェック
                     if (!m_player->UseEnergy(data->cost)) return;
 
-                    // バフ適用後のブロック量
-                    int blockAmount = m_player->GetBuffManager().ApplyBlockBuff(data->value);
-                    m_player->GetBuffManager().GetFinalBlock(data->value);
+                    // バフを適用した最終的なブロック量を計算
+                    int finalBlock = m_player->GetBuffManager().GetFinalBlock(data->value);
 
+                    // プレイヤーにブロックを追加
+                    m_player->AddBlock(finalBlock);
+
+                    // カードを捨て札に
                     m_deck.DiscardCard(card->GetId());
                     m_hand.RemoveCard(m_selectedCardIndex);
                     m_selectedCardIndex = -1;
@@ -1081,8 +1084,8 @@ void BattleScene::UpdateHighlight(int centerCol, int centerRow, const CardData* 
     }
 
     // ゆっくりした明滅の計算（ホバー中のマス用）
-    float pulse = sin(m_highlightTimer);
-    float hoverBrightness = 0.5f + 0.5f * pulse;
+    float pulse = sin(m_highlightTimer * 2.0f);
+    float hoverBrightness = 0.3f + 0.7f * ((pulse + 1.0f) / 2.0f);;
 
     bool isAreaHovered = false;
 
@@ -1122,14 +1125,34 @@ void BattleScene::UpdateHighlight(int centerCol, int centerRow, const CardData* 
         {
             const EnemyAction* action = enemy->GetNextAction();
             if (!action) continue;
-
-            if (action->type != EnemyActionType::Attack)
-                continue;
+            if (action->type != EnemyActionType::Attack) continue;
 
             int dcEnemy = abs(col - enemy->gridCol);
             int drEnemy = abs(row - enemy->gridRow);
 
-            if ((dcEnemy + drEnemy) <= action->range)
+            bool inRange = false;
+
+            switch (action->rangeType)
+            {
+            case RangeType::Adjacent:
+                inRange = (dcEnemy + drEnemy) == 1;
+                break;
+            case RangeType::Cross:
+                inRange = (dcEnemy == 0 || drEnemy == 0)
+                    && (dcEnemy + drEnemy) <= action->range;
+                break;
+            case RangeType::Area:
+                inRange = max(dcEnemy, drEnemy) <= action->range;
+                break;
+            case RangeType::Diamond:
+                inRange = (dcEnemy + drEnemy) <= action->range;
+                break;
+            default:
+                inRange = (dcEnemy + drEnemy) <= action->range;
+                break;
+            }
+
+            if (inRange)
             {
                 isDangerCell = true;
                 break;
@@ -1280,62 +1303,97 @@ void BattleScene::ProcessDeadEnemies()
     }
 }
 
-void BattleScene::UpdateEnemyIntentHighlight()
+void BattleScene::UpdateEnemyHighlight()
 {
-    float pulse = sin(m_highlightTimer * 2.0f);
-    float blink = 0.6f + 0.4f * pulse;
+    ClearEnemyHighlight();
+
+    float pulse = sin(m_highlightTimer * 3.0f); // 点滅速度
+    float blinkBrightness = 0.5f + 0.5f * pulse;
 
     for (auto enemy : m_enemies)
     {
         const EnemyAction* action = enemy->GetNextAction();
         if (!action) continue;
+        if (action->type != EnemyActionType::Attack) continue;
 
-        // 攻撃系以外は今は無視
-        if (action->type != EnemyActionType::Attack)
-            continue;
+        // 攻撃範囲のマスを計算
+        std::vector<std::pair<int, int>> candidates;
+        int ec = enemy->gridCol;
+        int er = enemy->gridRow;
 
-        std::vector<std::pair<int, int>> cells;
-
-        int centerCol = enemy->gridCol;
-        int centerRow = enemy->gridRow;
-
-        // ===== 今は Manhattan距離 =====
-        for (int dr = -action->range; dr <= action->range; dr++)
+        switch (action->rangeType)
         {
-            for (int dc = -action->range; dc <= action->range; dc++)
+        case RangeType::Adjacent:
+            candidates = {
+                {ec, er - 1}, {ec, er + 1},
+                {ec - 1, er}, {ec + 1, er}
+            };
+            break;
+        case RangeType::Cross:
+            for (int i = 1; i <= action->range; i++)
             {
-                if (abs(dc) + abs(dr) <= action->range
-                    && (dc != 0 || dr != 0))
-                {
-                    cells.push_back({
-                        centerCol + dc,
-                        centerRow + dr
-                        });
-                }
+                candidates.push_back({ ec,     er - i });
+                candidates.push_back({ ec,     er + i });
+                candidates.push_back({ ec - i, er });
+                candidates.push_back({ ec + i, er });
             }
+            break;
+        case RangeType::Area:
+            for (int dr = -action->range; dr <= action->range; dr++)
+                for (int dc = -action->range; dc <= action->range; dc++)
+                    if (max(abs(dc), abs(dr)) <= action->range && (dc != 0 || dr != 0))
+                        candidates.push_back({ ec + dc, er + dr });
+            break;
+        case RangeType::Diamond:
+            for (int dr = -action->range; dr <= action->range; dr++)
+                for (int dc = -action->range; dc <= action->range; dc++)
+                    if (abs(dc) + abs(dr) <= action->range && (dc != 0 || dr != 0))
+                        candidates.push_back({ ec + dc, er + dr });
+            break;
+        default:
+            continue;
         }
 
-        for (auto& [col, row] : cells)
+        for (auto& [col, row] : candidates)
         {
             if (col < 0 || col >= m_gridMap->GetCols()) continue;
             if (row < 0 || row >= m_gridMap->GetRows()) continue;
 
             auto& cell = m_gridMap->GetCell(col, row);
 
-            bool isPlayer =
-                (col == m_playerCol && row == m_playerRow);
+            // プレイヤーがこのマスにいるか
+            bool isPlayerHere = (col == m_playerCol && row == m_playerRow);
 
-            // プレイヤーが範囲内なら点滅
-            if (isPlayer)
+            // 距離を計算
+            int dc = abs(col - ec);
+            int dr = abs(row - er);
+            int dist = 0;
+
+            switch (action->rangeType)
             {
-                cell.gameObject.color =
-                    XMFLOAT4(blink, blink, 0.1f, 1.0f);
+            case RangeType::Area:
+                dist = max(dc, dr);
+                break;
+            default:
+                dist = dc + dr;
+                break;
+            }
+
+            // 距離に応じて薄くする（近いほど濃い黄色）
+            float alpha = 0.6f - (float)(dist - 1) / (float)max(1, action->range) * 0.25f;
+            alpha = max(0.2f, min(0.6f, alpha));
+
+            if (isPlayerHere)
+            {
+                // プレイヤーがいるマスは点滅
+                float pulse = sin(m_highlightTimer * 3.0f);
+                float blink = 0.5f + 0.5f * pulse;
+                cell.gameObject.color = XMFLOAT4(blink, blink, 0.0f, 1.0f);
             }
             else
             {
-                // 通常の予告色
-                cell.gameObject.color =
-                    XMFLOAT4(0.8f, 0.8f, 0.2f, 0.5f);
+                // 通常は距離に応じた薄い黄色
+                cell.gameObject.color = XMFLOAT4(alpha, alpha, 0.0f, 1.0f);
             }
 
             m_enemyHighlightCells.push_back({ col, row });
@@ -1347,9 +1405,16 @@ void BattleScene::ClearEnemyHighlight()
 {
     for (auto& [col, row] : m_enemyHighlightCells)
     {
-        // 元のセルタイプに応じた色に戻す
-        auto& cell = m_gridMap->GetCell(col, row);
-        m_gridMap->SetCellType(col, row, cell.type);
+        // プレイヤーハイライトと被っていなければ元に戻す
+        bool isPlayerHighlight = false;
+        for (auto& [pc, pr] : m_highlightCells)
+            if (pc == col && pr == row) { isPlayerHighlight = true; break; }
+
+        if (!isPlayerHighlight)
+        {
+            auto& cell = m_gridMap->GetCell(col, row);
+            m_gridMap->SetCellType(col, row, cell.type);
+        }
     }
     m_enemyHighlightCells.clear();
 }
