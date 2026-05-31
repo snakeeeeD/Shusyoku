@@ -23,7 +23,9 @@ void Enemy::Init(const std::string& id)
 	m_attack = data->attack;
 	width = data->width;
 	height = data->height;
+    m_isBoss = data->isBoss;
 	m_textureName = data->textureName;
+    m_gridShape = data->gridShape;
 }
 
 void Enemy::Update(float delteTime)
@@ -37,6 +39,11 @@ void Enemy::Draw3D(Renderer3D* renderer)
 	{
 		return;
 	}
+
+    // ƒ{ƒX‚ÍÔ‚Ý‚ª‚©‚Á‚½F
+    XMFLOAT4 drawColor = m_isBoss
+        ? XMFLOAT4(1.0f, 0.6f, 0.6f, 1.0f)
+        : color;
 
 	renderer->DrawBillboard(
 		TextureManager::Get(m_textureName),

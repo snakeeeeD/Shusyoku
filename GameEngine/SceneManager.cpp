@@ -29,13 +29,13 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	PlayerDataManager::Init();
 
 	// テクスチャ読み込み
-	TextureManager::Load("white", L"Assets/White.png");
-	TextureManager::Load("title", L"Assets/Title.png");
-	TextureManager::Load("player", L"Assets/yuusya_game.png");
-	TextureManager::Load("enemy", L"Assets/enemy.png");
-	TextureManager::Load("enemy_slime", L"Assets/slime.png");
-	TextureManager::Load("enemy_goblin", L"Assets/goblin.png");
-	TextureManager::Load("enemy_orc", L"Assets/orc.png");
+	TextureManager::Load("white", L"Assets/Test/White.png");
+	TextureManager::Load("title", L"Assets/Test/Title.png");
+	TextureManager::Load("player", L"Assets/Player/yuusya_game.png");
+	TextureManager::Load("enemy_slime", L"Assets/Enemy/slime.png");
+	TextureManager::Load("enemy_goblin", L"Assets/Enemy/goblin.png");
+	TextureManager::Load("enemy_orc", L"Assets/Enemy/orc.png");
+	TextureManager::Load("enemy_dragon_red", L"Assets/Enemy/dragon_red.png");
 
 	m_textRenderer = new TextRenderer();
 	if (!m_textRenderer->Init(device, context, swapChain))

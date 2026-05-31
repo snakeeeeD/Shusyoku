@@ -14,7 +14,10 @@
 #include "Deck.h"
 #include "CardDataBase.h"
 #include "CardVisual.h"
+#include "CardEffect.h"
 #include "SceneType.h"
+#include "BattleHighlighter.h"
+#include "CardExecutor.h"
 
 #include <vector>
 #include <utility>
@@ -25,6 +28,16 @@ enum class BattleResult
     None,   // 進行中
     Win,    // 勝利
     Lose,   // 敗北
+};
+
+struct DrawCardEffect
+{
+    std::string cardId;
+    float x, y;         // 現在位置
+    float targetX, targetY; // 目標位置
+    float alpha;        // 透明度
+    float timer;        // 経過時間
+    bool  done;         // 完了フラグ
 };
 
 class BattleScene : public Scene
@@ -49,6 +62,8 @@ public:
         int currentHP, int maxHP);
 
     void DrawEnemyHPBar(Enemy* enemy);
+
+    void DrawPileViewer();  // 山札、捨て札の中身表示
 
     std::function<void(SceneType)> onChangeScene;
 
@@ -90,34 +105,46 @@ private:
     static constexpr float CARD_HOVER_W = 110.0f;
     static constexpr float CARD_HOVER_H = 140.0f;
 
+    // 山札、捨て札表示定数
+    static constexpr float DRAW_PILE_BTN_X = 20.0f;
+    static constexpr float DRAW_PILE_BTN_Y = 660.0f; // m_screenHeight - 60
+    static constexpr float DISCARD_BTN_X = 80.0f;
+    static constexpr float DISCARD_BTN_Y = 660.0f;
+    static constexpr float PILE_BTN_W = 50.0f;
+    static constexpr float PILE_BTN_H = 40.0f;
+
     int m_prevHoveredCardIndex; // 前フレームのホバー状態
 
     Deck m_deck;
     static constexpr int HAND_SIZE = 7; // 毎ターン引く枚数
 
+    // 山札、捨て札UI
+    bool m_showDrawPile;        // 山札表示中か
+    bool m_showDiscardPile;     // 捨て札表示中か
+
     static constexpr float ENEMY_HPBAR_OFFSET_Y = 1.2f; // 頭上の高さ
 
     float m_enemyTurnTimer;
-    static constexpr float ENEMY_TURN_DELAY = 5.5f; // 0.5秒待つ
+    static constexpr float ENEMY_TURN_DELAY = 5.5f;
 
-    // ハイライト中のマスリスト
-    std::vector<std::pair<int, int>> m_highlightCells;
     std::pair<int, int> m_hoveredCell; // マウスが乗っているマス
-
-    // ハイライト計算関数
-    void UpdateHighlight(int centerCol, int centerRow, const CardData* data);
-    void ClearHighlight();
 
     float m_highlightTimer;  // ハイライト明滅用タイマー
 
     std::wstring GetCardEffectText(const CardData* data) const;
     bool IsCardBoosted(const CardData* data) const;
 
+    std::vector<DrawCardEffect> m_drawCardEffects;
+    static constexpr float DRAW_EFFECT_DURATION = 0.4f;
+
+    void StartDrawCardEffect(const std::string& cardId);
+    void UpdateDrawCardEffects(float deltaTime);
+    void DrawCardEffects();
+
     // Enemyの死亡判定用
     void ProcessDeadEnemies();
 
-    
-    std::vector<std::pair<int, int>> m_enemyHighlightCells;
-    void UpdateEnemyHighlight();
-    void ClearEnemyHighlight();
+
+    BattleHighlighter m_highlighter;
+    CardExecutor      m_cardExecutor;
 };

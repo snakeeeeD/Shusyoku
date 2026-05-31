@@ -1,6 +1,8 @@
 #pragma once
 #include "CardType.h"
+#include "CardData.h"
 #include "EnemyActionType.h"
+#include "BuffType.h"
 #include <string>
 #include <windows.h>
 
@@ -43,4 +45,28 @@ inline std::wstring ToWString(const std::string& str)
     std::wstring wstr(size, 0);
     MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), &wstr[0], size);
     return wstr;
+}
+
+inline CardEffectType StringToCardEffectType(const std::string& str)
+{
+    if (str == "Damage")      return CardEffectType::Damage;
+    if (str == "Block")       return CardEffectType::Block;
+    if (str == "Draw")        return CardEffectType::Draw;
+    if (str == "AddEnergy")   return CardEffectType::AddEnergy;
+    if (str == "ApplyBuff")   return CardEffectType::ApplyBuff;
+    if (str == "ApplyDebuff") return CardEffectType::ApplyDebuff;
+    if (str == "Heal")        return CardEffectType::Heal;
+    return CardEffectType::None;
+}
+
+inline BuffType StringToBuffType(const std::string& str)
+{
+    if (str == "AttackUp")   return BuffType::AttackUp;
+    if (str == "DefenseUp")  return BuffType::DefenseUp;
+    if (str == "MoveUp")     return BuffType::MoveUp;
+    if (str == "Regeneration") return BuffType::Regeneration;
+    if (str == "AttackDown") return BuffType::AttackDown;
+    if (str == "DefenseDown") return BuffType::DefenseDown;
+    if (str == "Poison")     return BuffType::Poison;
+    return BuffType::AttackUp; // デフォルト
 }

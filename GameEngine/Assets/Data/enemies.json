@@ -26,6 +26,7 @@
         }
       ]
     },
+
     {
       "id": "goblin",
       "texture": "enemy_goblin",
@@ -60,6 +61,7 @@
         }
       ]
     },
+
     {
       "id": "orc",
       "texture": "enemy_orc",
@@ -91,6 +93,48 @@
           "rangeType": "None",
           "chance": 20,
           "description": "8ブロック"
+        }
+      ]
+    },
+
+    {
+      "id": "dragon",
+      "texture": "enemy_dragon_red",
+      "gridShape": [
+        [ 0, 0 ],
+        [ 1, 0 ],
+        [ 0, 1 ],
+        [ 1, 1 ]
+      ],
+      "hp": 150,
+      "attack": 15,
+      "width": 1.5,
+      "height": 1.5,
+      "isBoss": true,
+      "actions": [
+        {
+          "type": "Attack",
+          "value": 20,
+          "range": 1,
+          "rangeType": "Adjacent",
+          "chance": 40,
+          "description": "20ダメージ"
+        },
+        {
+          "type": "Attack",
+          "value": 15,
+          "range": 3,
+          "rangeType": "Cross",
+          "chance": 35,
+          "description": "炎ブレス15ダメージ"
+        },
+        {
+          "type": "Attack",
+          "value": 8,
+          "range": 2,
+          "rangeType": "Area",
+          "chance": 25,
+          "description": "範囲攻撃8ダメージ"
         }
       ]
     }

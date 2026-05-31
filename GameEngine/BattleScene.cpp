@@ -40,6 +40,10 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
     m_prevHoveredCardIndex = -1;
 
+    m_showDrawPile = false;
+
+    m_showDiscardPile = false;
+
     m_enemyTurnTimer = ENEMY_TURN_DELAY;
 
     m_hoveredCell = { -1, -1 };
@@ -164,7 +168,11 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             for (int i = 0; i < HAND_SIZE - 1; i++)
             {
                 std::string id = m_deck.DrawCard();
-                if (!id.empty()) m_hand.AddCard(id);
+                if (!id.empty())
+                {
+                    m_hand.AddCard(id);
+                    StartDrawCardEffect(id);
+                }
             }
         };
     m_turnManager.onEnemyTurnStart = [this]()
@@ -183,15 +191,31 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             enemy->Init(id);
             enemy->gridCol = col;
             enemy->gridRow = row;
-            enemy->worldX = (col - m_gridMap->GetCols() / 2.0f) * 1.1f;
-            enemy->worldZ = (row - m_gridMap->GetRows() / 2.0f) * 1.1f;
+
+            // 形の中心を計算してワールド座標を設定
+            float sumCol = 0, sumRow = 0;
+            for (auto& [dc, dr] : enemy->GetGridShape())
+            {
+                sumCol += col + dc;
+                sumRow += row + dr;
+            }
+            float centerCol = sumCol / enemy->GetGridShape().size();
+            float centerRow = sumRow / enemy->GetGridShape().size();
+            enemy->worldX = (centerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+            enemy->worldZ = (centerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+
+            // 占有マスをセット
+            CellType cellType = enemy->IsBoss() ? CellType::Boss : CellType::Enemy;
+            for (auto& [dc, dr] : enemy->GetGridShape())
+                m_gridMap->SetCellType(col + dc, row + dr, cellType);
+
             m_enemies.push_back(enemy);
-            m_gridMap->SetCellType(col, row, CellType::Enemy);
         };
 
     addEnemy(2, 1, "slime");
-    //addEnemy(6, 4, "goblin");
-    addEnemy(0, 0, "orc");
+    addEnemy(6, 4, "goblin");
+    //addEnemy(0, 0, "orc");
+    //addEnemy(4, 0, "dragon");
 
     for (auto enemy : m_enemies)
         enemy->DecideNextAction();
@@ -213,7 +237,11 @@ void BattleScene::Update(float deltaTime)
 
 
     if (m_battleResult != BattleResult::None) return;   // 勝敗決定後は何もしない
-    UpdateEnemyHighlight();
+    m_highlighter.UpdateEnemyHighlight(
+        m_enemies, m_gridMap, m_player,
+        m_playerCol, m_playerRow, m_highlightTimer);
+
+    UpdateDrawCardEffects(deltaTime);
 
     // 勝利判定
     if (m_enemies.empty())
@@ -239,13 +267,11 @@ void BattleScene::Update(float deltaTime)
 
     if (m_turnManager.IsEnemyTurn())
     {
-        ClearHighlight();
-        ClearEnemyHighlight();
+        m_highlighter.ClearPlayerHighlight(m_gridMap);
+        m_highlighter.ClearEnemyHighlight(m_gridMap);
         m_enemyTurnTimer -= deltaTime;
-        OutputDebugStringW(L"★ 敵ターン待機中\n");
         if (m_enemyTurnTimer <= 0.0f)
         {
-            OutputDebugStringW(L"★ 敵ターン実行\n");
             for (auto enemy : m_enemies)
             {
                 int poison = enemy->GetBuffManager().GetPoisonValue();
@@ -281,13 +307,15 @@ void BattleScene::Update(float deltaTime)
             const CardData* data =
                 m_hand.GetCards()[m_selectedCardIndex]->GetData();
 
-            UpdateHighlight(m_playerCol, m_playerRow, data);
+            m_highlighter.UpdatePlayerHighlight(
+                m_playerCol, m_playerRow, data,
+                m_enemies, m_gridMap, m_player,
+                m_highlightTimer, m_hoveredCell);
         }
 }
 
 void BattleScene::Draw()
 {
-
     // カード表示
     const float cardHideY = m_screenHeight - CARD_HIDE_Y_OFFSET;
     const float cardHoverY = m_screenHeight - CARD_HEIGHT - CARD_HOVER_Y_OFFSET;
@@ -393,6 +421,22 @@ void BattleScene::Draw()
             XMFLOAT4(0.8f, 0.8f, 0.0f, 0.7f));
     }
 
+    // 山札ボタン
+    float drawPileX = 20.0f;
+    float drawPileY = m_screenHeight - 60.0f;
+    m_spriteRenderer->DrawSprite(m_whiteTexture, drawPileX, drawPileY,
+        50.0f, 40.0f,
+        0.0f, XMFLOAT4(0.2f, 0.2f, 0.6f, 1.0f));
+
+    // 捨て札ボタン
+    float discardX = 80.0f;
+    float discardY = m_screenHeight - 60.0f;
+    m_spriteRenderer->DrawSprite(m_whiteTexture, discardX, discardY, 50.0f, 40.0f,
+        0.0f, XMFLOAT4(0.5f, 0.2f, 0.2f, 1.0f));
+
+    // ドローアニメーション
+    DrawCardEffects();
+
     m_spriteRenderer->End();
 
     // テキスト描画
@@ -476,6 +520,20 @@ void BattleScene::Draw()
             descColor);
     }
 
+    wchar_t drawText[32];
+    swprintf_s(drawText, L"山:%d", m_deck.GetDrawPileCount());
+    m_textRenderer->DrawText(drawText, drawPileX + 5.0f, drawPileY + 8.0f, 18.0f,
+        D2D1::ColorF(D2D1::ColorF::White));
+
+    wchar_t discardText[32];
+    swprintf_s(discardText, L"捨:%d", m_deck.GetDiscardPileCount());
+    m_textRenderer->DrawText(discardText, discardX + 5.0f, discardY + 8.0f, 18.0f,
+        D2D1::ColorF(D2D1::ColorF::White));
+
+    // 中身表示
+    if (m_showDrawPile || m_showDiscardPile)
+        DrawPileViewer();
+
     // プレイヤーHP数字
     wchar_t hpText[64];
     swprintf_s(hpText, L"%d / %d", m_player->GetHp(), m_player->GetMaxHp());
@@ -494,75 +552,77 @@ void BattleScene::Draw()
         m_textRenderer->DrawText(blockText, 20.0f, 125.0f, 20.0f,
             D2D1::ColorF(D2D1::ColorF::LightBlue));
     }
-
-    // 敵の表示
-    for (auto enemy : m_enemies)
+    // 敵の表示（山札・捨て札表示中は非表示）
+    if (!m_showDrawPile && !m_showDiscardPile)
     {
-        // 敵のスクリーン座標を取得
-        float pitch = XMConvertToRadians(-Renderer3D::BILLBOARD_PITCH);
-        XMVECTOR worldPos = XMVectorSet(
-            enemy->worldX,
-            enemy->worldY + enemy->height * cos(pitch),
-            enemy->worldZ + 0.5f - enemy->height * sin(pitch),
-            1.0f
-        );
-        XMMATRIX view = m_renderer3D->GetViewMatrix();
-        XMMATRIX proj = m_renderer3D->GetProjectionMatrix();
-        XMVECTOR clipPos = XMVector4Transform(worldPos, view * proj);
-        XMFLOAT4 clip;
-        XMStoreFloat4(&clip, clipPos);
-
-        if (clip.w > 0.0f)
+        for (auto enemy : m_enemies)
         {
-            float screenX = (clip.x / clip.w + 1.0f) * 0.5f * m_screenWidth;
-            float screenY = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;
+            // 敵のスクリーン座標を取得
+            float pitch = XMConvertToRadians(-Renderer3D::BILLBOARD_PITCH);
+            XMVECTOR worldPos = XMVectorSet(
+                enemy->worldX,
+                enemy->worldY + enemy->height * cos(pitch),
+                enemy->worldZ + 0.5f - enemy->height * sin(pitch),
+                1.0f
+            );
+            XMMATRIX view = m_renderer3D->GetViewMatrix();
+            XMMATRIX proj = m_renderer3D->GetProjectionMatrix();
+            XMVECTOR clipPos = XMVector4Transform(worldPos, view * proj);
+            XMFLOAT4 clip;
+            XMStoreFloat4(&clip, clipPos);
 
-            float barWidth = 80.0f;
-            float barHeight = 10.0f;
-
-            wchar_t enemyHpText[64];
-            swprintf_s(enemyHpText, L"%d / %d", enemy->GetHp(), enemy->GetMaxHp());
-            m_textRenderer->DrawText(enemyHpText,
-                screenX - barWidth / 2.0f,
-                screenY - barHeight - 20.0f, // バーの上に表示
-                16.0f,
-                D2D1::ColorF(D2D1::ColorF::White));
-
-            // 行動予告
-            if (enemy->GetNextAction())
+            if (clip.w > 0.0f)
             {
-                m_textRenderer->DrawText(
-                    enemy->GetNextAction()->description.c_str(),
+                float screenX = (clip.x / clip.w + 1.0f) * 0.5f * m_screenWidth;
+                float screenY = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;
+
+                float barWidth = 80.0f;
+                float barHeight = 10.0f;
+
+                wchar_t enemyHpText[64];
+                swprintf_s(enemyHpText, L"%d / %d", enemy->GetHp(), enemy->GetMaxHp());
+                m_textRenderer->DrawText(enemyHpText,
                     screenX - barWidth / 2.0f,
-                    screenY - barHeight - 40.0f,
-                    14.0f,
-                    D2D1::ColorF(D2D1::ColorF::Orange)
-                );
-            }
-
-            if (enemy->GetBlock() > 0)
-            {
-                wchar_t blockText[64];
-                swprintf_s(blockText, L" %d", enemy->GetBlock());
-                m_textRenderer->DrawText(blockText,
-                    screenX + barWidth / 2.0f + 5.0f,
-                    screenY - barHeight - 20.0f,
+                    screenY - barHeight - 20.0f, // バーの上に表示
                     16.0f,
-                    D2D1::ColorF(D2D1::ColorF::LightBlue));
-            }
-            // 敵のデバフ表示
-            if (enemy->GetBuffManager().HasBuff(BuffType::Poison))
-            {
-                wchar_t poisonText[32];
-                swprintf_s(poisonText, L"毒%d", enemy->GetBuffManager().GetPoisonValue());
-                m_textRenderer->DrawText(poisonText,
-                    screenX - barWidth / 2.0f,
-                    screenY - barHeight - 60.0f,
-                    14.0f,
-                    D2D1::ColorF(0.5f, 0.0f, 0.8f)); // 紫
-            }
-        }
+                    D2D1::ColorF(D2D1::ColorF::White));
 
+                // 行動予告
+                if (enemy->GetNextAction())
+                {
+                    m_textRenderer->DrawText(
+                        enemy->GetNextAction()->description.c_str(),
+                        screenX - barWidth / 2.0f,
+                        screenY - barHeight - 40.0f,
+                        14.0f,
+                        D2D1::ColorF(D2D1::ColorF::Orange)
+                    );
+                }
+
+                if (enemy->GetBlock() > 0)
+                {
+                    wchar_t blockText[64];
+                    swprintf_s(blockText, L" %d", enemy->GetBlock());
+                    m_textRenderer->DrawText(blockText,
+                        screenX + barWidth / 2.0f + 5.0f,
+                        screenY - barHeight - 20.0f,
+                        16.0f,
+                        D2D1::ColorF(D2D1::ColorF::LightBlue));
+                }
+                // 敵のデバフ表示
+                if (enemy->GetBuffManager().HasBuff(BuffType::Poison))
+                {
+                    wchar_t poisonText[32];
+                    swprintf_s(poisonText, L"毒%d", enemy->GetBuffManager().GetPoisonValue());
+                    m_textRenderer->DrawText(poisonText,
+                        screenX - barWidth / 2.0f,
+                        screenY - barHeight - 60.0f,
+                        14.0f,
+                        D2D1::ColorF(0.5f, 0.0f, 0.8f)); // 紫
+                }
+            }
+
+        }
     }
 
     // ターン表示
@@ -588,22 +648,6 @@ void BattleScene::Draw()
             D2D1::ColorF(D2D1::ColorF::LightGreen));
         buffY += 22.0f;
     }
-
- 
-    //// カード名をテキストで表示
-    //for (int i = 0; i < (int)cards.size(); i++)
-    //{
-    //    float cardX = m_screenWidth / 2.0f
-    //        - (cards.size() * (cardWidth + 10.0f)) / 2.0f
-    //        + i * (cardWidth + 10.0f);
-    //    float offsetY = (i == m_selectedCardIndex) ? -20.0f : 0.0f;
-
-    //    std::wstring name(cards[i]->GetData()->name.begin(),
-    //        cards[i]->GetData()->name.end());
-    //    m_textRenderer->DrawText(cards[i]->GetData()->name.c_str(),
-    //        cardX, cardY + offsetY + 10.0f, 14.0f,
-    //        D2D1::ColorF(D2D1::ColorF::White));
-    //}
 
     // 勝敗表示
     if (m_battleResult == BattleResult::Win)
@@ -638,6 +682,12 @@ void BattleScene::HandleInput()
 
     const auto& cards = m_hand.GetCards();
 
+    // 山札・捨て札ボタン判定
+    float drawPileX = 20.0f;
+    float drawPileY = m_screenHeight - 60.0f;
+    float discardX = 80.0f;
+    float discardY = m_screenHeight - 60.0f;
+
     // カード選択中はマウスのマスにハイライト
     if (m_selectedCardIndex >= 0)
     {
@@ -656,12 +706,15 @@ void BattleScene::HandleInput()
             m_hoveredCell = { result.col, result.row };
 
         // プレイヤー位置を基準にハイライト
-        UpdateHighlight(m_playerCol, m_playerRow, data);
+        m_highlighter.UpdatePlayerHighlight(
+            m_playerCol, m_playerRow, data,
+            m_enemies, m_gridMap, m_player,
+            m_highlightTimer, m_hoveredCell);
     }
     else
     {
         m_hoveredCell = { -1, -1 };
-        ClearHighlight();
+        m_highlighter.ClearPlayerHighlight(m_gridMap);
     }
 
 
@@ -676,187 +729,82 @@ void BattleScene::HandleInput()
             m_screenHeight
         );
 
+        // 山札ボタン
+        if (mousePos.x >= drawPileX && mousePos.x <= drawPileX + 50.0f
+            && mousePos.y >= drawPileY && mousePos.y <= drawPileY + 40.0f)
+        {
+            m_showDrawPile = !m_showDrawPile;
+            m_showDiscardPile = false;
+        }
+
+        // 捨て札ボタン
+        else if (mousePos.x >= discardX && mousePos.x <= discardX + 50.0f
+            && mousePos.y >= discardY && mousePos.y <= discardY + 40.0f)
+        {
+            m_showDiscardPile = !m_showDiscardPile;
+            m_showDrawPile = false;
+        }
+
+        // ビューワー外クリックで閉じる
+        else if (m_showDrawPile || m_showDiscardPile)
+        {
+            float bgX = m_screenWidth / 2.0f - 300.0f;
+            float bgY = 50.0f;
+            bool outsideBg = mousePos.x < bgX || mousePos.x > bgX + 600.0f
+                || mousePos.y < bgY || mousePos.y > bgY + 580.0f;
+            if (outsideBg)
+            {
+                m_showDrawPile = false;
+                m_showDiscardPile = false;
+            }
+        }
+
     
         if (result.cell)
         {
             if (m_selectedCardIndex >= 0)
             {
-                // カード使用
                 const Card* card = m_hand.GetCards()[m_selectedCardIndex];
-                const CardData* data = card->GetData();
+                std::string cardId = card->GetId();
+                CardData dataCopy = *card->GetData();
 
-                if (data->type == CardType::Attack)
+                int newPlayerCol = m_playerCol;
+                int newPlayerRow = m_playerRow;
+
+                auto execResult = m_cardExecutor.Execute(
+                    dataCopy, cardId,
+                    result.col, result.row,
+                    m_player, m_enemies, m_gridMap,
+                    m_playerCol, m_playerRow,
+                    m_hand, m_selectedCardIndex, m_deck,
+                    newPlayerCol, newPlayerRow
+                );
+
+                if (execResult.cardUsed)
                 {
-                    if (data->rangeType == RangeType::Area)
+                    // プレイヤー座標を更新
+                    if (newPlayerCol != m_playerCol || newPlayerRow != m_playerRow)
                     {
-                        // 範囲内の全敵にダメージ
-                        bool hit = false;
-
-                        for (auto enemy : m_enemies)
-                        {
-                            int dc = abs(m_playerCol - enemy->gridCol);
-                            int dr = abs(m_playerRow - enemy->gridRow);
-                            if (max(dc, dr) <= data->range)
-                            {
-                                hit = true;
-                                break;
-                            }
-                        }
-
-                        if (hit)
-                        {
-                            if (!m_player->UseEnergy(data->cost)) return;
-
-                            std::vector<Enemy*> toDelete;
-
-                            for (auto enemy : m_enemies)
-                            {
-                                int dc = abs(m_playerCol - enemy->gridCol);
-                                int dr = abs(m_playerRow - enemy->gridRow);
-
-                                if (max(dc, dr) <= data->range)
-                                {
-                                    enemy->TakeDamage(
-                                        m_player->GetBuffManager().GetFinalAttack(data->value)
-                                    );
-
-                                    if (enemy->GetHp() <= 0)
-                                        toDelete.push_back(enemy);
-
-                                }
-
-                            }
-
-                            ProcessDeadEnemies();
-
-                            m_deck.DiscardCard(card->GetId());
-                            m_hand.RemoveCard(m_selectedCardIndex);
-                            m_selectedCardIndex = -1;
-                        }
-                    }
-                    else
-                    { 
-                        // 攻撃カード：隣接した敵に使用
-                        Enemy* targetEnemy = nullptr;
-                        for (auto enemy : m_enemies)
-                        {
-                            if (enemy->gridCol == result.col && enemy->gridRow == result.row)
-                            {
-                                targetEnemy = enemy;
-                                break;
-                            }
-                        }
-
-                        if (targetEnemy)
-                        {
-                            int dc = abs(m_playerCol - result.col);
-                            int dr = abs(m_playerRow - result.row);
-                            if ((dc + dr) <= data->range)
-                            {
-                                if (!m_player->UseEnergy(data->cost)) return; // エネルギー不足
-
-                                int finalDamage = m_player->GetBuffManager().GetFinalAttack(data->value);
-                                targetEnemy->TakeDamage(finalDamage);
-
-                                // 毒刃カードの場合は毒を付与
-                                if (data->id == "poison_blade")
-                                {
-                                    Buff poisonBuff;
-                                    poisonBuff.type = BuffType::Poison;
-                                    poisonBuff.value = 2;
-                                    poisonBuff.duration = 3;
-                                    poisonBuff.name = L"毒";
-                                    poisonBuff.description = L"毎ターン{value}ダメージ";
-                                    targetEnemy->GetBuffManager().AddBuff(poisonBuff);
-                                }
-
-                                ProcessDeadEnemies();
-
-                                m_deck.DiscardCard(card->GetId());
-                                m_hand.RemoveCard(m_selectedCardIndex);
-                                m_selectedCardIndex = -1;
-
-                            }
-                        }
-                    }
-                }
-                else if (data->type == CardType::Move)
-                {
-                    // 移動カード：空マスに移動
-                    if (result.cell->type == CellType::Empty)
-                    {
-                        if (!m_player->UseEnergy(data->cost)) return; // エネルギー不足
-
-                        // 範囲内か確認
-                        int dc = abs(m_playerCol - result.col);
-                        int dr = abs(m_playerRow - result.row);
-                        if ((dc + dr) > data->range) return; // 範囲外なら無視
-
-                        m_gridMap->SetCellType(m_playerCol, m_playerRow, CellType::Empty);
-                        m_playerCol = result.col;
-                        m_playerRow = result.row;
-                        m_gridMap->SetCellType(m_playerCol, m_playerRow, CellType::Player);
+                        m_playerCol = newPlayerCol;
+                        m_playerRow = newPlayerRow;
                         m_player->gridCol = m_playerCol;
                         m_player->gridRow = m_playerRow;
                         m_player->worldX = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
                         m_player->worldZ = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
-
-                        m_deck.DiscardCard(card->GetId());
-                        m_hand.RemoveCard(m_selectedCardIndex);
-                        m_selectedCardIndex = -1;
                     }
+
+                    ProcessDeadEnemies();
+                    m_selectedCardIndex = -1;
                 }
-                else if (data->type == CardType::Skill)
-                {
-                    // エネルギーチェック
-                    if (!m_player->UseEnergy(data->cost)) return;
-
-                    // バフを適用した最終的なブロック量を計算
-                    int finalBlock = m_player->GetBuffManager().GetFinalBlock(data->value);
-
-                    // プレイヤーにブロックを追加
-                    m_player->AddBlock(finalBlock);
-
-                    // カードを捨て札に
-                    m_deck.DiscardCard(card->GetId());
-                    m_hand.RemoveCard(m_selectedCardIndex);
-                    m_selectedCardIndex = -1;
-}
-                else if (data->type == CardType::Power)
-                {
-                    if (!m_player->UseEnergy(data->cost)) return;
-
-                    Buff buff;
-                    buff.value = data->value;
-
-                    if (data->id == "power_attack")
-                    {
-                        buff.type = BuffType::AttackUp;
-                        buff.duration = -1; // 永続
-                        buff.name = L"攻撃力UP";
-                        buff.description = L"攻撃力+" + std::to_wstring(data->value);
-                    }
-                    else if (data->id == "buff_defense")
-                    {
-                        buff.type = BuffType::DefenseUp;
-                        buff.duration = 2; // 2ターン
-                        buff.name = L"防御UP";
-                        buff.description = L"ダメージ-" + std::to_wstring(data->value);
-                    }
-
-                    m_player->GetBuffManager().AddBuff(buff);
-
-                    // 捨て札に入れず消滅（m_deck.DiscardCardを呼ばない）
-                    m_hand.RemoveCard(m_selectedCardIndex);
-                    m_selectedCardIndex = -1;
-}
-            }
-
-            else
-            {
-             
             }
         }
+    }
+
+    // ESCで閉じる
+    if (m_input.GetKeyTrigger(VK_ESCAPE))
+    {
+        m_showDrawPile = false;
+        m_showDiscardPile = false;
     }
 
     POINT mousePos = m_input.GetMousePos();
@@ -997,9 +945,10 @@ void BattleScene::DrawEnemyHPBar(Enemy* enemy)
     float screenX = (clip.x / clip.w + 1.0f) * 0.5f * m_screenWidth;
     float screenY = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;
 
-    // HPバーの幅と高さ
-    float barWidth = 80.0f;
-    float barHeight = 10.0f;
+    // ボスはHPバーを大きく
+    float barWidth = enemy->IsBoss() ? 150.0f : 80.0f;
+    float barHeight = enemy->IsBoss() ? 16.0f : 10.0f;
+
     float barX = screenX - barWidth / 2.0f;
     float barY = screenY - barHeight;
 
@@ -1013,250 +962,22 @@ void BattleScene::DrawEnemyHPBar(Enemy* enemy)
         0.0f, XMFLOAT4(0.0f, 0.8f, 0.0f, 1.0f));
 }
 
-void BattleScene::ClearHighlight()
-{
-    for (auto& [col, row] : m_highlightCells)
-    {
-        // 元のセルタイプに応じた色に戻す
-        auto& cell = m_gridMap->GetCell(col, row);
-        m_gridMap->SetCellType(col, row, cell.type);
-    }
-    m_highlightCells.clear();
-}
-
-void BattleScene::UpdateHighlight(int centerCol, int centerRow, const CardData* data)
-{
-    ClearHighlight();
-    if (!data) return;
-
-    std::vector<std::pair<int, int>> candidates;
-
-    switch (data->rangeType)
-    {
-    case RangeType::Adjacent:
-        candidates = {
-            {centerCol,     centerRow - 1},
-            {centerCol,     centerRow + 1},
-            {centerCol - 1, centerRow    },
-            {centerCol + 1, centerRow    },
-        };
-        break;
-    case RangeType::Cross:
-        for (int i = 1; i <= data->range; i++)
-        {
-            candidates.push_back({ centerCol,     centerRow - i });
-            candidates.push_back({ centerCol,     centerRow + i });
-            candidates.push_back({ centerCol - i, centerRow });
-            candidates.push_back({ centerCol + i, centerRow });
-        }
-        break;
-    case RangeType::Area:
-        for (int dr = -data->range; dr <= data->range; dr++)
-        {
-            for (int dc = -data->range; dc <= data->range; dc++)
-            {
-                if (max(abs(dc), abs(dr)) <= data->range)
-                {
-                    candidates.push_back({ centerCol + dc, centerRow + dr });
-                }
-            }
-        }
-        break;
-    case RangeType::Diamond:
-        for (int dr = -data->range; dr <= data->range; dr++)
-        {
-            for (int dc = -data->range; dc <= data->range; dc++)
-            {
-                if (abs(dc) + abs(dr) <= data->range && (dc != 0 || dr != 0))
-                {
-                    candidates.push_back({ centerCol + dc, centerRow + dr });
-                }
-            }
-        }
-        break;
-
-    case RangeType::None:
-        candidates.push_back({ centerCol, centerRow });
-        break;
-
-    default:
-        return;
-    }
-
-    // ゆっくりした明滅の計算（ホバー中のマス用）
-    float pulse = sin(m_highlightTimer * 2.0f);
-    float hoverBrightness = 0.3f + 0.7f * ((pulse + 1.0f) / 2.0f);;
-
-    bool isAreaHovered = false;
-
-    if (data->rangeType == RangeType::Area)
-    {
-        for (auto& [col, row] : candidates)
-        {
-            if (col == m_hoveredCell.first &&
-                row == m_hoveredCell.second)
-            {
-                isAreaHovered = true;
-                break;
-            }
-        }
-    }
-
-    for (auto& [col, row] : candidates)
-    {
-        if (col < 0 || col >= m_gridMap->GetCols()) continue;
-        if (row < 0 || row >= m_gridMap->GetRows()) continue;
-
-        auto& cell = m_gridMap->GetCell(col, row);
-
-        // 移動カードの場合、敵がいるマスはスキップ
-        if (data->type == CardType::Move && cell.type == CellType::Enemy)
-            continue;
-
-        m_highlightCells.push_back({ col, row });
-
-        // マウスが乗っているマスかどうか
-        bool isHovered = (col == m_hoveredCell.first && row == m_hoveredCell.second);
-
-        bool isEnemy = (cell.type == CellType::Enemy);
-        bool isDangerCell = false;
-
-        for (auto enemy : m_enemies)
-        {
-            const EnemyAction* action = enemy->GetNextAction();
-            if (!action) continue;
-            if (action->type != EnemyActionType::Attack) continue;
-
-            int dcEnemy = abs(col - enemy->gridCol);
-            int drEnemy = abs(row - enemy->gridRow);
-
-            bool inRange = false;
-
-            switch (action->rangeType)
-            {
-            case RangeType::Adjacent:
-                inRange = (dcEnemy + drEnemy) == 1;
-                break;
-            case RangeType::Cross:
-                inRange = (dcEnemy == 0 || drEnemy == 0)
-                    && (dcEnemy + drEnemy) <= action->range;
-                break;
-            case RangeType::Area:
-                inRange = max(dcEnemy, drEnemy) <= action->range;
-                break;
-            case RangeType::Diamond:
-                inRange = (dcEnemy + drEnemy) <= action->range;
-                break;
-            default:
-                inRange = (dcEnemy + drEnemy) <= action->range;
-                break;
-            }
-
-            if (inRange)
-            {
-                isDangerCell = true;
-                break;
-            }
-        }
-
-        if (data->rangeType == RangeType::Area)
-        {
-            // Enemyマスは常に最大輝度
-            if (isEnemy)
-            {
-                if (data->type == CardType::Attack)
-                    cell.gameObject.color = XMFLOAT4(1.0f, 0.2f, 0.2f, 1.0f);
-                else if (data->type == CardType::Move)
-                    cell.gameObject.color = XMFLOAT4(0.2f, 1.0f, 0.4f, 1.0f);
-            }
-            else
-            {
-                // Area内すべて点滅
-                if (data->type == CardType::Attack)
-                {
-                    float brightness = isAreaHovered ? hoverBrightness : 0.6f;
-                    cell.gameObject.color = XMFLOAT4(brightness, 0.2f, 0.2f, 1.0f);
-                }
-                else if (data->type == CardType::Move)
-                {
-                    float brightness = isAreaHovered ? hoverBrightness : 0.6f;
-                    cell.gameObject.color = XMFLOAT4(0.2f, brightness, 0.4f, 1.0f);
-                }
-            }
-        }
-        else
-        {
-            if (isHovered)
-            {
-                if (data->type == CardType::Attack)
-                    cell.gameObject.color = XMFLOAT4(hoverBrightness, 0.2f, 0.2f, 1.0f);
-                else if (data->type == CardType::Move)
-                    cell.gameObject.color = XMFLOAT4(0.2f, hoverBrightness, 0.2f, 1.0f);
-                else if (data->type == CardType::Skill)
-                    cell.gameObject.color = XMFLOAT4(0.2f, 0.2f, hoverBrightness, 1.0f);
-                else if (data->type == CardType::Power)
-                    cell.gameObject.color = XMFLOAT4(hoverBrightness, 0.2f, hoverBrightness, 1.0f);
-            }
-            else
-            {
-                int dc = abs(col - centerCol);
-                int dr = abs(row - centerRow);
-                int dist = dc + dr;
-
-                float brightness = 0.7f - (float)(dist - 1) / (float)max(1, data->range) * 0.3f;
-                brightness = max(0.4f, min(0.7f, brightness));
-
-                if (data->type == CardType::Attack)
-                {
-                    cell.gameObject.color = XMFLOAT4(brightness, 0.2f, 0.2f, 1.0f);
-                }
-                else if (data->type == CardType::Move)
-                {
-                    //float brightness = isAreaHovered ? hoverBrightness : 0.6f;
-                    if (isDangerCell)
-                    {
-                        float blink = 0.6f + 0.4f * sin(m_highlightTimer * 2.0f);
-
-                        // 危険移動マス
-                        cell.gameObject.color =
-                            XMFLOAT4(blink, blink, 0.1f, 1.0f);
-                    }
-                    else
-                    {
-                        // 通常移動マス
-                        cell.gameObject.color =
-                            XMFLOAT4(0.2f, brightness, 0.4f, 1.0f);
-                    }
-                }
-                else if (data->type == CardType::Skill)
-                {
-                    cell.gameObject.color = XMFLOAT4(0.2f, 0.2f, hoverBrightness, 1.0f);
-                }
-                else if (data->type == CardType::Power)
-                {
-                    cell.gameObject.color = XMFLOAT4(hoverBrightness, 0.2f, hoverBrightness, 1.0f);
-                }
-            }
-        }
-    }
-}
-
 std::wstring BattleScene::GetCardEffectText(const CardData* data) const
 {
     if (!data) return L"";
 
     // 実際の値を計算
-    int actualValue = data->value;
+    int actualValue = data->mainEffect.value;
     bool isBoosted = false;
 
     if (data->type == CardType::Attack)
     {
-        actualValue = m_player->GetBuffManager().ApplyAttackBuff(data->value);
+        actualValue = m_player->GetBuffManager().ApplyAttackBuff(data->mainEffect.value);
         isBoosted = m_player->GetBuffManager().HasBuff(BuffType::AttackUp);
     }
     else if (data->type == CardType::Skill)
     {
-        actualValue = m_player->GetBuffManager().ApplyBlockBuff(data->value);
+        actualValue = m_player->GetBuffManager().ApplyBlockBuff(data->mainEffect.value);
         isBoosted = m_player->GetBuffManager().HasBuff(BuffType::DefenseUp);
     }
 
@@ -1283,138 +1004,159 @@ bool BattleScene::IsCardBoosted(const CardData* data) const
 void BattleScene::ProcessDeadEnemies()
 {
     std::vector<Enemy*> toDelete;
-
     for (auto enemy : m_enemies)
-    {
         if (enemy->GetHp() <= 0)
             toDelete.push_back(enemy);
-    }
 
     for (auto enemy : toDelete)
     {
-        m_gridMap->SetCellType(enemy->gridCol, enemy->gridRow, CellType::Empty);
+        for (auto& [dc, dr] : enemy->GetGridShape())
+            m_gridMap->SetCellType(
+                enemy->gridCol + dc,
+                enemy->gridRow + dr,
+                CellType::Empty);
 
         m_enemies.erase(
             std::remove(m_enemies.begin(), m_enemies.end(), enemy),
             m_enemies.end()
         );
-
         delete enemy;
     }
 }
 
-void BattleScene::UpdateEnemyHighlight()
+void BattleScene::DrawPileViewer()
 {
-    ClearEnemyHighlight();
+    const auto& pile = m_showDrawPile
+        ? m_deck.GetDrawPile()
+        : m_deck.GetDiscardPile();
 
-    float pulse = sin(m_highlightTimer * 3.0f); // 点滅速度
-    float blinkBrightness = 0.5f + 0.5f * pulse;
+    const wchar_t* title = m_showDrawPile ? L"山札" : L"捨て札";
 
-    for (auto enemy : m_enemies)
+    // 背景
+    float bgX = m_screenWidth / 2.0f - 300.0f;
+    float bgY = 50.0f;
+    float bgW = 600.0f;
+    float bgH = 580.0f;
+
+    m_spriteRenderer->Begin();
+    m_spriteRenderer->DrawSprite(m_whiteTexture, bgX, bgY, bgW, bgH,
+        0.0f, XMFLOAT4(0.1f, 0.1f, 0.1f, 0.95f));
+    m_spriteRenderer->End();
+
+
+    // タイトル
+    m_textRenderer->DrawText(title, bgX + 20.0f, bgY + 10.0f, 24.0f,
+        D2D1::ColorF(D2D1::ColorF::White));
+
+    // 閉じる
+    m_textRenderer->DrawText(L"[ESCで閉じる]", bgX + bgW - 150.0f, bgY + 10.0f, 16.0f,
+        D2D1::ColorF(D2D1::ColorF::Gray));
+
+    // カード一覧
+    // 山札はシャッフル順がわからないようにカード名のみアルファベット順で表示
+    // 捨て札は捨てた順で表示
+    std::vector<std::string> displayPile = pile;
+
+    if (m_showDrawPile)
     {
-        const EnemyAction* action = enemy->GetNextAction();
-        if (!action) continue;
-        if (action->type != EnemyActionType::Attack) continue;
-
-        // 攻撃範囲のマスを計算
-        std::vector<std::pair<int, int>> candidates;
-        int ec = enemy->gridCol;
-        int er = enemy->gridRow;
-
-        switch (action->rangeType)
-        {
-        case RangeType::Adjacent:
-            candidates = {
-                {ec, er - 1}, {ec, er + 1},
-                {ec - 1, er}, {ec + 1, er}
-            };
-            break;
-        case RangeType::Cross:
-            for (int i = 1; i <= action->range; i++)
-            {
-                candidates.push_back({ ec,     er - i });
-                candidates.push_back({ ec,     er + i });
-                candidates.push_back({ ec - i, er });
-                candidates.push_back({ ec + i, er });
-            }
-            break;
-        case RangeType::Area:
-            for (int dr = -action->range; dr <= action->range; dr++)
-                for (int dc = -action->range; dc <= action->range; dc++)
-                    if (max(abs(dc), abs(dr)) <= action->range && (dc != 0 || dr != 0))
-                        candidates.push_back({ ec + dc, er + dr });
-            break;
-        case RangeType::Diamond:
-            for (int dr = -action->range; dr <= action->range; dr++)
-                for (int dc = -action->range; dc <= action->range; dc++)
-                    if (abs(dc) + abs(dr) <= action->range && (dc != 0 || dr != 0))
-                        candidates.push_back({ ec + dc, er + dr });
-            break;
-        default:
-            continue;
-        }
-
-        for (auto& [col, row] : candidates)
-        {
-            if (col < 0 || col >= m_gridMap->GetCols()) continue;
-            if (row < 0 || row >= m_gridMap->GetRows()) continue;
-
-            auto& cell = m_gridMap->GetCell(col, row);
-
-            // プレイヤーがこのマスにいるか
-            bool isPlayerHere = (col == m_playerCol && row == m_playerRow);
-
-            // 距離を計算
-            int dc = abs(col - ec);
-            int dr = abs(row - er);
-            int dist = 0;
-
-            switch (action->rangeType)
-            {
-            case RangeType::Area:
-                dist = max(dc, dr);
-                break;
-            default:
-                dist = dc + dr;
-                break;
-            }
-
-            // 距離に応じて薄くする（近いほど濃い黄色）
-            float alpha = 0.6f - (float)(dist - 1) / (float)max(1, action->range) * 0.25f;
-            alpha = max(0.2f, min(0.6f, alpha));
-
-            if (isPlayerHere)
-            {
-                // プレイヤーがいるマスは点滅
-                float pulse = sin(m_highlightTimer * 3.0f);
-                float blink = 0.5f + 0.5f * pulse;
-                cell.gameObject.color = XMFLOAT4(blink, blink, 0.0f, 1.0f);
-            }
-            else
-            {
-                // 通常は距離に応じた薄い黄色
-                cell.gameObject.color = XMFLOAT4(alpha, alpha, 0.0f, 1.0f);
-            }
-
-            m_enemyHighlightCells.push_back({ col, row });
-        }
+        // 山札はソートして順番をわからなくする
+        std::sort(displayPile.begin(), displayPile.end());
     }
+
+    const float cardW = 160.0f;
+    const float cardH = 50.0f;
+    const float padding = 10.0f;
+    const int   cols = 3;
+
+    for (int i = 0; i < (int)displayPile.size(); i++)
+    {
+        const CardData* data = CardDataBase::Get(displayPile[i]);
+        if (!data) continue;
+
+        int col = i % cols;
+        int row = i / cols;
+
+        float cx = bgX + 20.0f + col * (cardW + padding);
+        float cy = bgY + 50.0f + row * (cardH + padding);
+
+        // カード背景
+        XMFLOAT4 cardColor;
+        switch (data->type)
+        {
+        case CardType::Attack: cardColor = XMFLOAT4(0.5f, 0.1f, 0.1f, 1.0f); break;
+        case CardType::Skill:  cardColor = XMFLOAT4(0.1f, 0.3f, 0.5f, 1.0f); break;
+        case CardType::Move:   cardColor = XMFLOAT4(0.1f, 0.4f, 0.2f, 1.0f); break;
+        case CardType::Power:  cardColor = XMFLOAT4(0.4f, 0.1f, 0.4f, 1.0f); break;
+        default:               cardColor = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f); break;
+        }
+
+        m_spriteRenderer->Begin();
+        m_spriteRenderer->DrawSprite(m_whiteTexture, cx, cy, cardW, cardH,
+            0.0f, cardColor);
+        m_spriteRenderer->End();
+
+        // カード名とコスト
+        wchar_t cardText[64];
+        swprintf_s(cardText, L"%s  Cost:%d", data->name.c_str(), data->cost);
+        m_textRenderer->DrawText(cardText, cx + 5.0f, cy + 5.0f, 14.0f,
+            D2D1::ColorF(D2D1::ColorF::White));
+
+        // 説明文
+        m_textRenderer->DrawText(
+            GetCardEffectText(data).c_str(),
+            cx + 5.0f, cy + 26.0f, 11.0f,
+            D2D1::ColorF(D2D1::ColorF::LightGray));
+    }
+
 }
 
-void BattleScene::ClearEnemyHighlight()
+void BattleScene::StartDrawCardEffect(const std::string& cardId)
 {
-    for (auto& [col, row] : m_enemyHighlightCells)
-    {
-        // プレイヤーハイライトと被っていなければ元に戻す
-        bool isPlayerHighlight = false;
-        for (auto& [pc, pr] : m_highlightCells)
-            if (pc == col && pr == row) { isPlayerHighlight = true; break; }
+    DrawCardEffect effect;
+    effect.cardId = cardId;
+    effect.x = m_screenWidth - 120.0f; // 山札の位置から
+    effect.y = m_screenHeight - 60.0f;
+    effect.targetX = m_screenWidth / 2.0f;   // 手札の中央へ
+    effect.targetY = m_screenHeight - CARD_HIDE_Y_OFFSET;
+    effect.alpha = 1.0f;
+    effect.timer = 0.0f;
+    effect.done = false;
+    m_drawCardEffects.push_back(effect);
+}
 
-        if (!isPlayerHighlight)
-        {
-            auto& cell = m_gridMap->GetCell(col, row);
-            m_gridMap->SetCellType(col, row, cell.type);
-        }
+void BattleScene::UpdateDrawCardEffects(float deltaTime)
+{
+    for (auto& effect : m_drawCardEffects)
+    {
+        if (effect.done) continue;
+
+        effect.timer += deltaTime;
+        float t = min(1.0f, effect.timer / DRAW_EFFECT_DURATION);
+
+        // イージング（ease out）
+        float ease = 1.0f - (1.0f - t) * (1.0f - t);
+
+        effect.x = m_screenWidth - 120.0f + (effect.targetX - (m_screenWidth - 120.0f)) * ease;
+        effect.y = m_screenHeight - 60.0f + (effect.targetY - (m_screenHeight - 60.0f)) * ease;
+        effect.alpha = 1.0f - t * 0.5f;
+
+        if (t >= 1.0f) effect.done = true;
     }
-    m_enemyHighlightCells.clear();
+
+    // 完了したエフェクトを削除
+    m_drawCardEffects.erase(
+        std::remove_if(m_drawCardEffects.begin(), m_drawCardEffects.end(),
+            [](const DrawCardEffect& e) { return e.done; }),
+        m_drawCardEffects.end()
+    );
+}
+
+void BattleScene::DrawCardEffects()
+{
+    for (auto& effect : m_drawCardEffects)
+    {
+        m_spriteRenderer->DrawSprite(m_whiteTexture,
+            effect.x, effect.y, CARD_WIDTH, CARD_HEIGHT, 0.0f,
+            XMFLOAT4(0.2f, 0.4f, 0.8f, effect.alpha));
+    }
 }

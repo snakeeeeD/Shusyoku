@@ -133,6 +133,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="BattleHighlighter.h" />
     <ClInclude Include="BattleScene.h" />
     <ClInclude Include="Buff.h" />
     <ClInclude Include="BuffManager.h" />
@@ -140,6 +141,8 @@
     <ClInclude Include="Card.h" />
     <ClInclude Include="CardData.h" />
     <ClInclude Include="CardDataBase.h" />
+    <ClInclude Include="CardEffect.h" />
+    <ClInclude Include="CardExecutor.h" />
     <ClInclude Include="CardSelectScene.h" />
     <ClInclude Include="CardType.h" />
     <ClInclude Include="CardVisual.h" />
@@ -178,10 +181,12 @@
     <ClInclude Include="TurnManager.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Battlehighlighter.cpp" />
     <ClCompile Include="BattleScene.cpp" />
     <ClCompile Include="BuffManager.cpp" />
     <ClCompile Include="Card.cpp" />
     <ClCompile Include="CardDataBase.cpp" />
+    <ClCompile Include="CardExecutor.cpp" />
     <ClCompile Include="CardSelectScene.cpp" />
     <ClCompile Include="Deck.cpp" />
     <ClCompile Include="Enemy.cpp" />

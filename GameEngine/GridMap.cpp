@@ -46,6 +46,8 @@ void GridMap::SetCellType(int col, int row, CellType type)
     case CellType::Empty:  cell.gameObject.color = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f); break;
     case CellType::Player: cell.gameObject.color = XMFLOAT4(0.2f, 0.6f, 1.0f, 1.0f); break;
     case CellType::Enemy:  cell.gameObject.color = XMFLOAT4(1.0f, 0.3f, 0.3f, 1.0f); break;
+    case CellType::Boss:   cell.gameObject.color = XMFLOAT4(0.8f, 0.0f, 0.8f, 1.0f);
+        break;
     case CellType::Wall:   cell.gameObject.color = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f); break;
     }
 }

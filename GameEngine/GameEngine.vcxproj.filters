@@ -148,6 +148,18 @@
     <Filter Include="ソース ファイル\04-Game内関連\20-GridMap">
       <UniqueIdentifier>{6bd813c5-9d33-442f-b52a-415d625fc040}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\05-CardEffect">
+      <UniqueIdentifier>{a645167b-3d5c-42e6-86fb-61da95fa0c66}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene">
+      <UniqueIdentifier>{fb14e56c-a327-4363-9ced-57dc0825e057}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\10-BattleHighlighter">
+      <UniqueIdentifier>{55a2d2db-1139-41ef-abd4-ff1300ed5b7d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\20-CardExecutor">
+      <UniqueIdentifier>{e558de08-1903-4f83-a1fe-2300134a9059}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -176,9 +188,6 @@
     </ClInclude>
     <ClInclude Include="GameObject.h">
       <Filter>ソース ファイル\03-Object関連\01-GameObject</Filter>
-    </ClInclude>
-    <ClInclude Include="BattleScene.h">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene</Filter>
     </ClInclude>
     <ClInclude Include="Scene.h">
       <Filter>ソース ファイル\02-Scene\00-Scene</Filter>
@@ -279,6 +288,18 @@
     <ClInclude Include="GameUtils.h">
       <Filter>ソース ファイル\04-Game内関連\02-GameUtils</Filter>
     </ClInclude>
+    <ClInclude Include="CardEffect.h">
+      <Filter>ソース ファイル\03-Object関連\30-Card\05-CardEffect</Filter>
+    </ClInclude>
+    <ClInclude Include="BattleScene.h">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
+    </ClInclude>
+    <ClInclude Include="BattleHighlighter.h">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\10-BattleHighlighter</Filter>
+    </ClInclude>
+    <ClInclude Include="CardExecutor.h">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\20-CardExecutor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SpriteRenderer.cpp">
@@ -298,9 +319,6 @@
     </ClCompile>
     <ClCompile Include="GameObject.cpp">
       <Filter>ソース ファイル\03-Object関連\01-GameObject</Filter>
-    </ClCompile>
-    <ClCompile Include="BattleScene.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene</Filter>
     </ClCompile>
     <ClCompile Include="SceneManager.cpp">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
@@ -355,6 +373,15 @@
     </ClCompile>
     <ClCompile Include="FieldScene.cpp">
       <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="BattleScene.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
+    </ClCompile>
+    <ClCompile Include="Battlehighlighter.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\10-BattleHighlighter</Filter>
+    </ClCompile>
+    <ClCompile Include="CardExecutor.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\20-CardExecutor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -61,6 +61,7 @@ void EnemyDataBase::Init()
                 data.attack = e.value("attack", 0);
                 data.width = e["width"];
                 data.height = e["height"];
+                data.isBoss = e.value("isBoss", false);
 
                 // 行動データの読み込み
                 if (e.contains("actions") && e["actions"].is_array())
@@ -95,6 +96,16 @@ void EnemyDataBase::Init()
 
                         data.actions.push_back(action);
                     }
+                }
+                if (e.contains("gridShape"))
+                {
+                    for (auto& pos : e["gridShape"])
+                        data.gridShape.push_back({ pos[0], pos[1] });
+                }
+                else
+                {
+                    // デフォルトは1x1
+                    data.gridShape.push_back({ 0, 0 });
                 }
 
                 m_data[data.id] = data;

@@ -5,42 +5,60 @@
       "name": "ストライク",
       "type": "Attack",
       "cost": 1,
-      "value": 6,
       "range": 1,
       "rangeType": "Adjacent",
-      "description": "敵単体に{value}ダメージ"
+      "description": "敵単体に{value}ダメージ",
+      "mainEffect": {
+        "type": "Damage",
+        "value": 6
+      }
     },
     {
       "id": "Spin Slash",
       "name": "回転切り",
       "type": "Attack",
       "cost": 2,
-      "value": 10,
       "range": 1,
       "rangeType": "Area",
-      "description": "周囲の敵に{value}ダメージ"
+      "description": "周囲の敵に{value}ダメージ",
+      "mainEffect": {
+        "type": "Damage",
+        "value": 10
+      }
     },
     {
       "id": "poison_blade",
       "name": "毒刃",
       "type": "Attack",
       "cost": 1,
-      "value": 4,
       "range": 1,
       "rangeType": "Adjacent",
-      "description": "敵に{value}ダメージ、毒2を付与"
+      "description": "敵に{value}ダメージ、毒2付与",
+      "mainEffect": {
+        "type": "Damage",
+        "value": 4
+      },
+      "onHitEffect": {
+        "type": "ApplyDebuff",
+        "value": 2,
+        "duration": 3,
+        "buffType": "Poison"
+      }
     },
 
 
     {
       "id": "defend",
-      "name": "防御",
+      "name": "ディフェンド",
       "type": "Skill",
       "cost": 1,
-      "value": 5,
       "range": 0,
       "rangeType": "None",
-      "description": "{value}ブロックを得る"
+      "description": "{value}ブロックを得る",
+      "mainEffect": {
+        "type": "Block",
+        "value": 5
+      }
     },
 
 
@@ -49,20 +67,26 @@
       "name": "ステップ",
       "type": "Move",
       "cost": 1,
-      "value": 2,
       "range": 1,
       "rangeType": "Adjacent",
-      "description": "隣接するマスに移動"
+      "description": "隣接したマスに移動",
+      "mainEffect": {
+        "type": "None",
+        "value": 0
+      }
     },
     {
       "id": "dash",
       "name": "ダッシュ",
       "type": "Move",
       "cost": 2,
-      "value": 2,
       "range": 3,
       "rangeType": "Diamond",
-      "description": "{value}マス先まで移動"
+      "description": "{value}マス先まで移動",
+      "mainEffect": {
+        "type": "None",
+        "value": 2
+      }
     },
 
     {
@@ -70,20 +94,30 @@
       "name": "戦士の誓い",
       "type": "Power",
       "cost": 2,
-      "value": 3,
       "range": 0,
       "rangeType": "None",
-      "description": "攻撃力を永続で+3"
+      "description": "攻撃力を永続で+{value}",
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 3,
+        "duration": -1,
+        "buffType": "AttackUp"
+      }
     },
     {
       "id": "buff_defense",
       "name": "鉄の意志",
       "type": "Power",
       "cost": 1,
-      "value": 2,
       "range": 0,
       "rangeType": "None",
-      "description": "2ターン間、ブロック値を2増加"
+      "description": "2ターン間、ブロック値を+{value}",
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 2,
+        "duration": 2,
+        "buffType": "DefenseUp"
+      }
     }
   ]
 }

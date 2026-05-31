@@ -182,7 +182,7 @@ std::wstring CardSelectScene::GetCardEffectText(const CardData* data) const
         result.replace(
             pos,
             placeholder.size(),
-            std::to_wstring(data->value)
+            std::to_wstring(data->mainEffect.value)
         );
     }
 

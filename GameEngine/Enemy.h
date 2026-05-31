@@ -39,6 +39,9 @@ public:
 
 	BuffManager& GetBuffManager() { return m_buffManager; }
 
+	bool IsBoss() const { return m_isBoss; }
+
+	const std::vector<std::pair<int, int>>& GetGridShape() const { return m_gridShape; }
 
 private:
 	bool IsAdjacentTo(int playerCol, int playerRow);
@@ -47,6 +50,7 @@ private:
 	int m_maxHP;
 	int m_attack;
 	int m_block;
+	bool m_isBoss;
 
 	std::string m_textureName;
 	std::string m_id;
@@ -55,5 +59,7 @@ private:
 	bool IsInRange(int targetCol, int targetRow, int range, RangeType rangeType) const;
 
 	BuffManager m_buffManager;
+
+	std::vector<std::pair<int, int>> m_gridShape;
 };
 

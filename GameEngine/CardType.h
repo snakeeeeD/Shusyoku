@@ -10,10 +10,13 @@ enum class CardType
 
 enum class RangeType
 {
-	None,       // 範囲なし
-	Adjacent,   // 隣接1マス
-	Cross,      // 十字（射程N）
-	Area,       // 範囲（半径N）
-	Diamond,    // ひし形（合計N マス移動可能）
+    None,
+    Adjacent,   // 上下左右1マス
+    Cross,      // 十字
+    Area,       // 正方形
+    Diamond,    // ひし形
+    Diagonal,   // 斜め4方向
+    DiagonalCross, // 十字＋斜め（全8方向）
+    Line,       // 直線（貫通）
 };
 

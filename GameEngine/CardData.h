@@ -2,16 +2,39 @@
 #include <string>
 #include "CardType.h"
 
+// カード効果の種類
+enum class CardEffectType
+{
+    None,
+    Damage,      // ダメージ
+    Block,       // ブロック
+    Draw,        // ドロー
+    AddEnergy,   // エネルギー追加
+    ApplyBuff,   // バフ付与（プレイヤー）
+    ApplyDebuff, // デバフ付与（敵）
+    Heal,        // HP回復
+};
+
+// カード効果
+struct CardEffectData
+{
+    CardEffectType type = CardEffectType::None;
+    int            value = 0;
+    int            duration = 0;      // バフ・デバフ用
+    std::string    buffType = "";     // "Poison", "AttackUp"など
+    bool           hasEffect = false;
+};
 
 struct CardData
 {
-	std::string id;
-	std::wstring name;
-	CardType	type;
-	int			cost;			// エネルギーコスト
-	int			value;			// ダメージや効果量
-	int			range;			// 射程
-	RangeType rangeType;
-	std::wstring description;
-};
+    std::string  id;
+    std::wstring name;
+    CardType     type;
+    int          cost;
+    int          range;
+    RangeType    rangeType;
+    std::wstring description;
 
+    CardEffectData   mainEffect;   // メイン効果（ダメージ量やブロック量など）
+    CardEffectData   onHitEffect;  // ヒット時効果（攻撃カードのみ）
+};

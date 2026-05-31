@@ -12,6 +12,7 @@ enum class CellType
 	Empty,
 	Player,
 	Enemy,
+	Boss,
 	Wall
 };
 
@@ -63,4 +64,3 @@ private:
 
 
 };
-

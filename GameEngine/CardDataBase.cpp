@@ -13,8 +13,7 @@ void CardDataBase::Init()
     std::ifstream file("Assets/Data/cards.json");
     if (!file.is_open())
     {
-        OutputDebugStringW(L"★ cards.json 読み込み失敗 - ハードコードデータを使用\n");
-        LoadHardcodedData();
+        OutputDebugStringW(L"★ cards.json 読み込み失敗\n");
         return;
     }
 
@@ -32,10 +31,29 @@ void CardDataBase::Init()
             data.name = ToWString(c["name"]);
             data.type = StringToCardType(c["type"]);
             data.cost = c["cost"];
-            data.value = c["value"];
             data.range = c["range"];
             data.rangeType = StringToRangeType(c["rangeType"]);
             data.description = ToWString(c["description"]);
+
+            // mainEffect
+            data.mainEffect.hasEffect = true;
+            data.mainEffect.type = StringToCardEffectType(c["mainEffect"]["type"]);
+            data.mainEffect.value = c["mainEffect"]["value"];
+            data.mainEffect.duration = c["mainEffect"].value("duration", 0);  // ← 追加
+            data.mainEffect.buffType = c["mainEffect"].value("buffType", ""); // ← 追加
+
+            if (c.contains("onHitEffect"))
+            {
+                data.onHitEffect.hasEffect = true;
+                data.onHitEffect.type = StringToCardEffectType(c["onHitEffect"]["type"]);
+                data.onHitEffect.value = c["onHitEffect"]["value"];
+                data.onHitEffect.duration = c["onHitEffect"].value("duration", 0);
+                data.onHitEffect.buffType = c["onHitEffect"].value("buffType", "");
+            }
+            else
+            {
+                data.onHitEffect.hasEffect = false;
+            }
 
             m_data[data.id] = data;
 
@@ -51,15 +69,7 @@ void CardDataBase::Init()
         char buf[512];
         sprintf_s(buf, "★ JSONエラー: %s\n", e.what());
         OutputDebugStringA(buf);
-        LoadHardcodedData();
     }
-}
-
-void CardDataBase::LoadHardcodedData()
-{
-    m_data["strike"] = { "strike", L"ストライク",   CardType::Attack, 1, 6, 1, RangeType::Adjacent, L"隣接した敵に6ダメージ" };
-    m_data["defend"] = { "defend", L"ディフェンド", CardType::Skill,  1, 5, 0, RangeType::None,     L"5ブロックを得る" };
-    m_data["move"] = { "move",   L"ステップ",     CardType::Move,   1, 2, 1, RangeType::Adjacent, L"隣接したマスに移動" };
 }
 
 const CardData* CardDataBase::Get(const std::string& id)
