@@ -65,6 +65,8 @@ public:
 
     void DrawPileViewer();  // 山札、捨て札の中身表示
 
+    void SetEnemyId(const std::string& id) { m_battleEnemyId = id; }
+
     std::function<void(SceneType)> onChangeScene;
 
 private:
@@ -143,7 +145,8 @@ private:
 
     // Enemyの死亡判定用
     void ProcessDeadEnemies();
-
+    
+    std::string m_battleEnemyId;
 
     BattleHighlighter m_highlighter;
     CardExecutor      m_cardExecutor;

@@ -1,7 +1,6 @@
 #pragma once
 #include "Scene.h"
-#include "Scenetype.h"
-#include "SceneManager.h"
+#include "SceneType.h"
 #include "SpriteRenderer.h"
 #include "TextRenderer.h"
 #include "TextureManager.h"
@@ -25,33 +24,37 @@ public:
     void HandleInput() override;
 
     std::function<void(SceneType)> onChangeScene;
-
-    // バトルで使う敵IDを外部から取得できるように
     const std::string& GetCurrentBattleEnemyId() const { return m_currentEnemyId; }
 
 private:
     void GenerateMap();
-    void DrawNode(const FieldNode& node, bool isHovered);
-    bool CanMove(int nodeIndex) const;
-    XMFLOAT2 GetNodeScreenPos(const FieldNode& node) const;
+    bool CanMove(int col, int row) const;
+    int  GetNodeIndex(int col, int row) const;
+    XMFLOAT2 GetNodeScreenPos(int col, int row) const;
 
     SpriteRenderer* m_spriteRenderer;
     TextRenderer* m_textRenderer;
     Input           m_input;
-
     ID3D11ShaderResourceView* m_whiteTexture;
 
     int m_screenWidth;
     int m_screenHeight;
     HWND m_hWnd;
 
-    std::vector<FieldNode> m_nodes;
-    int m_currentNodeIndex;   // 現在いるノード
-    int m_hoveredNodeIndex;   // マウスが乗っているノード
+    std::vector<FieldNode> m_nodes; // グリッド上の全マス（col * GRID_ROWS + row）
+
+    int m_playerCol;
+    int m_playerRow;
+
+    int m_steps;
+    int m_maxSteps;
 
     std::string m_currentEnemyId;
+    float m_highlightTimer;
 
-    void SaveProgress();
-
-    static constexpr float NODE_RADIUS = 30.0f;
+    static constexpr int   GRID_COLS = 9;
+    static constexpr int   GRID_ROWS = 7;
+    static constexpr int   INITIAL_STEPS = 20;
+    static constexpr float CELL_SIZE = 60.0f;
+    static constexpr float CELL_GAP = 20.0f;
 };

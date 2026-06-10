@@ -1,6 +1,7 @@
 #include "FieldScene.h"
 #include "SceneType.h"
 #include <cstdlib>
+#include <algorithm>
 
 FieldScene::FieldScene()
     : m_spriteRenderer(nullptr)
@@ -9,8 +10,11 @@ FieldScene::FieldScene()
     , m_screenWidth(0)
     , m_screenHeight(0)
     , m_hWnd(nullptr)
-    , m_currentNodeIndex(0)
-    , m_hoveredNodeIndex(-1)
+    , m_playerCol(0)
+    , m_playerRow(0)
+    , m_steps(0)
+    , m_maxSteps(0)
+    , m_highlightTimer(0.0f)
 {
 }
 
@@ -21,8 +25,7 @@ FieldScene::~FieldScene()
 }
 
 bool FieldScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
-    int screenWidth, int screenHeight, HWND hWnd,
-    IDXGISwapChain* swapChain)
+    int screenWidth, int screenHeight, HWND hWnd, IDXGISwapChain* swapChain)
 {
     m_screenWidth = screenWidth;
     m_screenHeight = screenHeight;
@@ -40,171 +43,279 @@ bool FieldScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     m_input.SetWindowHandle(hWnd);
 
     GenerateMap();
-
-    // セーブデータから進行状況を復元
-    auto& playerData = PlayerDataManager::GetData();
-    m_currentNodeIndex = playerData.currentNodeIndex;
-
-    // クリア済みノードを復元
-    if (playerData.clearedNodes.size() == m_nodes.size())
-    {
-        for (int i = 0; i < (int)m_nodes.size(); i++)
-            m_nodes[i].cleared = playerData.clearedNodes[i];
-    }
-
     return true;
 }
 
 void FieldScene::GenerateMap()
 {
     m_nodes.clear();
+    m_nodes.resize(GRID_COLS * GRID_ROWS);
 
-    // 固定マップ（後でランダム生成に変更）
-    // 列(col)が進むほど奥に進む
-    // row は分岐の位置
+    m_steps = INITIAL_STEPS;
+    m_maxSteps = INITIAL_STEPS;
 
-    // スタート
-    m_nodes.push_back({ FieldNodeType::Start,  0, 1, true,  {1, 2} });
+    std::vector<std::string> enemyIds = { "slime", "goblin", "orc" };
 
-    // 1列目（分岐）
-    m_nodes.push_back({ FieldNodeType::Battle, 1, 0, false, {3} });
-    m_nodes.push_back({ FieldNodeType::Rest,   1, 2, false, {3} });
-
-    // 2列目（合流）
-    m_nodes.push_back({ FieldNodeType::Battle, 2, 1, false, {4, 5} });
-
-    // 3列目（分岐）
-    m_nodes.push_back({ FieldNodeType::Battle, 3, 0, false, {6} });
-    m_nodes.push_back({ FieldNodeType::Rest,   3, 2, false, {6} });
-
-    // 4列目（ボス）
-    m_nodes.push_back({ FieldNodeType::Boss,   4, 1, false, {} });
-
-    m_currentNodeIndex = 0;
-}
-
-XMFLOAT2 FieldScene::GetNodeScreenPos(const FieldNode& node) const
-{
-    const float colSpacing = 200.0f;
-    const float rowSpacing = 160.0f;
-    const float offsetX = 150.0f;
-    const float offsetY = m_screenHeight / 2.0f - rowSpacing;
-
-    return XMFLOAT2(
-        offsetX + node.col * colSpacing,
-        offsetY + node.row * rowSpacing
-    );
-}
-
-bool FieldScene::CanMove(int nodeIndex) const
-{
-    const auto& current = m_nodes[m_currentNodeIndex];
-    for (int next : current.nextNodeIndices)
-        if (next == nodeIndex) return true;
-    return false;
-}
-
-void FieldScene::DrawNode(const FieldNode& node, bool isHovered)
-{
-    XMFLOAT2 pos = GetNodeScreenPos(node);
-    float size = NODE_RADIUS * 2.0f;
-
-    XMFLOAT4 color;
-    switch (node.type)
+    // 全マスをEmptyで初期化
+    for (int row = 0; row < GRID_ROWS; row++)
     {
-    case FieldNodeType::Start:  color = XMFLOAT4(0.5f, 0.5f, 0.5f, 0.7f); break;
-    case FieldNodeType::Battle: color = XMFLOAT4(0.8f, 0.2f, 0.2f, 0.7f); break;
-    case FieldNodeType::Rest:   color = XMFLOAT4(0.2f, 0.8f, 0.2f, 0.7f); break;
-    case FieldNodeType::Boss:   color = XMFLOAT4(0.8f, 0.2f, 0.8f, 0.7f); break;
-    default:                    color = XMFLOAT4(0.3f, 0.3f, 0.3f, 0.7f); break;
+        for (int col = 0; col < GRID_COLS; col++)
+        {
+            int idx = col * GRID_ROWS + row;
+            m_nodes[idx].type = FieldNodeType::Empty;
+            m_nodes[idx].col = col;
+            m_nodes[idx].row = row;
+            m_nodes[idx].visited = false;
+            m_nodes[idx].enemyId = "";
+        }
     }
 
-    // 現在地は明るく
-    if (&node == &m_nodes[m_currentNodeIndex])
-        color = XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f);
+    // スタートは左端中央
+    m_playerCol = 0;
+    m_playerRow = GRID_ROWS / 2;
+    m_nodes[GetNodeIndex(m_playerCol, m_playerRow)].type = FieldNodeType::Start;
+    m_nodes[GetNodeIndex(m_playerCol, m_playerRow)].visited = true;
 
-    // ホバー中は少し明るく
-    if (isHovered && CanMove((int)(&node - &m_nodes[0])))
-        color.w = min(1.0f, color.x + 0.5f);
+    // ボスは右端中央
+    int bossCol = GRID_COLS - 1;
+    int bossRow = GRID_ROWS / 2;
+    m_nodes[GetNodeIndex(bossCol, bossRow)].type = FieldNodeType::Boss;
 
-    // クリア済みは暗く
-    if (node.cleared && &node != &m_nodes[m_currentNodeIndex])
-        color = XMFLOAT4(color.x * 0.5f, color.y * 0.5f, color.z * 0.5f, 1.0f);
+    // ランダムにバトル・休憩マスを配置
+    for (int row = 0; row < GRID_ROWS; row++)
+    {
+        for (int col = 1; col < GRID_COLS - 1; col++)
+        {
+            int idx = GetNodeIndex(col, row);
 
-    m_spriteRenderer->DrawSprite(m_whiteTexture,
-        pos.x - NODE_RADIUS, pos.y - NODE_RADIUS,
-        size, size, 0.0f, color);
+            int r = rand() % 10;
+            if (r < 7)
+            {
+                m_nodes[idx].type = FieldNodeType::Battle;
+                m_nodes[idx].enemyId = enemyIds[rand() % enemyIds.size()];
+            }
+            else
+            {
+                m_nodes[idx].type = FieldNodeType::Rest;
+            }
+        }
+    }
+}
+
+int FieldScene::GetNodeIndex(int col, int row) const
+{
+    return col * GRID_ROWS + row;
+}
+
+bool FieldScene::CanMove(int col, int row) const
+{
+    if (col < 0 || col >= GRID_COLS) return false;
+    if (row < 0 || row >= GRID_ROWS) return false;
+
+    // 自分のマスには移動不可 ← 追加
+    if (col == m_playerCol && row == m_playerRow) return false;
+
+    int dc = abs(col - m_playerCol);
+    int dr = abs(row - m_playerRow);
+    if (dc + dr != 1) return false;
+
+    int idx = GetNodeIndex(col, row);
+    if (m_nodes[idx].type == FieldNodeType::Empty) return false;
+    if (m_nodes[idx].type == FieldNodeType::Start) return false;
+
+    if (m_steps <= 0) return false;
+
+    return true;
+}
+XMFLOAT2 FieldScene::GetNodeScreenPos(int col, int row) const
+{
+    float totalW = GRID_COLS * (CELL_SIZE + CELL_GAP) - CELL_GAP;
+    float totalH = GRID_ROWS * (CELL_SIZE + CELL_GAP) - CELL_GAP;
+    float offsetX = (m_screenWidth - totalW) / 2.0f;
+    float offsetY = (m_screenHeight - totalH) / 2.0f;
+
+    return XMFLOAT2(
+        offsetX + col * (CELL_SIZE + CELL_GAP),
+        offsetY + row * (CELL_SIZE + CELL_GAP)
+    );
 }
 
 void FieldScene::Update(float deltaTime)
 {
     m_input.Update();
+    m_highlightTimer += deltaTime * 0.5f;
+    if (m_highlightTimer > 3.14159f * 2.0f)
+        m_highlightTimer = 0.0f;
 }
 
 void FieldScene::Draw()
 {
+   
     m_spriteRenderer->Begin();
 
-    // ノード間の線を描画
-    for (int i = 0; i < (int)m_nodes.size(); i++)
+    // 隣接マス間の線を描画
+    for (int row = 0; row < GRID_ROWS; row++)
     {
-        auto& node = m_nodes[i];
-        XMFLOAT2 from = GetNodeScreenPos(node);
-
-        for (int nextIdx : node.nextNodeIndices)
+        for (int col = 0; col < GRID_COLS; col++)
         {
-            XMFLOAT2 to = GetNodeScreenPos(m_nodes[nextIdx]);
+            int idx = GetNodeIndex(col, row);
+            if (m_nodes[idx].type == FieldNodeType::Empty) continue;
 
-            // 線の中点と長さを計算
-            float cx = (from.x + to.x) / 2.0f;
-            float cy = (from.y + to.y) / 2.0f;
-            float dx = to.x - from.x;
-            float dy = to.y - from.y;
-            float len = sqrtf(dx * dx + dy * dy);
+            XMFLOAT2 from = GetNodeScreenPos(col, row);
+            float cx1 = from.x + CELL_SIZE / 2.0f;
+            float cy1 = from.y + CELL_SIZE / 2.0f;
 
-            // 簡易的に細い矩形で線を描画
-            m_spriteRenderer->DrawSprite(m_whiteTexture,
-                cx - len / 2.0f, cy - 2.0f,
-                len, 4.0f, 0.0f,
-                XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f));
+            // 右のマスへの線
+            if (col + 1 < GRID_COLS)
+            {
+                int rightIdx = GetNodeIndex(col + 1, row);
+                if (m_nodes[rightIdx].type != FieldNodeType::Empty)
+                {
+                    XMFLOAT2 to = GetNodeScreenPos(col + 1, row);
+                    float cx2 = to.x + CELL_SIZE / 2.0f;
+                    float cy2 = to.y + CELL_SIZE / 2.0f;
+                    float len = sqrtf((cx2 - cx1) * (cx2 - cx1) + (cy2 - cy1) * (cy2 - cy1));
+                    float cx = (cx1 + cx2) / 2.0f;
+                    float cy = (cy1 + cy2) / 2.0f;
+                    m_spriteRenderer->DrawSprite(m_whiteTexture,
+                        cx - len / 2.0f, cy - 2.0f,
+                        len, 4.0f, 0.0f,
+                        XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f));
+                }
+            }
+
+            // 下のマスへの線
+            if (row + 1 < GRID_ROWS)
+            {
+                int downIdx = GetNodeIndex(col, row + 1);
+                if (m_nodes[downIdx].type != FieldNodeType::Empty)
+                {
+                    XMFLOAT2 to = GetNodeScreenPos(col, row + 1);
+                    float cx2 = to.x + CELL_SIZE / 2.0f;
+                    float cy2 = to.y + CELL_SIZE / 2.0f;
+                    float len = sqrtf((cx2 - cx1) * (cx2 - cx1) + (cy2 - cy1) * (cy2 - cy1));
+                    float cx = (cx1 + cx2) / 2.0f;
+                    float cy = (cy1 + cy2) / 2.0f;
+                    m_spriteRenderer->DrawSprite(m_whiteTexture,
+                        cx - len / 2.0f, cy - 2.0f,
+                        len, 4.0f, 1.5708f, // 90度
+                        XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f));
+                }
+            }
         }
     }
+    float pulse = sin(m_highlightTimer);
+    float blink = 0.3f + 0.7f * ((pulse + 1.0f) / 2.0f);
 
-    // ノードを描画
-    for (int i = 0; i < (int)m_nodes.size(); i++)
-        DrawNode(m_nodes[i], i == m_hoveredNodeIndex);
+    for (int row = 0; row < GRID_ROWS; row++)
+    {
+        for (int col = 0; col < GRID_COLS; col++)
+        {
+            int idx = GetNodeIndex(col, row);
+            auto& node = m_nodes[idx];
+
+            // Emptyは描画しない
+            if (node.type == FieldNodeType::Empty) continue;
+
+            XMFLOAT2 pos = GetNodeScreenPos(col, row);
+            XMFLOAT4 color;
+
+            bool isPlayer = (col == m_playerCol && row == m_playerRow);
+            bool canMoveTo = CanMove(col, row);
+
+            if (isPlayer)
+            {
+                color = XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f); // 黄色
+            }
+            else if (canMoveTo)
+            {
+                // 移動可能マスは点滅
+                switch (node.type)
+                {
+                case FieldNodeType::Battle:
+                    color = XMFLOAT4(blink, 0.2f, 0.2f, 1.0f); break;
+                case FieldNodeType::Rest:
+                    color = XMFLOAT4(0.2f, blink, 0.2f, 1.0f); break;
+                case FieldNodeType::Boss:
+                    color = XMFLOAT4(blink, 0.2f, blink, 1.0f); break;
+                default:
+                    color = XMFLOAT4(blink, blink, blink, 1.0f); break;
+                }
+            }
+            else if (node.visited)
+            {
+                // 訪問済みは暗く
+                color = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
+            }
+            else
+            {
+                // 通常色
+                switch (node.type)
+                {
+                case FieldNodeType::Battle:
+                    color = XMFLOAT4(0.7f, 0.2f, 0.2f, 1.0f); break;
+                case FieldNodeType::Rest:
+                    color = XMFLOAT4(0.2f, 0.7f, 0.2f, 1.0f); break;
+                case FieldNodeType::Boss:
+                    color = XMFLOAT4(0.7f, 0.2f, 0.7f, 1.0f); break;
+                case FieldNodeType::Start:
+                    color = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f); break;
+                default:
+                    color = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f); break;
+                }
+            }
+
+            m_spriteRenderer->DrawSprite(m_whiteTexture,
+                pos.x, pos.y, CELL_SIZE, CELL_SIZE, 0.0f, color);
+        }
+    }
 
     m_spriteRenderer->End();
 
-    // テキスト描画
     m_textRenderer->Begin();
 
-    for (int i = 0; i < (int)m_nodes.size(); i++)
+    // マスのラベル
+    for (int row = 0; row < GRID_ROWS; row++)
     {
-        auto& node = m_nodes[i];
-        XMFLOAT2 pos = GetNodeScreenPos(node);
-
-        const wchar_t* label = L"";
-        switch (node.type)
+        for (int col = 0; col < GRID_COLS; col++)
         {
-        case FieldNodeType::Start:  label = L"START";  break;
-        case FieldNodeType::Battle: label = L"BATTLE";     break;
-        case FieldNodeType::Rest:   label = L"REST";     break;
-        case FieldNodeType::Boss:   label = L"BOSS";   break;
-        }
+            int idx = GetNodeIndex(col, row);
+            auto& node = m_nodes[idx];
+            if (node.type == FieldNodeType::Empty) continue;
 
-        m_textRenderer->DrawText(label,
-            pos.x - NODE_RADIUS + 5.0f,
-            pos.y - 10.0f, 16.0f,
-            D2D1::ColorF(D2D1::ColorF::White));
+            XMFLOAT2 pos = GetNodeScreenPos(col, row);
+
+            const wchar_t* label = L"";
+            if (col == m_playerCol && row == m_playerRow)
+                label = L"YOU";
+            else switch (node.type)
+            {
+            case FieldNodeType::Start:  label = L"START";  break;
+            case FieldNodeType::Battle: label = L"BATTLE"; break;
+            case FieldNodeType::Rest:   label = L"REST";   break;
+            case FieldNodeType::Boss:   label = L"BOSS";   break;
+            default: break;
+            }
+
+            m_textRenderer->DrawText(label,
+                pos.x + 5.0f, pos.y + CELL_SIZE / 2.0f - 10.0f,
+                14.0f, D2D1::ColorF(D2D1::ColorF::White));
+        }
     }
 
-    // HP表示
+    // HP・歩数表示
     auto& playerData = PlayerDataManager::GetData();
     wchar_t hpText[64];
     swprintf_s(hpText, L"HP: %d / %d", playerData.hp, playerData.maxHp);
     m_textRenderer->DrawText(hpText, 20.0f, 20.0f, 24.0f,
         D2D1::ColorF(D2D1::ColorF::White));
+
+    wchar_t stepsText[64];
+    swprintf_s(stepsText, L"歩数: %d / %d", m_steps, m_maxSteps);
+    m_textRenderer->DrawText(stepsText, 20.0f, 50.0f, 24.0f,
+        m_steps <= 5
+        ? D2D1::ColorF(D2D1::ColorF::Red)
+        : D2D1::ColorF(D2D1::ColorF::White));
 
     m_textRenderer->End();
 }
@@ -213,73 +324,58 @@ void FieldScene::HandleInput()
 {
     POINT mousePos = m_input.GetMousePos();
 
-    // ホバー判定
-    m_hoveredNodeIndex = -1;
-    for (int i = 0; i < (int)m_nodes.size(); i++)
+    if (!m_input.GetMouseButtonTrigger(0)) return;
+
+    // クリックされたマスを判定
+    for (int row = 0; row < GRID_ROWS; row++)
     {
-        XMFLOAT2 pos = GetNodeScreenPos(m_nodes[i]);
-        float dx = mousePos.x - pos.x;
-        float dy = mousePos.y - pos.y;
-        if (sqrtf(dx * dx + dy * dy) <= NODE_RADIUS)
+        for (int col = 0; col < GRID_COLS; col++)
         {
-            m_hoveredNodeIndex = i;
-            break;
+            XMFLOAT2 pos = GetNodeScreenPos(col, row);
+
+            if (mousePos.x >= pos.x && mousePos.x <= pos.x + CELL_SIZE
+                && mousePos.y >= pos.y && mousePos.y <= pos.y + CELL_SIZE)
+            {
+                if (!CanMove(col, row)) return;
+
+                int idx = GetNodeIndex(col, row);
+                auto& node = m_nodes[idx];
+
+                m_playerCol = col;
+                m_playerRow = row;
+                m_steps--;
+
+                if (!node.visited)
+                {
+                    node.visited = true;
+
+                    switch (node.type)
+                    {
+                    case FieldNodeType::Battle:
+                        m_currentEnemyId = node.enemyId;
+                        if (onChangeScene)
+                            onChangeScene(SceneType::Battle);
+                        return;
+
+                    case FieldNodeType::Boss:
+                        m_currentEnemyId = "dragon";
+                        if (onChangeScene)
+                            onChangeScene(SceneType::Battle);
+                        return;
+
+                    case FieldNodeType::Rest:
+                    {
+                        auto& playerData = PlayerDataManager::GetData();
+                        playerData.hp = min(playerData.hp + 20, playerData.maxHp);
+                        PlayerDataManager::Save();
+                        break;
+                    }
+                    default:
+                        break;
+                    }
+                }
+                return;
+            }
         }
     }
-
-    // クリックで移動
-    if (m_hoveredNodeIndex >= 0 && m_input.GetMouseButtonTrigger(0))
-    {
-        if (CanMove(m_hoveredNodeIndex))
-        {
-            auto& node = m_nodes[m_hoveredNodeIndex];
-
-            switch (node.type)
-            {
-            case FieldNodeType::Battle:
-            case FieldNodeType::Boss:
-            {
-                m_currentNodeIndex = m_hoveredNodeIndex;
-                node.cleared = true;
-
-                // 進行状況を保存
-                SaveProgress();
-
-                if (onChangeScene)
-                    onChangeScene(SceneType::Battle);
-                break;
-            }
-
-            case FieldNodeType::Rest:
-            {
-                m_currentNodeIndex = m_hoveredNodeIndex;
-                node.cleared = true;
-
-                // HP回復
-                auto& playerData = PlayerDataManager::GetData();
-                playerData.hp = min(playerData.hp + 20, playerData.maxHp);
-
-                // 進行状況を保存
-                SaveProgress();
-
-                OutputDebugStringW(L"★ 休憩：HP+20\n");
-                break;
-            }
-            default:
-                break;
-            }
-        }
-
-    }
-    
 }
-
-    // 進行状況を保存する関数
-    void FieldScene::SaveProgress()
-    {
-        std::vector<bool> clearedStatus;
-        for (const auto& node : m_nodes)
-            clearedStatus.push_back(node.cleared);
-
-        PlayerDataManager::SaveFieldProgress(m_currentNodeIndex, clearedStatus);
-    }

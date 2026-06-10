@@ -121,9 +121,6 @@
     <Filter Include="ソース ファイル\03-Object関連\10-Player\10-PlayerData">
       <UniqueIdentifier>{483e1fda-3e19-4cfe-a87b-5495bd88bd04}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\03-Object関連\10-Player\PlayerDataManager">
-      <UniqueIdentifier>{664f2f83-73e3-4de9-9a61-e835ef657559}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ソース ファイル\02-Scene\30-CardSelectScene">
       <UniqueIdentifier>{94ce6886-9d61-4d15-9223-00694f2846c5}</UniqueIdentifier>
     </Filter>
@@ -159,6 +156,21 @@
     </Filter>
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\20-CardExecutor">
       <UniqueIdentifier>{e558de08-1903-4f83-a1fe-2300134a9059}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\40-FieldScene">
+      <UniqueIdentifier>{3b3bd69a-1c69-4760-af55-037ff746ddcd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\10-Player\20-PlayerDataManager">
+      <UniqueIdentifier>{664f2f83-73e3-4de9-9a61-e835ef657559}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\40-FieldScene\02-FieldNodeType">
+      <UniqueIdentifier>{928e9d2d-4943-464e-b757-b5eb899fd1bb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\40-FieldScene\01-FieldNode">
+      <UniqueIdentifier>{d672f544-252e-4aac-aaa9-391587923b74}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\40-FieldScene\00-FieldScene">
+      <UniqueIdentifier>{dce6fd4d-ba08-4764-96f5-20f7eb6454a8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -259,7 +271,7 @@
       <Filter>ソース ファイル\03-Object関連\10-Player\10-PlayerData</Filter>
     </ClInclude>
     <ClInclude Include="PlayerDataManager.h">
-      <Filter>ソース ファイル\03-Object関連\10-Player\PlayerDataManager</Filter>
+      <Filter>ソース ファイル\03-Object関連\10-Player\20-PlayerDataManager</Filter>
     </ClInclude>
     <ClInclude Include="CardSelectScene.h">
       <Filter>ソース ファイル\02-Scene\30-CardSelectScene</Filter>
@@ -272,15 +284,6 @@
     </ClInclude>
     <ClInclude Include="BuffManager.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\30-Buff\10-BuffManager</Filter>
-    </ClInclude>
-    <ClInclude Include="FieldNode.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="FieldNodeType.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="FieldScene.h">
-      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="CardVisual.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\04-CardVisual</Filter>
@@ -299,6 +302,15 @@
     </ClInclude>
     <ClInclude Include="CardExecutor.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\20-CardExecutor</Filter>
+    </ClInclude>
+    <ClInclude Include="FieldNode.h">
+      <Filter>ソース ファイル\02-Scene\40-FieldScene\01-FieldNode</Filter>
+    </ClInclude>
+    <ClInclude Include="FieldNodeType.h">
+      <Filter>ソース ファイル\02-Scene\40-FieldScene\02-FieldNodeType</Filter>
+    </ClInclude>
+    <ClInclude Include="FieldScene.h">
+      <Filter>ソース ファイル\02-Scene\40-FieldScene\00-FieldScene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -363,16 +375,13 @@
       <Filter>ソース ファイル\03-Object関連\10-Player\00-Player</Filter>
     </ClCompile>
     <ClCompile Include="PlayerDataManager.cpp">
-      <Filter>ソース ファイル\03-Object関連\10-Player\PlayerDataManager</Filter>
+      <Filter>ソース ファイル\03-Object関連\10-Player\20-PlayerDataManager</Filter>
     </ClCompile>
     <ClCompile Include="CardSelectScene.cpp">
       <Filter>ソース ファイル\02-Scene\30-CardSelectScene</Filter>
     </ClCompile>
     <ClCompile Include="BuffManager.cpp">
       <Filter>ソース ファイル\03-Object関連\30-Card\30-Buff\10-BuffManager</Filter>
-    </ClCompile>
-    <ClCompile Include="FieldScene.cpp">
-      <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="BattleScene.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
@@ -382,6 +391,9 @@
     </ClCompile>
     <ClCompile Include="CardExecutor.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\20-CardExecutor</Filter>
+    </ClCompile>
+    <ClCompile Include="FieldScene.cpp">
+      <Filter>ソース ファイル\02-Scene\40-FieldScene\00-FieldScene</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

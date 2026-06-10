@@ -1,14 +1,6 @@
 {
-  "clearedNodes": [
-    true,
-    true,
-    false,
-    false,
-    false,
-    false,
-    false
-  ],
-  "currentNodeIndex": 1,
+  "clearedNodes": [],
+  "currentNodeIndex": 0,
   "deck": [
     "strike",
     "strike",
@@ -21,7 +13,8 @@
     "move",
     "dash",
     "power_attack",
-    "buff_defense"
+    "buff_defense",
+    "defend"
   ],
   "hp": 50,
   "maxHp": 50

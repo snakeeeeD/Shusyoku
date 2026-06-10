@@ -66,6 +66,10 @@ void SceneManager::ChangeScene(SceneType type)
 		case SceneType::Battle:
 		{
 			auto scene = new BattleScene();
+			// フィールドシーンから敵IDを取得
+			if (auto field = dynamic_cast<FieldScene*>(m_currentScene))
+				scene->SetEnemyId(field->GetCurrentBattleEnemyId());
+
 			scene->onChangeScene = [this](SceneType type) { ChangeScene(type); };
 			m_currentScene = scene;
 			break;
