@@ -3,6 +3,8 @@
 
 Input input;
 
+int Input::s_wheelDelta = 0;
+
 //コンストラクタ
 Input::Input()
 {
@@ -22,6 +24,8 @@ Input::~Input()
 
 void Input::Update()
 {
+	m_currentWheelDelta = s_wheelDelta;
+	s_wheelDelta = 0;
 
 	// 1フレーム前の入力保存
 	for (int i = 0; i < 256; i++) keyState_old[i] = keyState[i];

@@ -139,11 +139,18 @@ void BattleHighlighter::UpdatePlayerHighlight(
     bool isAreaHovered = false;
     if (data->rangeType == RangeType::Area)
     {
-        for (auto& [col, row] : candidates)
-            if (col == hoveredCell.first && row == hoveredCell.second)
-            {
-                isAreaHovered = true; break;
-            }
+        if (data->type == CardType::Attack)
+        {
+            isAreaHovered = true;
+        }
+        else
+        {
+            for (auto& [col, row] : candidates)
+                if (col == hoveredCell.first && row == hoveredCell.second)
+                {
+                    isAreaHovered = true; break;
+                }
+        }
     }
 
     for (auto& [col, row] : candidates)
@@ -158,12 +165,38 @@ void BattleHighlighter::UpdatePlayerHighlight(
 
         m_playerHighlightCells.push_back({ col, row });
 
+        // マウスが乗っているマスかどうか
         bool isHovered = (col == hoveredCell.first && row == hoveredCell.second);
         bool isEnemy = (cell.type == CellType::Enemy || cell.type == CellType::Boss);
 
         // 攻撃カードは敵マスのみホバー有効
         if (data->type == CardType::Attack && isHovered && !isEnemy)
             isHovered = false;
+
+        // 攻撃カードで射程内の敵マスは自動でホバー扱い
+        if (data->type == CardType::Attack && isEnemy && !isHovered)
+        {
+            // 射程内か確認
+            int minDist = INT_MAX;
+            for (auto enemy : enemies)
+            {
+                for (auto& [dc, dr] : enemy->GetGridShape())
+                {
+                    if (enemy->gridCol + dc == col && enemy->gridRow + dr == row)
+                    {
+                        for (auto& [dc2, dr2] : enemy->GetGridShape())
+                        {
+                            int dist = abs(centerCol - (enemy->gridCol + dc2))
+                                + abs(centerRow - (enemy->gridRow + dr2));
+                            minDist = min(minDist, dist);
+                        }
+                        break;
+                    }
+                }
+            }
+            if (minDist <= data->range)
+                isHovered = true;
+        }
 
         // 危険マス判定
         bool isDangerCell = false;
@@ -186,7 +219,7 @@ void BattleHighlighter::UpdatePlayerHighlight(
             if (isEnemy)
             {
                 if (data->type == CardType::Attack)
-                    cell.gameObject.color = XMFLOAT4(1.0f, 0.2f, 0.2f, 1.0f);
+                    cell.gameObject.color = XMFLOAT4(hoverBrightness, 0.2f, 0.2f, 1.0f);
             }
             else
             {

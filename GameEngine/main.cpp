@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <d3d11.h>
 #include "Game.h"
+#include "input.h"
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d3dcompiler.lib")
@@ -76,6 +77,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_KEYDOWN:
         if (wParam == VK_ESCAPE)
            // PostQuitMessage(0);
+        break;
+    case WM_MOUSEWHEEL:
+        Input::SetWheelDelta(GET_WHEEL_DELTA_WPARAM(wParam));
         break;
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);

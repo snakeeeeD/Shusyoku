@@ -61,7 +61,8 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
 
     ExecuteResult result = { false, false };
 
-    if (!player->UseEnergy(data.cost))
+    // エネルギーが足りるかを先に確認
+    if (player->GetEnergy() < data.cost)
         return result;
 
     switch (data.type)
@@ -73,9 +74,11 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             auto targets = GetEnemiesInRange(data, playerCol, playerRow, enemies);
             if (targets.empty())
             {
-                //player->AddEnergy(data.cost); // エネルギーを返す
                 return result;
             }
+
+            player->UseEnergy(data.cost);
+
             for (auto enemy : targets)
             {
                 enemy->TakeDamage(player->GetBuffManager().GetFinalAttack(data.mainEffect.value));
@@ -87,9 +90,9 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             Enemy* target = GetEnemyAt(targetCol, targetRow, enemies);
             if (!target || GetMinDistToEnemy(playerCol, playerRow, target) > data.range)
             {
-                //player->AddEnergy(data.cost);
                 return result;
             }
+            player->UseEnergy(data.cost);
             target->TakeDamage(player->GetBuffManager().GetFinalAttack(data.mainEffect.value));
             CardEffect::ApplyOnHitEffect(data.onHitEffect, target->GetBuffManager());
         }
@@ -100,16 +103,15 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
         auto& cell = gridMap->GetCell(targetCol, targetRow);
         if (cell.type != CellType::Empty)
         {
-            //player->AddEnergy(data.cost);
             return result;
         }
         int dc = abs(playerCol - targetCol);
         int dr = abs(playerRow - targetRow);
         if ((dc + dr) > data.range)
         {
-            //player->AddEnergy(data.cost);
             return result;
         }
+        player->UseEnergy(data.cost);
         gridMap->SetCellType(playerCol, playerRow, CellType::Empty);
         outNewPlayerCol = targetCol;
         outNewPlayerRow = targetRow;
@@ -118,12 +120,14 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     }
     case CardType::Skill:
     {
+        player->UseEnergy(data.cost);
         int finalBlock = player->GetBuffManager().GetFinalBlock(data.mainEffect.value);
         player->AddBlock(finalBlock);
         break;
     }
     case CardType::Power:
     {
+        player->UseEnergy(data.cost);
         CardEffect::ApplyEffectToPlayer(data.mainEffect, player);
         // パワーカードは捨て札に入れない
         hand.RemoveCard(cardIndex);

@@ -28,6 +28,7 @@ public:
 
 private:
     void GenerateMap();
+    void SaveProgress();
     bool CanMove(int col, int row) const;
     int  GetNodeIndex(int col, int row) const;
     XMFLOAT2 GetNodeScreenPos(int col, int row) const;

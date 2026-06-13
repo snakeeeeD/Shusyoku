@@ -81,6 +81,17 @@ private:
 
     Input m_input;
 
+    float m_cameraZoom;
+    static constexpr float ZOOM_MIN = 0.5f;
+    static constexpr float ZOOM_MAX = 1.5f;
+    static constexpr float ZOOM_SPEED = 0.1f;
+
+    // カメラパン（右ドラッグ）
+    bool m_isDraggingCamera;
+    POINT m_dragStartPos;
+    float m_cameraOffsetX;
+    float m_cameraOffsetZ;
+
     int m_playerCol;
     int m_playerRow;
 
@@ -126,6 +137,8 @@ private:
 
     static constexpr float ENEMY_HPBAR_OFFSET_Y = 1.2f; // 頭上の高さ
 
+    bool GetEnemyScreenPos(Enemy* enemy, float& outX, float& outY) const;
+
     float m_enemyTurnTimer;
     static constexpr float ENEMY_TURN_DELAY = 5.5f;
 
@@ -145,6 +158,9 @@ private:
 
     // Enemyの死亡判定用
     void ProcessDeadEnemies();
+    void DrawArrowIndicator(float screenX, float screenY, const XMFLOAT4& color);
+
+    void DrawTargetIndicators();
     
     std::string m_battleEnemyId;
 

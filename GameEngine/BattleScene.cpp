@@ -17,12 +17,13 @@ BattleScene::BattleScene()
 BattleScene::~BattleScene()
 {
     delete m_spriteRenderer;
+    delete m_textRenderer;
     delete m_gridMap;
     delete m_renderer3D;
+    delete m_player;
     for (auto enemy : m_enemies)
         delete enemy;
     m_enemies.clear();
-    if (m_whiteTexture) m_whiteTexture->Release();
 }
 
 bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context, 
@@ -47,6 +48,13 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     m_enemyTurnTimer = ENEMY_TURN_DELAY;
 
     m_hoveredCell = { -1, -1 };
+
+    m_cameraZoom = 1.0f;
+
+    m_isDraggingCamera = false;
+    m_dragStartPos = { 0, 0 };
+    m_cameraOffsetX = 0.0f;
+    m_cameraOffsetZ = 0.0f;
 
     m_battleResult = BattleResult::None;
 
@@ -213,7 +221,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         };
 
     addEnemy(2, 1, "slime");
-    addEnemy(6, 4, "goblin");
+    addEnemy(2, 0, "goblin");
     //addEnemy(0, 0, "orc");
     //addEnemy(4, 0, "dragon");
 
@@ -228,6 +236,67 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 void BattleScene::Update(float deltaTime)
 {
     m_input.Update();
+
+    // カメラズーム（マウスホイール）
+    int wheelDelta = m_input.GetMouseWheelDelta();
+    if (wheelDelta != 0)
+    {
+        m_cameraZoom -= wheelDelta > 0 ? ZOOM_SPEED : -ZOOM_SPEED;
+        m_cameraZoom = max(ZOOM_MIN, min(ZOOM_MAX, m_cameraZoom));
+    }
+
+    // カメラパン（右ドラッグ）
+    if (m_input.GetMouseButtonPress(2))  // 右ボタン押し中
+    {
+        POINT mousePos = m_input.GetMousePos();
+        if (!m_isDraggingCamera)
+        {
+            m_isDraggingCamera = true;
+            m_dragStartPos = mousePos;
+        }
+        else
+        {
+            float dx = (float)(mousePos.x - m_dragStartPos.x);
+            float dy = (float)(mousePos.y - m_dragStartPos.y);
+            m_cameraOffsetX += dx * 0.02f * m_cameraZoom;
+            m_cameraOffsetZ -= dy * 0.02f * m_cameraZoom;
+            // カメラ移動制限
+            float maxOffset = 5.0f * m_cameraZoom;
+            m_cameraOffsetX = max(-maxOffset, min(maxOffset, m_cameraOffsetX));
+            m_cameraOffsetZ = max(-maxOffset, min(maxOffset, m_cameraOffsetZ));
+            m_dragStartPos = mousePos;
+        }
+    }
+    else
+    {
+        m_isDraggingCamera = false;
+    }
+
+    // カメラリセット（ミドルクリック）
+    if (m_input.GetMouseButtonTrigger(2))
+    {
+        m_cameraZoom = 1.0f;
+        m_cameraOffsetX = 0.0f;
+        m_cameraOffsetZ = 0.0f;
+    }
+
+    // カメラ更新（ズーム or パンが変わったら毎フレーム適用）
+    {
+        float px = m_player->worldX;
+        float pz = m_player->worldZ;
+
+        XMFLOAT3 target(
+            px + m_cameraOffsetX,
+            -2.0f,
+            pz + m_cameraOffsetZ
+        );
+        XMFLOAT3 zoomedPos(
+            px + m_cameraOffsetX,
+            target.y + 17.0f * m_cameraZoom,
+            pz + m_cameraOffsetZ + 6.0f * m_cameraZoom
+        );
+        m_renderer3D->SetCamera(zoomedPos, target, XMFLOAT3(0.0f, 1.0f, 0.0f));
+    }
 
     // ハイライト明滅タイマーを更新
     m_highlightTimer += deltaTime * 0.1f; // 点滅速度調整
@@ -439,6 +508,11 @@ void BattleScene::Draw()
 
     m_spriteRenderer->End();
 
+    // ターゲットインジケーター
+    m_spriteRenderer->Begin();
+    DrawTargetIndicators();
+    m_spriteRenderer->End();
+
     // テキスト描画
     m_textRenderer->Begin();
 
@@ -552,76 +626,150 @@ void BattleScene::Draw()
         m_textRenderer->DrawText(blockText, 20.0f, 125.0f, 20.0f,
             D2D1::ColorF(D2D1::ColorF::LightBlue));
     }
-    // 敵の表示（山札・捨て札表示中は非表示）
+    // 敵のUI（山札・捨て札表示中は非表示）
     if (!m_showDrawPile && !m_showDiscardPile)
     {
+        m_textRenderer->End();
+        m_spriteRenderer->Begin();
+
+        for (auto enemy : m_enemies)
+            DrawEnemyHPBar(enemy);
+
+        // アイコン描画（DrawEnemyUIのスプライト部分）
         for (auto enemy : m_enemies)
         {
-            // 敵のスクリーン座標を取得
-            float pitch = XMConvertToRadians(-Renderer3D::BILLBOARD_PITCH);
-            XMVECTOR worldPos = XMVectorSet(
-                enemy->worldX,
-                enemy->worldY + enemy->height * cos(pitch),
-                enemy->worldZ + 0.5f - enemy->height * sin(pitch),
-                1.0f
-            );
-            XMMATRIX view = m_renderer3D->GetViewMatrix();
-            XMMATRIX proj = m_renderer3D->GetProjectionMatrix();
-            XMVECTOR clipPos = XMVector4Transform(worldPos, view * proj);
-            XMFLOAT4 clip;
-            XMStoreFloat4(&clip, clipPos);
+            float screenX, screenY;
+            if (!GetEnemyScreenPos(enemy, screenX, screenY)) continue;
 
-            if (clip.w > 0.0f)
+            float barWidth = enemy->IsBoss() ? 150.0f : 100.0f;
+            float barHeight = enemy->IsBoss() ? 20.0f : 16.0f;
+            float barX = screenX - barWidth / 2.0f;
+            float barY = screenY - barHeight;
+
+            // 行動予告アイコン
+            const EnemyAction* action = enemy->GetNextAction();
+            if (action)
             {
-                float screenX = (clip.x / clip.w + 1.0f) * 0.5f * m_screenWidth;
-                float screenY = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;
+                float iconSize = 18.0f;
+                float iconX = barX;
+                float iconY = barY - iconSize - 4.0f;
 
-                float barWidth = 80.0f;
-                float barHeight = 10.0f;
-
-                wchar_t enemyHpText[64];
-                swprintf_s(enemyHpText, L"%d / %d", enemy->GetHp(), enemy->GetMaxHp());
-                m_textRenderer->DrawText(enemyHpText,
-                    screenX - barWidth / 2.0f,
-                    screenY - barHeight - 20.0f, // バーの上に表示
-                    16.0f,
-                    D2D1::ColorF(D2D1::ColorF::White));
-
-                // 行動予告
-                if (enemy->GetNextAction())
+                XMFLOAT4 iconColor;
+                switch (action->type)
                 {
-                    m_textRenderer->DrawText(
-                        enemy->GetNextAction()->description.c_str(),
-                        screenX - barWidth / 2.0f,
-                        screenY - barHeight - 40.0f,
-                        14.0f,
-                        D2D1::ColorF(D2D1::ColorF::Orange)
-                    );
+                case EnemyActionType::Attack: iconColor = XMFLOAT4(0.9f, 0.2f, 0.2f, 1.0f); break;
+                case EnemyActionType::Defend: iconColor = XMFLOAT4(0.2f, 0.4f, 0.9f, 1.0f); break;
+                case EnemyActionType::Move:   iconColor = XMFLOAT4(0.2f, 0.8f, 0.3f, 1.0f); break;
+                case EnemyActionType::Buf:    iconColor = XMFLOAT4(1.0f, 0.8f, 0.0f, 1.0f); break;
+                case EnemyActionType::Debuf:  iconColor = XMFLOAT4(0.6f, 0.0f, 0.8f, 1.0f); break;
+                default:                      iconColor = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f); break;
                 }
-
-                if (enemy->GetBlock() > 0)
-                {
-                    wchar_t blockText[64];
-                    swprintf_s(blockText, L" %d", enemy->GetBlock());
-                    m_textRenderer->DrawText(blockText,
-                        screenX + barWidth / 2.0f + 5.0f,
-                        screenY - barHeight - 20.0f,
-                        16.0f,
-                        D2D1::ColorF(D2D1::ColorF::LightBlue));
-                }
-                // 敵のデバフ表示
-                if (enemy->GetBuffManager().HasBuff(BuffType::Poison))
-                {
-                    wchar_t poisonText[32];
-                    swprintf_s(poisonText, L"毒%d", enemy->GetBuffManager().GetPoisonValue());
-                    m_textRenderer->DrawText(poisonText,
-                        screenX - barWidth / 2.0f,
-                        screenY - barHeight - 60.0f,
-                        14.0f,
-                        D2D1::ColorF(0.5f, 0.0f, 0.8f)); // 紫
-                }
+                m_spriteRenderer->DrawSprite(m_whiteTexture,
+                    iconX - 1.0f, iconY - 1.0f, iconSize + 2.0f, iconSize + 2.0f,
+                    0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
+                m_spriteRenderer->DrawSprite(m_whiteTexture,
+                    iconX, iconY, iconSize, iconSize, 0.0f, iconColor);
             }
 
+            // ブロックアイコン
+            if (enemy->GetBlock() > 0)
+            {
+                float iconSize = 16.0f;
+                float iconX = barX + barWidth + 5.0f;
+                float iconY = barY;
+                m_spriteRenderer->DrawSprite(m_whiteTexture,
+                    iconX - 1.0f, iconY - 1.0f, iconSize + 2.0f, iconSize + 2.0f,
+                    0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
+                m_spriteRenderer->DrawSprite(m_whiteTexture,
+                    iconX, iconY, iconSize, iconSize,
+                    0.0f, XMFLOAT4(0.2f, 0.5f, 0.9f, 1.0f));
+            }
+
+            // 毒アイコン
+            if (enemy->GetBuffManager().HasBuff(BuffType::Poison))
+            {
+                float iconSize = 16.0f;
+                float iconX = barX;
+                float iconY = barY - 18.0f - 4.0f - 18.0f - 4.0f;
+                m_spriteRenderer->DrawSprite(m_whiteTexture,
+                    iconX - 1.0f, iconY - 1.0f, iconSize + 2.0f, iconSize + 2.0f,
+                    0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
+                m_spriteRenderer->DrawSprite(m_whiteTexture,
+                    iconX, iconY, iconSize, iconSize,
+                    0.0f, XMFLOAT4(0.5f, 0.0f, 0.8f, 1.0f));
+            }
+        }
+
+        m_spriteRenderer->End();
+        m_textRenderer->Begin();
+
+        // テキスト部分
+        for (auto enemy : m_enemies)
+        {
+            float screenX, screenY;
+            if (!GetEnemyScreenPos(enemy, screenX, screenY)) continue;
+
+            float barWidth = enemy->IsBoss() ? 150.0f : 100.0f;
+            float barHeight = enemy->IsBoss() ? 20.0f : 16.0f;
+            float barX = screenX - barWidth / 2.0f;
+            float barY = screenY - barHeight;
+            float fontSize = enemy->IsBoss() ? 13.0f : 11.0f;
+
+            // HPテキスト（アウトライン付き）
+            wchar_t hpText[32];
+            swprintf_s(hpText, L"%d / %d", enemy->GetHp(), enemy->GetMaxHp());
+            m_textRenderer->DrawText(hpText, barX + 5.0f + 1.0f, barY + 2.0f + 1.0f,
+                fontSize, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
+            m_textRenderer->DrawText(hpText, barX + 5.0f - 1.0f, barY + 2.0f - 1.0f,
+                fontSize, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
+            m_textRenderer->DrawText(hpText, barX + 5.0f, barY + 2.0f,
+                fontSize, D2D1::ColorF(D2D1::ColorF::White));
+
+            // 行動予告の数字
+            const EnemyAction* action = enemy->GetNextAction();
+            if (action && action->value > 0 && action->type != EnemyActionType::Move)
+            {
+                float iconSize = 18.0f;
+                float iconX = barX;
+                float iconY = barY - iconSize - 4.0f;
+                wchar_t valueBuf[16];
+                swprintf_s(valueBuf, L"%d", action->value);
+                m_textRenderer->DrawText(valueBuf,
+                    iconX + iconSize + 3.0f + 1.0f, iconY + 1.0f + 1.0f,
+                    14.0f, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
+                m_textRenderer->DrawText(valueBuf,
+                    iconX + iconSize + 3.0f - 1.0f, iconY + 1.0f - 1.0f,
+                    14.0f, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
+                m_textRenderer->DrawText(valueBuf,
+                    iconX + iconSize + 3.0f, iconY + 1.0f,
+                    14.0f, D2D1::ColorF(D2D1::ColorF::White));
+            }
+
+            // ブロック数字
+            if (enemy->GetBlock() > 0)
+            {
+                float iconSize = 16.0f;
+                float iconX = barX + barWidth + 5.0f;
+                float iconY = barY;
+                wchar_t blockText[16];
+                swprintf_s(blockText, L"%d", enemy->GetBlock());
+                m_textRenderer->DrawText(blockText,
+                    iconX + iconSize + 2.0f, iconY + 1.0f,
+                    13.0f, D2D1::ColorF(D2D1::ColorF::White));
+            }
+
+            // 毒数字
+            if (enemy->GetBuffManager().HasBuff(BuffType::Poison))
+            {
+                float iconSize = 16.0f;
+                float iconX = barX;
+                float iconY = barY - 18.0f - 4.0f - 18.0f - 4.0f;
+                wchar_t poisonText[16];
+                swprintf_s(poisonText, L"%d", enemy->GetBuffManager().GetPoisonValue());
+                m_textRenderer->DrawText(poisonText,
+                    iconX + iconSize + 2.0f, iconY + 1.0f,
+                    13.0f, D2D1::ColorF(D2D1::ColorF::White));
+            }
         }
     }
 
@@ -901,7 +1049,8 @@ void BattleScene::HandleInput()
     {
         if (m_input.GetKeyTrigger(VK_RETURN))
         {
-            // TODO: タイトルへ
+            if (onChangeScene)
+                onChangeScene(SceneType::Title);
             OutputDebugStringW(L"★ タイトルへ\n");
         }
         return;
@@ -923,43 +1072,168 @@ void BattleScene::DrawHPBar(float x, float y, float width, float height,
 
 void BattleScene::DrawEnemyHPBar(Enemy* enemy)
 {
-    // 3D座標をスクリーン座標に変換
-    float pitch = XMConvertToRadians(-Renderer3D::BILLBOARD_PITCH);
-    XMVECTOR worldPos = XMVectorSet(
-        enemy->worldX,
-        enemy->worldY + enemy->height * cos(pitch),
-        enemy->worldZ + 0.5f - enemy->height * sin(pitch),
-        1.0f
-    );
+    float screenX, screenY;
+    if (!GetEnemyScreenPos(enemy, screenX, screenY)) return;
 
-    XMMATRIX view = m_renderer3D->GetViewMatrix();
-    XMMATRIX proj = m_renderer3D->GetProjectionMatrix();
-
-    XMVECTOR clipPos = XMVector4Transform(worldPos, view * proj);
-
-    XMFLOAT4 clip;
-    XMStoreFloat4(&clip, clipPos);
-
-    if (clip.w <= 0.0f) return; // カメラの後ろにある場合はスキップ
-
-    float screenX = (clip.x / clip.w + 1.0f) * 0.5f * m_screenWidth;
-    float screenY = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;
-
-    // ボスはHPバーを大きく
-    float barWidth = enemy->IsBoss() ? 150.0f : 80.0f;
-    float barHeight = enemy->IsBoss() ? 16.0f : 10.0f;
-
+    float barWidth = enemy->IsBoss() ? 150.0f : 100.0f;
+    float barHeight = enemy->IsBoss() ? 20.0f : 16.0f;
     float barX = screenX - barWidth / 2.0f;
     float barY = screenY - barHeight;
 
+    // 背景（黒枠）
+    m_spriteRenderer->DrawSprite(m_whiteTexture,
+        barX - 2.0f, barY - 2.0f, barWidth + 4.0f, barHeight + 4.0f,
+        0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
+
     // 背景（暗い赤）
-    m_spriteRenderer->DrawSprite(m_whiteTexture, barX, barY, barWidth, barHeight,
+    m_spriteRenderer->DrawSprite(m_whiteTexture,
+        barX, barY, barWidth, barHeight,
         0.0f, XMFLOAT4(0.3f, 0.0f, 0.0f, 1.0f));
 
     // HPバー（緑）
     float ratio = (float)enemy->GetHp() / (float)enemy->GetMaxHp();
-    m_spriteRenderer->DrawSprite(m_whiteTexture, barX, barY, barWidth * ratio, barHeight,
-        0.0f, XMFLOAT4(0.0f, 0.8f, 0.0f, 1.0f));
+    // HPが少ないと赤くなる
+    XMFLOAT4 barColor = ratio > 0.5f
+        ? XMFLOAT4(0.0f, 0.8f, 0.0f, 1.0f)
+        : ratio > 0.25f
+        ? XMFLOAT4(0.8f, 0.8f, 0.0f, 1.0f)
+        : XMFLOAT4(0.8f, 0.0f, 0.0f, 1.0f);
+
+    m_spriteRenderer->DrawSprite(m_whiteTexture,
+        barX, barY, barWidth * ratio, barHeight,
+        0.0f, barColor);
+}
+
+void BattleScene::DrawTargetIndicators()
+{
+    if (m_selectedCardIndex < 0 || m_selectedCardIndex >= (int)m_hand.GetCards().size())
+        return;
+
+    const CardData* data = m_hand.GetCards()[m_selectedCardIndex]->GetData();
+    if (!data) return;
+
+    if (data->type == CardType::Attack)
+    {
+        XMFLOAT4 arrowColor(1.0f, 0.3f, 0.1f, 1.0f);
+
+        auto candidates = BattleHighlighter::GetCandidates(
+            m_playerCol, m_playerRow, data->rangeType, data->range);
+
+        for (auto enemy : m_enemies)
+        {
+            bool inRange = false;
+
+            if (data->rangeType == RangeType::Area)
+            {
+                for (auto& [dc, dr] : enemy->GetGridShape())
+                {
+                    int ec = enemy->gridCol + dc;
+                    int er = enemy->gridRow + dr;
+                    for (auto& [cc, cr] : candidates)
+                        if (cc == ec && cr == er) { inRange = true; break; }
+                    if (inRange) break;
+                }
+            }
+            else
+            {
+                for (auto& [dc, dr] : enemy->GetGridShape())
+                {
+                    if (enemy->gridCol + dc == m_hoveredCell.first &&
+                        enemy->gridRow + dr == m_hoveredCell.second)
+                    {
+                        int minDist = INT_MAX;
+                        for (auto& [dc2, dr2] : enemy->GetGridShape())
+                        {
+                            int dist = abs(m_playerCol - (enemy->gridCol + dc2))
+                                     + abs(m_playerRow - (enemy->gridRow + dr2));
+                            minDist = min(minDist, dist);
+                        }
+                        if (minDist <= data->range)
+                            inRange = true;
+                        break;
+                    }
+                }
+            }
+
+            if (inRange)
+            {
+                float sx, sy;
+                if (GetEnemyScreenPos(enemy, sx, sy))
+                    DrawArrowIndicator(sx, sy, arrowColor);
+            }
+        }
+    }
+    else if (data->type == CardType::Skill || data->type == CardType::Power)
+    {
+        XMFLOAT4 arrowColor(0.2f, 0.8f, 1.0f, 1.0f);
+
+        float pitch = XMConvertToRadians(-Renderer3D::BILLBOARD_PITCH);
+        XMVECTOR worldPos = XMVectorSet(
+            m_player->worldX,
+            m_player->worldY + m_player->height * cos(pitch),
+            m_player->worldZ + 0.5f - m_player->height * sin(pitch),
+            1.0f
+        );
+        XMMATRIX view = m_renderer3D->GetViewMatrix();
+        XMMATRIX proj = m_renderer3D->GetProjectionMatrix();
+        XMVECTOR clipPos = XMVector4Transform(worldPos, view * proj);
+        XMFLOAT4 clip;
+        XMStoreFloat4(&clip, clipPos);
+
+        if (clip.w > 0.0f)
+        {
+            float sx = (clip.x / clip.w + 1.0f) * 0.5f * m_screenWidth;
+            float sy = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;
+            DrawArrowIndicator(sx, sy, arrowColor);
+        }
+    }
+    else if (data->type == CardType::Move)
+    {
+        if (m_hoveredCell.first < 0) return;
+
+        auto& cell = m_gridMap->GetCell(m_hoveredCell.first, m_hoveredCell.second);
+        if (cell.type != CellType::Empty) return;
+
+        int dc = abs(m_playerCol - m_hoveredCell.first);
+        int dr = abs(m_playerRow - m_hoveredCell.second);
+        if ((dc + dr) > data->range) return;
+
+        XMFLOAT4 arrowColor(0.2f, 0.9f, 0.3f, 1.0f);
+
+        float wx, wz;
+        GridToWorld(m_hoveredCell.first, m_hoveredCell.second, wx, wz);
+
+        XMVECTOR worldPos = XMVectorSet(wx - 0.5f, 0.5f, wz - 0.5f, 1.0f);
+        XMMATRIX view = m_renderer3D->GetViewMatrix();
+        XMMATRIX proj = m_renderer3D->GetProjectionMatrix();
+        XMVECTOR clipPos = XMVector4Transform(worldPos, view * proj);
+        XMFLOAT4 clip;
+        XMStoreFloat4(&clip, clipPos);
+
+        if (clip.w > 0.0f)
+        {
+            float sx = (clip.x / clip.w + 1.0f) * 0.5f * m_screenWidth;
+            float sy = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;
+            DrawArrowIndicator(sx, sy, arrowColor);
+        }
+    }
+}
+
+void BattleScene::DrawArrowIndicator(float sx, float sy, const XMFLOAT4& color)
+{
+    float bob = sin(m_highlightTimer * 3.0f) * 6.0f;
+    float ay = sy - 40.0f + bob;
+
+    XMFLOAT4 outline(0.0f, 0.0f, 0.0f, 1.0f);
+    m_spriteRenderer->DrawSprite(m_whiteTexture, sx - 3.0f, ay - 1.0f, 6.0f, 16.0f, 0.0f, outline);
+    m_spriteRenderer->DrawSprite(m_whiteTexture, sx - 8.0f, ay + 14.0f, 16.0f, 6.0f, 0.0f, outline);
+    m_spriteRenderer->DrawSprite(m_whiteTexture, sx - 5.0f, ay + 19.0f, 10.0f, 5.0f, 0.0f, outline);
+    m_spriteRenderer->DrawSprite(m_whiteTexture, sx - 3.0f, ay + 23.0f, 6.0f, 4.0f, 0.0f, outline);
+
+    m_spriteRenderer->DrawSprite(m_whiteTexture, sx - 2.0f, ay, 4.0f, 14.0f, 0.0f, color);
+    m_spriteRenderer->DrawSprite(m_whiteTexture, sx - 7.0f, ay + 15.0f, 14.0f, 4.0f, 0.0f, color);
+    m_spriteRenderer->DrawSprite(m_whiteTexture, sx - 4.0f, ay + 19.0f, 8.0f, 4.0f, 0.0f, color);
+    m_spriteRenderer->DrawSprite(m_whiteTexture, sx - 2.0f, ay + 23.0f, 4.0f, 3.0f, 0.0f, color);
 }
 
 std::wstring BattleScene::GetCardEffectText(const CardData* data) const
@@ -1160,3 +1434,26 @@ void BattleScene::DrawCardEffects()
             XMFLOAT4(0.2f, 0.4f, 0.8f, effect.alpha));
     }
 }
+
+bool BattleScene::GetEnemyScreenPos(Enemy* enemy, float& outX, float& outY) const
+{
+    float pitch = XMConvertToRadians(-Renderer3D::BILLBOARD_PITCH);
+    XMVECTOR worldPos = XMVectorSet(
+        enemy->worldX,
+        enemy->worldY + enemy->height * cos(pitch),
+        enemy->worldZ + 0.5f - enemy->height * sin(pitch),
+        1.0f
+    );
+    XMMATRIX view = m_renderer3D->GetViewMatrix();
+    XMMATRIX proj = m_renderer3D->GetProjectionMatrix();
+    XMVECTOR clipPos = XMVector4Transform(worldPos, view * proj);
+    XMFLOAT4 clip;
+    XMStoreFloat4(&clip, clipPos);
+
+    if (clip.w <= 0.0f) return false;
+
+    outX = (clip.x / clip.w + 1.0f) * 0.5f * m_screenWidth;
+    outY = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;
+    return true;
+}
+

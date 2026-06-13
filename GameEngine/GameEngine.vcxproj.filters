@@ -172,6 +172,9 @@
     <Filter Include="ソース ファイル\02-Scene\40-FieldScene\00-FieldScene">
       <UniqueIdentifier>{dce6fd4d-ba08-4764-96f5-20f7eb6454a8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\02-Scene\40-FieldScene\03-FieldMapConfig">
+      <UniqueIdentifier>{908572bb-d558-45c2-b419-17c737ecfba6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -311,6 +314,9 @@
     </ClInclude>
     <ClInclude Include="FieldScene.h">
       <Filter>ソース ファイル\02-Scene\40-FieldScene\00-FieldScene</Filter>
+    </ClInclude>
+    <ClInclude Include="FieldMapConfig.h">
+      <Filter>ソース ファイル\02-Scene\40-FieldScene\03-FieldMapConfig</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -11,6 +11,7 @@ SceneManager::SceneManager() : m_currentScene(nullptr)
 SceneManager::~SceneManager()
 {
 	delete m_currentScene;
+	delete m_textRenderer;
 	TextureManager::Shutdown();
 }
 
@@ -28,7 +29,6 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	CardDataBase::Init();
 	PlayerDataManager::Init();
 
-	// ƒeƒNƒXƒ`ƒƒ“Ç‚İ‚İ
 	TextureManager::Load("white", L"Assets/Test/White.png");
 	TextureManager::Load("title", L"Assets/Test/Title.png");
 	TextureManager::Load("player", L"Assets/Player/yuusya_game.png");
@@ -41,19 +41,26 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	if (!m_textRenderer->Init(device, context, swapChain))
 		return false;
 
-	// Å‰‚Íƒ^ƒCƒgƒ‹‚©‚ç
 	ChangeScene(SceneType::Title);
 	return true;
 }
 
 void SceneManager::ChangeScene(SceneType type)
 {
-	// ŒÃ‚¢ƒV[ƒ“‚ğíœ
+	// å‰Šé™¤å‰ã«å¿…è¦ãªæƒ…å ±ã‚’å–å¾—
+	std::string battleEnemyId;
+	if (type == SceneType::Battle)
+	{
+		if (auto field = dynamic_cast<FieldScene*>(m_currentScene))
+			battleEnemyId = field->GetCurrentBattleEnemyId();
+	}
+
+	// å¤ã„ã‚·ãƒ¼ãƒ³ã‚’å‰Šé™¤
 	delete m_currentScene;
 	m_currentScene = nullptr;
 	m_currentType = type;
 
-	// V‚µ‚¢ƒV[ƒ“‚ğì¬
+	// æ–°ã—ã„ã‚·ãƒ¼ãƒ³ã‚’ä½œæˆ
 	switch (type)
 	{
 		case SceneType::Title:
@@ -66,9 +73,8 @@ void SceneManager::ChangeScene(SceneType type)
 		case SceneType::Battle:
 		{
 			auto scene = new BattleScene();
-			// ƒtƒB[ƒ‹ƒhƒV[ƒ“‚©‚ç“GID‚ğæ“¾
-			if (auto field = dynamic_cast<FieldScene*>(m_currentScene))
-				scene->SetEnemyId(field->GetCurrentBattleEnemyId());
+			if (!battleEnemyId.empty())
+				scene->SetEnemyId(battleEnemyId);
 
 			scene->onChangeScene = [this](SceneType type) { ChangeScene(type); };
 			m_currentScene = scene;

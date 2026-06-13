@@ -87,7 +87,7 @@ void CardSelectScene::Draw()
 
         XMFLOAT4 color = CardVisual::GetCardColor(
             data->type,
-            i == m_hoveredIndex
+            false
         );
 
         m_spriteRenderer->DrawSprite(m_whiteTexture, cardX, drawY,

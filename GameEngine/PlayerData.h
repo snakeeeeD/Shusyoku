@@ -4,11 +4,16 @@
 
 struct PlayerData
 {
-    std::vector<std::string> deck; // カードIDのリスト
-    int maxHp;
     int hp;
+    int maxHp;
+    std::vector<std::string> deck;
+    int currentNodeIndex;
+    std::vector<bool> clearedNodes;
+    int fieldPlayerCol;
+    int fieldPlayerRow;
+    int fieldSteps;
 
-    // フィールド進行状況を追加
-    int currentNodeIndex;  // 現在いるノードのインデックス
-    std::vector<bool> clearedNodes;  // クリア済みノードのリスト
+    std::vector<int>         fieldNodeTypes;   // FieldNodeTypeをintで保存
+    std::vector<std::string> fieldNodeEnemyIds;
+    std::vector<bool>        fieldNodeVisited;
 };

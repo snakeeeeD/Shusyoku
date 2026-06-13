@@ -1,5 +1,10 @@
 #include "Game.h"
 
+Game::~Game()
+{
+    delete m_sceneManager;
+}
+
 bool Game::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     int screenWidth, int screenHeight, HWND hWnd, IDXGISwapChain* swapChain)
 {

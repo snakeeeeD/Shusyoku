@@ -1,10 +1,10 @@
 #pragma once
 #pragma once
-#include <d3d11.h>  // DirectX11を使うためのヘッダーファイル
-#include <DirectXMath.h> // DirextXの数学関連のヘッダーファイル
+#include <d3d11.h>
+#include <DirectXMath.h>
 #include <Windows.h>
-#include <Xinput.h> //XInputを使うためのヘッダーファイル
-#pragma comment (lib, "xinput.lib") //XInputを使うために必要
+#include <Xinput.h>
+#pragma comment (lib, "xinput.lib")
 
 #define XINPUT_A              0x1000
 #define XINPUT_B              0x2000
@@ -68,6 +68,8 @@ private:
 	XINPUT_STATE controllerState = {};
 	XINPUT_STATE controllerState_old = {};
 
+	static int s_wheelDelta;   // WndProcから書き込まれる
+
 	int VibrationTime; //振動継続時間をカウントする変数
 
 	int m_padIndex = -1;
@@ -113,6 +115,11 @@ public:
 	bool GetMouseButtonPress(int button);
 	bool GetMouseButtonTrigger(int button);	//クリックした瞬間
 	bool GetMouseButtonRelease(int button); //離した瞬間
+	
+	// マウスホイール
+	static void SetWheelDelta(int delta) { s_wheelDelta += delta; }
+	int GetMouseWheelDelta() const { return m_currentWheelDelta; }
+	int m_currentWheelDelta = 0;
 
 	void SetWindowHandle(HWND hWnd) { m_hWnd = hWnd; }
 };

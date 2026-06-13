@@ -6,6 +6,7 @@
 #include "SceneManager.h"
 #include <functional>
 #include"Texturemanager.h"
+#include "TextRenderer.h"
 
 // SceneType‚¾‚¯Žg‚¦‚é‚æ‚¤‚É
 enum class SceneType;
@@ -27,6 +28,7 @@ public:
 
 private:
     SpriteRenderer* m_spriteRenderer;
+    TextRenderer* m_textRenderer;
     ID3D11ShaderResourceView* m_titleTexture;
     Input m_input;
 

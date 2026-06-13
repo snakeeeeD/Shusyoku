@@ -1,7 +1,11 @@
 #include "FieldScene.h"
+#include "FieldMapConfig.h"
 #include "SceneType.h"
 #include <cstdlib>
 #include <algorithm>
+#include <ctime>
+#include <map>
+#include <ctime>
 
 FieldScene::FieldScene()
     : m_spriteRenderer(nullptr)
@@ -43,6 +47,23 @@ bool FieldScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     m_input.SetWindowHandle(hWnd);
 
     GenerateMap();
+
+    auto& playerData = PlayerDataManager::GetData();
+
+    // ノード情報が保存されていれば復元
+    if ((int)playerData.fieldNodeTypes.size() == GRID_COLS * GRID_ROWS)
+    {
+        for (int i = 0; i < GRID_COLS * GRID_ROWS; i++)
+        {
+            m_nodes[i].type = (FieldNodeType)playerData.fieldNodeTypes[i];
+            m_nodes[i].enemyId = playerData.fieldNodeEnemyIds[i];
+            m_nodes[i].visited = playerData.fieldNodeVisited[i];
+        }
+        m_playerCol = playerData.fieldPlayerCol;
+        m_playerRow = playerData.fieldPlayerRow;
+        m_steps = playerData.fieldSteps;
+    }
+
     return true;
 }
 
@@ -54,14 +75,21 @@ void FieldScene::GenerateMap()
     m_steps = INITIAL_STEPS;
     m_maxSteps = INITIAL_STEPS;
 
-    std::vector<std::string> enemyIds = { "slime", "goblin", "orc" };
+    srand((unsigned int)time(nullptr));
+
+    // マップ設定
+    FieldMapConfig config;
+    config.typeLimits = {
+        { FieldNodeType::Battle, -1, 7 },
+        { FieldNodeType::Rest,    4,  3 },
+    };
 
     // 全マスをEmptyで初期化
     for (int row = 0; row < GRID_ROWS; row++)
     {
         for (int col = 0; col < GRID_COLS; col++)
         {
-            int idx = col * GRID_ROWS + row;
+            int idx = GetNodeIndex(col, row);
             m_nodes[idx].type = FieldNodeType::Empty;
             m_nodes[idx].col = col;
             m_nodes[idx].row = row;
@@ -73,35 +101,83 @@ void FieldScene::GenerateMap()
     // スタートは左端中央
     m_playerCol = 0;
     m_playerRow = GRID_ROWS / 2;
-    m_nodes[GetNodeIndex(m_playerCol, m_playerRow)].type = FieldNodeType::Start;
-    m_nodes[GetNodeIndex(m_playerCol, m_playerRow)].visited = true;
+    m_nodes[GetNodeIndex(0, m_playerRow)].type = FieldNodeType::Start;
+    m_nodes[GetNodeIndex(0, m_playerRow)].visited = true;
 
     // ボスは右端中央
-    int bossCol = GRID_COLS - 1;
-    int bossRow = GRID_ROWS / 2;
-    m_nodes[GetNodeIndex(bossCol, bossRow)].type = FieldNodeType::Boss;
+    m_nodes[GetNodeIndex(GRID_COLS - 1, GRID_ROWS / 2)].type = FieldNodeType::Boss;
 
-    // ランダムにバトル・休憩マスを配置
-    for (int row = 0; row < GRID_ROWS; row++)
+    // 固定配置マスを先に配置
+    for (auto& fixed : config.fixedNodes)
     {
-        for (int col = 1; col < GRID_COLS - 1; col++)
-        {
-            int idx = GetNodeIndex(col, row);
+        int idx = GetNodeIndex(fixed.col, fixed.row);
+        m_nodes[idx].type = fixed.type;
+        m_nodes[idx].enemyId = fixed.enemyId;
+    }
 
-            int r = rand() % 10;
-            if (r < 7)
+    std::vector<std::string> enemyIds = { "slime", "goblin", "orc" };
+
+    // 各タイプの配置数を管理
+    std::map<FieldNodeType, int> typeCounts;
+    for (auto& limit : config.typeLimits)
+        typeCounts[limit.type] = 0;
+
+    // 中間マスの座標をシャッフル
+    std::vector<std::pair<int, int>> positions;
+    for (int row = 0; row < GRID_ROWS; row++)
+        for (int col = 1; col < GRID_COLS - 1; col++)
+            positions.push_back({ col, row });
+
+    for (int i = (int)positions.size() - 1; i > 0; i--)
+    {
+        int j = rand() % (i + 1);
+        std::swap(positions[i], positions[j]);
+    }
+
+    // シャッフルした順に配置
+    for (auto& [col, row] : positions)
+    {
+        int idx = GetNodeIndex(col, row);
+        if (m_nodes[idx].type != FieldNodeType::Empty) continue;
+
+        // 配置可能なタイプを重みで選ぶ
+        std::vector<std::pair<FieldNodeType, int>> available;
+        for (auto& limit : config.typeLimits)
+        {
+            if (limit.maxCount >= 0 && typeCounts[limit.type] >= limit.maxCount)
+                continue;
+            available.push_back({ limit.type, limit.weight });
+        }
+
+        FieldNodeType chosen;
+        if (available.empty())
+        {
+            // 全タイプが上限に達したらBattleで埋める
+            chosen = FieldNodeType::Battle;
+        }
+        else
+        {
+            // 重みに基づいてランダム選択
+            int totalWeight = 0;
+            for (auto& a : available) totalWeight += a.second;
+
+            int roll = rand() % totalWeight;
+            int cum = 0;
+            chosen = available[0].first;
+            for (auto& a : available)
             {
-                m_nodes[idx].type = FieldNodeType::Battle;
-                m_nodes[idx].enemyId = enemyIds[rand() % enemyIds.size()];
-            }
-            else
-            {
-                m_nodes[idx].type = FieldNodeType::Rest;
+                cum += a.second;
+                if (roll < cum) { chosen = a.first; break; }
             }
         }
+
+        m_nodes[idx].type = chosen;
+        typeCounts[chosen]++;
+
+        if (chosen == FieldNodeType::Battle)
+            m_nodes[idx].enemyId = enemyIds[rand() % enemyIds.size()];
     }
 }
-
 int FieldScene::GetNodeIndex(int col, int row) const
 {
     return col * GRID_ROWS + row;
@@ -227,9 +303,14 @@ void FieldScene::Draw()
             {
                 color = XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f); // 黄色
             }
+            else if (canMoveTo && node.visited)
+            {
+                // 訪問済みの移動可能マスは灰色で点滅
+                color = XMFLOAT4(blink * 0.5f, blink * 0.5f, blink * 0.5f, 1.0f);
+            }
             else if (canMoveTo)
             {
-                // 移動可能マスは点滅
+                // 未訪問の移動可能マスは点滅
                 switch (node.type)
                 {
                 case FieldNodeType::Battle:
@@ -353,12 +434,14 @@ void FieldScene::HandleInput()
                     {
                     case FieldNodeType::Battle:
                         m_currentEnemyId = node.enemyId;
+                        SaveProgress();
                         if (onChangeScene)
                             onChangeScene(SceneType::Battle);
                         return;
 
                     case FieldNodeType::Boss:
                         m_currentEnemyId = "dragon";
+                        SaveProgress();
                         if (onChangeScene)
                             onChangeScene(SceneType::Battle);
                         return;
@@ -367,15 +450,40 @@ void FieldScene::HandleInput()
                     {
                         auto& playerData = PlayerDataManager::GetData();
                         playerData.hp = min(playerData.hp + 20, playerData.maxHp);
-                        PlayerDataManager::Save();
+                        SaveProgress();
                         break;
                     }
                     default:
                         break;
                     }
                 }
+                else
+                {
+                    SaveProgress(); // ← 訪問済みマスへの移動時も保存
+                }
                 return;
             }
         }
     }
+}
+
+void FieldScene::SaveProgress()
+{
+    auto& playerData = PlayerDataManager::GetData();
+    playerData.fieldPlayerCol = m_playerCol;
+    playerData.fieldPlayerRow = m_playerRow;
+    playerData.fieldSteps = m_steps;
+
+    // ノード情報を保存
+    playerData.fieldNodeTypes.clear();
+    playerData.fieldNodeEnemyIds.clear();
+    playerData.fieldNodeVisited.clear();
+    for (auto& node : m_nodes)
+    {
+        playerData.fieldNodeTypes.push_back((int)node.type);
+        playerData.fieldNodeEnemyIds.push_back(node.enemyId);
+        playerData.fieldNodeVisited.push_back(node.visited);
+    }
+
+    PlayerDataManager::Save();
 }

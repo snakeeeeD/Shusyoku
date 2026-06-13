@@ -25,7 +25,7 @@ bool Renderer3D::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
     // デフォルトカメラ（斜め上から見下ろす）
     SetCamera(
-        XMFLOAT3(-0.6f, 15.0f, 6.0f),   // カメラ位置
+        XMFLOAT3(-0.6f, 13.0f, 5.0f),   // カメラ位置
         XMFLOAT3(-0.6f, -2.0f, 0.0f),   // 注視点
         XMFLOAT3(0.0f, 1.0f, 0.0f)    // 上方向
     );

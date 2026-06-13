@@ -153,6 +153,7 @@
     <ClInclude Include="Enemydata.h" />
     <ClInclude Include="EnemyDataBase.h" />
     <ClInclude Include="External\nlohmann\json.hpp" />
+    <ClInclude Include="FieldMapConfig.h" />
     <ClInclude Include="FieldNode.h" />
     <ClInclude Include="FieldNodeType.h" />
     <ClInclude Include="FieldScene.h" />
