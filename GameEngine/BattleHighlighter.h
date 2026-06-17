@@ -6,6 +6,8 @@
 #include <vector>
 #include <utility>
 
+class Renderer3D;
+
 class BattleHighlighter
 {
 public:
@@ -27,7 +29,10 @@ public:
         GridMap* gridMap,
         const Player* player,
         float timer,
-        std::pair<int, int> hoveredCell);
+        std::pair<int, int> hoveredCell,
+        Renderer3D* renderer3D,
+        int screenWidth, int screenHeight,
+        const RECT& cardArea);
 
     void UpdateEnemyHighlight(
         const std::vector<Enemy*>& enemies,

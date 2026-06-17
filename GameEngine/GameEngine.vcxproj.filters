@@ -175,6 +175,9 @@
     <Filter Include="ソース ファイル\02-Scene\40-FieldScene\03-FieldMapConfig">
       <UniqueIdentifier>{908572bb-d558-45c2-b419-17c737ecfba6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\11-BattleUI">
+      <UniqueIdentifier>{434ce89c-361e-402c-995f-dc1aa0b969ec}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -318,6 +321,9 @@
     <ClInclude Include="FieldMapConfig.h">
       <Filter>ソース ファイル\02-Scene\40-FieldScene\03-FieldMapConfig</Filter>
     </ClInclude>
+    <ClInclude Include="BattleUI.h">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\11-BattleUI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SpriteRenderer.cpp">
@@ -400,6 +406,9 @@
     </ClCompile>
     <ClCompile Include="FieldScene.cpp">
       <Filter>ソース ファイル\02-Scene\40-FieldScene\00-FieldScene</Filter>
+    </ClCompile>
+    <ClCompile Include="BattleUI.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\11-BattleUI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

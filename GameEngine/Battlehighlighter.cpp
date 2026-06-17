@@ -1,5 +1,6 @@
 #include "BattleHighlighter.h"
 #include "EnemyActionType.h"
+#include "Renderer3D.h"
 #include <algorithm>
 #include <cmath>
 
@@ -126,7 +127,10 @@ void BattleHighlighter::UpdatePlayerHighlight(
     GridMap* gridMap,
     const Player* player,
     float timer,
-    std::pair<int, int> hoveredCell)
+    std::pair<int, int> hoveredCell,
+    Renderer3D* renderer3D,
+    int screenWidth, int screenHeight,
+    const RECT& cardArea)
 {
     ClearPlayerHighlight(gridMap);
     if (!data) return;
@@ -157,6 +161,26 @@ void BattleHighlighter::UpdatePlayerHighlight(
     {
         if (col < 0 || col >= gridMap->GetCols()) continue;
         if (row < 0 || row >= gridMap->GetRows()) continue;
+
+        // 手札エリアと重なるかチェック
+        float wx = (col - gridMap->GetCols() / 2.0f) * 1.1f;
+        float wz = (row - gridMap->GetRows() / 2.0f) * 1.1f;
+        XMVECTOR worldPos = XMVectorSet(wx, 0.0f, wz, 1.0f);
+        XMVECTOR clipPos = XMVector4Transform(worldPos,
+            renderer3D->GetViewMatrix() * renderer3D->GetProjectionMatrix());
+        XMFLOAT4 clip;
+        XMStoreFloat4(&clip, clipPos);
+        bool isUnderCards = false;
+        if (clip.w > 0.0f)
+        {
+            float sx = (clip.x / clip.w + 1.0f) * 0.5f * screenWidth;
+            float sy = (1.0f - clip.y / clip.w) * 0.5f * screenHeight;
+            if (sx >= cardArea.left && sx <= cardArea.right
+                && sy >= cardArea.top && sy <= cardArea.bottom)
+                isUnderCards = true;
+        }
+
+        float finalBrightness = isUnderCards ? 0.6f : hoverBrightness;
 
         auto& cell = gridMap->GetCell(col, row);
 
@@ -219,11 +243,11 @@ void BattleHighlighter::UpdatePlayerHighlight(
             if (isEnemy)
             {
                 if (data->type == CardType::Attack)
-                    cell.gameObject.color = XMFLOAT4(hoverBrightness, 0.2f, 0.2f, 1.0f);
+                    cell.gameObject.color = XMFLOAT4(finalBrightness, 0.2f, 0.2f, 1.0f);
             }
             else
             {
-                float brightness = isAreaHovered ? hoverBrightness : 0.6f;
+                float brightness = isAreaHovered ? finalBrightness : 0.6f;
                 if (data->type == CardType::Attack)
                     cell.gameObject.color = XMFLOAT4(brightness, 0.2f, 0.2f, 1.0f);
                 else if (data->type == CardType::Move)
@@ -240,17 +264,17 @@ void BattleHighlighter::UpdatePlayerHighlight(
             if (isHovered)
             {
                 if (data->type == CardType::Attack)
-                    cell.gameObject.color = XMFLOAT4(hoverBrightness, 0.2f, 0.2f, 1.0f);
+                    cell.gameObject.color = XMFLOAT4(finalBrightness, 0.2f, 0.2f, 1.0f);
                 else if (data->type == CardType::Move)
-                    cell.gameObject.color = XMFLOAT4(0.2f, hoverBrightness, 0.2f, 1.0f);
+                    cell.gameObject.color = XMFLOAT4(0.2f, finalBrightness, 0.2f, 1.0f);
                 else if (data->type == CardType::Skill)
-                    cell.gameObject.color = XMFLOAT4(0.2f, 0.2f, hoverBrightness, 1.0f);
+                    cell.gameObject.color = XMFLOAT4(0.2f, 0.2f, finalBrightness, 1.0f);
                 else if (data->type == CardType::Power)
-                    cell.gameObject.color = XMFLOAT4(hoverBrightness, 0.2f, hoverBrightness, 1.0f);
+                    cell.gameObject.color = XMFLOAT4(finalBrightness, 0.2f, finalBrightness, 1.0f);
             }
             else if (data->type == CardType::Move && isDangerCell)
             {
-                float blink = 0.6f + 0.4f * sin(timer * 2.0f);
+                float blink = isUnderCards ? 0.6f : 0.6f + 0.4f * sin(timer * 2.0f);
                 cell.gameObject.color = XMFLOAT4(blink, blink, 0.1f, 1.0f);
             }
             else
@@ -260,9 +284,9 @@ void BattleHighlighter::UpdatePlayerHighlight(
                 else if (data->type == CardType::Move)
                     cell.gameObject.color = XMFLOAT4(0.2f, brightness, 0.4f, 1.0f);
                 else if (data->type == CardType::Skill)
-                    cell.gameObject.color = XMFLOAT4(0.2f, 0.2f, hoverBrightness, 1.0f);
+                    cell.gameObject.color = XMFLOAT4(0.2f, 0.2f, finalBrightness, 1.0f);
                 else if (data->type == CardType::Power)
-                    cell.gameObject.color = XMFLOAT4(hoverBrightness, 0.2f, hoverBrightness, 1.0f);
+                    cell.gameObject.color = XMFLOAT4(finalBrightness, 0.2f, finalBrightness, 1.0f);
             }
         }
     }

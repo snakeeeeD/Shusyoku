@@ -135,6 +135,7 @@
   <ItemGroup>
     <ClInclude Include="BattleHighlighter.h" />
     <ClInclude Include="BattleScene.h" />
+    <ClInclude Include="BattleUI.h" />
     <ClInclude Include="Buff.h" />
     <ClInclude Include="BuffManager.h" />
     <ClInclude Include="BuffType.h" />
@@ -184,6 +185,7 @@
   <ItemGroup>
     <ClCompile Include="Battlehighlighter.cpp" />
     <ClCompile Include="BattleScene.cpp" />
+    <ClCompile Include="BattleUI.cpp" />
     <ClCompile Include="BuffManager.cpp" />
     <ClCompile Include="Card.cpp" />
     <ClCompile Include="CardDataBase.cpp" />
