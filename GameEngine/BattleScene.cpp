@@ -54,8 +54,6 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
     m_isDraggingCamera = false;
     m_dragStartPos = { 0, 0 };
-    m_cameraOffsetX = 0.0f;
-    m_cameraOffsetZ = 0.0f;
 
     m_battleResult = BattleResult::None;
 
@@ -118,6 +116,9 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     m_player->gridRow = m_playerRow;
     m_player->worldX = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
     m_player->worldZ = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+
+    m_cameraOffsetX = m_player->worldX;
+    m_cameraOffsetZ = m_player->worldZ;
 
     // PlayerDataManagerからHPを引き継ぐ
     m_player->SetHp(playerData.hp);
@@ -260,9 +261,13 @@ void BattleScene::Update(float deltaTime)
 
             m_cameraOffsetX += dx * 0.02f * m_cameraZoom;
             m_cameraOffsetZ -= dy * 0.02f * m_cameraZoom;
-            float maxOffset = 5.0f * m_cameraZoom;
-            m_cameraOffsetX = max(-maxOffset, min(maxOffset, m_cameraOffsetX));
-            m_cameraOffsetZ = max(-maxOffset, min(maxOffset, m_cameraOffsetZ));
+
+            // クランプはオフセット加算の後
+            float gridHalfW = (m_gridMap->GetCols() / 2.0f) * 1.1f ;
+            float gridHalfH = (m_gridMap->GetRows() / 2.0f) * 1.1f ;
+            m_cameraOffsetX = max(-gridHalfW + 3.0f, min(gridHalfW - 4.0f, m_cameraOffsetX));
+            m_cameraOffsetZ = max(-gridHalfH+1.0f, min(gridHalfH - 3.0f, m_cameraOffsetZ));
+
             m_dragStartPos = mousePos;
         }
     }
@@ -281,124 +286,120 @@ void BattleScene::Update(float deltaTime)
     if (m_input.GetMouseButtonTrigger(2))
     {
         m_cameraZoom = 1.0f;
-        m_cameraOffsetX = 0.0f;
-        m_cameraOffsetZ = 0.0f;
+        m_cameraOffsetX = m_player->worldX;
+        m_cameraOffsetZ = m_player->worldZ;
     }
 
     // カメラ更新（ズーム or パンが変わったら毎フレーム適用）
     {
-        float px = m_player->worldX;
-        float pz = m_player->worldZ;
-
         XMFLOAT3 target(
-            px + m_cameraOffsetX,
+            m_cameraOffsetX,
             -2.0f,
-            pz + m_cameraOffsetZ
+            m_cameraOffsetZ
         );
         XMFLOAT3 zoomedPos(
-            px + m_cameraOffsetX,
+            m_cameraOffsetX,
             target.y + 17.0f * m_cameraZoom,
-            pz + m_cameraOffsetZ + 6.0f * m_cameraZoom
+            m_cameraOffsetZ + 6.0f * m_cameraZoom
         );
         m_renderer3D->SetCamera(zoomedPos, target, XMFLOAT3(0.0f, 1.0f, 0.0f));
-    }
 
-    // ハイライト更新
-    if (m_selectedCardIndex >= 0 && m_selectedCardIndex < (int)m_hand.GetCards().size())
-    {
-        const CardData* data = m_hand.GetCards()[m_selectedCardIndex]->GetData();
-
-        RECT cardArea = { 0, 0, 0, 0 };
-        if (!m_hand.GetCards().empty())
+        // ハイライト更新
+        if (m_selectedCardIndex >= 0 && m_selectedCardIndex < (int)m_hand.GetCards().size())
         {
-            int numCards = (int)m_hand.GetCards().size();
-            float totalW = numCards * (CARD_WIDTH + 10.0f);
-            float leftX = m_screenWidth / 2.0f - totalW / 2.0f;
-            float rightX = leftX + totalW;
-            float topY = m_screenHeight - CARD_HIDE_Y_OFFSET;
-            cardArea = { (LONG)leftX, (LONG)topY, (LONG)rightX, (LONG)m_screenHeight };
-        }
+            const CardData* data = m_hand.GetCards()[m_selectedCardIndex]->GetData();
 
-        m_highlighter.UpdatePlayerHighlight(
-            m_playerCol, m_playerRow, data,
-            m_enemies, m_gridMap, m_player,
-            m_highlightTimer, m_hoveredCell,
-            m_renderer3D, m_screenWidth, m_screenHeight,
-            cardArea);
-    }
-
-    // ハイライト明滅タイマーを更新
-    m_highlightTimer += deltaTime * 0.1f; // 点滅速度調整
-    if (m_highlightTimer > 3.14159f * 2.0f)
-        m_highlightTimer = 0.0f;
-
-
-
-    if (m_battleResult != BattleResult::None) return;   // 勝敗決定後は何もしない
-    m_highlighter.UpdateEnemyHighlight(
-        m_enemies, m_gridMap, m_player,
-        m_playerCol, m_playerRow, m_highlightTimer);
-
-    m_battleUI->UpdateDrawCardEffects(deltaTime);
-
-    // 勝利判定
-    if (m_enemies.empty())
-    {
-        m_battleResult = BattleResult::Win;
-
-        // HPを保存
-        PlayerDataManager::GetData().hp = m_player->GetHp();
-        PlayerDataManager::Save();
-        return;
-    }
-
-    // 敗北判定
-    if (m_player->GetHp() <= 0)
-    {
-        m_battleResult = BattleResult::Lose;
-
-        // HPを0で保存
-        PlayerDataManager::GetData().hp = 0;
-        PlayerDataManager::Save();
-        return;
-    }
-
-    if (m_turnManager.IsEnemyTurn())
-    {
-        m_highlighter.ClearPlayerHighlight(m_gridMap);
-        m_highlighter.ClearEnemyHighlight(m_gridMap);
-        m_enemyTurnTimer -= deltaTime;
-        if (m_enemyTurnTimer <= 0.0f)
-        {
-            for (auto enemy : m_enemies)
+            RECT cardArea = { 0, 0, 0, 0 };
+            if (!m_hand.GetCards().empty())
             {
-                int poison = enemy->GetBuffManager().GetPoisonValue();
-
-                if (poison > 0)
-                {
-                    enemy->TakeDamage(poison);
-
-                    if (enemy->GetHp() <= 0)
-                        continue;
-                }
-
-                int damage = enemy->Think(m_playerCol, m_playerRow, m_gridMap);
-                if (damage > 0)
-                {
-                    m_player->TakeDamage(damage);
-                }
+                int numCards = (int)m_hand.GetCards().size();
+                float totalW = numCards * (CARD_WIDTH + 10.0f);
+                float leftX = m_screenWidth / 2.0f - totalW / 2.0f;
+                float rightX = leftX + totalW;
+                float topY = m_screenHeight - CARD_HIDE_Y_OFFSET;
+                cardArea = { (LONG)leftX, (LONG)topY, (LONG)rightX, (LONG)m_screenHeight };
             }
 
-            ProcessDeadEnemies();
-
-            // 敵のバフ更新
-            for (auto enemy : m_enemies)
-                enemy->GetBuffManager().OnTurnEnd();
-
-            m_enemyTurnTimer = ENEMY_TURN_DELAY;
-            m_turnManager.EndTurn();
+            m_highlighter.UpdatePlayerHighlight(
+                m_playerCol, m_playerRow, data,
+                m_enemies, m_gridMap, m_player,
+                m_highlightTimer, m_hoveredCell,
+                m_renderer3D, m_screenWidth, m_screenHeight,
+                cardArea);
         }
-    }
+
+        // ハイライト明滅タイマーを更新
+        m_highlightTimer += deltaTime * 0.1f; // 点滅速度調整
+        if (m_highlightTimer > 3.14159f * 2.0f)
+            m_highlightTimer = 0.0f;
+
+
+
+        if (m_battleResult != BattleResult::None) return;   // 勝敗決定後は何もしない
+        m_highlighter.UpdateEnemyHighlight(
+            m_enemies, m_gridMap, m_player,
+            m_playerCol, m_playerRow, m_highlightTimer);
+
+        m_battleUI->UpdateDrawCardEffects(deltaTime);
+
+        // 勝利判定
+        if (m_enemies.empty())
+        {
+            m_battleResult = BattleResult::Win;
+
+            // HPを保存
+            PlayerDataManager::GetData().hp = m_player->GetHp();
+            PlayerDataManager::Save();
+            return;
+        }
+
+        // 敗北判定
+        if (m_player->GetHp() <= 0)
+        {
+            m_battleResult = BattleResult::Lose;
+
+            // HPを0で保存
+            PlayerDataManager::GetData().hp = 0;
+            PlayerDataManager::Save();
+            return;
+        }
+
+        if (m_turnManager.IsEnemyTurn())
+        {
+            m_highlighter.ClearPlayerHighlight(m_gridMap);
+            m_highlighter.ClearEnemyHighlight(m_gridMap);
+            m_enemyTurnTimer -= deltaTime;
+            if (m_enemyTurnTimer <= 0.0f)
+            {
+                for (auto enemy : m_enemies)
+                {
+                    int poison = enemy->GetBuffManager().GetPoisonValue();
+
+                    if (poison > 0)
+                    {
+                        enemy->TakeDamage(poison);
+
+                        if (enemy->GetHp() <= 0)
+                            continue;
+                    }
+
+                    int damage = enemy->Think(m_playerCol, m_playerRow, m_gridMap);
+                    if (damage > 0)
+                    {
+                        m_player->TakeDamage(damage);
+                    }
+                }
+
+                ProcessDeadEnemies();
+
+                // 敵のバフ更新
+                for (auto enemy : m_enemies)
+                    enemy->GetBuffManager().OnTurnEnd();
+
+                m_enemyTurnTimer = ENEMY_TURN_DELAY;
+                m_turnManager.EndTurn();
+            }
+        }
 
         if (m_selectedCardIndex >= 0)
         {
@@ -424,6 +425,7 @@ void BattleScene::Update(float deltaTime)
                 m_renderer3D, m_screenWidth, m_screenHeight,
                 cardArea);
         }
+    }
 }
 
 void BattleScene::Draw()
@@ -732,6 +734,28 @@ void BattleScene::HandleInput()
                     && mp.y >= btnY && mp.y <= btnY + btnH)
                 {
                     m_turnManager.EndTurn();
+                }
+            }
+        }
+
+        // 敵パネルクリック → カメラ移動
+        if (m_input.GetMouseButtonTrigger(0))
+        {
+            POINT mp = m_input.GetMousePos();
+            float panelX = m_screenWidth - 180.0f;
+            float panelY = 10.0f;
+            float panelW = 170.0f;
+            float entryH = 70.0f;
+
+            for (int i = 0; i < (int)m_enemies.size(); i++)
+            {
+                float entryY = panelY + i * (entryH + 5.0f);
+                if (mp.x >= panelX && mp.x <= panelX + panelW
+                    && mp.y >= entryY && mp.y <= entryY + entryH)
+                {
+                    m_cameraOffsetX = m_enemies[i]->worldX;
+                    m_cameraOffsetZ = m_enemies[i]->worldZ;
+                    break;
                 }
             }
         }

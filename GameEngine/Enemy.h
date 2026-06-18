@@ -43,6 +43,9 @@ public:
 
 	const std::vector<std::pair<int, int>>& GetGridShape() const { return m_gridShape; }
 
+	const std::string& GetTextureName() const { return m_textureName; }
+	const std::string& GetId() const { return m_id; }
+
 private:
 	bool IsAdjacentTo(int playerCol, int playerRow);
 

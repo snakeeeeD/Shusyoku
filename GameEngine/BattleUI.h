@@ -89,12 +89,16 @@ private:
 
     void DrawHPBar(float x, float y, float w, float h, int currentHP, int maxHP);
     void DrawEnemyHPBar(Enemy* enemy, Renderer3D* renderer3D);
+    void DrawEnemyInfoPanel(const BattleUIContext& ctx);
     void DrawTargetIndicators(const BattleUIContext& ctx);
     void DrawArrowIndicator(float sx, float sy, const DirectX::XMFLOAT4& color, float highlightTimer);
     void DrawPileViewer(const BattleUIContext& ctx);
     void DrawCardEffects();
+    void DrawPlayerOffScreenIndicator(const BattleUIContext& ctx);
+
 
     bool GetEnemyScreenPos(Enemy* enemy, Renderer3D* renderer3D, float& outX, float& outY) const;
+    bool GetEnemyFootPos(Enemy* enemy, Renderer3D* renderer3D, float& outX, float& outY) const;
     std::wstring GetCardEffectText(const CardData* data, Player* player) const;
     bool IsCardBoosted(const CardData* data, Player* player) const;
 
