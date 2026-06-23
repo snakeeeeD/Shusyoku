@@ -16,6 +16,8 @@
 #include "SceneType.h"
 #include "BattleHighlighter.h"
 #include "CardExecutor.h"
+#include "EncounterData.h"
+#include "EncounterDataBase.h"
 
 #include <vector>
 #include <utility>
@@ -47,6 +49,7 @@ private:
     BattleUI* m_battleUI;
     GridMap* m_gridMap;
     Renderer3D* m_renderer3D;
+    SpriteRenderer* m_spriteRenderer;
     ID3D11ShaderResourceView* m_whiteTexture;
 
     ID3D11Device* m_device;
@@ -67,6 +70,8 @@ private:
 
     Player* m_player;
     std::vector<Enemy*> m_enemies;
+
+    void AddEnemy(int col, int row, const std::string& id);
 
     Hand m_hand;
     int m_selectedCardIndex;
@@ -106,11 +111,16 @@ private:
     // カメラ
     float m_cameraZoom;
     static constexpr float ZOOM_MIN = 0.5f;
-    static constexpr float ZOOM_MAX = 1.5f;
+    static constexpr float ZOOM_MAX = 0.8f;
     static constexpr float ZOOM_SPEED = 0.1f;
 
     bool m_isDraggingCamera;
     POINT m_dragStartPos;
     float m_cameraOffsetX;
     float m_cameraOffsetZ;
+
+    bool m_debugMode;
+    int m_debugRank;
+    int m_debugEncounterIndex;
+    std::string m_currentEncounterId;  // 今のテンプレート情報を覚えておく
 };

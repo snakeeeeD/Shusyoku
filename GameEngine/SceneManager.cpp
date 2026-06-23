@@ -2,6 +2,7 @@
 #include "EnemyDataBase.h"
 #include "CardDataBase.h"
 #include "PlayerDataManager.h"
+#include "EncounterDataBase.h"
 
 SceneManager::SceneManager() : m_currentScene(nullptr)
 {
@@ -26,11 +27,15 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 
 	TextureManager::Init(device);
 	EnemyDataBase::Init();
+	EncounterDataBase::Init();
 	CardDataBase::Init();
 	PlayerDataManager::Init();
 
 	TextureManager::Load("white", L"Assets/Test/White.png");
 	TextureManager::Load("title", L"Assets/Test/Title.png");
+	TextureManager::Load("battle_bg", L"Assets/Field/GrassField.jpg");
+	TextureManager::Load("map_bg", L"Assets/Field/Map.jpg");
+	TextureManager::Load("cardSelect_bg", L"Assets/Field/CardSelect.jpeg");
 	TextureManager::Load("player", L"Assets/Player/yuusya_game.png");
 	TextureManager::Load("enemy_slime", L"Assets/Enemy/slime.png");
 	TextureManager::Load("enemy_goblin", L"Assets/Enemy/goblin.png");

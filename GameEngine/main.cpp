@@ -2,12 +2,15 @@
 #include <d3d11.h>
 #include "Game.h"
 #include "input.h"
+#include "External/imgui/imgui.h"
+#include "External/imgui/backends/imgui_impl_win32.h"
+#include "External/imgui/backends/imgui_impl_dx11.h"
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "ole32.lib")
 
-// ƒOƒ[ƒoƒ‹•Ï”
+// ï¿½Oï¿½ï¿½ï¿½[ï¿½oï¿½ï¿½ï¿½Ïï¿½
 HWND g_hWnd = nullptr;
 ID3D11Device* g_pd3dDevice = nullptr;
 ID3D11DeviceContext* g_pImmediateContext = nullptr;
@@ -19,7 +22,7 @@ Game* g_game = nullptr;
 const int SCREEN_WIDTH = 1280;
 const int SCREEN_HEIGHT = 720;
 
-// ‘O•ûéŒ¾
+// ï¿½Oï¿½ï¿½ï¿½éŒ¾
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 bool InitWindow(HINSTANCE hInstance, int nCmdShow);
 bool InitD3D();
@@ -42,7 +45,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
         return 0;
     }
 
-    // ƒƒCƒ“ƒ‹[ƒv
+    // ï¿½ï¿½ï¿½Cï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½v
     MSG msg = { 0 };
     while (WM_QUIT != msg.message)
     {
@@ -56,7 +59,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
             if (g_game)
             {
                 g_game->HandleInput();
-                g_game->Update(0.016f);  // Œã‚Å‚¿‚á‚ñ‚Æ‚µ‚½ŽžŠÔŒv‘ª
+                g_game->Update(0.016f);  // ï¿½ï¿½Å‚ï¿½ï¿½ï¿½ï¿½Æ‚ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÔŒvï¿½ï¿½
             }
             Render();
         }
@@ -67,8 +70,13 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     return (int)msg.wParam;
 }
 
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
+        return true;
+
     switch (message)
     {
     case WM_DESTROY:
@@ -173,33 +181,56 @@ bool InitD3D()
     vp.TopLeftY = 0;
     g_pImmediateContext->RSSetViewports(1, &vp);
 
-    // ƒQ[ƒ€‰Šú‰»
+    // ï¿½Qï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     g_game = new Game();
     if (!g_game->Init(g_pd3dDevice, g_pImmediateContext, SCREEN_WIDTH, SCREEN_HEIGHT, g_hWnd, g_pSwapChain))
     {
-        OutputDebugStringW(L"š Game‰Šú‰»Ž¸”s\n");
+        OutputDebugStringW(L"ï¿½ï¿½ Gameï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½s\n");
         return false;
     }
+
+    // ImGuiåˆæœŸåŒ–
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGui_ImplWin32_Init(g_hWnd);
+    ImGui_ImplDX11_Init(g_pd3dDevice, g_pImmediateContext);
+    ImGui::StyleColorsDark();
 
     return true;
 }
 
 void Render()
 {
-    float ClearColor[4] = { 0.1f, 0.2f, 0.4f, 1.0f };
+    float ClearColor[4] = { 0.1f, 0.4f, 0.2f, 1.0f };
     g_pImmediateContext->ClearRenderTargetView(g_pRenderTargetView, ClearColor);
 
-    // ƒQ[ƒ€•`‰æ
+    // ï¿½Qï¿½[ï¿½ï¿½ï¿½`ï¿½ï¿½
     if (g_game)
     {
         g_game->Draw();
     }
+
+    // ImGuiæç”»
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+
+    ImGui::Begin("Debug");
+    ImGui::Text("Hello ImGui!");
+    ImGui::End();
+
+    ImGui::Render();
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
     g_pSwapChain->Present(0, 0);
 }
 
 void CleanupDevice()
 {
+    ImGui_ImplDX11_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
+
     if (g_pImmediateContext) g_pImmediateContext->ClearState();
 
     if (g_game)

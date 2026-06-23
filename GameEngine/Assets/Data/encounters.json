@@ -1,0 +1,62 @@
+{
+  "encounters": [
+    {
+      "rank": 1,
+      "weight": 20,
+      "enemies": [
+        {
+          "id": "slime",
+          "col": 6,
+          "row": 3
+        },
+        {
+          "id": "slime",
+          "col": 2,
+          "row": 3
+        },
+        {
+          "id": "goblin",
+          "col": 4,
+          "row": 0
+        }
+      ]
+    },
+    {
+      "rank": 1,
+      "weight": 30,
+      "enemies": [
+        {
+          "id": "goblin",
+          "col": 6,
+          "row": 0
+        },
+        {
+          "id": "goblin",
+          "col": 2,
+          "row": 0
+        }
+      ]
+    },
+    {
+      "rank": 1,
+      "weight": 30,
+      "enemies": [
+        {
+          "id": "slime",
+          "col": 2,
+          "row": 1
+        },
+        {
+          "id": "slime",
+          "col": 3,
+          "row": 0
+        },
+        {
+          "id": "slime",
+          "col": 3,
+          "row": 2
+        }
+      ]
+    }
+  ]
+}

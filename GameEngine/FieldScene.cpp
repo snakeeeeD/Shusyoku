@@ -229,6 +229,12 @@ void FieldScene::Draw()
    
     m_spriteRenderer->Begin();
 
+    m_spriteRenderer->DrawSprite(
+        TextureManager::Get("map_bg"),  // シーンごとに変える
+        0.0f, 0.0f,
+        (float)m_screenWidth, (float)m_screenHeight,
+        0.0f, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+
     // 隣接マス間の線を描画
     for (int row = 0; row < GRID_ROWS; row++)
     {

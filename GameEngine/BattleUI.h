@@ -54,6 +54,7 @@ struct BattleUIContext
     bool showDrawPile;
     bool showDiscardPile;
     bool isPlayerTurn;
+    float cameraZoom;
 
     int screenWidth, screenHeight;
 };
@@ -68,6 +69,8 @@ public:
     void Draw(const BattleUIContext& ctx);
     void UpdateDrawCardEffects(float deltaTime);
     void StartDrawCardEffect(const std::string& cardId);
+
+    TextRenderer* GetTextRenderer() { return m_textRenderer; }
 
 private:
     SpriteRenderer* m_spriteRenderer = nullptr;
@@ -95,7 +98,6 @@ private:
     void DrawPileViewer(const BattleUIContext& ctx);
     void DrawCardEffects();
     void DrawPlayerOffScreenIndicator(const BattleUIContext& ctx);
-
 
     bool GetEnemyScreenPos(Enemy* enemy, Renderer3D* renderer3D, float& outX, float& outY) const;
     bool GetEnemyFootPos(Enemy* enemy, Renderer3D* renderer3D, float& outX, float& outY) const;

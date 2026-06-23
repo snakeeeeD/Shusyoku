@@ -347,3 +347,4 @@ void BattleHighlighter::UpdateEnemyHighlight(
         }
     }
 }
+

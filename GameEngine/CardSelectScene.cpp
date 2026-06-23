@@ -77,6 +77,12 @@ void CardSelectScene::Draw()
 
     m_spriteRenderer->Begin();
 
+    m_spriteRenderer->DrawSprite(
+        TextureManager::Get("cardSelect_bg"),
+        0.0f, 0.0f,
+        (float)m_screenWidth, (float)m_screenHeight,
+        0.0f, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+
     for (int i = 0; i < (int)m_choices.size(); i++)
     {
         const CardData* data = CardDataBase::Get(m_choices[i]);

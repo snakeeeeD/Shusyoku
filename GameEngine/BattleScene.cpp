@@ -19,6 +19,7 @@ BattleScene::~BattleScene()
     delete m_battleUI;
     delete m_gridMap;
     delete m_renderer3D;
+    delete m_spriteRenderer;
     delete m_player;
     for (auto enemy : m_enemies)
         delete enemy;
@@ -50,10 +51,15 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
     m_rightClickDragged = false;
 
-    m_cameraZoom = 1.0f;
+    m_cameraZoom = ZOOM_MAX;
 
     m_isDraggingCamera = false;
     m_dragStartPos = { 0, 0 };
+
+    m_debugMode = false;
+    m_debugRank = 1;
+
+    m_debugEncounterIndex = -1;  // -1 = ランダム
 
     m_battleResult = BattleResult::None;
 
@@ -89,6 +95,9 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     m_renderer3D = new Renderer3D();
     if (!m_renderer3D->Init(device, context, screenWidth, screenHeight))
         return false;
+
+    m_spriteRenderer = new SpriteRenderer();
+    m_spriteRenderer->Init(device, context, screenWidth, screenHeight);
 
     m_battleUI = new BattleUI();
     if (!m_battleUI->Init(device, context, screenWidth, screenHeight, swapChain))
@@ -188,38 +197,12 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
         };
 
-    // 敵の初期配置
-    auto addEnemy = [&](int col, int row, const std::string& id)
-        {
-            auto enemy = new Enemy();
-            enemy->Init(id);
-            enemy->gridCol = col;
-            enemy->gridRow = row;
-
-            // 形の中心を計算してワールド座標を設定
-            float sumCol = 0, sumRow = 0;
-            for (auto& [dc, dr] : enemy->GetGridShape())
-            {
-                sumCol += col + dc;
-                sumRow += row + dr;
-            }
-            float centerCol = sumCol / enemy->GetGridShape().size();
-            float centerRow = sumRow / enemy->GetGridShape().size();
-            enemy->worldX = (centerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
-            enemy->worldZ = (centerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
-
-            // 占有マスをセット
-            CellType cellType = enemy->IsBoss() ? CellType::Boss : CellType::Enemy;
-            for (auto& [dc, dr] : enemy->GetGridShape())
-                m_gridMap->SetCellType(col + dc, row + dr, cellType);
-
-            m_enemies.push_back(enemy);
-        };
-
-    addEnemy(2, 1, "slime");
-    addEnemy(2, 0, "goblin");
-    //addEnemy(0, 0, "orc");
-    //addEnemy(4, 0, "dragon");
+    const EncounterData* encounter = EncounterDataBase::GetRandom(1);
+    if (encounter)
+    {
+        for (auto& ee : encounter->enemies)
+            AddEnemy(ee.col, ee.row, ee.id);
+    }
 
     for (auto enemy : m_enemies)
         enemy->DecideNextAction();
@@ -229,9 +212,75 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     return true;
 }
 
+void BattleScene::AddEnemy(int col, int row, const std::string& id)
+{
+    auto enemy = new Enemy();
+    enemy->Init(id);
+    enemy->gridCol = col;
+    enemy->gridRow = row;
+
+    // 形の中心を計算してワールド座標を設定
+    float sumCol = 0, sumRow = 0;
+    for (auto& [dc, dr] : enemy->GetGridShape())
+    {
+        sumCol += col + dc;
+        sumRow += row + dr;
+    }
+    float centerCol = sumCol / enemy->GetGridShape().size();
+    float centerRow = sumRow / enemy->GetGridShape().size();
+    enemy->worldX = (centerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+    enemy->worldZ = (centerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+
+    // 占有マスをセット
+    CellType cellType = enemy->IsBoss() ? CellType::Boss : CellType::Enemy;
+    for (auto& [dc, dr] : enemy->GetGridShape())
+        m_gridMap->SetCellType(col + dc, row + dr, cellType);
+
+    m_enemies.push_back(enemy);
+}
+
 void BattleScene::Update(float deltaTime)
 {
     m_input.Update();
+
+    if (GetAsyncKeyState(VK_F1) & 1) m_debugMode = !m_debugMode;
+    // F2: テンプレート切り替え（次のテンプレート）
+    // F3: リロード＆リセット
+    if (GetAsyncKeyState(VK_F2) & 1)
+    {
+        m_debugEncounterIndex++;
+        if (m_debugEncounterIndex >= EncounterDataBase::GetCount())
+            m_debugEncounterIndex = -1;  // ランダムに戻る
+    }
+    if (GetAsyncKeyState(VK_F3) & 1)
+    {
+        // JSON再読み込み
+        EnemyDataBase::Reload();
+        EncounterDataBase::Reload();
+
+        // 既存の敵を削除
+        for (auto enemy : m_enemies)
+        {
+            for (auto& [dc, dr] : enemy->GetGridShape())
+                m_gridMap->SetCellType(enemy->gridCol + dc, enemy->gridRow + dr, CellType::Empty);
+            delete enemy;
+        }
+        m_enemies.clear();
+
+        // 再配置
+        const EncounterData* encounter = (m_debugEncounterIndex < 0)
+            ? EncounterDataBase::GetRandom(m_debugRank)
+            : EncounterDataBase::GetByIndex(m_debugEncounterIndex);
+
+        if (encounter)
+        {
+            for (auto& ee : encounter->enemies)
+                AddEnemy(ee.col, ee.row, ee.id);
+        }
+
+        for (auto enemy : m_enemies)
+            enemy->DecideNextAction();
+    }
 
     // カメラズーム（マウスホイール）
     int wheelDelta = m_input.GetMouseWheelDelta();
@@ -263,10 +312,11 @@ void BattleScene::Update(float deltaTime)
             m_cameraOffsetZ -= dy * 0.02f * m_cameraZoom;
 
             // クランプはオフセット加算の後
-            float gridHalfW = (m_gridMap->GetCols() / 2.0f) * 1.1f ;
-            float gridHalfH = (m_gridMap->GetRows() / 2.0f) * 1.1f ;
-            m_cameraOffsetX = max(-gridHalfW + 3.0f, min(gridHalfW - 4.0f, m_cameraOffsetX));
-            m_cameraOffsetZ = max(-gridHalfH+1.0f, min(gridHalfH - 3.0f, m_cameraOffsetZ));
+            float gridHalfW = (m_gridMap->GetCols() / 2.0f) * 1.1f;
+            float gridHalfH = (m_gridMap->GetRows() / 2.0f) * 1.1f;
+            float zoomFactor = (m_cameraZoom > 1.0f) ? 1.0f / m_cameraZoom : 1.0f;  // ズームアウト時に制限が狭くなる
+            m_cameraOffsetX = max((-gridHalfW + 2.0f) * zoomFactor, min((gridHalfW - 3.0f) * zoomFactor, m_cameraOffsetX));
+            m_cameraOffsetZ = max((-gridHalfH + 1.0f) * zoomFactor, min((gridHalfH - 2.0f) * zoomFactor, m_cameraOffsetZ));
 
             m_dragStartPos = mousePos;
         }
@@ -285,7 +335,7 @@ void BattleScene::Update(float deltaTime)
     // カメラリセット（ミドルクリック）
     if (m_input.GetMouseButtonTrigger(2))
     {
-        m_cameraZoom = 1.0f;
+        m_cameraZoom = ZOOM_MAX;
         m_cameraOffsetX = m_player->worldX;
         m_cameraOffsetZ = m_player->worldZ;
     }
@@ -430,6 +480,15 @@ void BattleScene::Update(float deltaTime)
 
 void BattleScene::Draw()
 {
+    // 背景
+    m_spriteRenderer->Begin();
+    m_spriteRenderer->DrawSprite(
+        TextureManager::Get("battle_bg"),
+        0.0f, 0.0f,
+        (float)m_screenWidth, (float)m_screenHeight,
+        0.0f, XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f));
+    m_spriteRenderer->End();
+
     // 3D描画
     m_renderer3D->Begin();
 
@@ -470,10 +529,44 @@ void BattleScene::Draw()
     ctx.showDiscardPile = m_showDiscardPile;
     ctx.screenWidth = m_screenWidth;
     ctx.screenHeight = m_screenHeight;
+    ctx.cameraZoom = m_cameraZoom;
     ctx.isPlayerTurn = m_turnManager.IsPlayerTurn();
     ctx.mousePos = m_input.GetMousePos();
 
     m_battleUI->Draw(ctx);
+
+    if (m_debugMode)
+    {
+        m_battleUI->GetTextRenderer()->Begin();
+
+        m_battleUI->GetTextRenderer()->DrawText(L"[DEBUG MODE]",
+            10.0f, m_screenHeight - 200.0f, 16.0f,
+            D2D1::ColorF(D2D1::ColorF::Yellow));
+
+        float y = m_screenHeight - 180.0f;
+        for (auto enemy : m_enemies)
+        {
+            wchar_t buf[128];
+            swprintf_s(buf, L"%S  pos:(%d,%d)  HP:%d/%d",
+                enemy->GetId().c_str(),
+                enemy->gridCol, enemy->gridRow,
+                enemy->GetHp(), enemy->GetMaxHp());
+            m_battleUI->GetTextRenderer()->DrawText(buf,
+                10.0f, y, 13.0f,
+                D2D1::ColorF(D2D1::ColorF::LightGreen));
+            y += 18.0f;
+        }
+
+        wchar_t modeBuf[64];
+        swprintf_s(modeBuf, L"Template: %s  Rank: %d",
+            m_debugEncounterIndex < 0 ? L"Random" : std::to_wstring(m_debugEncounterIndex).c_str(),
+            m_debugRank);
+        m_battleUI->GetTextRenderer()->DrawText(modeBuf,
+            10.0f, m_screenHeight - 220.0f, 14.0f,
+            D2D1::ColorF(D2D1::ColorF::Yellow));
+
+        m_battleUI->GetTextRenderer()->End();
+    }
 }
 
 void BattleScene::HandleInput()

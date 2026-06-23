@@ -178,6 +178,15 @@
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\11-BattleUI">
       <UniqueIdentifier>{434ce89c-361e-402c-995f-dc1aa0b969ec}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\30-EncounterData">
+      <UniqueIdentifier>{69296338-09c9-4909-ae3a-c2195de116c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\30-EncounterData\00-EncounterData">
+      <UniqueIdentifier>{70f5b741-f07a-4a8a-83db-bc636b9b2582}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\30-EncounterData\01-EncounterDataBase">
+      <UniqueIdentifier>{01ad420e-2937-4cb7-9639-a1114fe24821}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -324,6 +333,12 @@
     <ClInclude Include="BattleUI.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\11-BattleUI</Filter>
     </ClInclude>
+    <ClInclude Include="EncounterData.h">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\30-EncounterData\00-EncounterData</Filter>
+    </ClInclude>
+    <ClInclude Include="EncounterDataBase.h">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\30-EncounterData\01-EncounterDataBase</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SpriteRenderer.cpp">
@@ -409,6 +424,9 @@
     </ClCompile>
     <ClCompile Include="BattleUI.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\11-BattleUI</Filter>
+    </ClCompile>
+    <ClCompile Include="EncounterDataBase.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\30-EncounterData\01-EncounterDataBase</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

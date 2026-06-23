@@ -154,3 +154,9 @@ const EnemyData* EnemyDataBase::Get(const std::string& id)
     }
     return &it->second;
 }
+
+void EnemyDataBase::Reload()
+{
+    m_data.clear();
+    Init();
+}

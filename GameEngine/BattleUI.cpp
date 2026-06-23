@@ -154,6 +154,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
     m_spriteRenderer->Begin();
 
+
     DrawHPBar(20.0f, 60.0f, 200.0f, 30.0f, ctx.player->GetHp(), ctx.player->GetMaxHp());
     DrawEnemyInfoPanel(ctx);
 
@@ -358,8 +359,10 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             if (!GetEnemyScreenPos(enemy, ctx.renderer3D, headX, headY)) continue;
             if (!GetEnemyFootPos(enemy, ctx.renderer3D, footX, footY)) continue;
 
-            float barWidth = enemy->IsBoss() ? 150.0f : 100.0f;
-            float barHeight = enemy->IsBoss() ? 20.0f : 16.0f;
+            float scale = 1.0f / ctx.cameraZoom;  // ズームアウト時に小さくなる
+
+            float barWidth = (enemy->IsBoss() ? 100.0f : 50.0f) * scale;
+            float barHeight = (enemy->IsBoss() ? 15.0f : 10.0f) * scale;
 
             // --- HPバー（足元の少し下） ---
             float barX = footX - barWidth / 2.0f;
@@ -370,11 +373,11 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
             m_spriteRenderer->DrawSprite(m_whiteTexture,
                 barX, barY, barWidth, barHeight,
-                0.0f, XMFLOAT4(0.3f, 0.0f, 0.0f, 1.0f));
+                0.0f, XMFLOAT4(0.6f, 0.6f, 0.6f, 1.0f));
 
             float ratio = (float)enemy->GetHp() / (float)enemy->GetMaxHp();
             XMFLOAT4 barColor = ratio > 0.5f
-                ? XMFLOAT4(0.0f, 0.8f, 0.0f, 1.0f)
+                ? XMFLOAT4(0.0f, 0.0f, 0.8f, 1.0f)
                 : ratio > 0.25f
                 ? XMFLOAT4(0.8f, 0.8f, 0.0f, 1.0f)
                 : XMFLOAT4(0.8f, 0.0f, 0.0f, 1.0f);
@@ -420,8 +423,8 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             if (action)
             {
                 float iconSize = 18.0f;
-                float iconX = headX - iconSize / 2.0f;
-                float iconY = headY - iconSize - 8.0f;
+                float iconX = barX;
+                float iconY = barY - iconSize - 2.0f;
 
                 XMFLOAT4 iconColor;
                 switch (action->type)
@@ -450,18 +453,19 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             if (!GetEnemyScreenPos(enemy, ctx.renderer3D, headX, headY)) continue;
             if (!GetEnemyFootPos(enemy, ctx.renderer3D, footX, footY)) continue;
 
-            float barWidth = enemy->IsBoss() ? 150.0f : 100.0f;
-            float barHeight = enemy->IsBoss() ? 20.0f : 16.0f;
+            float scale = 1.0f / ctx.cameraZoom;
+            float barWidth = (enemy->IsBoss() ? 100.0f : 50.0f) * scale;
+            float barHeight = (enemy->IsBoss() ? 15.0f : 10.0f) * scale;
             float barX = footX - barWidth / 2.0f;
-            float barY = footY + 4.0f;
-            float fontSize = enemy->IsBoss() ? 13.0f : 11.0f;
+            float barY = footY - 30.0f;
+            float fontSize = max(8.0f, (enemy->IsBoss() ? 10.0f : 8.0f) * scale);
 
             // HP数値
             wchar_t hpText[32];
             swprintf_s(hpText, L"%d / %d", enemy->GetHp(), enemy->GetMaxHp());
-            m_textRenderer->DrawText(hpText, barX + 5.0f + 1.0f, barY - 31.0f + 1.0f,
+            m_textRenderer->DrawText(hpText, barX + 3.0f + 1.0f, barY + 1.0f,
                 fontSize, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
-            m_textRenderer->DrawText(hpText, barX + 5.0f, barY - 31.0f,
+            m_textRenderer->DrawText(hpText, barX + 3.0f, barY,
                 fontSize, D2D1::ColorF(D2D1::ColorF::White));
 
             // 行動の数値（頭上）
@@ -469,8 +473,8 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             if (action && action->value > 0 && action->type != EnemyActionType::Move)
             {
                 float iconSize = 18.0f;
-                float iconX = headX - iconSize / 2.0f;
-                float iconY = headY - iconSize - 8.0f;
+                float iconX = barX;
+                float iconY = barY - iconSize - 2.0f;
                 wchar_t valueBuf[16];
                 swprintf_s(valueBuf, L"%d", action->value);
                 m_textRenderer->DrawText(valueBuf,
@@ -884,11 +888,11 @@ void BattleUI::DrawPlayerOffScreenIndicator(const BattleUIContext& ctx)
 
 void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
 {
-    float panelX = ctx.screenWidth - 180.0f;
+    float panelX = ctx.screenWidth - 250.0f;
     float panelY = 10.0f;
-    float panelW = 170.0f;
-    float entryH = 70.0f;
-    float iconSize = 40.0f;
+    float panelW = 240.0f;
+    float entryH = 90.0f;
+    float iconSize = 55.0f;
 
     POINT mp = ctx.mousePos;
     int hoveredEnemy = -1;
@@ -903,8 +907,8 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
             && mp.y >= entryY && mp.y <= entryY + entryH;
 
         XMFLOAT4 bgColor = isHover
-            ? XMFLOAT4(0.15f, 0.15f, 0.25f, 0.9f)
-            : XMFLOAT4(0.1f, 0.1f, 0.2f, 0.7f);
+            ? XMFLOAT4(0.45f, 0.45f, 0.25f, 0.9f)
+            : XMFLOAT4(0.45f, 0.45f, 0.25f, 0.7f);
         m_spriteRenderer->DrawSprite(m_whiteTexture, panelX, entryY,
             panelW, entryH, 0.0f, bgColor);
 
@@ -920,13 +924,13 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
         float barX = panelX + iconSize + 10.0f;
         float barY = entryY + 5.0f;
         float barW = panelW - iconSize - 20.0f;
-        float barH = 8.0f;
+        float barH = 12.0f;
         float hpRatio = (float)enemy->GetHp() / (float)enemy->GetMaxHp();
 
         m_spriteRenderer->DrawSprite(m_whiteTexture, barX, barY,
-            barW, barH, 0.0f, XMFLOAT4(0.3f, 0.0f, 0.0f, 1.0f));
+            barW, barH, 0.0f, XMFLOAT4(0.6f, 0.6f, 0.6f, 1.0f));
         m_spriteRenderer->DrawSprite(m_whiteTexture, barX, barY,
-            barW * hpRatio, barH, 0.0f, XMFLOAT4(0.0f, 0.8f, 0.0f, 1.0f));
+            barW * hpRatio, barH, 0.0f, XMFLOAT4(0.0f, 0.0f, 0.8f, 1.0f));
 
         if (isHover)
             hoveredEnemy = i;
@@ -945,7 +949,7 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
             wchar_t hpText[32];
             swprintf_s(hpText, L"%d/%d", enemy->GetHp(), enemy->GetMaxHp());
             m_textRenderer->DrawText(hpText,
-                panelX + iconSize + 10.0f, entryY + 16.0f, 12.0f,
+                panelX + iconSize + 10.0f, entryY + 16.0f, 15.0f,
                 D2D1::ColorF(D2D1::ColorF::White));
 
             // 次の行動
@@ -953,7 +957,7 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
             if (action)
             {
                 m_textRenderer->DrawText(action->description.c_str(),
-                    panelX + iconSize + 10.0f, entryY + 32.0f, 11.0f,
+                    panelX + iconSize + 10.0f, entryY + 32.0f, 14.0f,
                     D2D1::ColorF(D2D1::ColorF::Orange));
             }
 
@@ -961,16 +965,16 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
             if (hoveredEnemy >= 0)
             {
                 float entryY = panelY + hoveredEnemy * (entryH + 5.0f);
-                float detailX = panelX - 160.0f;
+                float detailX = panelX - 200.0f;
                 m_spriteRenderer->DrawSprite(m_whiteTexture, detailX, entryY,
-                    150.0f, entryH, 0.0f, XMFLOAT4(0.1f, 0.1f, 0.2f, 0.85f));
+                    190.0f, entryH, 0.0f, XMFLOAT4(0.1f, 0.1f, 0.2f, 0.85f));
             }
             m_spriteRenderer->End();
 
             // ホバー時の詳細
             if (hoveredEnemy == i)
             {
-                float detailX = panelX - 160.0f;
+                float detailX = panelX - 200.0f;
                 float detailY = entryY;
                 float lineY = detailY + 5.0f;
 
@@ -980,9 +984,9 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
                 {
                     std::wstring actionText = act->description + L": " + std::to_wstring(act->value);
                     m_textRenderer->DrawText(actionText.c_str(),
-                        detailX + 10.0f, lineY, 13.0f,
+                        detailX + 10.0f, lineY, 15.0f,
                         D2D1::ColorF(1.0f, 0.8f, 0.3f));
-                    lineY += 18.0f;
+                    lineY += 22.0f;
                 }
 
                 // ブロック
@@ -991,7 +995,7 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
                     wchar_t blockText[32];
                     swprintf_s(blockText, L"Block: %d", enemy->GetBlock());
                     m_textRenderer->DrawText(blockText,
-                        detailX + 10.0f, lineY, 13.0f,
+                        detailX + 10.0f, lineY, 15.0f,
                         D2D1::ColorF(D2D1::ColorF::LightBlue));
                     lineY += 18.0f;
                 }
@@ -1004,9 +1008,9 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
                         buffText += L" (" + std::to_wstring(buff.duration) + L"T)";
 
                     m_textRenderer->DrawText(buffText.c_str(),
-                        detailX + 10.0f, lineY, 12.0f,
+                        detailX + 10.0f, lineY, 14.0f,
                         D2D1::ColorF(0.6f, 1.0f, 0.6f));
-                    lineY += 16.0f;
+                    lineY += 20.0f;
                 }
             }
         }
