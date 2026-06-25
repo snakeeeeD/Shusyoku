@@ -190,6 +190,7 @@
   <ItemGroup>
     <ClCompile Include="Battlehighlighter.cpp" />
     <ClCompile Include="BattleScene.cpp" />
+    <ClCompile Include="BattleSceneDebug.cpp" />
     <ClCompile Include="BattleUI.cpp" />
     <ClCompile Include="BuffManager.cpp" />
     <ClCompile Include="Card.cpp" />

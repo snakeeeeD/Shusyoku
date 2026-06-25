@@ -2,6 +2,10 @@
 #include "TextureLoader.h"
 #include <algorithm>
 
+#ifdef _DEBUG
+#include "External/imgui/imgui.h"
+#endif
+
 BattleScene::BattleScene()
     : m_battleUI(nullptr)
     , m_gridMap(nullptr)
@@ -56,7 +60,6 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     m_isDraggingCamera = false;
     m_dragStartPos = { 0, 0 };
 
-    m_debugMode = false;
     m_debugRank = 1;
 
     m_debugEncounterIndex = -1;  // -1 = ランダム
@@ -139,13 +142,10 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             m_player->ResetBlock();
             m_player->GetBuffManager().OnTurnEnd();
 
-            // 毒ダメージ
-            int poison = m_player->GetBuffManager().GetPoisonValue();
-            if (poison > 0)
-            {
-                m_player->TakeDamage(poison);
-                OutputDebugStringW(L"毒ダメージ\n");
-            }
+            // デバフダメージ
+            auto dmg = m_player->GetBuffManager().GetTurnEndDamage();
+            if (dmg.total() > 0)
+                m_player->TakeDamage(dmg.total());
 
             for (auto enemy : m_enemies)
                 enemy->DecideNextAction();
@@ -242,45 +242,6 @@ void BattleScene::AddEnemy(int col, int row, const std::string& id)
 void BattleScene::Update(float deltaTime)
 {
     m_input.Update();
-
-    if (GetAsyncKeyState(VK_F1) & 1) m_debugMode = !m_debugMode;
-    // F2: テンプレート切り替え（次のテンプレート）
-    // F3: リロード＆リセット
-    if (GetAsyncKeyState(VK_F2) & 1)
-    {
-        m_debugEncounterIndex++;
-        if (m_debugEncounterIndex >= EncounterDataBase::GetCount())
-            m_debugEncounterIndex = -1;  // ランダムに戻る
-    }
-    if (GetAsyncKeyState(VK_F3) & 1)
-    {
-        // JSON再読み込み
-        EnemyDataBase::Reload();
-        EncounterDataBase::Reload();
-
-        // 既存の敵を削除
-        for (auto enemy : m_enemies)
-        {
-            for (auto& [dc, dr] : enemy->GetGridShape())
-                m_gridMap->SetCellType(enemy->gridCol + dc, enemy->gridRow + dr, CellType::Empty);
-            delete enemy;
-        }
-        m_enemies.clear();
-
-        // 再配置
-        const EncounterData* encounter = (m_debugEncounterIndex < 0)
-            ? EncounterDataBase::GetRandom(m_debugRank)
-            : EncounterDataBase::GetByIndex(m_debugEncounterIndex);
-
-        if (encounter)
-        {
-            for (auto& ee : encounter->enemies)
-                AddEnemy(ee.col, ee.row, ee.id);
-        }
-
-        for (auto enemy : m_enemies)
-            enemy->DecideNextAction();
-    }
 
     // カメラズーム（マウスホイール）
     int wheelDelta = m_input.GetMouseWheelDelta();
@@ -423,12 +384,10 @@ void BattleScene::Update(float deltaTime)
             {
                 for (auto enemy : m_enemies)
                 {
-                    int poison = enemy->GetBuffManager().GetPoisonValue();
-
-                    if (poison > 0)
+                    auto dmg = enemy->GetBuffManager().GetTurnEndDamage();
+                    if (dmg.total() > 0)
                     {
-                        enemy->TakeDamage(poison);
-
+                        enemy->TakeDamage(dmg.total());
                         if (enemy->GetHp() <= 0)
                             continue;
                     }
@@ -534,39 +493,6 @@ void BattleScene::Draw()
     ctx.mousePos = m_input.GetMousePos();
 
     m_battleUI->Draw(ctx);
-
-    if (m_debugMode)
-    {
-        m_battleUI->GetTextRenderer()->Begin();
-
-        m_battleUI->GetTextRenderer()->DrawText(L"[DEBUG MODE]",
-            10.0f, m_screenHeight - 200.0f, 16.0f,
-            D2D1::ColorF(D2D1::ColorF::Yellow));
-
-        float y = m_screenHeight - 180.0f;
-        for (auto enemy : m_enemies)
-        {
-            wchar_t buf[128];
-            swprintf_s(buf, L"%S  pos:(%d,%d)  HP:%d/%d",
-                enemy->GetId().c_str(),
-                enemy->gridCol, enemy->gridRow,
-                enemy->GetHp(), enemy->GetMaxHp());
-            m_battleUI->GetTextRenderer()->DrawText(buf,
-                10.0f, y, 13.0f,
-                D2D1::ColorF(D2D1::ColorF::LightGreen));
-            y += 18.0f;
-        }
-
-        wchar_t modeBuf[64];
-        swprintf_s(modeBuf, L"Template: %s  Rank: %d",
-            m_debugEncounterIndex < 0 ? L"Random" : std::to_wstring(m_debugEncounterIndex).c_str(),
-            m_debugRank);
-        m_battleUI->GetTextRenderer()->DrawText(modeBuf,
-            10.0f, m_screenHeight - 220.0f, 14.0f,
-            D2D1::ColorF(D2D1::ColorF::Yellow));
-
-        m_battleUI->GetTextRenderer()->End();
-    }
 }
 
 void BattleScene::HandleInput()

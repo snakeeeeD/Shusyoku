@@ -33,6 +33,7 @@ public:
         int screenWidth, int screenHeight, HWND hWnd, IDXGISwapChain* swapChain) override;
     void Update(float deltaTime) override;
     void Draw() override;
+    void DrawImGui() override;
     void HandleInput() override;
 
     void GridToWorld(int col, int row, float& outX, float& outZ)
@@ -119,7 +120,6 @@ private:
     float m_cameraOffsetX;
     float m_cameraOffsetZ;
 
-    bool m_debugMode;
     int m_debugRank;
     int m_debugEncounterIndex;
     std::string m_currentEncounterId;  // 今のテンプレート情報を覚えておく

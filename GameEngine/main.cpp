@@ -2,9 +2,11 @@
 #include <d3d11.h>
 #include "Game.h"
 #include "input.h"
+#ifdef _DEBUG
 #include "External/imgui/imgui.h"
 #include "External/imgui/backends/imgui_impl_win32.h"
 #include "External/imgui/backends/imgui_impl_dx11.h"
+#endif
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d3dcompiler.lib")
@@ -70,12 +72,16 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     return (int)msg.wParam;
 }
 
+#ifdef _DEBUG
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+#endif
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+#ifdef _DEBUG
     if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
         return true;
+#endif
 
     switch (message)
     {
@@ -189,12 +195,13 @@ bool InitD3D()
         return false;
     }
 
-    // ImGui初期化
+#ifdef _DEBUG
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui_ImplWin32_Init(g_hWnd);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pImmediateContext);
     ImGui::StyleColorsDark();
+#endif
 
     return true;
 }
@@ -210,26 +217,28 @@ void Render()
         g_game->Draw();
     }
 
-    // ImGui描画
+#ifdef _DEBUG
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::Begin("Debug");
-    ImGui::Text("Hello ImGui!");
-    ImGui::End();
+    if (g_game)
+        g_game->DrawImGui();
 
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+#endif
 
     g_pSwapChain->Present(0, 0);
 }
 
 void CleanupDevice()
 {
+#ifdef _DEBUG
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
+#endif
 
     if (g_pImmediateContext) g_pImmediateContext->ClearState();
 

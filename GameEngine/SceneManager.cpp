@@ -119,6 +119,12 @@ void SceneManager::Draw()
 	if (m_currentScene) m_currentScene->Draw();
 }
 
+void SceneManager::DrawImGui()
+{
+	if (m_currentScene)
+		m_currentScene->DrawImGui();
+}
+
 void SceneManager::HandleInput()
 {
 	if (m_currentScene) m_currentScene->HandleInput();

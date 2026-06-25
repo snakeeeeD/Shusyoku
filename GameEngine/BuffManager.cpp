@@ -89,9 +89,12 @@ int BuffManager::ApplyDefenseDebuff(int baseBlock) const
     return max(0, baseBlock - GetBuffValue(BuffType::DefenseDown));
 }
 
-int BuffManager::GetPoisonValue() const
+
+BuffManager::TurnEndDamage BuffManager::GetTurnEndDamage() const
 {
-    return GetBuffValue(BuffType::Poison);
+    TurnEndDamage dmg;
+    dmg.poison = GetBuffValue(BuffType::Poison);
+    return dmg;
 }
 
 // バフ・デバフ両方考慮した最終値

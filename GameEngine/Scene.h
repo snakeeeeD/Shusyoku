@@ -10,6 +10,8 @@ public:
 		IDXGISwapChain* swapChain) = 0;
 	virtual void Update(float deltaTime) = 0;
 	virtual void Draw() = 0;
+	virtual void DrawImGui() {};
 	virtual void HandleInput() = 0;
+
 };
 	
