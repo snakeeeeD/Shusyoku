@@ -47,21 +47,49 @@ void CardSelectScene::GenerateChoices()
 {
     m_choices.clear();
 
-    // 全カードIDを取得してランダムに3枚選ぶ
-    // 今はハードコードで仮実装
-    std::vector<std::string> allCards = {
-        "strike", "defend", "move", "Spin Slash", "dash"
+    // 全カードを重み付きで集める
+    struct WeightedCard {
+        std::string id;
+        int weight;
+    };
+    std::vector<WeightedCard> pool;
+
+    std::vector<std::string> allIds = {
+        "strike", "defend", "move", "Spin Slash", "dash",
+        "poison_blade", "power_attack", "buff_defense"
     };
 
-    // シャッフルして先頭3枚を選ぶ
-    for (int i = (int)allCards.size() - 1; i > 0; i--)
+    for (const auto& id : allIds)
     {
-        int j = rand() % (i + 1);
-        std::swap(allCards[i], allCards[j]);
+        const CardData* data = CardDataBase::Get(id);
+        if (!data) continue;
+
+        int w = 10; // Common
+        if (data->rarity == CardRarity::Uncommon) w = 5;
+        else if (data->rarity == CardRarity::Rare) w = 2;
+
+        pool.push_back({ id, w });
     }
 
-    for (int i = 0; i < CHOICE_COUNT && i < (int)allCards.size(); i++)
-        m_choices.push_back(allCards[i]);
+    // 重み付きランダムで3枚選ぶ（重複なし）
+    for (int i = 0; i < CHOICE_COUNT && !pool.empty(); i++)
+    {
+        int totalWeight = 0;
+        for (const auto& p : pool) totalWeight += p.weight;
+
+        int roll = rand() % totalWeight;
+        int cumulative = 0;
+        int picked = 0;
+
+        for (int j = 0; j < (int)pool.size(); j++)
+        {
+            cumulative += pool[j].weight;
+            if (roll < cumulative) { picked = j; break; }
+        }
+
+        m_choices.push_back(pool[picked].id);
+        pool.erase(pool.begin() + picked);
+    }
 }
 
 void CardSelectScene::Update(float deltaTime)

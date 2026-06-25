@@ -24,7 +24,14 @@ public:
     // デバフ適用
     int  ApplyAttackDebuff(int baseAttack) const;
     int  ApplyDefenseDebuff(int baseBlock) const;
-    int  GetPoisonValue() const;
+
+    struct TurnEndDamage {
+        int poison = 0;
+        // 後々ここにダメージデバフを追加
+        int total() const { return poison; }
+    };
+
+    TurnEndDamage GetTurnEndDamage() const;
 
     // バフ・デバフ両方考慮した最終値
     int  GetFinalAttack(int baseAttack) const;

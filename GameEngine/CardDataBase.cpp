@@ -35,12 +35,18 @@ void CardDataBase::Init()
             data.rangeType = StringToRangeType(c["rangeType"]);
             data.description = ToWString(c["description"]);
 
+            std::string rarityStr = c.value("rarity", "Common");
+            if (rarityStr == "Uncommon") data.rarity = CardRarity::Uncommon;
+            else if (rarityStr == "Rare") data.rarity = CardRarity::Rare;
+            else data.rarity = CardRarity::Common;
+
             // mainEffect
             data.mainEffect.hasEffect = true;
             data.mainEffect.type = StringToCardEffectType(c["mainEffect"]["type"]);
             data.mainEffect.value = c["mainEffect"]["value"];
-            data.mainEffect.duration = c["mainEffect"].value("duration", 0);  // Å© í«â¡
-            data.mainEffect.buffType = c["mainEffect"].value("buffType", ""); // Å© í«â¡
+            data.mainEffect.duration = c["mainEffect"].value("duration", 0);
+            data.mainEffect.buffType = c["mainEffect"].value("buffType", "");
+
 
             if (c.contains("onHitEffect"))
             {

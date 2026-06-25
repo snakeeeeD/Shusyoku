@@ -18,7 +18,9 @@ public:
     BuffManager& GetBuffManager() { return m_buffManager; }
 
     // セッター
-    void SetHp(int hp) { m_hp = min(hp, m_maxHp); }
+    void SetHp(int hp) { m_hp = hp; }
+    void SetEnergy(int energy) { m_energy = energy; }
+    void SetBlock(int block) { m_block = block; }
 
     void AddBlock(int amount);
     void TakeDamage(int damage);

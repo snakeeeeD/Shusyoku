@@ -22,6 +22,11 @@ void Game::Draw()
     m_sceneManager->Draw();
 }
 
+void Game::DrawImGui()
+{
+    m_sceneManager->DrawImGui();
+}
+
 void Game::HandleInput()
 {
     m_sceneManager->HandleInput();

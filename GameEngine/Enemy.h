@@ -16,9 +16,13 @@ public:
 	void Draw3D(class Renderer3D* renderer) override;
 
 	
-
+	// ゲッター
 	int GetHp() const { return m_HP; }
 	int GetMaxHp() const { return m_maxHP; }
+	int GetBlock() const { return m_block; }
+
+	// セッター
+	void SetHp(int hp) { m_HP = hp; }
 
 	int Think(int playerCol, int playerRow, class GridMap* gridMap);
 	int GetAttack() const { return m_attack; }
@@ -35,7 +39,6 @@ public:
 
 	void AddBlock(int amount);
 	void ResetBlock();
-	int GetBlock() const { return m_block; }
 
 	BuffManager& GetBuffManager() { return m_buffManager; }
 

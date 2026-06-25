@@ -15,6 +15,7 @@ public:
             IDXGISwapChain* swapChain);
     void Update(float deltaTime);
     void Draw();
+    void DrawImGui();
     void HandleInput();
 
 private:

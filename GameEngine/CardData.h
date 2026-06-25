@@ -15,6 +15,14 @@ enum class CardEffectType
     Heal,        // HP回復
 };
 
+// カードレアリティ
+enum class CardRarity
+{
+    Common,
+    Uncommon,
+    Rare,
+};
+
 // カード効果
 struct CardEffectData
 {
@@ -34,6 +42,7 @@ struct CardData
     int          range;
     RangeType    rangeType;
     std::wstring description;
+    CardRarity rarity = CardRarity::Common;
 
     CardEffectData   mainEffect;   // メイン効果（ダメージ量やブロック量など）
     CardEffectData   onHitEffect;  // ヒット時効果（攻撃カードのみ）

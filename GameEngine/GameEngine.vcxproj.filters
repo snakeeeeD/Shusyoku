@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="ソース ファイル\Input">
-      <UniqueIdentifier>{0d24911b-b633-412b-8461-6f07d4c5dbe3}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ソース ファイル\01-描画関連">
       <UniqueIdentifier>{52090197-e8c9-4069-b67e-00af71744414}</UniqueIdentifier>
     </Filter>
@@ -187,6 +184,15 @@
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\30-EncounterData\01-EncounterDataBase">
       <UniqueIdentifier>{01ad420e-2937-4cb7-9639-a1114fe24821}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\01-BattleSceneDebug">
+      <UniqueIdentifier>{b5716a26-0561-4416-b19d-44770a85ae46}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\05-Input">
+      <UniqueIdentifier>{0d24911b-b633-412b-8461-6f07d4c5dbe3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\06-ImGui">
+      <UniqueIdentifier>{73ba1c63-90c8-47a0-afdc-b5dc41a9aa15}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -208,7 +214,7 @@
       <Filter>ソース ファイル\01-描画関連\04-TextureLoader</Filter>
     </ClInclude>
     <ClInclude Include="input.h">
-      <Filter>ソース ファイル\Input</Filter>
+      <Filter>ソース ファイル\05-Input</Filter>
     </ClInclude>
     <ClInclude Include="GridMap.h">
       <Filter>ソース ファイル\04-Game内関連\20-GridMap</Filter>
@@ -339,6 +345,15 @@
     <ClInclude Include="EncounterDataBase.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\30-EncounterData\01-EncounterDataBase</Filter>
     </ClInclude>
+    <ClInclude Include="External\imgui\imgui.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="External\imgui\backends\imgui_impl_dx11.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="External\imgui\backends\imgui_impl_win32.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SpriteRenderer.cpp">
@@ -348,7 +363,7 @@
       <Filter>ソース ファイル\01-描画関連\04-TextureLoader</Filter>
     </ClCompile>
     <ClCompile Include="input.cpp">
-      <Filter>ソース ファイル\Input</Filter>
+      <Filter>ソース ファイル\05-Input</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>ソース ファイル\00-Main</Filter>
@@ -427,6 +442,27 @@
     </ClCompile>
     <ClCompile Include="EncounterDataBase.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\30-EncounterData\01-EncounterDataBase</Filter>
+    </ClCompile>
+    <ClCompile Include="BattleSceneDebug.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\01-BattleSceneDebug</Filter>
+    </ClCompile>
+    <ClCompile Include="External\imgui\imgui.cpp">
+      <Filter>ソース ファイル\06-ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="External\imgui\imgui_draw.cpp">
+      <Filter>ソース ファイル\06-ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="External\imgui\imgui_tables.cpp">
+      <Filter>ソース ファイル\06-ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="External\imgui\imgui_widgets.cpp">
+      <Filter>ソース ファイル\06-ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="External\imgui\backends\imgui_impl_dx11.cpp">
+      <Filter>ソース ファイル\06-ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="External\imgui\backends\imgui_impl_win32.cpp">
+      <Filter>ソース ファイル\06-ImGui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
