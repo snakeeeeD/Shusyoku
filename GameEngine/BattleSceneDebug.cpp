@@ -73,4 +73,7 @@ void BattleScene::DrawImGui()
 
     ImGui::End();
 }
+#else
+#include "BattleScene.h"
+void BattleScene::DrawImGui() {}
 #endif
