@@ -555,7 +555,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         m_textRenderer->DrawText(L"Victory!",
             m_screenWidth / 2.0f - 80.0f, m_screenHeight / 2.0f - 30.0f,
             60.0f, D2D1::ColorF(D2D1::ColorF::Gold));
-        m_textRenderer->DrawText(L"Enterキーで次へ",
+        m_textRenderer->DrawText(L"クリックで次へ",
             m_screenWidth / 2.0f - 80.0f, m_screenHeight / 2.0f + 40.0f,
             24.0f, D2D1::ColorF(D2D1::ColorF::White));
     }
@@ -564,7 +564,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         m_textRenderer->DrawText(L"Game Over...",
             m_screenWidth / 2.0f - 100.0f, m_screenHeight / 2.0f - 30.0f,
             60.0f, D2D1::ColorF(D2D1::ColorF::Red));
-        m_textRenderer->DrawText(L"Enterキーでタイトルへ",
+        m_textRenderer->DrawText(L"クリックでタイトルへ",
             m_screenWidth / 2.0f - 100.0f, m_screenHeight / 2.0f + 40.0f,
             24.0f, D2D1::ColorF(D2D1::ColorF::White));
     }
