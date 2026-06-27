@@ -395,14 +395,14 @@ void FieldScene::Draw()
     wchar_t hpText[64];
     swprintf_s(hpText, L"HP: %d / %d", playerData.hp, playerData.maxHp);
     m_textRenderer->DrawText(hpText, 20.0f, 20.0f, 24.0f,
-        D2D1::ColorF(D2D1::ColorF::White));
+        D2D1::ColorF(D2D1::ColorF::Black));
 
     wchar_t stepsText[64];
     swprintf_s(stepsText, L"•à”: %d / %d", m_steps, m_maxSteps);
     m_textRenderer->DrawText(stepsText, 20.0f, 50.0f, 24.0f,
         m_steps <= 5
         ? D2D1::ColorF(D2D1::ColorF::Red)
-        : D2D1::ColorF(D2D1::ColorF::White));
+        : D2D1::ColorF(D2D1::ColorF::Black));
 
     m_textRenderer->End();
 }
