@@ -80,6 +80,8 @@ private:
     int m_screenWidth = 0;
     int m_screenHeight = 0;
 
+    int m_panelHoveredEnemy = -1;
+
     std::vector<DrawCardEffect> m_drawCardEffects;
 
     static constexpr float CARD_WIDTH = 100.0f;
@@ -98,6 +100,7 @@ private:
     void DrawPileViewer(const BattleUIContext& ctx);
     void DrawCardEffects();
     void DrawPlayerOffScreenIndicator(const BattleUIContext& ctx);
+    void DrawEnemyGridHighlight(const BattleUIContext& ctx);
 
     bool GetEnemyScreenPos(Enemy* enemy, Renderer3D* renderer3D, float& outX, float& outY) const;
     bool GetEnemyFootPos(Enemy* enemy, Renderer3D* renderer3D, float& outX, float& outY) const;

@@ -156,6 +156,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
 
     DrawHPBar(20.0f, 60.0f, 200.0f, 30.0f, ctx.player->GetHp(), ctx.player->GetMaxHp());
+    DrawEnemyGridHighlight(ctx);
     DrawEnemyInfoPanel(ctx);
 
     for (int i = 0; i < (int)cards.size(); i++)
@@ -935,11 +936,23 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
         if (isHover)
             hoveredEnemy = i;
 
-
+        m_panelHoveredEnemy = hoveredEnemy;
+    
         // テキスト（スプライト描画後にテキスト描画）
+       
+        // ホバー時の詳細背景（スプライト）
+        if (hoveredEnemy >= 0)
+        {
+            float detailEntryY = panelY + hoveredEnemy * (entryH + 5.0f);
+            float detailX = panelX - 200.0f;
+            m_spriteRenderer->DrawSprite(m_whiteTexture, detailX, detailEntryY,
+                190.0f, entryH, 0.0f, XMFLOAT4(0.1f, 0.1f, 0.2f, 0.85f));
+        }
+
         m_spriteRenderer->End();
         m_textRenderer->Begin();
 
+        // テキスト描画（全敵分まとめて）
         for (int i = 0; i < (int)ctx.enemies->size(); i++)
         {
             Enemy* enemy = (*ctx.enemies)[i];
@@ -961,24 +974,12 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
                     D2D1::ColorF(D2D1::ColorF::Orange));
             }
 
-            // ホバー時の詳細背景
-            if (hoveredEnemy >= 0)
-            {
-                float entryY = panelY + hoveredEnemy * (entryH + 5.0f);
-                float detailX = panelX - 200.0f;
-                m_spriteRenderer->DrawSprite(m_whiteTexture, detailX, entryY,
-                    190.0f, entryH, 0.0f, XMFLOAT4(0.1f, 0.1f, 0.2f, 0.85f));
-            }
-            m_spriteRenderer->End();
-
-            // ホバー時の詳細
+            // ホバー時の詳細テキスト
             if (hoveredEnemy == i)
             {
                 float detailX = panelX - 200.0f;
-                float detailY = entryY;
-                float lineY = detailY + 5.0f;
+                float lineY = entryY + 5.0f;
 
-                // 次の行動
                 const EnemyAction* act = enemy->GetNextAction();
                 if (act)
                 {
@@ -989,7 +990,6 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
                     lineY += 22.0f;
                 }
 
-                // ブロック
                 if (enemy->GetBlock() > 0)
                 {
                     wchar_t blockText[32];
@@ -1000,7 +1000,6 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
                     lineY += 18.0f;
                 }
 
-                // バフ/デバフを自動列挙
                 for (auto& buff : enemy->GetBuffManager().GetBuffs())
                 {
                     std::wstring buffText = buff.name + L": " + std::to_wstring(buff.value);
@@ -1014,8 +1013,34 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
                 }
             }
         }
-
         m_textRenderer->End();
-   
     }
+}
+
+
+void BattleUI::DrawEnemyGridHighlight(const BattleUIContext& ctx)
+{
+    if (m_panelHoveredEnemy < 0) return;
+    if (m_panelHoveredEnemy >= (int)ctx.enemies->size()) return;
+
+    Enemy* enemy = (*ctx.enemies)[m_panelHoveredEnemy];
+    float footX, footY;
+    if (!GetEnemyFootPos(enemy, ctx.renderer3D, footX, footY)) return;
+
+    float scale = 1.0f / ctx.cameraZoom;
+    float size = 70.0f * scale;
+    float thickness = 3.0f * scale;
+    XMFLOAT4 color(1.0f, 1.0f, 0.0f, 0.8f);
+
+    float left = footX - size / 2.0f;
+    float top = footY - size;
+
+    // 上
+    m_spriteRenderer->DrawSprite(m_whiteTexture, left, top, size, thickness, 0.0f, color);
+    // 下
+    m_spriteRenderer->DrawSprite(m_whiteTexture, left, top + size, size, thickness, 0.0f, color);
+    // 左
+    m_spriteRenderer->DrawSprite(m_whiteTexture, left, top, thickness, size, 0.0f, color);
+    // 右
+    m_spriteRenderer->DrawSprite(m_whiteTexture, left + size - thickness, top, thickness, size + thickness, 0.0f, color);
 }
