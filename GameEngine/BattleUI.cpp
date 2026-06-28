@@ -161,14 +161,13 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
     for (int i = 0; i < (int)cards.size(); i++)
     {
+        if (i >= (int)m_cardAnims.size()) continue;
         if (i == ctx.hoveredCardIndex) continue;
         if (i == ctx.selectedCardIndex) continue;
 
-        float cardX = m_screenWidth / 2.0f
-            - (cards.size() * (CARD_WIDTH + 10.0f)) / 2.0f
-            + i * (CARD_WIDTH + 10.0f);
+        float cardX = m_cardAnims[i].currentX;
 
-        float drawY = cardHideY;
+        float drawY = m_cardAnims[i].currentY;
 
         XMFLOAT4 color = CardVisual::GetCardColor(
             cards[i]->GetData()->type, false);
@@ -180,12 +179,11 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     if (ctx.hoveredCardIndex >= 0 && ctx.hoveredCardIndex < (int)cards.size())
     {
         int i = ctx.hoveredCardIndex;
-        float cardX = m_screenWidth / 2.0f
-            - (cards.size() * (CARD_WIDTH + 10.0f)) / 2.0f
-            + i * (CARD_WIDTH + 10.0f);
+        if (i >= (int)m_cardAnims.size()) return;  // もしくは処理をスキップ
+        float cardX = m_cardAnims[i].currentX;
 
         float drawX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
-        float drawY = cardHoverY;
+        float drawY = m_cardAnims[i].currentY;
 
         XMFLOAT4 color = (i == ctx.selectedCardIndex)
             ? XMFLOAT4(0.8f, 0.8f, 0.0f, 0.7f)
@@ -199,12 +197,11 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         && ctx.selectedCardIndex < (int)cards.size())
     {
         int i = ctx.selectedCardIndex;
-        float cardX = m_screenWidth / 2.0f
-            - (cards.size() * (CARD_WIDTH + 10.0f)) / 2.0f
-            + i * (CARD_WIDTH + 10.0f);
+        if (i >= (int)m_cardAnims.size()) return;  // もしくは処理をスキップ
+        float cardX = m_cardAnims[i].currentX;
 
         float drawX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
-        float drawY = cardHoverY + 40.0f;
+        float drawY = m_cardAnims[i].currentY;
 
         m_spriteRenderer->DrawSprite(m_whiteTexture, drawX, drawY,
             CARD_HOVER_W, CARD_HOVER_H, 0.0f,
@@ -236,6 +233,8 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         discardW, discardH, 0.0f, discardColor);
 
     DrawCardEffects();
+    DrawPlayCardEffects();
+    DrawDiscardEffects();
 
     m_spriteRenderer->End();
 
@@ -248,15 +247,14 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
     for (int i = 0; i < (int)cards.size(); i++)
     {
+        if (i >= (int)m_cardAnims.size()) continue;
         if (i == ctx.hoveredCardIndex) continue;
         if (i == ctx.selectedCardIndex) continue;
 
-        float cardX = m_screenWidth / 2.0f
-            - (cards.size() * (CARD_WIDTH + 10.0f)) / 2.0f
-            + i * (CARD_WIDTH + 10.0f);
+        float cardX = m_cardAnims[i].currentX;
 
         m_textRenderer->DrawText(cards[i]->GetData()->name.c_str(),
-            cardX, cardHideY + 5.0f, 12.0f,
+            cardX, m_cardAnims[i].currentY + 5.0f, 12.0f,
             D2D1::ColorF(D2D1::ColorF::White));
     }
 
@@ -264,11 +262,10 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         && ctx.selectedCardIndex < (int)cards.size())
     {
         int i = ctx.selectedCardIndex;
-        float cardX = m_screenWidth / 2.0f
-            - (cards.size() * (CARD_WIDTH + 10.0f)) / 2.0f
-            + i * (CARD_WIDTH + 10.0f);
+        if (i >= (int)m_cardAnims.size()) return;  // もしくは処理をスキップ
+        float cardX = m_cardAnims[i].currentX;
         float drawX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
-        float drawY = cardHoverY + 40.0f;
+        float drawY = m_cardAnims[i].currentY;
 
         m_textRenderer->DrawText(cards[i]->GetData()->name.c_str(),
             drawX + 5.0f, drawY + 10.0f, 16.0f,
@@ -292,11 +289,10 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     if (ctx.hoveredCardIndex >= 0 && ctx.hoveredCardIndex < (int)cards.size())
     {
         int i = ctx.hoveredCardIndex;
-        float cardX = m_screenWidth / 2.0f
-            - (cards.size() * (CARD_WIDTH + 10.0f)) / 2.0f
-            + i * (CARD_WIDTH + 10.0f);
+        if (i >= (int)m_cardAnims.size()) return;  // もしくは処理をスキップ
+        float cardX = m_cardAnims[i].currentX;
         float drawX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
-        float drawY = cardHoverY;
+        float drawY = m_cardAnims[i].currentY;
 
         m_textRenderer->DrawText(cards[i]->GetData()->name.c_str(),
             drawX + 5.0f, drawY + 10.0f, 16.0f,
@@ -828,6 +824,147 @@ void BattleUI::DrawCardEffects()
         m_spriteRenderer->DrawSprite(m_whiteTexture,
             effect.x, effect.y, CARD_WIDTH, CARD_HEIGHT, 0.0f,
             XMFLOAT4(0.2f, 0.4f, 0.8f, effect.alpha));
+    }
+}
+
+void BattleUI::StartDiscardEffects()
+{
+    for (auto& anim : m_cardAnims)
+    {
+        DiscardCardEffect effect;
+        effect.startX = anim.currentX;
+        effect.startY = anim.currentY;
+        effect.alpha = 1.0f;
+        effect.timer = 0.0f;
+        effect.done = false;
+        m_discardCardEffects.push_back(effect);
+    }
+}
+
+void BattleUI::UpdateDiscardEffects(float deltaTime)
+{
+    for (auto& e : m_discardCardEffects)
+    {
+        if (e.done) continue;
+        e.timer += deltaTime;
+        float t = min(1.0f, e.timer / 1.0f);
+        e.alpha = 1.0f - t;
+        if (t >= 1.0f) e.done = true;
+    }
+    m_discardCardEffects.erase(
+        std::remove_if(m_discardCardEffects.begin(), m_discardCardEffects.end(),
+            [](const DiscardCardEffect& e) { return e.done; }),
+        m_discardCardEffects.end());
+}
+
+void BattleUI::DrawDiscardEffects()
+{
+    float targetX = 80.0f;
+    float targetY = (float)(m_screenHeight - 60);
+
+    for (auto& e : m_discardCardEffects)
+    {
+        float t = min(1.0f, e.timer / 1.0f);
+        float ease = t * t;
+        float x = e.startX + (targetX - e.startX) * ease;
+        float y = e.startY + (targetY - e.startY) * ease;
+
+        XMFLOAT4 color(0.4f, 0.4f, 0.4f, e.alpha);
+        m_spriteRenderer->DrawSprite(m_whiteTexture, x, y,
+            CARD_WIDTH, CARD_HEIGHT, 0.0f, color);
+    }
+}
+
+void BattleUI::StartPlayCardEffect(CardType type, float fromX, float fromY)
+{
+    PlayCardEffect effect;
+    effect.startX = fromX;
+    effect.startY = fromY;
+    effect.alpha = 1.0f;
+    effect.timer = 0.0f;
+    effect.done = false;
+    effect.cardType = type;
+    m_playCardEffects.push_back(effect);
+}
+
+void BattleUI::UpdatePlayCardEffects(float deltaTime)
+{
+    for (auto& e : m_playCardEffects)
+    {
+        if (e.done) continue;
+        e.timer += deltaTime;
+        float t = min(1.0f, e.timer / 2.0f);
+        e.alpha = 1.0f - t;
+        if (t >= 1.0f) e.done = true;
+    }
+    m_playCardEffects.erase(
+        std::remove_if(m_playCardEffects.begin(), m_playCardEffects.end(),
+            [](const PlayCardEffect& e) { return e.done; }),
+        m_playCardEffects.end());
+}
+
+void BattleUI::UpdateCardAnimations(float deltaTime, int handSize, int hoveredIndex, int selectedIndex)
+{
+    int prevSize = (int)m_cardAnims.size();
+
+    while ((int)m_cardAnims.size() < handSize)
+    {
+        CardAnimState anim;
+        anim.currentX = 20.0f;
+        anim.currentY = (float)(m_screenHeight - 60);
+        m_cardAnims.push_back(anim);
+    }
+    while ((int)m_cardAnims.size() > handSize)
+        m_cardAnims.pop_back();
+
+    float cardHideY = m_screenHeight - CARD_HIDE_Y_OFFSET;
+    float cardHoverY = m_screenHeight - CARD_HEIGHT - CARD_HOVER_Y_OFFSET;
+    float speed = 1.0f;
+    float dt = min(deltaTime, 0.03f);
+
+    for (int i = 0; i < handSize; i++)
+    {
+        float targetX = m_screenWidth / 2.0f
+            - (handSize * (CARD_WIDTH + 10.0f)) / 2.0f
+            + i * (CARD_WIDTH + 10.0f);
+
+        float targetY;
+        if (i == hoveredIndex)
+            targetY = cardHoverY;
+        else if (i == selectedIndex)
+            targetY = cardHoverY + 40.0f;
+        else
+            targetY = cardHideY;
+
+        if (i < prevSize)
+        {
+            m_cardAnims[i].currentX += (targetX - m_cardAnims[i].currentX) * speed * dt;
+            m_cardAnims[i].currentY += (targetY - m_cardAnims[i].currentY) * speed * dt;
+        }
+    }
+}
+
+void BattleUI::OnCardRemoved(int index)
+{
+    if (index >= 0 && index < (int)m_cardAnims.size())
+        m_cardAnims.erase(m_cardAnims.begin() + index);
+}
+
+void BattleUI::DrawPlayCardEffects()
+{
+    for (auto& e : m_playCardEffects)
+    {
+        float t = min(1.0f, e.timer / 2.0f);
+        float ease = 1.0f - (1.0f - t) * (1.0f - t);
+        float y = e.startY - 150.0f * ease;
+        float scale = 1.0f + 0.3f * ease;
+        float w = CARD_WIDTH * scale;
+        float h = CARD_HEIGHT * scale;
+        float x = e.startX - (w - CARD_WIDTH) / 2.0f;
+
+        XMFLOAT4 color = CardVisual::GetCardColor(e.cardType, false);
+        color.w = e.alpha;
+        m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, w, h, 0.0f, color);
     }
 }
 

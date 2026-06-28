@@ -150,11 +150,6 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             for (auto enemy : m_enemies)
                 enemy->DecideNextAction();
 
-            // 手札を捨て札に
-            for (auto card : m_hand.GetCards())
-                m_deck.DiscardCard(card->GetId());
-            m_hand.Clear();
-
             // 山札と捨て札から移動カードを探す
             std::vector<std::string> moveCardIds;
             auto collectMoveCards = [&](const std::vector<std::string>& pile)
@@ -194,7 +189,11 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             for (auto enemy : m_enemies) {
                 enemy->ResetBlock();
             }
-
+            m_battleUI->StartDiscardEffects();
+            for (auto card : m_hand.GetCards())
+                m_deck.DiscardCard(card->GetId());
+            m_hand.Clear();
+            m_battleUI->ClearCardAnimations();
         };
 
     const EncounterData* encounter = EncounterDataBase::GetRandom(1);
@@ -352,6 +351,9 @@ void BattleScene::Update(float deltaTime)
             m_playerCol, m_playerRow, m_highlightTimer);
 
         m_battleUI->UpdateDrawCardEffects(deltaTime);
+        m_battleUI->UpdatePlayCardEffects(deltaTime);
+        m_battleUI->UpdateCardAnimations(deltaTime, (int)m_hand.GetCards().size(), m_hoveredCardIndex, m_selectedCardIndex);
+        m_battleUI->UpdateDiscardEffects(deltaTime);
 
         // 勝利判定
         if (m_enemies.empty())
@@ -626,6 +628,11 @@ void BattleScene::HandleInput()
                 int newPlayerCol = m_playerCol;
                 int newPlayerRow = m_playerRow;
 
+                float playCardX = m_screenWidth / 2.0f
+                    - (m_hand.GetCards().size() * (CARD_WIDTH + 10.0f)) / 2.0f
+                    + m_selectedCardIndex * (CARD_WIDTH + 10.0f);
+                float playCardY = m_screenHeight - 30.0f;
+
                 auto execResult = m_cardExecutor.Execute(
                     dataCopy, cardId,
                     result.col, result.row,
@@ -647,6 +654,9 @@ void BattleScene::HandleInput()
                         m_player->worldX = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
                         m_player->worldZ = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
                     }
+
+                    m_battleUI->StartPlayCardEffect(dataCopy.type, playCardX, playCardY);
+                    m_battleUI->OnCardRemoved(m_selectedCardIndex);
 
                     ProcessDeadEnemies();
                     m_selectedCardIndex = -1;

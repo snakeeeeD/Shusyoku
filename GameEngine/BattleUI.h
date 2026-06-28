@@ -33,6 +33,26 @@ struct DrawCardEffect
     bool  done;
 };
 
+struct DiscardCardEffect {
+    float startX, startY;
+    float alpha;
+    float timer;
+    bool done;
+};
+
+
+struct CardAnimState {
+    float currentX, currentY;
+};
+
+struct PlayCardEffect {
+    float startX, startY;
+    float alpha;
+    float timer;
+    bool done;
+    CardType cardType;
+};
+
 struct BattleUIContext
 {
     Player* player;
@@ -67,8 +87,17 @@ public:
         int screenWidth, int screenHeight, IDXGISwapChain* swapChain);
 
     void Draw(const BattleUIContext& ctx);
+
     void UpdateDrawCardEffects(float deltaTime);
     void StartDrawCardEffect(const std::string& cardId);
+    void StartDiscardEffects();
+    void UpdateDiscardEffects(float deltaTime);
+    void UpdateCardAnimations(float deltaTime, int handSize, int hoveredIndex, int selectedIndex);
+    void OnCardRemoved(int index);
+    void StartPlayCardEffect(CardType type, float fromX, float fromY);
+    void UpdatePlayCardEffects(float deltaTime);
+
+    void ClearCardAnimations() { m_cardAnims.clear(); }
 
     TextRenderer* GetTextRenderer() { return m_textRenderer; }
 
@@ -83,6 +112,7 @@ private:
     int m_panelHoveredEnemy = -1;
 
     std::vector<DrawCardEffect> m_drawCardEffects;
+    std::vector<PlayCardEffect> m_playCardEffects;
 
     static constexpr float CARD_WIDTH = 100.0f;
     static constexpr float CARD_HEIGHT = 110.0f;
@@ -99,6 +129,10 @@ private:
     void DrawArrowIndicator(float sx, float sy, const DirectX::XMFLOAT4& color, float highlightTimer);
     void DrawPileViewer(const BattleUIContext& ctx);
     void DrawCardEffects();
+    std::vector<CardAnimState> m_cardAnims;
+    std::vector<DiscardCardEffect> m_discardCardEffects;
+    void DrawPlayCardEffects();
+    void DrawDiscardEffects();
     void DrawPlayerOffScreenIndicator(const BattleUIContext& ctx);
     void DrawEnemyGridHighlight(const BattleUIContext& ctx);
 
