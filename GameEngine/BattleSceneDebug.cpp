@@ -71,6 +71,134 @@ void BattleScene::DrawImGui()
         ImGui::PopID();
     }
 
+    ImGui::Separator();
+
+    // --- カード追加 ---
+    ImGui::Text("Add Card");
+    {
+        static int selectedCard = 0;
+        static std::vector<std::string> cardIds;
+
+        if (cardIds.empty())
+        {
+            for (auto& [id, data] : CardDataBase::GetAll())
+                cardIds.push_back(id);
+            std::sort(cardIds.begin(), cardIds.end());
+        }
+
+        if (!cardIds.empty())
+        {
+            if (ImGui::BeginCombo("Card", cardIds[selectedCard].c_str()))
+            {
+                for (int i = 0; i < (int)cardIds.size(); i++)
+                {
+                    bool isSelected = (i == selectedCard);
+                    if (ImGui::Selectable(cardIds[i].c_str(), isSelected))
+                        selectedCard = i;
+                    if (isSelected)
+                        ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
+
+            if (ImGui::Button("Add to Hand"))
+                m_hand.AddCard(cardIds[selectedCard]);
+        }
+}
+
+    ImGui::Separator();
+
+    // --- バフ/デバフ付与 ---
+    ImGui::Text("Buff / Debuff");
+    {
+        static int targetType = 0;
+        static int targetEnemy = 0;
+        static int buffIndex = 0;
+        static int buffValue = 3;
+        static int buffDuration = 3;
+
+        const char* targets[] = { "Player", "Enemy" };
+        ImGui::Combo("Target", &targetType, targets, 2);
+
+        if (targetType == 1 && !m_enemies.empty())
+        {
+            ImGui::SliderInt("Enemy Index", &targetEnemy, 0, (int)m_enemies.size() - 1);
+        }
+
+        const char* buffNames[] = {
+            "AttackUp", "DefenseUp", "MoveUp", "Regeneration",
+            "AttackDown", "DefenseDown", "Poison"
+        };
+        BuffType buffTypes[] = {
+            BuffType::AttackUp, BuffType::DefenseUp, BuffType::MoveUp, BuffType::Regeneration,
+            BuffType::AttackDown, BuffType::DefenseDown, BuffType::Poison
+        };
+        const wchar_t* buffDisplayNames[] = {
+            L"AttackUP", L"DefenseUP", L"MoveUP", L"Regen",
+            L"AttackDOWN", L"DefenseDOWN", L"Poison"
+        };
+
+        ImGui::Combo("Buff Type", &buffIndex, buffNames, 7);
+        ImGui::SliderInt("Value", &buffValue, 1, 20);
+        ImGui::SliderInt("Duration", &buffDuration, -1, 10);
+
+        if (ImGui::Button("Apply Buff"))
+        {
+            Buff buff;
+            buff.type = buffTypes[buffIndex];
+            buff.value = buffValue;
+            buff.duration = buffDuration;
+            buff.name = buffDisplayNames[buffIndex];
+            buff.description = L"Debug";
+
+            if (targetType == 0)
+                m_player->GetBuffManager().AddBuff(buff);
+            else if (!m_enemies.empty())
+                m_enemies[targetEnemy]->GetBuffManager().AddBuff(buff);
+        }
+    }
+
+    ImGui::Separator();
+
+    // --- 手札操作 ---
+    ImGui::Text("Hand");
+    {
+        const auto& cards = m_hand.GetCards();
+        for (int i = 0; i < (int)cards.size(); i++)
+        {
+            ImGui::PushID(i + 1000);
+            char label[64];
+            sprintf_s(label, "Discard: %s", cards[i]->GetId().c_str());
+            if (ImGui::Button(label))
+            {
+                m_deck.DiscardCard(cards[i]->GetId());
+                m_hand.RemoveCard(i);
+                m_battleUI->OnCardRemoved(i);
+                ImGui::PopID();
+                break;
+            }
+            ImGui::PopID();
+        }
+    }
+
+    ImGui::Separator();
+
+    // --- 手札リセット ---
+    if (ImGui::Button("Reset Hand"))
+    {
+        for (auto card : m_hand.GetCards())
+            m_deck.DiscardCard(card->GetId());
+        m_hand.Clear();
+        m_battleUI->ClearCardAnimations();
+
+        for (int i = 0; i < 5; i++)
+        {
+            std::string id = m_deck.DrawCard();
+            if (!id.empty())
+                m_hand.AddCard(id);
+        }
+    }
+
     ImGui::End();
 }
 #else

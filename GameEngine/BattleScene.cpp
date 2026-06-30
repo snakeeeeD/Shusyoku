@@ -242,6 +242,12 @@ void BattleScene::Update(float deltaTime)
 {
     m_input.Update();
 
+#ifdef _DEBUG
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.WantCaptureMouse) return;
+#endif
+
+
     // カメラズーム（マウスホイール）
     int wheelDelta = m_input.GetMouseWheelDelta();
     if (wheelDelta != 0)
