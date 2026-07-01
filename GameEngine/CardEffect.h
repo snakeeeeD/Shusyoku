@@ -84,11 +84,6 @@ namespace CardEffect
                 buff.name = L"ˆÚ“®UP";
                 buff.description = L"ˆÚ“®—Í+" + std::to_wstring(effect.value);
             }
-            else if (effect.buffType == "Regeneration")
-            {
-                buff.name = L"Ä¶";
-                buff.description = L"–ˆƒ^[ƒ“HP+" + std::to_wstring(effect.value);
-            }
             else
             {
                 buff.name = ToWString(effect.buffType);

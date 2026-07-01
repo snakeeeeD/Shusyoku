@@ -126,19 +126,25 @@ void BattleScene::DrawImGui()
         }
 
         const char* buffNames[] = {
-            "AttackUp", "DefenseUp", "MoveUp", "Regeneration",
-            "AttackDown", "DefenseDown", "Poison"
+        "AttackUp", "DefenseUp", "MoveUp",
+        "Thorns", "Charge", "Momentum", "HitAndRun", "Reposition", "Barricade",
+        "AttackDown", "DefenseDown", "Vulnerable", "Weak", "Frail",
+        "Root", "Slow", "Burn", "Poison"
         };
         BuffType buffTypes[] = {
-            BuffType::AttackUp, BuffType::DefenseUp, BuffType::MoveUp, BuffType::Regeneration,
-            BuffType::AttackDown, BuffType::DefenseDown, BuffType::Poison
+            BuffType::AttackUp, BuffType::DefenseUp, BuffType::MoveUp,
+            BuffType::Thorns, BuffType::Charge, BuffType::Momentum, BuffType::HitAndRun, BuffType::Reposition, BuffType::Barricade,
+            BuffType::AttackDown, BuffType::DefenseDown, BuffType::Vulnerable, BuffType::Weak, BuffType::Frail,
+            BuffType::Root, BuffType::Slow, BuffType::Burn, BuffType::Poison
         };
         const wchar_t* buffDisplayNames[] = {
-            L"AttackUP", L"DefenseUP", L"MoveUP", L"Regen",
-            L"AttackDOWN", L"DefenseDOWN", L"Poison"
+            L"AttackUP", L"DefenseUP", L"MoveUP",
+            L"Thorns", L"Charge", L"Momentum", L"HitAndRun", L"Reposition", L"Barricade",
+            L"AttackDOWN", L"DefenseDOWN", L"Vulnerable", L"Weak", L"Frail",
+            L"Root", L"Slow", L"Burn", L"Poison"
         };
 
-        ImGui::Combo("Buff Type", &buffIndex, buffNames, 7);
+        ImGui::Combo("Buff Type", &buffIndex, buffNames, 18);
         ImGui::SliderInt("Value", &buffValue, 1, 20);
         ImGui::SliderInt("Duration", &buffDuration, -1, 10);
 

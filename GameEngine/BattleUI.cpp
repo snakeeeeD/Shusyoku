@@ -1,4 +1,5 @@
 #include "BattleUI.h"
+#include "BuffInfo.h"
 #include <algorithm>
 
 using namespace DirectX;
@@ -123,9 +124,9 @@ std::wstring BattleUI::GetCardEffectText(const CardData* data, Player* player) c
     int actualValue = data->mainEffect.value;
 
     if (data->type == CardType::Attack)
-        actualValue = player->GetBuffManager().ApplyAttackBuff(data->mainEffect.value);
+        actualValue = player->GetBuffManager().GetFinalAttack(data->mainEffect.value);
     else if (data->type == CardType::Skill)
-        actualValue = player->GetBuffManager().ApplyBlockBuff(data->mainEffect.value);
+        actualValue = player->GetBuffManager().GetFinalBlock(data->mainEffect.value);
 
     std::wstring result = data->description;
     std::wstring placeholder = L"{value}";
@@ -387,14 +388,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             for (auto& buff : enemy->GetBuffManager().GetBuffs())
             {
                 float iconSize = 16.0f;
-                XMFLOAT4 buffColor;
-                switch (buff.type)
-                {
-                case BuffType::Poison:      buffColor = XMFLOAT4(0.5f, 0.0f, 0.8f, 1.0f); break;
-                case BuffType::AttackUp:    buffColor = XMFLOAT4(0.9f, 0.3f, 0.1f, 1.0f); break;
-                case BuffType::DefenseUp:   buffColor = XMFLOAT4(0.2f, 0.5f, 0.9f, 1.0f); break;
-                default:                    buffColor = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f); break;
-                }
+                XMFLOAT4 buffColor = BuffInfo::Get(buff.type).color;
                 m_spriteRenderer->DrawSprite(m_whiteTexture,
                     buffIconX - 1.0f, buffIconY - 1.0f, iconSize + 2.0f, iconSize + 2.0f,
                     0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
@@ -1041,8 +1035,21 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
         float entryY = panelY + i * (entryH + 5.0f);
 
         // ”wŒi
-        bool isHover = mp.x >= panelX && mp.x <= panelX + panelW
-            && mp.y >= entryY && mp.y <= entryY + entryH;
+        float detailX = panelX - 200.0f;
+        // Ú×ƒpƒlƒ‹‚Ì‚‚³‚ðŒvŽZ
+        float detailH = 10.0f;
+        if (enemy->GetNextAction()) detailH += 22.0f;
+        if (enemy->GetBlock() > 0) detailH += 18.0f;
+        for (auto& buff : enemy->GetBuffManager().GetBuffs())
+            detailH += 20.0f;
+        detailH += 18.0f;
+        if (detailH < entryH) detailH = entryH;
+        bool isEntryHover = (mp.x >= panelX && mp.x <= panelX + panelW
+            && mp.y >= entryY && mp.y <= entryY + entryH);
+        bool isDetailHover = (m_panelHoveredEnemy == i)
+            && (mp.x >= detailX && mp.x <= panelX
+                && mp.y >= entryY && mp.y <= entryY + detailH);
+        bool isHover = isEntryHover || isDetailHover;
 
         XMFLOAT4 bgColor = isHover
             ? XMFLOAT4(0.45f, 0.45f, 0.25f, 0.9f)
@@ -1070,7 +1077,7 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
         m_spriteRenderer->DrawSprite(m_whiteTexture, barX, barY,
             barW * hpRatio, barH, 0.0f, XMFLOAT4(0.0f, 0.0f, 0.8f, 1.0f));
 
-        if (isHover)
+        if (isHover && hoveredEnemy < 0)
             hoveredEnemy = i;
 
         m_panelHoveredEnemy = hoveredEnemy;
@@ -1081,9 +1088,8 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
         if (hoveredEnemy >= 0)
         {
             float detailEntryY = panelY + hoveredEnemy * (entryH + 5.0f);
-            float detailX = panelX - 200.0f;
             m_spriteRenderer->DrawSprite(m_whiteTexture, detailX, detailEntryY,
-                190.0f, entryH, 0.0f, XMFLOAT4(0.1f, 0.1f, 0.2f, 0.85f));
+                190.0f, detailH, 0.0f, XMFLOAT4(0.1f, 0.1f, 0.2f, 1.0f));
         }
 
         m_spriteRenderer->End();
@@ -1139,14 +1145,26 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
 
                 for (auto& buff : enemy->GetBuffManager().GetBuffs())
                 {
-                    std::wstring buffText = buff.name + L": " + std::to_wstring(buff.value);
+                    const auto& info = BuffInfo::Get(buff.type);
+                    std::wstring buffText = info.name + L": " + std::to_wstring(buff.value);
                     if (!buff.isPermanent())
                         buffText += L" (" + std::to_wstring(buff.duration) + L"T)";
-
+                    bool buffHover = (mp.x >= detailX && mp.x <= detailX + 190.0f
+                        && mp.y >= lineY && mp.y <= lineY + 20.0f);
+                    D2D1::ColorF buffColor = buffHover
+                        ? D2D1::ColorF(1.0f, 1.0f, 0.5f)
+                        : D2D1::ColorF(0.6f, 1.0f, 0.6f);
                     m_textRenderer->DrawText(buffText.c_str(),
-                        detailX + 10.0f, lineY, 14.0f,
-                        D2D1::ColorF(0.6f, 1.0f, 0.6f));
+                        detailX + 10.0f, lineY, 14.0f, buffColor);
                     lineY += 20.0f;
+                    if (buffHover)
+                    {
+                        std::wstring desc = BuffInfo::GetDescription(buff.type, buff.value);
+                        m_textRenderer->DrawText(desc.c_str(),
+                            detailX + 10.0f, lineY, 12.0f,
+                            D2D1::ColorF(0.8f, 0.8f, 0.8f));
+                        lineY += 18.0f;
+                    }
                 }
             }
         }

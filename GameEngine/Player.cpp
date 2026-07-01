@@ -30,6 +30,10 @@ void Player::Draw3D(Renderer3D* renderer)
 
 void Player::TakeDamage(int damage)
 {
+    // Vulnerable: 50%‘
+    if (m_buffManager.HasBuff(BuffType::Vulnerable))
+        damage = damage * 150 / 100;
+
     // ƒuƒƒbƒN‚Åæ‚ÉŽó‚¯‚é
     if (m_block > 0)
     {

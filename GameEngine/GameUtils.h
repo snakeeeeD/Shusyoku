@@ -64,7 +64,6 @@ inline BuffType StringToBuffType(const std::string& str)
     if (str == "AttackUp")   return BuffType::AttackUp;
     if (str == "DefenseUp")  return BuffType::DefenseUp;
     if (str == "MoveUp")     return BuffType::MoveUp;
-    if (str == "Regeneration") return BuffType::Regeneration;
     if (str == "AttackDown") return BuffType::AttackDown;
     if (str == "DefenseDown") return BuffType::DefenseDown;
     if (str == "Poison")     return BuffType::Poison;

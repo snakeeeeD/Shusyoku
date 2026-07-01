@@ -137,6 +137,7 @@
     <ClInclude Include="BattleScene.h" />
     <ClInclude Include="BattleUI.h" />
     <ClInclude Include="Buff.h" />
+    <ClInclude Include="BuffInfo.h" />
     <ClInclude Include="BuffManager.h" />
     <ClInclude Include="BuffType.h" />
     <ClInclude Include="Card.h" />

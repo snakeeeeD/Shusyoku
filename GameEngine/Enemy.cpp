@@ -176,6 +176,10 @@ void Enemy::MoveToward(int playerCol, int playerRow, GridMap* gridMap)
 
 void Enemy::TakeDamage(int damage)
 {
+    // Vulnerable: 50%‘
+    if (m_buffManager.HasBuff(BuffType::Vulnerable))
+        damage = damage * 150 / 100;
+
     if (m_block > 0)
     {
         int blocked = min(m_block, damage);

@@ -28,7 +28,7 @@ public:
     void RestoreEnergy();          // ターン開始時に回復
     bool UseEnergy(int cost);      // エネルギー消費（足りなければfalse）
 
-    void ResetBlock() { m_block = 0; }
+    void ResetBlock() { if (!m_buffManager.HasBuff(BuffType::Barricade)) m_block = 0; }
 
 private:
 

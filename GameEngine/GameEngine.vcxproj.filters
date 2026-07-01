@@ -193,6 +193,9 @@
     <Filter Include="ソース ファイル\06-ImGui">
       <UniqueIdentifier>{73ba1c63-90c8-47a0-afdc-b5dc41a9aa15}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\30-Buff\20-BuffInfo">
+      <UniqueIdentifier>{cd732ea9-71eb-4e8c-bd5a-91c453b5d577}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -353,6 +356,9 @@
     </ClInclude>
     <ClInclude Include="External\imgui\backends\imgui_impl_win32.h">
       <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="BuffInfo.h">
+      <Filter>ソース ファイル\03-Object関連\30-Card\30-Buff\20-BuffInfo</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
