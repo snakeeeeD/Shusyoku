@@ -215,7 +215,6 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     playerBar.hasBurn = ctx.player->GetBuffManager().HasBuff(BuffType::Burn);
     DrawHPBar(20.0f, 60.0f, 200.0f, 30.0f, playerBar, ctx.highlightTimer);
     DrawEnemyGridHighlight(ctx);
-    DrawEnemyInfoPanel(ctx);
 
     if (ctx.player->GetBlock() > 0)
     {
@@ -714,8 +713,10 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         m_textRenderer->DrawText(desc.c_str(), tipX + 5.0f, tipY + 18.0f, 11.0f,
             D2D1::ColorF(0.8f, 0.8f, 0.8f));
     }
-
     m_textRenderer->End();
+
+    m_spriteRenderer->Begin();
+    DrawEnemyInfoPanel(ctx);
 }
 
 void BattleUI::DrawTargetIndicators(const BattleUIContext& ctx)
@@ -1052,9 +1053,13 @@ void BattleUI::UpdatePlayCardEffects(float deltaTime)
         m_playCardEffects.end());
 }
 
-void BattleUI::UpdateCardAnimations(float deltaTime, int handSize, int hoveredIndex, int selectedIndex)
+void BattleUI::UpdateCardAnimations(float deltaTime, int handSize, int hoveredIndex, 
+    int selectedIndex, POINT mousePos, bool selectedNeedsTarget)
 {
     int prevSize = (int)m_cardAnims.size();
+
+    if (selectedIndex < 0)
+        m_cardLockedToCenter = false;
 
     while ((int)m_cardAnims.size() < handSize)
     {
@@ -1078,12 +1083,43 @@ void BattleUI::UpdateCardAnimations(float deltaTime, int handSize, int hoveredIn
             + i * (CARD_WIDTH + 10.0f);
 
         float targetY;
-        if (i == hoveredIndex && selectedIndex >= 0 && i != selectedIndex)
+
+        if (i == selectedIndex)
+        {
+            if (selectedNeedsTarget)
+            {
+                if (mousePos.y < m_screenHeight - 100)
+                    m_cardLockedToCenter = true;
+
+                if (m_cardLockedToCenter)
+                {
+                    targetX = m_screenWidth / 2.0f - CARD_WIDTH / 2.0f;
+                    targetY = cardHoverY + 40.0f;
+                }
+                else
+                {
+                    targetX = (float)mousePos.x - CARD_WIDTH / 2.0f;
+                    targetY = (float)mousePos.y - CARD_HEIGHT / 2.0f;
+                }
+            }
+            else
+            {
+                targetX = (float)mousePos.x - CARD_WIDTH / 2.0f;
+                targetY = (float)mousePos.y - CARD_HEIGHT / 2.0f;
+            }
+
+            if (i < prevSize)
+            {
+                float dragSpeed = m_cardLockedToCenter ? 8.0f : 15.0f;
+                m_cardAnims[i].currentX += (targetX - m_cardAnims[i].currentX) * dragSpeed * dt;
+                m_cardAnims[i].currentY += (targetY - m_cardAnims[i].currentY) * dragSpeed * dt;
+            }
+            continue;
+        }
+        else if (i == hoveredIndex && selectedIndex >= 0)
             targetY = cardHideY - 40.0f;
         else if (i == hoveredIndex)
             targetY = cardHoverY;
-        else if (i == selectedIndex)
-            targetY = cardHoverY + 40.0f;
         else
             targetY = cardHideY;
 

@@ -362,7 +362,14 @@ void BattleScene::Update(float deltaTime)
 
         m_battleUI->UpdateDrawCardEffects(deltaTime);
         m_battleUI->UpdatePlayCardEffects(deltaTime);
-        m_battleUI->UpdateCardAnimations(deltaTime, (int)m_hand.GetCards().size(), m_hoveredCardIndex, m_selectedCardIndex);
+        bool selectedNeedsTarget = false;
+        if (m_selectedCardIndex >= 0 && m_selectedCardIndex < (int)m_hand.GetCards().size())
+        {
+            CardType ct = m_hand.GetCards()[m_selectedCardIndex]->GetData()->type;
+            selectedNeedsTarget = (ct == CardType::Attack || ct == CardType::Move);
+        }
+        m_battleUI->UpdateCardAnimations(deltaTime, (int)m_hand.GetCards().size(), m_hoveredCardIndex, 
+            m_selectedCardIndex, m_input.GetMousePos(), selectedNeedsTarget);
         m_battleUI->UpdateDiscardEffects(deltaTime);
 
         // 勝利判定
@@ -551,6 +558,82 @@ void BattleScene::HandleInput()
 
     bool isOnCard = false;
     bool cardJustUsed = false;
+
+    // 全カード: グリッドエリア上で左ボタンを離したら使用
+    if (m_input.GetMouseButtonRelease(0) && m_selectedCardIndex >= 0 && m_selectedCardIndex < (int)cards.size())
+    {
+        POINT releasePos = m_input.GetMousePos();
+        if (releasePos.y < m_screenHeight - 150)
+        {
+            const Card* card = cards[m_selectedCardIndex];
+            CardData dataCopy = *card->GetData();
+            CardType ct = dataCopy.type;
+
+            int targetCol = m_playerCol;
+            int targetRow = m_playerRow;
+            bool canTry = true;
+
+            if (ct == CardType::Attack || ct == CardType::Move)
+            {
+                auto result = m_gridMap->GetClickedCell3D(
+                    releasePos,
+                    m_renderer3D->GetViewMatrix(),
+                    m_renderer3D->GetProjectionMatrix(),
+                    m_screenWidth,
+                    m_screenHeight
+                );
+                if (result.cell)
+                {
+                    targetCol = result.col;
+                    targetRow = result.row;
+                }
+                else
+                {
+                    canTry = false;
+                }
+            }
+
+            if (canTry)
+            {
+                std::string cardId = card->GetId();
+                int newPlayerCol = m_playerCol;
+                int newPlayerRow = m_playerRow;
+
+                float playCardX = m_screenWidth / 2.0f
+                    - (cards.size() * (CARD_WIDTH + 10.0f)) / 2.0f
+                    + m_selectedCardIndex * (CARD_WIDTH + 10.0f);
+                float playCardY = m_screenHeight - 30.0f;
+
+                auto execResult = m_cardExecutor.Execute(
+                    dataCopy, cardId,
+                    targetCol, targetRow,
+                    m_player, m_enemies, m_gridMap,
+                    m_playerCol, m_playerRow,
+                    m_hand, m_selectedCardIndex, m_deck,
+                    newPlayerCol, newPlayerRow
+                );
+
+                if (execResult.cardUsed)
+                {
+                    if (newPlayerCol != m_playerCol || newPlayerRow != m_playerRow)
+                    {
+                        m_playerCol = newPlayerCol;
+                        m_playerRow = newPlayerRow;
+                        m_player->gridCol = m_playerCol;
+                        m_player->gridRow = m_playerRow;
+                        m_player->worldX = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                        m_player->worldZ = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                    }
+
+                    m_battleUI->StartPlayCardEffect(dataCopy.type, playCardX, playCardY);
+                    m_battleUI->OnCardRemoved(m_selectedCardIndex);
+                    ProcessDeadEnemies();
+                    m_selectedCardIndex = -1;
+                    cardJustUsed = true;
+                }
+            }
+        }
+    }
 
     if (m_input.GetMouseButtonTrigger(0))
     {

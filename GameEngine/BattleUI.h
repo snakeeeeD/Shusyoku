@@ -102,7 +102,8 @@ public:
     void StartDrawCardEffect(const std::string& cardId);
     void StartDiscardEffects();
     void UpdateDiscardEffects(float deltaTime);
-    void UpdateCardAnimations(float deltaTime, int handSize, int hoveredIndex, int selectedIndex);
+    void UpdateCardAnimations(float deltaTime, int handSize, int hoveredIndex, 
+        int selectedIndex, POINT mousePos, bool selectedNeedsTarget);
     void OnCardRemoved(int index);
     void StartPlayCardEffect(CardType type, float fromX, float fromY);
     void UpdatePlayCardEffects(float deltaTime);
@@ -152,6 +153,7 @@ private:
     float m_hoveredBuffX = 0;
     float m_hoveredBuffY = 0;
     bool m_hasHoveredBuff = false;
+    bool m_cardLockedToCenter = false;
 
     bool GetEnemyScreenPos(Enemy* enemy, Renderer3D* renderer3D, float& outX, float& outY) const;
     bool GetEnemyFootPos(Enemy* enemy, Renderer3D* renderer3D, float& outX, float& outY) const;
