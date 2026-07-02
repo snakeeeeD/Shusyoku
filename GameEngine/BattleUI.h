@@ -136,6 +136,13 @@ private:
     void DrawPlayerOffScreenIndicator(const BattleUIContext& ctx);
     void DrawEnemyGridHighlight(const BattleUIContext& ctx);
 
+    BuffType m_hoveredBuffType = BuffType::AttackUp;
+    int m_hoveredBuffEnemy = -1;
+    int m_hoveredBuffValue = 0;
+    float m_hoveredBuffX = 0;
+    float m_hoveredBuffY = 0;
+    bool m_hasHoveredBuff = false;
+
     bool GetEnemyScreenPos(Enemy* enemy, Renderer3D* renderer3D, float& outX, float& outY) const;
     bool GetEnemyFootPos(Enemy* enemy, Renderer3D* renderer3D, float& outX, float& outY) const;
     std::wstring GetCardEffectText(const CardData* data, Player* player) const;

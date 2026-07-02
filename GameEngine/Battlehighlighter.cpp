@@ -170,17 +170,8 @@ void BattleHighlighter::UpdatePlayerHighlight(
             renderer3D->GetViewMatrix() * renderer3D->GetProjectionMatrix());
         XMFLOAT4 clip;
         XMStoreFloat4(&clip, clipPos);
-        bool isUnderCards = false;
-        if (clip.w > 0.0f)
-        {
-            float sx = (clip.x / clip.w + 1.0f) * 0.5f * screenWidth;
-            float sy = (1.0f - clip.y / clip.w) * 0.5f * screenHeight;
-            if (sx >= cardArea.left && sx <= cardArea.right
-                && sy >= cardArea.top && sy <= cardArea.bottom)
-                isUnderCards = true;
-        }
 
-        float finalBrightness = isUnderCards ? 0.6f : hoverBrightness;
+        float finalBrightness = hoverBrightness;
 
         auto& cell = gridMap->GetCell(col, row);
 
@@ -274,7 +265,7 @@ void BattleHighlighter::UpdatePlayerHighlight(
             }
             else if (data->type == CardType::Move && isDangerCell)
             {
-                float blink = isUnderCards ? 0.6f : 0.6f + 0.4f * sin(timer * 2.0f);
+                float blink =  0.6f + 0.4f * sin(timer * 2.0f);
                 cell.gameObject.color = XMFLOAT4(blink, blink, 0.1f, 1.0f);
             }
             else

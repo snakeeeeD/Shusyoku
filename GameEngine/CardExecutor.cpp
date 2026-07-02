@@ -82,18 +82,27 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             for (auto enemy : targets)
             {
                 enemy->TakeDamage(player->GetBuffManager().GetFinalAttack(data.mainEffect.value));
+                // Thorns反射
+                if (enemy->GetBuffManager().HasBuff(BuffType::Thorns))
+                    player->TakeDamage(enemy->GetBuffManager().GetBuffValue(BuffType::Thorns));
                 CardEffect::ApplyOnHitEffect(data.onHitEffect, enemy->GetBuffManager());
             }
         }
         else
         {
             Enemy* target = GetEnemyAt(targetCol, targetRow, enemies);
-            if (!target || GetMinDistToEnemy(playerCol, playerRow, target) > data.range)
+            int range = data.range;
+            if (player->GetBuffManager().HasBuff(BuffType::Reposition))
+                range += player->GetBuffManager().GetBuffValue(BuffType::Reposition);
+            if (!target || GetMinDistToEnemy(playerCol, playerRow, target) > range)
             {
                 return result;
             }
             player->UseEnergy(data.cost);
             target->TakeDamage(player->GetBuffManager().GetFinalAttack(data.mainEffect.value));
+            // Thorns反射
+            if (target->GetBuffManager().HasBuff(BuffType::Thorns))
+                player->TakeDamage(target->GetBuffManager().GetBuffValue(BuffType::Thorns));
             CardEffect::ApplyOnHitEffect(data.onHitEffect, target->GetBuffManager());
         }
         break;
@@ -107,7 +116,8 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
         }
         int dc = abs(playerCol - targetCol);
         int dr = abs(playerRow - targetRow);
-        if ((dc + dr) > data.range)
+        int moveRange = player->GetBuffManager().GetFinalMoveRange(data.range);
+        if ((dc + dr) > moveRange)
         {
             return result;
         }
@@ -116,6 +126,42 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
         outNewPlayerCol = targetCol;
         outNewPlayerRow = targetRow;
         gridMap->SetCellType(targetCol, targetRow, CellType::Player);
+        // 移動距離
+        int moveDist = dc + dr;
+
+        // Burn: 移動するたびダメージ
+        if (player->GetBuffManager().HasBuff(BuffType::Burn))
+            player->TakeDamage(player->GetBuffManager().GetBuffValue(BuffType::Burn) * moveDist);
+
+        // Momentum: 移動するたびブロック+
+        if (player->GetBuffManager().HasBuff(BuffType::Momentum))
+            player->AddBlock(player->GetBuffManager().GetBuffValue(BuffType::Momentum) * moveDist);
+
+        // Charge: 移動距離に応じて次の攻撃ダメージ+（AttackUpに加算）
+        if (player->GetBuffManager().HasBuff(BuffType::Charge))
+        {
+            int bonus = player->GetBuffManager().GetBuffValue(BuffType::Charge) * moveDist;
+            Buff atkBuff;
+            atkBuff.type = BuffType::AttackUp;
+            atkBuff.value = player->GetBuffManager().GetBuffValue(BuffType::AttackUp) + bonus;
+            atkBuff.duration = 1;
+            atkBuff.name = L"チャージ攻撃UP";
+            atkBuff.description = L"";
+            player->GetBuffManager().AddBuff(atkBuff);
+        }
+
+        // HitAndRun: 移動時に隣接する敵にダメージ
+        if (player->GetBuffManager().HasBuff(BuffType::HitAndRun))
+        {
+            int hitDmg = player->GetBuffManager().GetBuffValue(BuffType::HitAndRun);
+            for (auto enemy : enemies)
+            {
+                int ex = abs(targetCol - enemy->gridCol);
+                int ey = abs(targetRow - enemy->gridRow);
+                if (ex + ey == 1)
+                    enemy->TakeDamage(hitDmg);
+            }
+        }
         break;
     }
     case CardType::Skill:

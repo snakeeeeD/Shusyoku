@@ -153,8 +153,9 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     const float cardHoverY = m_screenHeight - CARD_HEIGHT - CARD_HOVER_Y_OFFSET;
     const auto& cards = ctx.hand->GetCards();
 
-    m_spriteRenderer->Begin();
+    m_hasHoveredBuff = false;
 
+    m_spriteRenderer->Begin();
 
     DrawHPBar(20.0f, 60.0f, 200.0f, 30.0f, ctx.player->GetHp(), ctx.player->GetMaxHp());
     DrawEnemyGridHighlight(ctx);
@@ -385,16 +386,33 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             // --- バフ/デバフアイコン（HPバーの下） ---
             float buffIconY = barY + barHeight + 4.0f;
             float buffIconX = barX;
+            float buffMaxX = barX + barWidth + 40.0f;
             for (auto& buff : enemy->GetBuffManager().GetBuffs())
             {
                 float iconSize = 16.0f;
+                if (buffIconX + iconSize + 20.0f > buffMaxX)
+                {
+                    buffIconX = barX;
+                    buffIconY += iconSize + 6.0f;
+                }
                 XMFLOAT4 buffColor = BuffInfo::Get(buff.type).color;
+                bool iconHover = (ctx.mousePos.x >= buffIconX && ctx.mousePos.x <= buffIconX + iconSize
+                    && ctx.mousePos.y >= buffIconY && ctx.mousePos.y <= buffIconY + iconSize);
+                if (iconHover)
+                {
+                    m_hasHoveredBuff = true;
+                    m_hoveredBuffType = buff.type;
+                    m_hoveredBuffValue = buff.value;
+                    m_hoveredBuffX = buffIconX;
+                    m_hoveredBuffY = buffIconY;
+                }
                 m_spriteRenderer->DrawSprite(m_whiteTexture,
                     buffIconX - 1.0f, buffIconY - 1.0f, iconSize + 2.0f, iconSize + 2.0f,
                     0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
                 m_spriteRenderer->DrawSprite(m_whiteTexture,
-                    buffIconX, buffIconY, iconSize, iconSize, 0.0f, buffColor);
-                buffIconX += iconSize + 4.0f;
+                    buffIconX, buffIconY, iconSize, iconSize, 0.0f,
+                    iconHover ? XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f) : buffColor);
+                buffIconX += iconSize + 20.0f;
             }
 
             if (enemy->GetBlock() > 0)
@@ -479,15 +497,21 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             // バフ/デバフ数値
             float buffIconY = barY + barHeight + 4.0f;
             float buffIconX = barX;
+            float buffMaxX = barX + barWidth + 40.0f;
             for (auto& buff : enemy->GetBuffManager().GetBuffs())
             {
                 float iconSize = 16.0f;
+                if (buffIconX + iconSize + 20.0f > buffMaxX)
+                {
+                    buffIconX = barX;
+                    buffIconY += iconSize + 6.0f;
+                }
                 wchar_t buffVal[16];
                 swprintf_s(buffVal, L"%d", buff.value);
                 m_textRenderer->DrawText(buffVal,
                     buffIconX + iconSize + 2.0f, buffIconY + 1.0f,
                     11.0f, D2D1::ColorF(D2D1::ColorF::White));
-                buffIconX += iconSize + 4.0f;
+                buffIconX += iconSize + 20.0f;
             }
 
             if (enemy->GetBlock() > 0)
@@ -513,15 +537,37 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     float buffY = 155.0f;
     for (auto& buff : buffs)
     {
+        const auto& info = BuffInfo::Get(buff.type);
+        bool buffHover = (ctx.mousePos.x >= 20.0f && ctx.mousePos.x <= 200.0f
+            && ctx.mousePos.y >= buffY && ctx.mousePos.y <= buffY + 20.0f);
+        // アイコン
+        m_textRenderer->End();
+        m_spriteRenderer->Begin();
+        m_spriteRenderer->DrawSprite(m_whiteTexture, 20.0f, buffY, 16.0f, 16.0f, 0.0f,
+            XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
+        m_spriteRenderer->DrawSprite(m_whiteTexture, 21.0f, buffY + 1.0f, 14.0f, 14.0f, 0.0f,
+            info.color);
+        m_spriteRenderer->End();
+        m_textRenderer->Begin();
+        // 名前と値
         wchar_t buffText[64];
         if (buff.isPermanent())
-            swprintf_s(buffText, L"%s +%d (永続)", buff.name.c_str(), buff.value);
+            swprintf_s(buffText, L"%s %d", info.name.c_str(), buff.value);
         else
-            swprintf_s(buffText, L"%s +%d (%dターン)", buff.name.c_str(), buff.value, buff.duration);
-
-        m_textRenderer->DrawText(buffText, 20.0f, buffY, 16.0f,
-            D2D1::ColorF(D2D1::ColorF::LightGreen));
-        buffY += 22.0f;
+            swprintf_s(buffText, L"%s %d (%dT)", info.name.c_str(), buff.value, buff.duration);
+        D2D1::ColorF textColor = buffHover
+            ? D2D1::ColorF(1.0f, 1.0f, 0.5f)
+            : D2D1::ColorF(0.6f, 1.0f, 0.6f);
+        m_textRenderer->DrawText(buffText, 40.0f, buffY, 14.0f, textColor);
+        buffY += 20.0f;
+        // ホバーで説明
+        if (buffHover)
+        {
+            std::wstring desc = BuffInfo::GetDescription(buff.type, buff.value);
+            m_textRenderer->DrawText(desc.c_str(), 40.0f, buffY, 12.0f,
+                D2D1::ColorF(0.8f, 0.8f, 0.8f));
+            buffY += 18.0f;
+        }
     }
 
     // ターンエンドボタン
@@ -558,6 +604,28 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         m_textRenderer->DrawText(L"クリックでタイトルへ",
             m_screenWidth / 2.0f - 100.0f, m_screenHeight / 2.0f + 40.0f,
             24.0f, D2D1::ColorF(D2D1::ColorF::White));
+    }
+
+    if (m_hasHoveredBuff)
+    {
+        const auto& info = BuffInfo::Get(m_hoveredBuffType);
+        std::wstring desc = BuffInfo::GetDescription(m_hoveredBuffType, m_hoveredBuffValue);
+        float tipX = m_hoveredBuffX;
+        float tipY = m_hoveredBuffY - 40.0f;
+        float tipW = 200.0f;
+        float tipH = 36.0f;
+
+        m_textRenderer->End();
+        m_spriteRenderer->Begin();
+        m_spriteRenderer->DrawSprite(m_whiteTexture, tipX, tipY, tipW, tipH, 0.0f,
+            XMFLOAT4(0.08f, 0.08f, 0.15f, 0.95f));
+        m_spriteRenderer->End();
+        m_textRenderer->Begin();
+
+        m_textRenderer->DrawText(info.name.c_str(), tipX + 5.0f, tipY + 2.0f, 13.0f,
+            D2D1::ColorF(1.0f, 1.0f, 0.5f));
+        m_textRenderer->DrawText(desc.c_str(), tipX + 5.0f, tipY + 18.0f, 11.0f,
+            D2D1::ColorF(0.8f, 0.8f, 0.8f));
     }
 
     m_textRenderer->End();
@@ -681,9 +749,9 @@ void BattleUI::DrawTargetIndicators(const BattleUIContext& ctx)
 void BattleUI::DrawArrowIndicator(float sx, float sy, const XMFLOAT4& color, float highlightTimer)
 {
 
-    float cardAreaY = m_screenHeight - CARD_HEIGHT - CARD_HIDE_Y_OFFSET;
+    /*float cardAreaY = m_screenHeight - CARD_HEIGHT - CARD_HIDE_Y_OFFSET;
     if (sy > cardAreaY)
-        return;
+        return;*/
 
     float bob = sin(highlightTimer * 3.0f) * 6.0f;
     float ay = sy - 40.0f + bob;

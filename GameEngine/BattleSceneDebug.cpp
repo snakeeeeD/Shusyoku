@@ -126,21 +126,21 @@ void BattleScene::DrawImGui()
         }
 
         const char* buffNames[] = {
-        "AttackUp", "DefenseUp", "MoveUp",
-        "Thorns", "Charge", "Momentum", "HitAndRun", "Reposition", "Barricade",
-        "AttackDown", "DefenseDown", "Vulnerable", "Weak", "Frail",
+        "AttackUp", "DefenseUp", "Barricade", "Thorns", "Momentum",
+        "MoveUp", "Charge", "HitAndRun", "Reposition",
+        "AttackDown", "Weak", "DefenseDown", "Frail", "Vulnerable",
         "Root", "Slow", "Burn", "Poison"
         };
         BuffType buffTypes[] = {
-            BuffType::AttackUp, BuffType::DefenseUp, BuffType::MoveUp,
-            BuffType::Thorns, BuffType::Charge, BuffType::Momentum, BuffType::HitAndRun, BuffType::Reposition, BuffType::Barricade,
-            BuffType::AttackDown, BuffType::DefenseDown, BuffType::Vulnerable, BuffType::Weak, BuffType::Frail,
+            BuffType::AttackUp, BuffType::DefenseUp, BuffType::Barricade, BuffType::Thorns, BuffType::Momentum,
+            BuffType::MoveUp, BuffType::Charge, BuffType::HitAndRun, BuffType::Reposition,
+            BuffType::AttackDown, BuffType::Weak, BuffType::DefenseDown, BuffType::Frail, BuffType::Vulnerable,
             BuffType::Root, BuffType::Slow, BuffType::Burn, BuffType::Poison
         };
         const wchar_t* buffDisplayNames[] = {
-            L"AttackUP", L"DefenseUP", L"MoveUP",
-            L"Thorns", L"Charge", L"Momentum", L"HitAndRun", L"Reposition", L"Barricade",
-            L"AttackDOWN", L"DefenseDOWN", L"Vulnerable", L"Weak", L"Frail",
+            L"AttackUP", L"DefenseUP", L"Barricade", L"Thorns", L"Momentum",
+            L"MoveUP", L"Charge", L"HitAndRun", L"Reposition",
+            L"AttackDOWN", L"Weak", L"DefenseDOWN", L"Frail", L"Vulnerable",
             L"Root", L"Slow", L"Burn", L"Poison"
         };
 

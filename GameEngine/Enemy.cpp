@@ -131,6 +131,8 @@ int Enemy::Think(int playerCol, int playerRow, GridMap* gridMap)
 
 void Enemy::MoveToward(int playerCol, int playerRow, GridMap* gridMap)
 {
+    if (m_buffManager.HasBuff(BuffType::Root))
+        return;
     int dc = playerCol - gridCol;
     int dr = playerRow - gridRow;
 

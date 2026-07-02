@@ -522,8 +522,11 @@ void BattleScene::HandleInput()
     if (m_selectedCardIndex >= 0)
     {
         POINT mousePos = m_input.GetMousePos();
+        POINT gridMousePos = mousePos;
+        if (gridMousePos.y > m_screenHeight + 200)
+            gridMousePos.y = m_screenHeight + 200;
         auto result = m_gridMap->GetClickedCell3D(
-            mousePos,
+            gridMousePos,
             m_renderer3D->GetViewMatrix(),
             m_renderer3D->GetProjectionMatrix(),
             m_screenWidth,
@@ -547,7 +550,8 @@ void BattleScene::HandleInput()
 
         // カードエリアにマウスがあるかチェック
         isOnCard = false;
-        for (int i = 0; i < (int)cards.size(); i++)
+        if (m_selectedCardIndex < 0)
+            for (int i = 0; i < (int)cards.size(); i++)
         {
             float cardX = m_screenWidth / 2.0f
                 - (cards.size() * (CARD_WIDTH + 10.0f)) / 2.0f
@@ -584,8 +588,11 @@ void BattleScene::HandleInput()
             }
         }
 
+        POINT gridMousePos2 = mousePos;
+        if (gridMousePos2.y > m_screenHeight - 200)
+            gridMousePos2.y = m_screenHeight - 200;
         auto result = m_gridMap->GetClickedCell3D(
-            mousePos,
+            gridMousePos2,
             m_renderer3D->GetViewMatrix(),
             m_renderer3D->GetProjectionMatrix(),
             m_screenWidth,
@@ -724,7 +731,7 @@ void BattleScene::HandleInput()
     m_prevHoveredCardIndex = m_hoveredCardIndex;
     m_hoveredCardIndex = -1;
 
-    
+    if (m_selectedCardIndex < 0)
         for (int i = 0; i < (int)cards.size(); i++)
         {
             float cardX = m_screenWidth / 2.0f
