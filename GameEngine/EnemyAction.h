@@ -11,4 +11,11 @@ struct EnemyAction
     RangeType       rangeType;
     int chance;   // 発生確率（0?100）
     std::wstring description; // 表示テキスト
+    std::string buffType;
+    int duration = 0;
+
+    // 攻撃時デバフ付与用
+    std::string onHitBuffType;
+    int onHitValue = 0;
+    int onHitDuration = 0;
 };

@@ -15,7 +15,9 @@ public:
     int GetEnergy() const { return m_energy; }
     int GetBlock() const { return m_block; }
     int GetMaxEnergy() const { return m_maxEnergy; }
+    float GetDisplayHp() const { return m_displayHp; }
     BuffManager& GetBuffManager() { return m_buffManager; }
+
 
     // セッター
     void SetHp(int hp) { m_hp = hp; }
@@ -30,6 +32,14 @@ public:
 
     void ResetBlock() { if (!m_buffManager.HasBuff(BuffType::Barricade)) m_block = 0; }
 
+    void UpdateDisplayHp(float deltaTime) {
+        float speed = 0.5f;
+        if (m_displayHp > (float)GetHp())
+            m_displayHp -= speed * deltaTime * (m_displayHp - GetHp());
+        if (m_displayHp < (float)GetHp())
+            m_displayHp = (float)GetHp();
+    }
+
 private:
 
     int m_hp;
@@ -38,6 +48,7 @@ private:
     int m_maxEnergy;
     int m_block;
     float m_BillboardRotation = 0.0;
+    float m_displayHp;
 
     BuffManager m_buffManager;
 };

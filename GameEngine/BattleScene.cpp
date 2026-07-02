@@ -1,6 +1,7 @@
 ﻿#include "BattleScene.h"
 #include "TextureLoader.h"
 #include <algorithm>
+#include <cstdio>
 
 #ifdef _DEBUG
 #include "External/imgui/imgui.h"
@@ -247,6 +248,9 @@ void BattleScene::Update(float deltaTime)
     if (io.WantCaptureMouse) return;
 #endif
 
+    m_player->UpdateDisplayHp(deltaTime);
+    for (auto enemy : m_enemies)
+        enemy->UpdateDisplayHp(deltaTime);
 
     // カメラズーム（マウスホイール）
     int wheelDelta = m_input.GetMouseWheelDelta();
@@ -365,9 +369,12 @@ void BattleScene::Update(float deltaTime)
         if (m_enemies.empty())
         {
             m_battleResult = BattleResult::Win;
-
-            // HPを保存
-            PlayerDataManager::GetData().hp = m_player->GetHp();
+            // HPを保存、現在のマスをクリア済みに
+            auto& pd = PlayerDataManager::GetData();
+            pd.hp = m_player->GetHp();
+            int nodeIdx = pd.fieldPlayerCol * 7 + pd.fieldPlayerRow;
+            if (nodeIdx >= 0 && nodeIdx < (int)pd.fieldNodeVisited.size())
+                pd.fieldNodeVisited[nodeIdx] = true;
             PlayerDataManager::Save();
             return;
         }
@@ -376,9 +383,9 @@ void BattleScene::Update(float deltaTime)
         if (m_player->GetHp() <= 0)
         {
             m_battleResult = BattleResult::Lose;
-
-            // HPを0で保存
-            PlayerDataManager::GetData().hp = 0;
+            // セーブデータを削除（ニューゲームからやり直し）
+            std::remove("Assets/Data/playerdata.json");
+            PlayerDataManager::Init();
             PlayerDataManager::Save();
             return;
         }
@@ -400,7 +407,7 @@ void BattleScene::Update(float deltaTime)
                             continue;
                     }
 
-                    int damage = enemy->Think(m_playerCol, m_playerRow, m_gridMap);
+                    int damage = enemy->Think(m_playerCol, m_playerRow, m_gridMap, m_player);
                     if (damage > 0)
                     {
                         m_player->TakeDamage(damage);
@@ -543,6 +550,7 @@ void BattleScene::HandleInput()
     }
 
     bool isOnCard = false;
+    bool cardJustUsed = false;
 
     if (m_input.GetMouseButtonTrigger(0))
     {
@@ -550,9 +558,9 @@ void BattleScene::HandleInput()
 
         // カードエリアにマウスがあるかチェック
         isOnCard = false;
-        if (m_selectedCardIndex < 0)
-            for (int i = 0; i < (int)cards.size(); i++)
+        for (int i = 0; i < (int)cards.size(); i++)
         {
+            if (i == m_selectedCardIndex) continue;
             float cardX = m_screenWidth / 2.0f
                 - (cards.size() * (CARD_WIDTH + 10.0f)) / 2.0f
                 + i * (CARD_WIDTH + 10.0f);
@@ -567,10 +575,20 @@ void BattleScene::HandleInput()
             }
             else if (i == m_prevHoveredCardIndex)
             {
-                hitX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
-                hitY = cardHoverY;
-                hitW = CARD_HOVER_W;
-                hitH = CARD_HOVER_H;
+                if (m_selectedCardIndex >= 0)
+                {
+                    hitX = cardX;
+                    hitY = cardHideY - 40.0f;
+                    hitW = CARD_WIDTH;
+                    hitH = CARD_HEIGHT;
+                }
+                else
+                {
+                    hitX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
+                    hitY = cardHoverY;
+                    hitW = CARD_HOVER_W;
+                    hitH = CARD_HOVER_H;
+                }
             }
             else
             {
@@ -673,6 +691,7 @@ void BattleScene::HandleInput()
 
                     ProcessDeadEnemies();
                     m_selectedCardIndex = -1;
+                    cardJustUsed = true;
                 }
             }
         }
@@ -684,6 +703,8 @@ void BattleScene::HandleInput()
 
     POINT mousePos = m_input.GetMousePos();
     
+    if (!cardJustUsed)
+    {
         for (int i = 0; i < (int)cards.size(); i++)
         {
             float cardX = m_screenWidth / 2.0f
@@ -701,10 +722,20 @@ void BattleScene::HandleInput()
             }
             else if (i == m_prevHoveredCardIndex)
             {
-                hitX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
-                hitY = cardHoverY;
-                hitW = CARD_HOVER_W;
-                hitH = CARD_HOVER_H;
+                if (m_selectedCardIndex >= 0)
+                {
+                    hitX = cardX;
+                    hitY = cardHideY - 40.0f;
+                    hitW = CARD_WIDTH;
+                    hitH = CARD_HEIGHT;
+                }
+                else
+                {
+                    hitX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
+                    hitY = cardHoverY;
+                    hitW = CARD_HOVER_W;
+                    hitH = CARD_HOVER_H;
+                }
             }
             else
             {
@@ -726,12 +757,12 @@ void BattleScene::HandleInput()
                 break;
             }
         }
+    }
     
 
     m_prevHoveredCardIndex = m_hoveredCardIndex;
     m_hoveredCardIndex = -1;
 
-    if (m_selectedCardIndex < 0)
         for (int i = 0; i < (int)cards.size(); i++)
         {
             float cardX = m_screenWidth / 2.0f

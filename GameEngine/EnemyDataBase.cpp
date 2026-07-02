@@ -93,6 +93,12 @@ void EnemyDataBase::Init()
                         // description‚ðUTF-8‚©‚çwstring‚É•ÏŠ·
                         std::string descStr = actionJson["description"];
                         action.description = ToWString(descStr);
+                        action.buffType = actionJson.value("buffType", "");
+                        action.duration = actionJson.value("duration", 0);
+
+                        action.onHitBuffType = actionJson.value("onHitBuffType", "");
+                        action.onHitValue = actionJson.value("onHitValue", 0);
+                        action.onHitDuration = actionJson.value("onHitDuration", 0);
 
                         data.actions.push_back(action);
                     }

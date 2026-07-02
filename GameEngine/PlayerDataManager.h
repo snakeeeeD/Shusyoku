@@ -10,6 +10,7 @@ public:
     static void AddCard(const std::string& id); // ÉJÅ[Éhí«â¡
 
     static bool HasSaveData();
+    static void DeleteSave();
 
     static void SaveFieldProgress(int nodeIndex, const std::vector<bool>& clearedNodes);
     static void StartNewGame();

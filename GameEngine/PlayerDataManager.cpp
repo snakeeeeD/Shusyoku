@@ -144,11 +144,15 @@ void PlayerDataManager::StartNewGame()
 	m_data.maxHp = 50;
 	m_data.deck = {
 	   "strike", "strike", "strike", "Spin Slash", "poison_blade",
-	   "defend", "defend",
+	   "defend", "defend", "defend", "defend",
 	   "move",   "move",   "dash",
-	   "power_attack", "buff_defense"
 	};
 	m_data.currentNodeIndex = 0;
 	m_data.clearedNodes.clear();
 	Save();
+}
+
+void PlayerDataManager::DeleteSave()
+{
+	std::remove(SAVE_PATH);
 }

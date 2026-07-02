@@ -34,14 +34,64 @@ void BattleUI::GridToWorld(GridMap* gridMap, int col, int row, float& outX, floa
     outZ = (row - gridMap->GetRows() / 2.0f + 0.5f) * 1.1f;
 }
 
-void BattleUI::DrawHPBar(float x, float y, float w, float h, int currentHP, int maxHP)
+void BattleUI::DrawHPBar(float x, float y, float w, float h, const HPBarInfo& info, float time)
 {
+    float hpRatio = (float)info.currentHP / (float)info.maxHP;
+    float displayRatio = info.displayHP / (float)info.maxHP;
+    float poisonRatio = (float)info.poisonDmg / (float)info.maxHP;
+
+    // ブロック時：外枠を青白く
+    if (info.block > 0)
+    {
+        float glow = 0.7f + 0.3f * sin(time * 3.0f);
+        XMFLOAT4 glowColor = XMFLOAT4(0.7f * glow, 0.8f * glow, 1.0f * glow, 1.0f);
+        m_spriteRenderer->DrawSprite(m_whiteTexture, x - 5.0f, y - 5.0f, w + 10.0f, h + 10.0f,
+            0.0f, glowColor);
+    }
+
+    // 黒い外枠
+    m_spriteRenderer->DrawSprite(m_whiteTexture, x - 1.0f, y - 1.0f, w + 2.0f, h + 2.0f,
+        0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
+    // 背景（暗い赤）
     m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, w, h,
         0.0f, XMFLOAT4(0.3f, 0.0f, 0.0f, 1.0f));
 
-    float ratio = (float)currentHP / (float)maxHP;
-    m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, w * ratio, h,
-        0.0f, XMFLOAT4(0.0f, 0.8f, 0.0f, 1.0f));
+    // 減少アニメーション（オレンジ）
+    if (displayRatio > hpRatio)
+    {
+        m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, w * displayRatio, h,
+            0.0f, XMFLOAT4(0.9f, 0.6f, 0.1f, 1.0f));
+    }
+
+    // HPバー本体
+    XMFLOAT4 barColor;
+    // ブロック時：青白い外枠
+    if (info.block > 0)
+    {
+        XMFLOAT4 glowColor = XMFLOAT4(0.3f, 0.5f , 1.0f, 1.0f);
+        m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, w * hpRatio, h,
+            0.0f, glowColor);
+    }
+    else if (info.hasBurn)
+    {
+        float flash = 0.5f + 0.5f * sin(time * 4.0f);
+        barColor = XMFLOAT4(0.8f, 0.4f * flash, 0.0f, 1.0f);
+    }
+    else
+        barColor = XMFLOAT4(0.0f, 0.8f, 0.0f, 1.0f);
+
+    m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, w * hpRatio, h,
+        0.0f, barColor);
+
+    // 毒ダメージ予測（紫）
+    if (info.poisonDmg > 0 && hpRatio > 0.0f)
+    {
+        float poisonW = w * min(poisonRatio, hpRatio);
+        float poisonX = x + w * hpRatio - poisonW;
+        float alpha = 0.6f + 0.4f * sin(time * 4.0f);
+        m_spriteRenderer->DrawSprite(m_whiteTexture, poisonX, y, poisonW, h,
+            0.0f, XMFLOAT4(0.5f * alpha, 0.0f, 0.8f * alpha, alpha));
+    }
 }
 
 void BattleUI::DrawEnemyHPBar(Enemy* enemy, Renderer3D* renderer3D)
@@ -156,10 +206,29 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     m_hasHoveredBuff = false;
 
     m_spriteRenderer->Begin();
-
-    DrawHPBar(20.0f, 60.0f, 200.0f, 30.0f, ctx.player->GetHp(), ctx.player->GetMaxHp());
+    HPBarInfo playerBar;
+    playerBar.currentHP = ctx.player->GetHp();
+    playerBar.maxHP = ctx.player->GetMaxHp();
+    playerBar.displayHP = ctx.player->GetDisplayHp();
+    playerBar.block = ctx.player->GetBlock();
+    playerBar.poisonDmg = ctx.player->GetBuffManager().GetTurnEndDamage().total();
+    playerBar.hasBurn = ctx.player->GetBuffManager().HasBuff(BuffType::Burn);
+    DrawHPBar(20.0f, 60.0f, 200.0f, 30.0f, playerBar, ctx.highlightTimer);
     DrawEnemyGridHighlight(ctx);
     DrawEnemyInfoPanel(ctx);
+
+    if (ctx.player->GetBlock() > 0)
+    {
+        float pIconSize = 30.0f * 1.5f;
+        float pIconX = 20.0f - pIconSize * 0.35f;
+        float pIconY = 60.0f + (30.0f - pIconSize) / 2.0f;
+        m_spriteRenderer->DrawSprite(m_whiteTexture,
+            pIconX - 1.0f, pIconY - 1.0f, pIconSize + 2.0f, pIconSize + 2.0f,
+            0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
+        m_spriteRenderer->DrawSprite(m_whiteTexture,
+            pIconX, pIconY, pIconSize, pIconSize,
+            0.0f, XMFLOAT4(0.3f, 0.6f, 1.0f, 1.0f));
+    }
 
     for (int i = 0; i < (int)cards.size(); i++)
     {
@@ -340,10 +409,21 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
     if (ctx.player->GetBlock() > 0)
     {
-        wchar_t blockText[64];
-        swprintf_s(blockText, L"Block: %d", ctx.player->GetBlock());
-        m_textRenderer->DrawText(blockText, 20.0f, 125.0f, 20.0f,
-            D2D1::ColorF(D2D1::ColorF::LightBlue));
+        float pIconSize = 30.0f * 1.5f;
+        float pIconX = 20.0f - pIconSize * 0.35f;
+        float pIconY = 60.0f + (30.0f - pIconSize) / 2.0f;
+        wchar_t blockText[16];
+        swprintf_s(blockText, L"%d", ctx.player->GetBlock());
+        float bFontSize = 18.0f;
+        float bTextW = wcslen(blockText) * bFontSize * 0.5f;
+        m_textRenderer->DrawText(blockText,
+            pIconX + (pIconSize - bTextW) / 2.0f + 1.0f,
+            pIconY + (pIconSize - bFontSize) / 2.0f + 1.0f,
+            bFontSize, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
+        m_textRenderer->DrawText(blockText,
+            pIconX + (pIconSize - bTextW) / 2.0f,
+            pIconY + (pIconSize - bFontSize) / 2.0f,
+            bFontSize, D2D1::ColorF(D2D1::ColorF::White));
     }
 
     // 敵UI
@@ -361,27 +441,33 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             float scale = 1.0f / ctx.cameraZoom;  // ズームアウト時に小さくなる
 
             float barWidth = (enemy->IsBoss() ? 100.0f : 50.0f) * scale;
-            float barHeight = (enemy->IsBoss() ? 15.0f : 10.0f) * scale;
+            float barHeight = (enemy->IsBoss() ? 10.0f : 7.0f) * scale;
 
             // --- HPバー（足元の少し下） ---
             float barX = footX - barWidth / 2.0f;
             float barY = footY - 30.0f;
 
-            m_spriteRenderer->DrawSprite(m_whiteTexture,
-                barX - 2.0f, barY - 2.0f, barWidth + 4.0f, barHeight + 4.0f,
-                0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
-            m_spriteRenderer->DrawSprite(m_whiteTexture,
-                barX, barY, barWidth, barHeight,
-                0.0f, XMFLOAT4(0.6f, 0.6f, 0.6f, 1.0f));
+            HPBarInfo eBar;
+            eBar.currentHP = enemy->GetHp();
+            eBar.maxHP = enemy->GetMaxHp();
+            eBar.displayHP = enemy->GetDisplayHp();
+            eBar.poisonDmg = enemy->GetBuffManager().GetTurnEndDamage().total();
+            eBar.hasBurn = enemy->GetBuffManager().HasBuff(BuffType::Burn);
+            DrawHPBar(barX, barY, barWidth, barHeight, eBar, ctx.highlightTimer);
 
-            float ratio = (float)enemy->GetHp() / (float)enemy->GetMaxHp();
-            XMFLOAT4 barColor = ratio > 0.5f
-                ? XMFLOAT4(0.0f, 0.0f, 0.8f, 1.0f)
-                : ratio > 0.25f
-                ? XMFLOAT4(0.8f, 0.8f, 0.0f, 1.0f)
-                : XMFLOAT4(0.8f, 0.0f, 0.0f, 1.0f);
-            m_spriteRenderer->DrawSprite(m_whiteTexture,
-                barX, barY, barWidth * ratio, barHeight, 0.0f, barColor);
+            // ブロックアイコン（HPバー左端）
+            if (enemy->GetBlock() > 0)
+            {
+                float iconSize = barHeight * 1.5f;
+                float iconX = barX - iconSize / 2.0f;
+                float iconY = barY + (barHeight - iconSize) / 2.0f;
+                m_spriteRenderer->DrawSprite(m_whiteTexture,
+                    iconX - 1.0f, iconY - 1.0f, iconSize + 2.0f, iconSize + 2.0f,
+                    0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
+                m_spriteRenderer->DrawSprite(m_whiteTexture,
+                    iconX, iconY, iconSize, iconSize,
+                    0.0f, XMFLOAT4(0.3f, 0.6f, 1.0f, 1.0f));
+            }
 
             // --- バフ/デバフアイコン（HPバーの下） ---
             float buffIconY = barY + barHeight + 4.0f;
@@ -413,18 +499,6 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                     buffIconX, buffIconY, iconSize, iconSize, 0.0f,
                     iconHover ? XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f) : buffColor);
                 buffIconX += iconSize + 20.0f;
-            }
-
-            if (enemy->GetBlock() > 0)
-            {
-                float iconSize = 16.0f;
-                m_spriteRenderer->DrawSprite(m_whiteTexture,
-                    buffIconX - 1.0f, buffIconY - 1.0f, iconSize + 2.0f, iconSize + 2.0f,
-                    0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
-                m_spriteRenderer->DrawSprite(m_whiteTexture,
-                    buffIconX, buffIconY, iconSize, iconSize,
-                    0.0f, XMFLOAT4(0.2f, 0.5f, 0.9f, 1.0f));
-                buffIconX += iconSize + 4.0f;
             }
 
             // --- 次の行動アイコン（頭上） ---
@@ -471,11 +545,34 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
             // HP数値
             wchar_t hpText[32];
-            swprintf_s(hpText, L"%d / %d", enemy->GetHp(), enemy->GetMaxHp());
-            m_textRenderer->DrawText(hpText, barX + 3.0f + 1.0f, barY + 1.0f,
+            swprintf_s(hpText, L"%d/%d", enemy->GetHp(), enemy->GetMaxHp());
+            float textW = wcslen(hpText) * fontSize * 0.5f;
+            float textX = barX + (barWidth - textW) / 2.0f;
+            float textY = barY + (barHeight - fontSize) / 2.0f - 3.0;
+            m_textRenderer->DrawText(hpText, textX + 1.0f, textY + 1.0f,
                 fontSize, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
-            m_textRenderer->DrawText(hpText, barX + 3.0f, barY,
+            m_textRenderer->DrawText(hpText, textX, textY,
                 fontSize, D2D1::ColorF(D2D1::ColorF::White));
+
+            // ブロック数値
+            if (enemy->GetBlock() > 0)
+            {
+                float iconSize = barHeight * 1.5f;
+                float iconX = barX - iconSize / 2.0f;
+                float iconY = barY + (barHeight - iconSize) / 2.0f - 2.0;
+                wchar_t blockText[16];
+                swprintf_s(blockText, L"%d", enemy->GetBlock());
+                float blockFontSize = max(7.0f, fontSize * 0.9f);
+                float bTextW = wcslen(blockText) * blockFontSize * 0.5f;
+                m_textRenderer->DrawText(blockText,
+                    iconX + (iconSize - bTextW) / 2.0f + 1.0f,
+                    iconY + (iconSize - blockFontSize) / 2.0f + 1.0f,
+                    blockFontSize, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
+                m_textRenderer->DrawText(blockText,
+                    iconX + (iconSize - bTextW) / 2.0f,
+                    iconY + (iconSize - blockFontSize) / 2.0f,
+                    blockFontSize, D2D1::ColorF(D2D1::ColorF::White));
+            }
 
             // 行動の数値（頭上）
             const EnemyAction* action = enemy->GetNextAction();
@@ -512,16 +609,6 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                     buffIconX + iconSize + 2.0f, buffIconY + 1.0f,
                     11.0f, D2D1::ColorF(D2D1::ColorF::White));
                 buffIconX += iconSize + 20.0f;
-            }
-
-            if (enemy->GetBlock() > 0)
-            {
-                float iconSize = 16.0f;
-                wchar_t blockText[16];
-                swprintf_s(blockText, L"%d", enemy->GetBlock());
-                m_textRenderer->DrawText(blockText,
-                    buffIconX + iconSize + 2.0f, buffIconY + 1.0f,
-                    11.0f, D2D1::ColorF(D2D1::ColorF::White));
             }
         }
     }
@@ -991,7 +1078,9 @@ void BattleUI::UpdateCardAnimations(float deltaTime, int handSize, int hoveredIn
             + i * (CARD_WIDTH + 10.0f);
 
         float targetY;
-        if (i == hoveredIndex)
+        if (i == hoveredIndex && selectedIndex >= 0 && i != selectedIndex)
+            targetY = cardHideY - 40.0f;
+        else if (i == hoveredIndex)
             targetY = cardHoverY;
         else if (i == selectedIndex)
             targetY = cardHoverY + 40.0f;
@@ -1138,108 +1227,177 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
         float barY = entryY + 5.0f;
         float barW = panelW - iconSize - 20.0f;
         float barH = 12.0f;
-        float hpRatio = (float)enemy->GetHp() / (float)enemy->GetMaxHp();
 
-        m_spriteRenderer->DrawSprite(m_whiteTexture, barX, barY,
-            barW, barH, 0.0f, XMFLOAT4(0.6f, 0.6f, 0.6f, 1.0f));
-        m_spriteRenderer->DrawSprite(m_whiteTexture, barX, barY,
-            barW * hpRatio, barH, 0.0f, XMFLOAT4(0.0f, 0.0f, 0.8f, 1.0f));
+        HPBarInfo panelBar;
+        panelBar.currentHP = enemy->GetHp();
+        panelBar.maxHP = enemy->GetMaxHp();
+        panelBar.displayHP = enemy->GetDisplayHp();
+        panelBar.block = enemy->GetBlock();
+        panelBar.poisonDmg = enemy->GetBuffManager().GetTurnEndDamage().total();
+        panelBar.hasBurn = enemy->GetBuffManager().HasBuff(BuffType::Burn);
+        DrawHPBar(barX, barY, barW, barH, panelBar, ctx.highlightTimer);
+
+        if (enemy->GetBlock() > 0)
+        {
+            float bIconSize = barH * 1.5f;
+            float bIconX = barX - bIconSize * 0.35f;
+            float bIconY = barY + (barH - bIconSize) / 2.0f;
+            m_spriteRenderer->DrawSprite(m_whiteTexture,
+                bIconX - 1.0f, bIconY - 1.0f, bIconSize + 2.0f, bIconSize + 2.0f,
+                0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
+            m_spriteRenderer->DrawSprite(m_whiteTexture,
+                bIconX, bIconY, bIconSize, bIconSize,
+                0.0f, XMFLOAT4(0.3f, 0.6f, 1.0f, 1.0f));
+        }
 
         if (isHover && hoveredEnemy < 0)
             hoveredEnemy = i;
 
-        m_panelHoveredEnemy = hoveredEnemy;
-    
-        // テキスト（スプライト描画後にテキスト描画）
-       
-        // ホバー時の詳細背景（スプライト）
-        if (hoveredEnemy >= 0)
+    }
+
+    // ホバー中の詳細背景（スプライト）
+    if (hoveredEnemy >= 0)
+    {
+        Enemy* hEnemy = (*ctx.enemies)[hoveredEnemy];
+        float detailX = panelX - 200.0f;
+        float detailEntryY = panelY + hoveredEnemy * (entryH + 5.0f);
+        float detailH = 10.0f;
+        if (hEnemy->GetNextAction()) detailH += 22.0f;
+        if (hEnemy->GetBlock() > 0) detailH += 18.0f;
+        for (auto& buff : hEnemy->GetBuffManager().GetBuffs())
+            detailH += 20.0f;
+        detailH += 18.0f;
+        if (detailH < entryH) detailH = entryH;
+        m_spriteRenderer->DrawSprite(m_whiteTexture, detailX, detailEntryY,
+            190.0f, detailH, 0.0f, XMFLOAT4(0.1f, 0.1f, 0.2f, 1.0f));
+    }
+
+    m_panelHoveredEnemy = hoveredEnemy;
+
+    m_spriteRenderer->End();
+    m_textRenderer->Begin();
+
+    // テキスト描画（全エネミーまとめて）
+    for (int i = 0; i < (int)ctx.enemies->size(); i++)
+    {
+        Enemy* enemy = (*ctx.enemies)[i];
+        float entryY = panelY + i * (entryH + 5.0f);
+
+        // HP数値
+        wchar_t hpText[32];
+        swprintf_s(hpText, L"%d/%d", enemy->GetHp(), enemy->GetMaxHp());
+        m_textRenderer->DrawText(hpText,
+            panelX + iconSize + 10.0f, entryY + 16.0f, 15.0f,
+            D2D1::ColorF(D2D1::ColorF::White));
+
+        if (enemy->GetBlock() > 0)
         {
-            float detailEntryY = panelY + hoveredEnemy * (entryH + 5.0f);
-            m_spriteRenderer->DrawSprite(m_whiteTexture, detailX, detailEntryY,
-                190.0f, detailH, 0.0f, XMFLOAT4(0.1f, 0.1f, 0.2f, 1.0f));
+            float barX = panelX + iconSize + 10.0f;
+            float barY = entryY + 5.0f;
+            float barH = 12.0f;
+            float bIconSize = barH * 1.5f;
+            float bIconX = barX - bIconSize * 0.35f;
+            float bIconY = barY + (barH - bIconSize) / 2.0f;
+            wchar_t blockText[16];
+            swprintf_s(blockText, L"%d", enemy->GetBlock());
+            float bFont = 11.0f;
+            float bTextW = wcslen(blockText) * bFont * 0.5f;
+            m_textRenderer->DrawText(blockText,
+                bIconX + (bIconSize - bTextW) / 2.0f + 1.0f,
+                bIconY + (bIconSize - bFont) / 2.0f + 1.0f,
+                bFont, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
+            m_textRenderer->DrawText(blockText,
+                bIconX + (bIconSize - bTextW) / 2.0f,
+                bIconY + (bIconSize - bFont) / 2.0f,
+                bFont, D2D1::ColorF(D2D1::ColorF::White));
         }
 
-        m_spriteRenderer->End();
-        m_textRenderer->Begin();
-
-        // テキスト描画（全敵分まとめて）
-        for (int i = 0; i < (int)ctx.enemies->size(); i++)
+        // 次の行動
+        const EnemyAction* action = enemy->GetNextAction();
+        if (action)
         {
-            Enemy* enemy = (*ctx.enemies)[i];
-            float entryY = panelY + i * (entryH + 5.0f);
-
-            // HP数値
-            wchar_t hpText[32];
-            swprintf_s(hpText, L"%d/%d", enemy->GetHp(), enemy->GetMaxHp());
-            m_textRenderer->DrawText(hpText,
-                panelX + iconSize + 10.0f, entryY + 16.0f, 15.0f,
-                D2D1::ColorF(D2D1::ColorF::White));
-
-            // 次の行動
-            const EnemyAction* action = enemy->GetNextAction();
-            if (action)
+            std::wstring dispText = action->description;
+            if (action->type == EnemyActionType::Attack)
             {
-                m_textRenderer->DrawText(action->description.c_str(),
-                    panelX + iconSize + 10.0f, entryY + 32.0f, 14.0f,
-                    D2D1::ColorF(D2D1::ColorF::Orange));
+                int finalVal = enemy->GetBuffManager().GetFinalAttack(action->value);
+                std::wstring oldNum = std::to_wstring(action->value);
+                std::wstring newNum = std::to_wstring(finalVal);
+                size_t pos = dispText.find(oldNum);
+                if (pos != std::wstring::npos)
+                    dispText.replace(pos, oldNum.size(), newNum);
+            }
+            else if (action->type == EnemyActionType::Defend)
+            {
+                int finalVal = enemy->GetBuffManager().GetFinalBlock(action->value);
+                std::wstring oldNum = std::to_wstring(action->value);
+                std::wstring newNum = std::to_wstring(finalVal);
+                size_t pos = dispText.find(oldNum);
+                if (pos != std::wstring::npos)
+                    dispText.replace(pos, oldNum.size(), newNum);
+            }
+            m_textRenderer->DrawText(dispText.c_str(),
+                panelX + iconSize + 10.0f, entryY + 32.0f, 14.0f,
+                D2D1::ColorF(D2D1::ColorF::Orange));
+        }
+
+        // ホバー中の詳細テキスト
+        if (hoveredEnemy == i)
+        {
+            float detailX = panelX - 200.0f;
+            float lineY = entryY + 5.0f;
+
+            const EnemyAction* act = enemy->GetNextAction();
+            if (act)
+            {
+                int displayValue = act->value;
+                if (act->type == EnemyActionType::Attack)
+                    displayValue = enemy->GetBuffManager().GetFinalAttack(act->value);
+                else if (act->type == EnemyActionType::Defend)
+                    displayValue = enemy->GetBuffManager().GetFinalBlock(act->value);
+                std::wstring actionText = act->description + L": " + std::to_wstring(displayValue);
+                m_textRenderer->DrawText(actionText.c_str(),
+                    detailX + 10.0f, lineY, 15.0f,
+                    D2D1::ColorF(1.0f, 0.8f, 0.3f));
+                lineY += 22.0f;
             }
 
-            // ホバー時の詳細テキスト
-            if (hoveredEnemy == i)
+            if (enemy->GetBlock() > 0)
             {
-                float detailX = panelX - 200.0f;
-                float lineY = entryY + 5.0f;
+                wchar_t blockText[32];
+                swprintf_s(blockText, L"Block: %d", enemy->GetBlock());
+                m_textRenderer->DrawText(blockText,
+                    detailX + 10.0f, lineY, 15.0f,
+                    D2D1::ColorF(D2D1::ColorF::LightBlue));
+                lineY += 18.0f;
+            }
 
-                const EnemyAction* act = enemy->GetNextAction();
-                if (act)
+            for (auto& buff : enemy->GetBuffManager().GetBuffs())
+            {
+                const auto& info = BuffInfo::Get(buff.type);
+                std::wstring buffText = info.name + L": " + std::to_wstring(buff.value);
+                if (!buff.isPermanent())
+                    buffText += L" (" + std::to_wstring(buff.duration) + L"T)";
+                bool buffHover = (mp.x >= detailX && mp.x <= detailX + 190.0f
+                    && mp.y >= lineY && mp.y <= lineY + 20.0f);
+                D2D1::ColorF buffColor = buffHover
+                    ? D2D1::ColorF(1.0f, 1.0f, 0.5f)
+                    : D2D1::ColorF(0.6f, 1.0f, 0.6f);
+                m_textRenderer->DrawText(buffText.c_str(),
+                    detailX + 10.0f, lineY, 14.0f, buffColor);
+                lineY += 20.0f;
+                if (buffHover)
                 {
-                    std::wstring actionText = act->description + L": " + std::to_wstring(act->value);
-                    m_textRenderer->DrawText(actionText.c_str(),
-                        detailX + 10.0f, lineY, 15.0f,
-                        D2D1::ColorF(1.0f, 0.8f, 0.3f));
-                    lineY += 22.0f;
-                }
-
-                if (enemy->GetBlock() > 0)
-                {
-                    wchar_t blockText[32];
-                    swprintf_s(blockText, L"Block: %d", enemy->GetBlock());
-                    m_textRenderer->DrawText(blockText,
-                        detailX + 10.0f, lineY, 15.0f,
-                        D2D1::ColorF(D2D1::ColorF::LightBlue));
+                    std::wstring desc = BuffInfo::GetDescription(buff.type, buff.value);
+                    m_textRenderer->DrawText(desc.c_str(),
+                        detailX + 10.0f, lineY, 12.0f,
+                        D2D1::ColorF(0.8f, 0.8f, 0.8f));
                     lineY += 18.0f;
                 }
-
-                for (auto& buff : enemy->GetBuffManager().GetBuffs())
-                {
-                    const auto& info = BuffInfo::Get(buff.type);
-                    std::wstring buffText = info.name + L": " + std::to_wstring(buff.value);
-                    if (!buff.isPermanent())
-                        buffText += L" (" + std::to_wstring(buff.duration) + L"T)";
-                    bool buffHover = (mp.x >= detailX && mp.x <= detailX + 190.0f
-                        && mp.y >= lineY && mp.y <= lineY + 20.0f);
-                    D2D1::ColorF buffColor = buffHover
-                        ? D2D1::ColorF(1.0f, 1.0f, 0.5f)
-                        : D2D1::ColorF(0.6f, 1.0f, 0.6f);
-                    m_textRenderer->DrawText(buffText.c_str(),
-                        detailX + 10.0f, lineY, 14.0f, buffColor);
-                    lineY += 20.0f;
-                    if (buffHover)
-                    {
-                        std::wstring desc = BuffInfo::GetDescription(buff.type, buff.value);
-                        m_textRenderer->DrawText(desc.c_str(),
-                            detailX + 10.0f, lineY, 12.0f,
-                            D2D1::ColorF(0.8f, 0.8f, 0.8f));
-                        lineY += 18.0f;
-                    }
-                }
             }
         }
-        m_textRenderer->End();
     }
+    m_textRenderer->End();
 }
-
 
 void BattleUI::DrawEnemyGridHighlight(const BattleUIContext& ctx)
 {

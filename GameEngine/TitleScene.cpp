@@ -80,6 +80,13 @@ void TitleScene::Draw()
 
 void TitleScene::HandleInput()
 {
+    // 初回フレームはクリックを無視（前シーンのクリックを拾わないように）
+    if (m_skipFirstFrame)
+    {
+        m_skipFirstFrame = false;
+        return;
+    }
+
     // ニューゲーム開始時
     if (m_input.GetMouseButtonTrigger(0))
     {
@@ -91,6 +98,7 @@ void TitleScene::HandleInput()
     // コンティニュー
     if (m_input.GetMouseButtonTrigger(1))
     {
+        if (!PlayerDataManager::HasSaveData()) return;
         PlayerDataManager::Load();
         if (onChangeScene)
             onChangeScene(SceneType::Field);

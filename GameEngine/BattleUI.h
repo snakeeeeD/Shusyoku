@@ -53,6 +53,16 @@ struct PlayCardEffect {
     CardType cardType;
 };
 
+struct HPBarInfo
+{
+    int currentHP;
+    int maxHP;
+    float displayHP;
+    int block;
+    int poisonDmg;
+    bool hasBurn;
+};
+
 struct BattleUIContext
 {
     Player* player;
@@ -122,7 +132,7 @@ private:
     static constexpr float CARD_HOVER_H = 140.0f;
     static constexpr float DRAW_EFFECT_DURATION = 0.4f;
 
-    void DrawHPBar(float x, float y, float w, float h, int currentHP, int maxHP);
+    void DrawHPBar(float x, float y, float w, float h, const HPBarInfo& info, float time);
     void DrawEnemyHPBar(Enemy* enemy, Renderer3D* renderer3D);
     void DrawEnemyInfoPanel(const BattleUIContext& ctx);
     void DrawTargetIndicators(const BattleUIContext& ctx);

@@ -61,11 +61,25 @@ inline CardEffectType StringToCardEffectType(const std::string& str)
 
 inline BuffType StringToBuffType(const std::string& str)
 {
-    if (str == "AttackUp")   return BuffType::AttackUp;
-    if (str == "DefenseUp")  return BuffType::DefenseUp;
-    if (str == "MoveUp")     return BuffType::MoveUp;
-    if (str == "AttackDown") return BuffType::AttackDown;
+    // バフ
+    if (str == "AttackUp")    return BuffType::AttackUp;
+    if (str == "DefenseUp")   return BuffType::DefenseUp;
+    if (str == "Barricade")   return BuffType::Barricade;
+    if (str == "Thorns")      return BuffType::Thorns;
+    if (str == "Momentum")    return BuffType::Momentum;
+    if (str == "MoveUp")      return BuffType::MoveUp;
+    if (str == "Charge")      return BuffType::Charge;
+    if (str == "HitAndRun")   return BuffType::HitAndRun;
+    if (str == "Reposition")  return BuffType::Reposition;
+    // デバフ
+    if (str == "AttackDown")  return BuffType::AttackDown;
+    if (str == "Weak")        return BuffType::Weak;
     if (str == "DefenseDown") return BuffType::DefenseDown;
-    if (str == "Poison")     return BuffType::Poison;
-    return BuffType::AttackUp; // デフォルト
+    if (str == "Frail")       return BuffType::Frail;
+    if (str == "Vulnerable")  return BuffType::Vulnerable;
+    if (str == "Root")        return BuffType::Root;
+    if (str == "Slow")        return BuffType::Slow;
+    if (str == "Burn")        return BuffType::Burn;
+    if (str == "Poison")      return BuffType::Poison;
+    return BuffType::AttackUp;
 }

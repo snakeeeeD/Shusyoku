@@ -13,8 +13,19 @@
           "value": 3,
           "range": 1,
           "rangeType": "Adjacent",
-          "chance": 70,
+          "chance": 40,
           "description": "3ダメージ"
+        },
+        {
+          "type": "Attack",
+          "value": 2,
+          "range": 1,
+          "rangeType": "Adjacent",
+          "chance": 30,
+          "description": "2ダメージ+毒2",
+          "onHitBuffType": "Burn",
+          "onHitValue": 2,
+          "onHitDuration": 3
         },
         {
           "type": "Move",
@@ -40,7 +51,7 @@
           "value": 8,
           "range": 1,
           "rangeType": "Adjacent",
-          "chance": 60,
+          "chance": 50,
           "description": "8ダメージ"
         },
         {
@@ -52,11 +63,21 @@
           "description": "5ブロック"
         },
         {
+          "type": "Buf",
+          "value": 3,
+          "range": 0,
+          "rangeType": "None",
+          "chance": 20,
+          "description": "攻撃力UP",
+          "buffType": "AttackUp",
+          "duration": 2
+        },
+        {
           "type": "Move",
           "value": 0,
           "range": 0,
           "rangeType": "None",
-          "chance": 20,
+          "chance": 10,
           "description": "移動"
         }
       ]

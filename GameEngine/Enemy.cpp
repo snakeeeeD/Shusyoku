@@ -1,6 +1,9 @@
 #include "Enemy.h"
 #include "Renderer3D.h"
 #include "TextureManager.h"
+#include "Player.h"
+#include "BuffInfo.h"
+#include "GameUtils.h"
 
 Enemy::Enemy()
     : m_HP(30), m_maxHP(30), m_attack(5)
@@ -9,7 +12,7 @@ Enemy::Enemy()
 {
     width = 1.0f;
     height = 1.0f;
-    worldY = 0.5f;
+    worldY = 0.0f;
 }
 void Enemy::Init(const std::string& id)
 {
@@ -17,9 +20,9 @@ void Enemy::Init(const std::string& id)
 	if (!data) return;
 
     m_id = id;
-
 	m_HP = data->hp;
 	m_maxHP = data->hp;
+    m_displayHp = (float)m_HP;
 	m_attack = data->attack;
 	width = data->width;
 	height = data->height;
@@ -47,7 +50,7 @@ void Enemy::Draw3D(Renderer3D* renderer)
 
 	renderer->DrawBillboard(
 		TextureManager::Get(m_textureName),
-		worldX, worldY, worldZ + 0.5,
+        worldX, worldY, worldZ,
 		width, height, 0.0f, drawColor
 	);
 }
@@ -92,7 +95,7 @@ bool Enemy::IsInRange(int targetCol, int targetRow, int range, RangeType rangeTy
     }
 }
 
-int Enemy::Think(int playerCol, int playerRow, GridMap* gridMap)
+int Enemy::Think(int playerCol, int playerRow, GridMap* gridMap, Player* player)
 {
     if (!m_hasNextAction) return 0;
 
@@ -105,8 +108,19 @@ int Enemy::Think(int playerCol, int playerRow, GridMap* gridMap)
         // 範囲内にいるかチェック
         if (IsInRange(playerCol, playerRow, m_nextAction.range, m_nextAction.rangeType))
         {
+            // 攻撃命中時デバフ
+            if (!m_nextAction.onHitBuffType.empty() && player)
+            {
+                Buff debuff;
+                debuff.type = StringToBuffType(m_nextAction.onHitBuffType);
+                debuff.value = m_nextAction.onHitValue;
+                debuff.duration = m_nextAction.onHitDuration;
+                const auto& info = BuffInfo::Get(debuff.type);
+                debuff.name = info.name;
+                player->GetBuffManager().AddBuff(debuff);
+            }
             // 攻撃
-            return m_nextAction.value;
+            return m_buffManager.GetFinalAttack(m_nextAction.value);
         }
         else
         {
@@ -122,7 +136,32 @@ int Enemy::Think(int playerCol, int playerRow, GridMap* gridMap)
     }
     else if (m_nextAction.type == EnemyActionType::Defend)
     {
-        AddBlock(m_nextAction.value);
+        AddBlock(m_buffManager.GetFinalBlock(m_nextAction.value));
+        return 0;
+    }
+    else if (m_nextAction.type == EnemyActionType::Buf)
+    {
+        Buff buff;
+        buff.type = StringToBuffType(m_nextAction.buffType);
+        buff.value = m_nextAction.value;
+        buff.duration = m_nextAction.duration;
+        const auto& info = BuffInfo::Get(buff.type);
+        buff.name = info.name;
+        m_buffManager.AddBuff(buff);
+        return 0;
+    }
+    else if (m_nextAction.type == EnemyActionType::Debuf)
+    {
+        if (player)
+        {
+            Buff debuff;
+            debuff.type = StringToBuffType(m_nextAction.buffType);
+            debuff.value = m_nextAction.value;
+            debuff.duration = m_nextAction.duration;
+            const auto& info = BuffInfo::Get(debuff.type);
+            debuff.name = info.name;
+            player->GetBuffManager().AddBuff(debuff);
+        }
         return 0;
     }
 

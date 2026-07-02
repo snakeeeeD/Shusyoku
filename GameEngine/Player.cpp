@@ -9,8 +9,9 @@ Player::Player()
 {
     width = 1.0f;
     height = 1.0f;
-    worldY = 0.5f;
+    worldY = 0.0f;
     m_BillboardRotation = 0.0f;
+    m_displayHp = (float)m_maxHp;
 
 }
 
@@ -23,7 +24,7 @@ void Player::Draw3D(Renderer3D* renderer)
     if (!isActive) return;
     renderer->DrawBillboard(
         TextureManager::Get("player"),
-        worldX, worldY, worldZ + 0.5,
+        worldX, worldY, worldZ,
         width, height, m_BillboardRotation, color
     );
 }

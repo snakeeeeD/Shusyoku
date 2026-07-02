@@ -19,13 +19,25 @@ public:
 	// ゲッター
 	int GetHp() const { return m_HP; }
 	int GetMaxHp() const { return m_maxHP; }
+	int GetAttack() const { return m_attack; }
 	int GetBlock() const { return m_block; }
+	float GetDisplayHp() const { return m_displayHp; }
+	BuffManager& GetBuffManager() { return m_buffManager; }
+	const std::string& GetTextureName() const { return m_textureName; }
+	const std::string& GetId() const { return m_id; }
 
 	// セッター
 	void SetHp(int hp) { m_HP = hp; }
 
-	int Think(int playerCol, int playerRow, class GridMap* gridMap);
-	int GetAttack() const { return m_attack; }
+	int Think(int playerCol, int playerRow, class GridMap* gridMap, class Player* player);
+
+	void UpdateDisplayHp(float deltaTime) {
+		float speed = 0.5f;
+		if (m_displayHp > (float)GetHp())
+			m_displayHp -= speed * deltaTime * (m_displayHp - GetHp());
+		if (m_displayHp < (float)GetHp())
+			m_displayHp = (float)GetHp();
+	}
 
 	void TakeDamage(int damage);
 
@@ -40,14 +52,9 @@ public:
 	void AddBlock(int amount);
 	void ResetBlock();
 
-	BuffManager& GetBuffManager() { return m_buffManager; }
-
 	bool IsBoss() const { return m_isBoss; }
 
 	const std::vector<std::pair<int, int>>& GetGridShape() const { return m_gridShape; }
-
-	const std::string& GetTextureName() const { return m_textureName; }
-	const std::string& GetId() const { return m_id; }
 
 private:
 	bool IsAdjacentTo(int playerCol, int playerRow);
@@ -57,6 +64,7 @@ private:
 	int m_attack;
 	int m_block;
 	bool m_isBoss;
+	float m_displayHp;
 
 	std::string m_textureName;
 	std::string m_id;

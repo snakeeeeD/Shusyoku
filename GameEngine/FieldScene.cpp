@@ -434,19 +434,11 @@ void FieldScene::HandleInput()
 
                 if (!node.visited)
                 {
-                    node.visited = true;
-
                     switch (node.type)
                     {
                     case FieldNodeType::Battle:
-                        m_currentEnemyId = node.enemyId;
-                        SaveProgress();
-                        if (onChangeScene)
-                            onChangeScene(SceneType::Battle);
-                        return;
-
                     case FieldNodeType::Boss:
-                        m_currentEnemyId = "dragon";
+                        m_currentEnemyId = (node.type == FieldNodeType::Boss) ? "dragon" : node.enemyId;
                         SaveProgress();
                         if (onChangeScene)
                             onChangeScene(SceneType::Battle);
@@ -454,12 +446,14 @@ void FieldScene::HandleInput()
 
                     case FieldNodeType::Rest:
                     {
+                        node.visited = true;
                         auto& playerData = PlayerDataManager::GetData();
                         playerData.hp = min(playerData.hp + 20, playerData.maxHp);
                         SaveProgress();
                         break;
                     }
                     default:
+                        node.visited = true;
                         break;
                     }
                 }
