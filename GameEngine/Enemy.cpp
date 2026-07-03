@@ -27,6 +27,7 @@ void Enemy::Init(const std::string& id)
 	width = data->width;
 	height = data->height;
     m_isBoss = data->isBoss;
+    m_immovable = data->immovable;
 	m_textureName = data->textureName;
     m_gridShape = data->gridShape;
 }

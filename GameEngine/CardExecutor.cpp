@@ -86,6 +86,14 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 if (enemy->GetBuffManager().HasBuff(BuffType::Thorns))
                     player->TakeDamage(enemy->GetBuffManager().GetBuffValue(BuffType::Thorns));
                 CardEffect::ApplyOnHitEffect(data.onHitEffect, enemy->GetBuffManager());
+
+                if (data.onHitEffect.hasEffect)
+                {
+                    if (data.onHitEffect.type == CardEffectType::Knockback)
+                        ApplyKnockback(enemy, playerCol, playerRow, data.onHitEffect.value, gridMap, enemies);
+                    else if (data.onHitEffect.type == CardEffectType::Pull)
+                        ApplyPull(enemy, playerCol, playerRow, data.onHitEffect.value, gridMap, enemies, outNewPlayerCol, outNewPlayerRow);
+                }
             }
         }
         else
@@ -104,6 +112,15 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             if (target->GetBuffManager().HasBuff(BuffType::Thorns))
                 player->TakeDamage(target->GetBuffManager().GetBuffValue(BuffType::Thorns));
             CardEffect::ApplyOnHitEffect(data.onHitEffect, target->GetBuffManager());
+
+            // ノックバック/引き寄せ
+            if (data.onHitEffect.hasEffect)
+            {
+                if (data.onHitEffect.type == CardEffectType::Knockback)
+                    ApplyKnockback(target, playerCol, playerRow, data.onHitEffect.value, gridMap, enemies);
+                else if (data.onHitEffect.type == CardEffectType::Pull)
+                    ApplyPull(target, playerCol, playerRow, data.onHitEffect.value, gridMap, enemies, outNewPlayerCol, outNewPlayerRow);
+            }
         }
         break;
     }
@@ -264,4 +281,255 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     result.success = true;
     result.cardUsed = true;
     return result;
+}
+
+
+void CardExecutor::ApplyKnockback(Enemy* target, int playerCol, int playerRow,
+    int distance, GridMap* gridMap, std::vector<Enemy*>& enemies)
+{
+    if (target->IsImmovable())
+        return;
+
+    // プレイヤー→敵の方向を計算
+    int dc = target->gridCol - playerCol;
+    int dr = target->gridRow - playerRow;
+
+    // 方向を正規化（縦横どちらか大きい方を優先）
+    int dirC = 0, dirR = 0;
+    if (abs(dc) >= abs(dr))
+        dirC = (dc > 0) ? 1 : -1;
+    else
+        dirR = (dr > 0) ? 1 : -1;
+
+    int moved = 0;
+    for (int i = 0; i < distance; i++)
+    {
+        int nextCol = target->gridCol + dirC;
+        int nextRow = target->gridRow + dirR;
+
+        // 壁判定
+        if (nextCol < 0 || nextCol >= gridMap->GetCols()
+            || nextRow < 0 || nextRow >= gridMap->GetRows()
+            || gridMap->GetCell(nextCol, nextRow).type == CellType::Wall)
+        {
+            int remaining = distance - moved;
+            target->TakeDamage(remaining * 3);
+            break;
+        }
+
+        // 敵との衝突判定
+        Enemy* blocker = GetEnemyAt(nextCol, nextRow, enemies);
+        if (blocker && blocker != target)
+        {
+            int remaining = distance - moved;
+            target->TakeDamage(remaining * 3);
+            blocker->TakeDamage(remaining * 3);
+            break;
+        }
+
+        // 移動実行
+        gridMap->SetCellType(target->gridCol, target->gridRow, CellType::Empty);
+        target->gridCol = nextCol;
+        target->gridRow = nextRow;
+        gridMap->SetCellType(nextCol, nextRow, CellType::Enemy);
+        target->worldX = (nextCol - gridMap->GetCols() / 2.0f) * 1.1f;
+        target->worldZ = (nextRow - gridMap->GetRows() / 2.0f) * 1.1f;
+        moved++;
+    }
+}
+
+void CardExecutor::ApplyPull(Enemy* target, int playerCol, int playerRow,
+    int distance, GridMap* gridMap, std::vector<Enemy*>& enemies,
+    int& outNewPlayerCol, int& outNewPlayerRow)
+{
+    if (target->IsImmovable())
+    {
+        // プレイヤーが敵の方へ引っ張られる
+        int dc = target->gridCol - playerCol;
+        int dr = target->gridRow - playerRow;
+        int dirC = 0, dirR = 0;
+        if (abs(dc) >= abs(dr))
+            dirC = (dc > 0) ? 1 : -1;
+        else
+            dirR = (dr > 0) ? 1 : -1;
+
+        for (int i = 0; i < distance; i++)
+        {
+            int nextCol = outNewPlayerCol + dirC;
+            int nextRow = outNewPlayerRow + dirR;
+            // 壁チェック
+            if (nextCol < 0 || nextCol >= gridMap->GetCols()
+                || nextRow < 0 || nextRow >= gridMap->GetRows()
+                || gridMap->GetCell(nextCol, nextRow).type == CellType::Wall)
+                break;
+            // 敵マスには入らない
+            if (gridMap->GetCell(nextCol, nextRow).type == CellType::Enemy)
+                break;
+
+            gridMap->SetCellType(outNewPlayerCol, outNewPlayerRow, CellType::Empty);
+            outNewPlayerCol = nextCol;
+            outNewPlayerRow = nextRow;
+            gridMap->SetCellType(nextCol, nextRow, CellType::Player);
+        }
+        return;
+    }
+    // 敵→プレイヤーの方向
+    int dc = playerCol - target->gridCol;
+    int dr = playerRow - target->gridRow;
+
+    int dirC = 0, dirR = 0;
+    if (abs(dc) >= abs(dr))
+        dirC = (dc > 0) ? 1 : -1;
+    else
+        dirR = (dr > 0) ? 1 : -1;
+
+    int moved = 0;
+    for (int i = 0; i < distance; i++)
+    {
+        int nextCol = target->gridCol + dirC;
+        int nextRow = target->gridRow + dirR;
+
+        if (nextCol < 0 || nextCol >= gridMap->GetCols()
+            || nextRow < 0 || nextRow >= gridMap->GetRows()
+            || gridMap->GetCell(nextCol, nextRow).type == CellType::Wall)
+            break;
+
+        // プレイヤーマスには入れない
+        if (nextCol == playerCol && nextRow == playerRow)
+            break;
+
+        Enemy* blocker = GetEnemyAt(nextCol, nextRow, enemies);
+        if (blocker && blocker != target)
+            break;
+
+        gridMap->SetCellType(target->gridCol, target->gridRow, CellType::Empty);
+        target->gridCol = nextCol;
+        target->gridRow = nextRow;
+        gridMap->SetCellType(nextCol, nextRow, CellType::Enemy);
+        target->worldX = (nextCol - gridMap->GetCols() / 2.0f) * 1.1f;
+        target->worldZ = (nextRow - gridMap->GetRows() / 2.0f) * 1.1f;
+        moved++;
+    }
+}
+
+CardExecutor::MovePreview CardExecutor::PreviewKnockback(
+    Enemy* target, int playerCol, int playerRow,
+    int distance, GridMap* gridMap, std::vector<Enemy*>& enemies)
+{
+    MovePreview preview;
+    preview.destCol = target->gridCol;
+    preview.destRow = target->gridRow;
+
+    if (target->IsImmovable())
+    {
+        preview.immovable = true;
+        return preview;
+    }
+
+    int dc = target->gridCol - playerCol;
+    int dr = target->gridRow - playerRow;
+    int dirC = 0, dirR = 0;
+    if (abs(dc) >= abs(dr))
+        dirC = (dc > 0) ? 1 : -1;
+    else
+        dirR = (dr > 0) ? 1 : -1;
+
+    for (int i = 0; i < distance; i++)
+    {
+        int nextCol = preview.destCol + dirC;
+        int nextRow = preview.destRow + dirR;
+
+        if (nextCol < 0 || nextCol >= gridMap->GetCols()
+            || nextRow < 0 || nextRow >= gridMap->GetRows()
+            || gridMap->GetCell(nextCol, nextRow).type == CellType::Wall)
+        {
+            preview.hitsWall = true;
+            break;
+        }
+
+        Enemy* blocker = GetEnemyAt(nextCol, nextRow, enemies);
+        if (blocker && blocker != target)
+        {
+            preview.hitsWall = true;
+            preview.hasCollision = true;
+            preview.collisionCol = blocker->gridCol;
+            preview.collisionRow = blocker->gridRow;
+            break;
+        }
+
+        preview.destCol = nextCol;
+        preview.destRow = nextRow;
+    }
+    return preview;
+}
+
+CardExecutor::MovePreview CardExecutor::PreviewPull(
+    Enemy* target, int playerCol, int playerRow,
+    int distance, GridMap* gridMap, std::vector<Enemy*>& enemies)
+{
+    MovePreview preview;
+    preview.destCol = target->gridCol;
+    preview.destRow = target->gridRow;
+
+    if (target->IsImmovable())
+    {
+        preview.immovable = true;
+        preview.playerDestCol = playerCol;
+        preview.playerDestRow = playerRow;
+
+        int dc = target->gridCol - playerCol;
+        int dr = target->gridRow - playerRow;
+        int dirC = 0, dirR = 0;
+        if (abs(dc) >= abs(dr))
+            dirC = (dc > 0) ? 1 : -1;
+        else
+            dirR = (dr > 0) ? 1 : -1;
+
+        for (int i = 0; i < distance; i++)
+        {
+            int nextCol = preview.playerDestCol + dirC;
+            int nextRow = preview.playerDestRow + dirR;
+
+            if (nextCol < 0 || nextCol >= gridMap->GetCols()
+                || nextRow < 0 || nextRow >= gridMap->GetRows()
+                || gridMap->GetCell(nextCol, nextRow).type == CellType::Wall)
+                break;
+            if (gridMap->GetCell(nextCol, nextRow).type == CellType::Enemy)
+                break;
+
+            preview.playerDestCol = nextCol;
+            preview.playerDestRow = nextRow;
+        }
+        return preview;
+    }
+
+    int dc = playerCol - target->gridCol;
+    int dr = playerRow - target->gridRow;
+    int dirC = 0, dirR = 0;
+    if (abs(dc) >= abs(dr))
+        dirC = (dc > 0) ? 1 : -1;
+    else
+        dirR = (dr > 0) ? 1 : -1;
+
+    for (int i = 0; i < distance; i++)
+    {
+        int nextCol = preview.destCol + dirC;
+        int nextRow = preview.destRow + dirR;
+
+        if (nextCol < 0 || nextCol >= gridMap->GetCols()
+            || nextRow < 0 || nextRow >= gridMap->GetRows()
+            || gridMap->GetCell(nextCol, nextRow).type == CellType::Wall)
+            break;
+
+        if (nextCol == playerCol && nextRow == playerRow)
+            break;
+
+        Enemy* blocker = GetEnemyAt(nextCol, nextRow, enemies);
+        if (blocker && blocker != target)
+            break;
+
+        preview.destCol = nextCol;
+        preview.destRow = nextRow;
+    }
+    return preview;
 }

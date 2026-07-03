@@ -14,6 +14,8 @@ enum class CardEffectType
     ApplyDebuff, // デバフ付与（敵）
     Heal,        // HP回復
     CreateCard,  // カード生成
+    Knockback,   // ノックバック
+    Pull,        // 引き寄せ
 };
 
 // カードレアリティ

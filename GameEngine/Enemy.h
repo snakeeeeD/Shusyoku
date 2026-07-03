@@ -53,6 +53,7 @@ public:
 	void ResetBlock();
 
 	bool IsBoss() const { return m_isBoss; }
+	bool IsImmovable() const { return m_immovable; }
 
 	const std::vector<std::pair<int, int>>& GetGridShape() const { return m_gridShape; }
 
@@ -71,6 +72,8 @@ private:
 	EnemyAction m_nextAction;
 	bool m_hasNextAction;
 	bool IsInRange(int targetCol, int targetRow, int range, RangeType rangeType) const;
+
+	bool m_immovable = false;
 
 	BuffManager m_buffManager;
 

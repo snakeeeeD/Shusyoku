@@ -79,6 +79,42 @@
         "value": 4
       }
     },
+    {
+      "id": "shield_bash",
+      "name": "シールドバッシュ",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 2,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "{value}ダメージ、2マスノックバック",
+      "mainEffect": {
+        "type": "Damage",
+        "value": 5
+      },
+      "onHitEffect": {
+        "type": "Knockback",
+        "value": 2
+      }
+    },
+    {
+      "id": "hook",
+      "name": "フック",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "range": 3,
+      "rangeType": "Cross",
+      "description": "{value}ダメージ、2マス引き寄せ",
+      "mainEffect": {
+        "type": "Damage",
+        "value": 3
+      },
+      "onHitEffect": {
+        "type": "Pull",
+        "value": 2
+      }
+    },
 
     {
       "id": "defend",

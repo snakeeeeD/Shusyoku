@@ -1,5 +1,6 @@
 #include "BattleUI.h"
 #include "BuffInfo.h"
+#include "CardExecutor.h"
 #include <algorithm>
 
 using namespace DirectX;
@@ -801,6 +802,145 @@ void BattleUI::DrawTargetIndicators(const BattleUIContext& ctx)
                 float sx, sy;
                 if (GetEnemyScreenPos(enemy, ctx.renderer3D, sx, sy))
                     DrawArrowIndicator(sx, sy, arrowColor, ctx.highlightTimer);
+
+                // ノックバック/引き寄せプレビュー
+                if (data->onHitEffect.hasEffect)
+                {
+                    if (data->onHitEffect.type == CardEffectType::Knockback)
+                    {
+                        auto preview = CardExecutor::PreviewKnockback(
+                            enemy, ctx.playerCol, ctx.playerRow,
+                            data->onHitEffect.value, ctx.gridMap, *ctx.enemies);
+
+                        if (preview.immovable)
+                        {
+                            // ×マーク（敵は動かない）
+                            m_spriteRenderer->DrawSprite(m_whiteTexture,
+                                sx - 12.0f, sy - 62.0f, 24.0f, 4.0f, 0.78f,
+                                XMFLOAT4(1.0f, 0.2f, 0.2f, 0.9f));
+                            m_spriteRenderer->DrawSprite(m_whiteTexture,
+                                sx - 12.0f, sy - 62.0f, 24.0f, 4.0f, -0.78f,
+                                XMFLOAT4(1.0f, 0.2f, 0.2f, 0.9f));
+                        }
+                        else if (preview.destCol != enemy->gridCol || preview.destRow != enemy->gridRow)
+                        {
+                            float wx, wz;
+                            GridToWorld(ctx.gridMap, preview.destCol, preview.destRow, wx, wz);
+
+                            XMVECTOR worldPos = XMVectorSet(wx - 0.5f, 0.01f, wz - 0.5f, 1.0f);
+                            XMMATRIX view = ctx.renderer3D->GetViewMatrix();
+                            XMMATRIX proj = ctx.renderer3D->GetProjectionMatrix();
+                            XMVECTOR clipPos = XMVector4Transform(worldPos, view * proj);
+                            XMFLOAT4 clip;
+                            XMStoreFloat4(&clip, clipPos);
+
+                            if (clip.w > 0.0f)
+                            {
+                                float dx = (clip.x / clip.w + 1.0f) * 0.5f * m_screenWidth;
+                                float dy = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;
+
+                                ID3D11ShaderResourceView* tex = TextureManager::Get(enemy->GetTextureName());
+                                if (tex)
+                                {
+                                    float ghostW = enemy->width * 50.0f;
+                                    float ghostH = enemy->height * 50.0f;
+                                    m_spriteRenderer->DrawSprite(tex,
+                                        dx - ghostW / 2.0f, dy - ghostH,
+                                        ghostW, ghostH, 0.0f,
+                                        XMFLOAT4(1.0f, 1.0f, 1.0f, 0.3f));
+                                }
+                                if (preview.hasCollision)
+                                {
+                                    for (auto* other : *ctx.enemies)
+                                    {
+                                        if (other->gridCol == preview.collisionCol && other->gridRow == preview.collisionRow)
+                                        {
+                                            float osx, osy;
+                                            if (GetEnemyScreenPos(other, ctx.renderer3D, osx, osy))
+                                                DrawArrowIndicator(osx, osy, XMFLOAT4(1.0f, 0.2f, 0.2f, 1.0f), ctx.highlightTimer);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else if (data->onHitEffect.type == CardEffectType::Pull)
+                    {
+                        auto preview = CardExecutor::PreviewPull(
+                            enemy, ctx.playerCol, ctx.playerRow,
+                            data->onHitEffect.value, ctx.gridMap, *ctx.enemies);
+
+                        if (preview.immovable)
+                        {
+                            // ×マーク（敵は動かない）
+                            m_spriteRenderer->DrawSprite(m_whiteTexture,
+                                sx - 12.0f, sy - 62.0f, 24.0f, 4.0f, 0.78f,
+                                XMFLOAT4(1.0f, 0.2f, 0.2f, 0.9f));
+                            m_spriteRenderer->DrawSprite(m_whiteTexture,
+                                sx - 12.0f, sy - 62.0f, 24.0f, 4.0f, -0.78f,
+                                XMFLOAT4(1.0f, 0.2f, 0.2f, 0.9f));
+
+                            // プレイヤーの移動先表示
+                            if (preview.playerDestCol != ctx.playerCol || preview.playerDestRow != ctx.playerRow)
+                            {
+                                float wx, wz;
+                                GridToWorld(ctx.gridMap, preview.playerDestCol, preview.playerDestRow, wx, wz);
+                                XMVECTOR worldPos = XMVectorSet(wx - 0.5f, 0.01f, wz - 0.5f, 1.0f);
+                                XMMATRIX view = ctx.renderer3D->GetViewMatrix();
+                                XMMATRIX proj = ctx.renderer3D->GetProjectionMatrix();
+                                XMVECTOR clipPos = XMVector4Transform(worldPos, view * proj);
+                                XMFLOAT4 clip;
+                                XMStoreFloat4(&clip, clipPos);
+
+                                if (clip.w > 0.0f)
+                                {
+                                    float px = (clip.x / clip.w + 1.0f) * 0.5f * m_screenWidth;
+                                    float py = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;
+                                    ID3D11ShaderResourceView* playerTex = TextureManager::Get("player");
+                                    if (playerTex)
+                                    {
+                                        float ghostW = ctx.player->width * 50.0f;
+                                        float ghostH = ctx.player->height * 50.0f;
+                                        m_spriteRenderer->DrawSprite(playerTex,
+                                            px - ghostW / 2.0f, py - ghostH,
+                                            ghostW, ghostH, 0.0f,
+                                            XMFLOAT4(1.0f, 1.0f, 1.0f, 0.3f));
+                                    }
+                                }
+                            }
+                        }
+                        else if (preview.destCol != enemy->gridCol || preview.destRow != enemy->gridRow)
+                        {
+                            float wx, wz;
+                            GridToWorld(ctx.gridMap, preview.destCol, preview.destRow, wx, wz);
+
+                            XMVECTOR worldPos = XMVectorSet(wx - 0.5f, 0.01f, wz - 0.5f, 1.0f);
+                            XMMATRIX view = ctx.renderer3D->GetViewMatrix();
+                            XMMATRIX proj = ctx.renderer3D->GetProjectionMatrix();
+                            XMVECTOR clipPos = XMVector4Transform(worldPos, view * proj);
+                            XMFLOAT4 clip;
+                            XMStoreFloat4(&clip, clipPos);
+
+                            if (clip.w > 0.0f)
+                            {
+                                float dx = (clip.x / clip.w + 1.0f) * 0.5f * m_screenWidth;
+                                float dy = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;
+
+                                ID3D11ShaderResourceView* tex = TextureManager::Get(enemy->GetTextureName());
+                                if (tex)
+                                {
+                                    float ghostW = enemy->width * 50.0f;
+                                    float ghostH = enemy->height * 50.0f;
+                                    m_spriteRenderer->DrawSprite(tex,
+                                        dx - ghostW / 2.0f, dy - ghostH,
+                                        ghostW, ghostH, 0.0f,
+                                        XMFLOAT4(1.0f, 1.0f, 1.0f, 0.3f));
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -1263,6 +1403,7 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
         float detailH = 10.0f;
         if (enemy->GetNextAction()) detailH += 22.0f;
         if (enemy->GetBlock() > 0) detailH += 18.0f;
+        if (enemy->IsImmovable()) detailH += 20.0f;
         for (auto& buff : enemy->GetBuffManager().GetBuffs())
             detailH += 20.0f;
         detailH += 18.0f;
@@ -1330,6 +1471,7 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
         float detailH = 10.0f;
         if (hEnemy->GetNextAction()) detailH += 22.0f;
         if (hEnemy->GetBlock() > 0) detailH += 18.0f;
+        if (hEnemy->IsImmovable()) detailH += 20.0f;
         for (auto& buff : hEnemy->GetBuffManager().GetBuffs())
             detailH += 20.0f;
         detailH += 18.0f;
@@ -1435,6 +1577,15 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
                     detailX + 10.0f, lineY, 15.0f,
                     D2D1::ColorF(D2D1::ColorF::LightBlue));
                 lineY += 18.0f;
+            }
+
+            // 移動不可表示
+            if (enemy->IsImmovable())
+            {
+                m_textRenderer->DrawText(L"移動不可",
+                    detailX + 10.0f, lineY, 14.0f,
+                    D2D1::ColorF(0.9f, 0.4f, 0.4f));
+                lineY += 20.0f;
             }
 
             for (auto& buff : enemy->GetBuffManager().GetBuffs())

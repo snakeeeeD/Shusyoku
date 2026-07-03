@@ -19,6 +19,19 @@ public:
         std::vector<std::string> drawnCards;
     };
 
+    struct MovePreview 
+    {
+        bool immovable = false;
+        int destCol, destRow;      // ˆÚ“®æ
+        bool hitsWall = false;     // •Çor“G‚É‚Ô‚Â‚©‚é‚©
+
+        // Pull: immovable‚ÌƒvƒŒƒCƒ„[ˆÚ“®æ
+        int playerDestCol = -1, playerDestRow = -1;
+        // Knockback: Œã‚ë‚Ì“G‚ÉÕ“Ë
+        bool hasCollision = false;
+        int collisionCol = -1, collisionRow = -1;
+    };
+
     ExecuteResult Execute(
         const CardData& data,
         const std::string& cardId,
@@ -33,17 +46,26 @@ public:
         int& outNewPlayerRow
     );
 
+    static MovePreview PreviewKnockback(Enemy* target, int playerCol, int playerRow,
+        int distance, GridMap* gridMap, std::vector<Enemy*>& enemies);
+    static MovePreview PreviewPull(Enemy* target, int playerCol, int playerRow,
+        int distance, GridMap* gridMap, std::vector<Enemy*>& enemies);
+
 private:
     std::vector<Enemy*> GetEnemiesInRange(
         const CardData& data,
         int playerCol, int playerRow,
         std::vector<Enemy*>& enemies);
 
-    Enemy* GetEnemyAt(
-        int col, int row,
-        std::vector<Enemy*>& enemies);
+    static Enemy* GetEnemyAt(int col, int row, std::vector<Enemy*>& enemies);
 
     int GetMinDistToEnemy(
         int playerCol, int playerRow,
         Enemy* enemy);
+
+    void ApplyKnockback(Enemy* target, int playerCol, int playerRow,
+        int distance, GridMap* gridMap, std::vector<Enemy*>& enemies);
+    void ApplyPull(Enemy* target, int playerCol, int playerRow,
+        int distance, GridMap* gridMap, std::vector<Enemy*>& enemies,
+        int& outNewPlayerCol, int& outNewPlayerRow);
 };
