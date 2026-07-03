@@ -93,6 +93,7 @@ private:
 
     bool m_showDrawPile;
     bool m_showDiscardPile;
+    bool m_showExhaustPile;
     bool m_rightClickDragged;
 
     float m_enemyTurnTimer;

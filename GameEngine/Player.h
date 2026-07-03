@@ -27,6 +27,9 @@ public:
     void AddBlock(int amount);
     void TakeDamage(int damage);
 
+    void Heal(int amount) { m_hp = min(m_hp + amount, m_maxHp); }
+    void AddEnergy(int amount) { m_energy += amount; }
+
     void RestoreEnergy();          // ターン開始時に回復
     bool UseEnergy(int cost);      // エネルギー消費（足りなければfalse）
 

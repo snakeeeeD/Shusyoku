@@ -167,8 +167,42 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     case CardType::Skill:
     {
         player->UseEnergy(data.cost);
-        int finalBlock = player->GetBuffManager().GetFinalBlock(data.mainEffect.value);
-        player->AddBlock(finalBlock);
+
+        switch (data.mainEffect.type)
+        {
+        case CardEffectType::Block:
+            player->AddBlock(player->GetBuffManager().GetFinalBlock(data.mainEffect.value));
+            break;
+        case CardEffectType::Draw:
+            for (int i = 0; i < data.mainEffect.value; i++)
+            {
+                std::string id = deck.DrawCard();
+                if (!id.empty())
+                {
+                    hand.AddCard(id);
+                    result.drawnCards.push_back(id);
+                }
+            }
+            break;
+        case CardEffectType::Heal:
+            player->Heal(data.mainEffect.value);
+            break;
+        case CardEffectType::AddEnergy:
+            player->AddEnergy(data.mainEffect.value);
+            break;
+        case CardEffectType::ApplyBuff:
+            CardEffect::ApplyEffectToPlayer(data.mainEffect, player);
+            break;
+        case CardEffectType::CreateCard:
+            for (int i = 0; i < data.mainEffect.value; i++)
+            {
+                hand.AddCard(data.mainEffect.cardId);
+                result.drawnCards.push_back(data.mainEffect.cardId);
+            }
+            break;
+        default:
+            break;
+        }
         break;
     }
     case CardType::Power:
@@ -181,7 +215,51 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     }
     }
 
-    deck.DiscardCard(cardId);
+    // ƒTƒuŒø‰Ê‚Ìˆ—
+    if (data.subEffect.hasEffect)
+    {
+        switch (data.subEffect.type)
+        {
+        case CardEffectType::Draw:
+            for (int i = 0; i < data.subEffect.value; i++)
+            {
+                std::string id = deck.DrawCard();
+                if (!id.empty())
+                {
+                    hand.AddCard(id);
+                    result.drawnCards.push_back(id);
+                }
+            }
+            break;
+        case CardEffectType::Heal:
+            player->Heal(data.subEffect.value);
+            break;
+        case CardEffectType::AddEnergy:
+            player->AddEnergy(data.subEffect.value);
+            break;
+        case CardEffectType::ApplyBuff:
+            CardEffect::ApplyEffectToPlayer(data.subEffect, player);
+            break;
+        case CardEffectType::Block:
+            player->AddBlock(player->GetBuffManager().GetFinalBlock(data.subEffect.value));
+            break;
+        case CardEffectType::CreateCard:
+            for (int i = 0; i < data.subEffect.value; i++)
+            {
+                hand.AddCard(data.subEffect.cardId);
+                result.drawnCards.push_back(data.subEffect.cardId);
+            }
+            break;
+        default:
+            break;
+        }
+    }
+
+    if (data.exhaust)
+        deck.ExhaustCard(cardId);
+    else
+        deck.DiscardCard(cardId);
+
     hand.RemoveCard(cardIndex);
     result.success = true;
     result.cardUsed = true;

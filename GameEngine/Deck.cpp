@@ -26,6 +26,11 @@ void Deck::DiscardCard(const std::string& id)
     m_discardPile.push_back(id);
 }
 
+void Deck::ExhaustCard(const std::string& id)
+{
+    m_exhaustPile.push_back(id);
+}
+
 void Deck::ShuffleDrawPile()
 {
     std::random_device rd;

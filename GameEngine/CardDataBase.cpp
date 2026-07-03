@@ -40,12 +40,15 @@ void CardDataBase::Init()
             else if (rarityStr == "Rare") data.rarity = CardRarity::Rare;
             else data.rarity = CardRarity::Common;
 
+            data.exhaust = c.value("exhaust", false);
+
             // mainEffect
             data.mainEffect.hasEffect = true;
             data.mainEffect.type = StringToCardEffectType(c["mainEffect"]["type"]);
             data.mainEffect.value = c["mainEffect"]["value"];
             data.mainEffect.duration = c["mainEffect"].value("duration", 0);
             data.mainEffect.buffType = c["mainEffect"].value("buffType", "");
+            data.mainEffect.cardId = c["mainEffect"].value("cardId", "");
 
 
             if (c.contains("onHitEffect"))
@@ -55,10 +58,25 @@ void CardDataBase::Init()
                 data.onHitEffect.value = c["onHitEffect"]["value"];
                 data.onHitEffect.duration = c["onHitEffect"].value("duration", 0);
                 data.onHitEffect.buffType = c["onHitEffect"].value("buffType", "");
+                data.onHitEffect.cardId = c["onHitEffect"].value("cardId", "");
             }
             else
             {
                 data.onHitEffect.hasEffect = false;
+            }
+
+            if (c.contains("subEffect"))
+            {
+                data.subEffect.hasEffect = true;
+                data.subEffect.type = StringToCardEffectType(c["subEffect"]["type"]);
+                data.subEffect.value = c["subEffect"]["value"];
+                data.subEffect.duration = c["subEffect"].value("duration", 0);
+                data.subEffect.buffType = c["subEffect"].value("buffType", "");
+                data.subEffect.cardId = c["subEffect"].value("cardId", "");
+            }
+            else
+            {
+                data.subEffect.hasEffect = false;
             }
 
             m_data[data.id] = data;

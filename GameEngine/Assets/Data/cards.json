@@ -15,6 +15,23 @@
       }
     },
     {
+      "id": "pommel_strike",
+      "name": "柄打ち",
+      "type": "Attack",
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "敵単体に{value}ダメージ、1枚ドロー",
+      "mainEffect": {
+        "type": "Damage",
+        "value": 9
+      },
+      "subEffect": {
+        "type": "Draw",
+        "value": 1
+      }
+    },
+    {
       "id": "Spin Slash",
       "name": "回転切り",
       "type": "Attack",
@@ -48,7 +65,20 @@
         "buffType": "Poison"
       }
     },
-
+    {
+      "id": "knife",
+      "name": "ナイフ",
+      "type": "Attack",
+      "cost": 0,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "{value}ダメージ",
+      "exhaust": true,
+      "mainEffect": {
+        "type": "Damage",
+        "value": 4
+      }
+    },
 
     {
       "id": "defend",
@@ -78,7 +108,53 @@
         "value": 12
       }
     },
-
+    {
+      "id": "first_aid",
+      "name": "応急手当",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "HPを{value}回復",
+      "mainEffect": {
+        "type": "Heal",
+        "value": 5
+      }
+    },
+    {
+      "id": "adrenaline",
+      "name": "アドレナリン",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 0,
+      "range": 0,
+      "rangeType": "None",
+      "description": "2枚ドロー、エネルギー+1",
+      "mainEffect": {
+        "type": "Draw",
+        "value": 2
+      },
+      "subEffect": {
+        "type": "AddEnergy",
+        "value": 1
+      }
+    },
+    {
+      "id": "blade_dance",
+      "name": "剣の舞",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "ナイフを3枚手札に加える",
+      "mainEffect": {
+        "type": "CreateCard",
+        "value": 3,
+        "cardId": "knife"
+      }
+    },
 
     {
       "id": "move",

@@ -175,7 +175,7 @@ std::wstring BattleUI::GetCardEffectText(const CardData* data, Player* player) c
 
     if (data->type == CardType::Attack)
         actualValue = player->GetBuffManager().GetFinalAttack(data->mainEffect.value);
-    else if (data->type == CardType::Skill)
+    else if (data->mainEffect.type == CardEffectType::Block)
         actualValue = player->GetBuffManager().GetFinalBlock(data->mainEffect.value);
 
     std::wstring result = data->description;
@@ -183,6 +183,9 @@ std::wstring BattleUI::GetCardEffectText(const CardData* data, Player* player) c
     size_t pos = result.find(placeholder);
     if (pos != std::wstring::npos)
         result.replace(pos, placeholder.size(), std::to_wstring(actualValue));
+
+    if (data->exhaust)
+        result += L" [Á–Å]";
 
     return result;
 }
@@ -302,6 +305,21 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     m_spriteRenderer->DrawSprite(m_whiteTexture, discardX, discardY,
         discardW, discardH, 0.0f, discardColor);
 
+    if (ctx.deck->GetExhaustPileCount() > 0)
+    {
+        float exhaustX = 140.0f;
+        float exhaustY = m_screenHeight - 60.0f;
+        float exhaustW = 50.0f;
+        float exhaustH = 40.0f;
+        bool hoverExhaust = ctx.mousePos.x >= exhaustX && ctx.mousePos.x <= exhaustX + exhaustW
+            && ctx.mousePos.y >= exhaustY && ctx.mousePos.y <= exhaustY + exhaustH;
+        XMFLOAT4 exhaustColor = hoverExhaust
+            ? XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f)
+            : XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
+        m_spriteRenderer->DrawSprite(m_whiteTexture, exhaustX, exhaustY,
+            exhaustW, exhaustH, 0.0f, exhaustColor);
+    }
+
     DrawCardEffects();
     DrawPlayCardEffects();
     DrawDiscardEffects();
@@ -393,7 +411,15 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     m_textRenderer->DrawText(discardText, discardX + 5.0f, discardY + 8.0f, 18.0f,
         D2D1::ColorF(D2D1::ColorF::White));
 
-    if (ctx.showDrawPile || ctx.showDiscardPile)
+    if (ctx.deck->GetExhaustPileCount() > 0)
+    {
+        wchar_t exhaustText[32];
+        swprintf_s(exhaustText, L"”p:%d", ctx.deck->GetExhaustPileCount());
+        m_textRenderer->DrawText(exhaustText, 145.0f, m_screenHeight - 52.0f, 18.0f,
+            D2D1::ColorF(D2D1::ColorF::White));
+    }
+
+    if (ctx.showDrawPile || ctx.showDiscardPile || ctx.showExhaustPile)
         DrawPileViewer(ctx);
 
     wchar_t hpText[64];
@@ -860,9 +886,13 @@ void BattleUI::DrawPileViewer(const BattleUIContext& ctx)
 {
     const auto& pile = ctx.showDrawPile
         ? ctx.deck->GetDrawPile()
-        : ctx.deck->GetDiscardPile();
+        : ctx.showDiscardPile
+        ? ctx.deck->GetDiscardPile()
+        : ctx.deck->GetExhaustPile();
 
-    const wchar_t* title = ctx.showDrawPile ? L"ŽRŽD" : L"ŽÌ‚ÄŽD";
+    const wchar_t* title = ctx.showDrawPile ? L"ŽRŽD"
+        : ctx.showDiscardPile ? L"ŽÌ‚ÄŽD"
+        : L"”pŠüŽD";
 
     float bgX = m_screenWidth / 2.0f - 300.0f;
     float bgY = 50.0f;

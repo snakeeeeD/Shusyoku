@@ -83,6 +83,7 @@ struct BattleUIContext
 
     bool showDrawPile;
     bool showDiscardPile;
+    bool showExhaustPile;
     bool isPlayerTurn;
     float cameraZoom;
 

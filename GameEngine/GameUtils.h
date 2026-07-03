@@ -56,6 +56,7 @@ inline CardEffectType StringToCardEffectType(const std::string& str)
     if (str == "ApplyBuff")   return CardEffectType::ApplyBuff;
     if (str == "ApplyDebuff") return CardEffectType::ApplyDebuff;
     if (str == "Heal")        return CardEffectType::Heal;
+    if (str == "CreateCard")  return CardEffectType::CreateCard;
     return CardEffectType::None;
 }
 

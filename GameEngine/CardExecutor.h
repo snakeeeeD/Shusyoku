@@ -7,6 +7,8 @@
 #include "Deck.h"
 #include <vector>
 
+
+
 class CardExecutor
 {
 public:
@@ -14,6 +16,7 @@ public:
     {
         bool success;
         bool cardUsed;
+        std::vector<std::string> drawnCards;
     };
 
     ExecuteResult Execute(

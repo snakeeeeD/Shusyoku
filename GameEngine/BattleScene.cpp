@@ -41,23 +41,18 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     m_hWnd = hWnd;
 
     m_selectedCardIndex = -1;
-
     m_hoveredCardIndex  = -1;
-
     m_prevHoveredCardIndex = -1;
 
     m_showDrawPile = false;
-
     m_showDiscardPile = false;
+    m_showExhaustPile = false;
 
     m_enemyTurnTimer = ENEMY_TURN_DELAY;
-
     m_hoveredCell = { -1, -1 };
-
     m_rightClickDragged = false;
 
     m_cameraZoom = ZOOM_MAX;
-
     m_isDraggingCamera = false;
     m_dragStartPos = { 0, 0 };
 
@@ -508,6 +503,7 @@ void BattleScene::Draw()
     ctx.battleResult = m_battleResult;
     ctx.showDrawPile = m_showDrawPile;
     ctx.showDiscardPile = m_showDiscardPile;
+    ctx.showExhaustPile = m_showExhaustPile;
     ctx.screenWidth = m_screenWidth;
     ctx.screenHeight = m_screenHeight;
     ctx.cameraZoom = m_cameraZoom;
@@ -625,11 +621,18 @@ void BattleScene::HandleInput()
                         m_player->worldZ = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
                     }
 
+                    for (auto& drawnId : execResult.drawnCards)
+                        m_battleUI->StartDrawCardEffect(drawnId);
+
                     m_battleUI->StartPlayCardEffect(dataCopy.type, playCardX, playCardY);
                     m_battleUI->OnCardRemoved(m_selectedCardIndex);
                     ProcessDeadEnemies();
                     m_selectedCardIndex = -1;
                     cardJustUsed = true;
+
+                    // ドロー効果のアニメーション
+                    for (auto& drawnId : execResult.drawnCards)
+                        m_battleUI->StartDrawCardEffect(drawnId);
                 }
             }
         }
@@ -716,8 +719,18 @@ void BattleScene::HandleInput()
             m_showDrawPile = false;
         }
 
+        // 廃棄札ボタン
+        else if (m_deck.GetExhaustPileCount() > 0
+            && mousePos.x >= 140.0f && mousePos.x <= 190.0f
+            && mousePos.y >= discardY && mousePos.y <= discardY + 40.0f)
+        {
+            m_showExhaustPile = !m_showExhaustPile;
+            m_showDrawPile = false;
+            m_showDiscardPile = false;
+        }
+
         // ビューワー外クリックで閉じる
-        else if (m_showDrawPile || m_showDiscardPile)
+        else if (m_showDrawPile || m_showDiscardPile || m_showExhaustPile)
         {
             float bgX = m_screenWidth / 2.0f - 300.0f;
             float bgY = 50.0f;
@@ -727,6 +740,7 @@ void BattleScene::HandleInput()
             {
                 m_showDrawPile = false;
                 m_showDiscardPile = false;
+                m_showExhaustPile = false;
             }
         }
 
@@ -768,6 +782,10 @@ void BattleScene::HandleInput()
                         m_player->worldX = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
                         m_player->worldZ = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
                     }
+
+
+                    for (auto& drawnId : execResult.drawnCards)
+                        m_battleUI->StartDrawCardEffect(drawnId);
 
                     m_battleUI->StartPlayCardEffect(dataCopy.type, playCardX, playCardY);
                     m_battleUI->OnCardRemoved(m_selectedCardIndex);

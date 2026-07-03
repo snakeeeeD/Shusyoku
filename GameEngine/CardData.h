@@ -13,6 +13,7 @@ enum class CardEffectType
     ApplyBuff,   // バフ付与（プレイヤー）
     ApplyDebuff, // デバフ付与（敵）
     Heal,        // HP回復
+    CreateCard,  // カード生成
 };
 
 // カードレアリティ
@@ -30,6 +31,7 @@ struct CardEffectData
     int            value = 0;
     int            duration = 0;      // バフ・デバフ用
     std::string    buffType = "";     // "Poison", "AttackUp"など
+    std::string    cardId = "";       // CreateCard用
     bool           hasEffect = false;
 };
 
@@ -43,7 +45,9 @@ struct CardData
     RangeType    rangeType;
     std::wstring description;
     CardRarity rarity = CardRarity::Common;
+    bool exhaust = false;
 
     CardEffectData   mainEffect;   // メイン効果（ダメージ量やブロック量など）
     CardEffectData   onHitEffect;  // ヒット時効果（攻撃カードのみ）
+    CardEffectData   subEffect;    // サブ効果（ドロー/エネルギー/回復/自己バフ）
 };

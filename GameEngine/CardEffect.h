@@ -92,9 +92,9 @@ namespace CardEffect
 
             player->GetBuffManager().AddBuff(buff);
         }
-      /*  else if (effect.type == CardEffectType::Heal)
+        else if (effect.type == CardEffectType::Heal)
             player->Heal(effect.value);
         else if (effect.type == CardEffectType::AddEnergy)
-            player->AddEnergy(effect.value);*/
+            player->AddEnergy(effect.value);
     }
 }

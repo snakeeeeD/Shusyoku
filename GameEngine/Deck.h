@@ -13,11 +13,14 @@ public:
     std::string DrawCard();
     std::string DrawSpecificCard(const std::string& id);
     void DiscardCard(const std::string& id);
+    void ExhaustCard(const std::string& id);
     void ShuffleDrawPile();
     void Reset();
 
     int GetDrawPileCount()    const { return (int)m_drawPile.size(); }
     int GetDiscardPileCount() const { return (int)m_discardPile.size(); }
+    int GetExhaustPileCount() const { return (int)m_exhaustPile.size(); }
+    const std::vector<std::string>& GetExhaustPile() const { return m_exhaustPile; }
 
     const std::vector<std::string>& GetDrawPile()    const { return m_drawPile; }    // Å© í«â¡
     const std::vector<std::string>& GetDiscardPile() const { return m_discardPile; } // Å© í«â¡
@@ -25,4 +28,5 @@ public:
 private:
     std::vector<std::string> m_drawPile;
     std::vector<std::string> m_discardPile;
+    std::vector<std::string> m_exhaustPile;
 };
