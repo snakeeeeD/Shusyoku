@@ -49,6 +49,7 @@ void CardDataBase::Init()
             data.mainEffect.duration = c["mainEffect"].value("duration", 0);
             data.mainEffect.buffType = c["mainEffect"].value("buffType", "");
             data.mainEffect.cardId = c["mainEffect"].value("cardId", "");
+            data.mainEffect.trapType = c["mainEffect"].value("trapType", "");
 
 
             if (c.contains("onHitEffect"))

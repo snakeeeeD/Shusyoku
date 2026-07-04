@@ -1,5 +1,6 @@
 ﻿#include "BattleScene.h"
 #include "TextureLoader.h"
+#include "CardExecutor.h"
 #include <algorithm>
 #include <cstdio>
 
@@ -414,6 +415,13 @@ void BattleScene::Update(float deltaTime)
                     {
                         m_player->TakeDamage(damage);
                     }
+
+                    // 罠チェック
+                    auto& cell = m_gridMap->GetCell(enemy->gridCol, enemy->gridRow);
+                    if (cell.trap.active)
+                    {
+                        CardExecutor::TriggerTrap(cell, enemy);
+                    }
                 }
 
                 ProcessDeadEnemies();
@@ -479,9 +487,94 @@ void BattleScene::Draw()
         }
     }
 
+    // 罠の表示
+    for (int row = 0; row < m_gridMap->GetRows(); row++)
+    {
+        for (int col = 0; col < m_gridMap->GetCols(); col++)
+        {
+            auto& cell = m_gridMap->GetCell(col, row);
+            if (cell.trap.active)
+            {
+                float x = (col - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                float z = (row - m_gridMap->GetRows() / 2.0f) * 1.1f;
+
+                XMFLOAT4 trapColor;
+                switch (cell.trap.type)
+                {
+                case TrapType::Explosion: trapColor = XMFLOAT4(1.0f, 0.3f, 0.0f, 0.5f); break;
+                case TrapType::Root:      trapColor = XMFLOAT4(0.2f, 0.8f, 0.2f, 0.5f); break;
+                case TrapType::Poison:    trapColor = XMFLOAT4(0.5f, 0.0f, 0.8f, 0.5f); break;
+                default:                  trapColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.5f); break;
+                }
+                m_renderer3D->DrawTile(m_whiteTexture, x, z, 0.8f, trapColor);
+            }
+        }
+    }
+
+    // 罠設置不可マーク（フラグだけ保存）
+    float trapBlockX = -1, trapBlockY = -1;
+    float trapAngle1 = 0, trapAngle2 = 0, trapLen = 0;
+
+    if (m_selectedCardIndex >= 0 && m_selectedCardIndex < (int)m_hand.GetCards().size())
+    {
+        const CardData* selData = m_hand.GetCards()[m_selectedCardIndex]->GetData();
+        if (selData && selData->mainEffect.type == CardEffectType::PlaceTrap)
+        {
+            auto& playerCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
+            if (playerCell.trap.active)
+            {
+                float cx = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                float cz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                float half = 0.4f;
+
+                XMMATRIX vp = m_renderer3D->GetViewMatrix() * m_renderer3D->GetProjectionMatrix();
+
+                auto toScreen = [&](float wx, float wz, float& outX, float& outY) -> bool {
+                    XMVECTOR w = XMVectorSet(wx, 0.01f, wz, 1.0f);
+                    XMVECTOR c = XMVector4Transform(w, vp);
+                    XMFLOAT4 cl;
+                    XMStoreFloat4(&cl, c);
+                    if (cl.w <= 0) return false;
+                    outX = (cl.x / cl.w + 1.0f) * 0.5f * m_screenWidth;
+                    outY = (1.0f - cl.y / cl.w) * 0.5f * m_screenHeight;
+                    return true;
+                    };
+
+                float sx, sy, rx, ry, bx, by;
+                if (toScreen(cx, cz, sx, sy) &&
+                    toScreen(cx + half, cz, rx, ry) &&
+                    toScreen(cx, cz + half, bx, by))
+                {
+                    trapBlockX = sx;
+                    trapBlockY = sy;
+                    float hw = rx - sx;
+                    float hh = by - sy;
+                    trapAngle1 = atan2f(hh, hw);
+                    trapAngle2 = atan2f(hh, -hw);
+                    trapLen = sqrtf(hw * hw + hh * hh) * 2.0f;
+                }
+            }
+        }
+    }
+
     m_player->Draw3D(m_renderer3D);
     for (auto enemy : m_enemies)
         enemy->Draw3D(m_renderer3D);
+
+    // 罠設置不可×マーク描画
+    if (trapBlockX >= 0)
+    {
+        m_spriteRenderer->Begin();
+        m_spriteRenderer->DrawSprite(m_whiteTexture,
+            trapBlockX - trapLen / 2.0f, trapBlockY - 2.5f,
+            trapLen, 5.0f, trapAngle1,
+            XMFLOAT4(1.0f, 0.1f, 0.1f, 0.8f));
+        m_spriteRenderer->DrawSprite(m_whiteTexture,
+            trapBlockX - trapLen / 2.0f, trapBlockY - 2.5f,
+            trapLen, 5.0f, trapAngle2,
+            XMFLOAT4(1.0f, 0.1f, 0.1f, 0.8f));
+        m_spriteRenderer->End();
+    }
 
     m_renderer3D->End();
 
@@ -548,7 +641,20 @@ void BattleScene::HandleInput()
     }
     else
     {
-        m_hoveredCell = { -1, -1 };
+        POINT mousePos = m_input.GetMousePos();
+        auto result = m_gridMap->GetClickedCell3D(
+            mousePos,
+            m_renderer3D->GetViewMatrix(),
+            m_renderer3D->GetProjectionMatrix(),
+            m_screenWidth,
+            m_screenHeight
+        );
+
+        if (result.cell)
+            m_hoveredCell = { result.col, result.row };
+        else
+            m_hoveredCell = { -1, -1 };
+
         m_highlighter.ClearPlayerHighlight(m_gridMap);
     }
 

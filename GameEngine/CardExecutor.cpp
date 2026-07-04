@@ -183,6 +183,14 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     }
     case CardType::Skill:
     {
+        // 罠設置不可チェック（エナジー消費前）
+        if (data.mainEffect.type == CardEffectType::PlaceTrap)
+        {
+            auto& cell = gridMap->GetCell(playerCol, playerRow);
+            if (cell.trap.active)
+                return result;
+        }
+
         player->UseEnergy(data.cost);
 
         switch (data.mainEffect.type)
@@ -217,6 +225,19 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 result.drawnCards.push_back(data.mainEffect.cardId);
             }
             break;
+        case CardEffectType::PlaceTrap:
+        {
+            auto& cell = gridMap->GetCell(playerCol, playerRow);
+            if (cell.trap.active)
+            {
+                return result;  // 既に罠がある → 使えない
+            }
+            cell.trap.active = true;
+            cell.trap.type = StringToTrapType(data.mainEffect.trapType);
+            cell.trap.value = data.mainEffect.value;
+            cell.trap.duration = data.mainEffect.duration;
+            break;
+        }
         default:
             break;
         }
@@ -283,6 +304,41 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     return result;
 }
 
+void CardExecutor::TriggerTrap(Cell& cell, Enemy* enemy)
+{
+    if (!cell.trap.active) return;
+
+    switch (cell.trap.type)
+    {
+    case TrapType::Explosion:
+        enemy->TakeDamage(cell.trap.value);
+        break;
+    case TrapType::Root:
+    {
+        Buff root;
+        root.type = BuffType::Root;
+        root.value = cell.trap.value;
+        root.duration = cell.trap.duration;
+        root.name = L"拘束";
+        root.description = L"";
+        enemy->GetBuffManager().AddBuff(root);
+        break;
+    }
+    case TrapType::Poison:
+    {
+        Buff poison;
+        poison.type = BuffType::Poison;
+        poison.value = cell.trap.value;
+        poison.duration = cell.trap.duration;
+        poison.name = L"毒";
+        poison.description = L"";
+        enemy->GetBuffManager().AddBuff(poison);
+        break;
+    }
+    }
+    cell.trap = TrapData();  // 発動後リセット
+}
+
 
 void CardExecutor::ApplyKnockback(Enemy* target, int playerCol, int playerRow,
     int distance, GridMap* gridMap, std::vector<Enemy*>& enemies)
@@ -334,6 +390,8 @@ void CardExecutor::ApplyKnockback(Enemy* target, int playerCol, int playerRow,
         gridMap->SetCellType(nextCol, nextRow, CellType::Enemy);
         target->worldX = (nextCol - gridMap->GetCols() / 2.0f) * 1.1f;
         target->worldZ = (nextRow - gridMap->GetRows() / 2.0f) * 1.1f;
+        auto& passedCell = gridMap->GetCell(nextCol, nextRow);
+        TriggerTrap(passedCell, target);
         moved++;
     }
 }
@@ -408,6 +466,8 @@ void CardExecutor::ApplyPull(Enemy* target, int playerCol, int playerRow,
         gridMap->SetCellType(nextCol, nextRow, CellType::Enemy);
         target->worldX = (nextCol - gridMap->GetCols() / 2.0f) * 1.1f;
         target->worldZ = (nextRow - gridMap->GetRows() / 2.0f) * 1.1f;
+        auto& passedCell = gridMap->GetCell(nextCol, nextRow);
+        TriggerTrap(passedCell, target);
         moved++;
     }
 }

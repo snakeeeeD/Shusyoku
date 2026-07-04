@@ -23,7 +23,7 @@
           "rangeType": "Adjacent",
           "chance": 30,
           "description": "2ダメージ+毒2",
-          "onHitBuffType": "Burn",
+          "onHitBuffType": "Poison",
           "onHitValue": 2,
           "onHitDuration": 3
         },

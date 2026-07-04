@@ -740,6 +740,62 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         m_textRenderer->DrawText(desc.c_str(), tipX + 5.0f, tipY + 18.0f, 11.0f,
             D2D1::ColorF(0.8f, 0.8f, 0.8f));
     }
+
+    // 罠のホバー詳細
+    if (ctx.hoveredCell.first >= 0 && ctx.hoveredCell.second >= 0
+        && ctx.hoveredCell.first < ctx.gridMap->GetCols()
+        && ctx.hoveredCell.second < ctx.gridMap->GetRows())
+    {
+        auto& hCell = ctx.gridMap->GetCell(ctx.hoveredCell.first, ctx.hoveredCell.second);
+        if (hCell.trap.active)
+        {
+            std::wstring trapName;
+            XMFLOAT4 trapColor;
+            switch (hCell.trap.type)
+            {
+            case TrapType::Explosion:
+                trapName = L"爆発の罠";
+                trapColor = XMFLOAT4(1.0f, 0.3f, 0.0f, 1.0f);
+                break;
+            case TrapType::Root:
+                trapName = L"拘束の罠";
+                trapColor = XMFLOAT4(0.2f, 0.8f, 0.2f, 1.0f);
+                break;
+            case TrapType::Poison:
+                trapName = L"毒の罠";
+                trapColor = XMFLOAT4(0.5f, 0.0f, 0.8f, 1.0f);
+                break;
+            default:
+                trapName = L"罠";
+                trapColor = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+                break;
+            }
+
+            wchar_t detailText[64];
+            if (hCell.trap.type == TrapType::Explosion)
+                swprintf_s(detailText, L"ダメージ: %d", hCell.trap.value);
+            else
+                swprintf_s(detailText, L"効果: %d (%dT)", hCell.trap.value, hCell.trap.duration);
+
+            float tipX = (float)ctx.mousePos.x + 15.0f;
+            float tipY = (float)ctx.mousePos.y - 50.0f;
+            float tipW = 150.0f;
+            float tipH = 40.0f;
+
+            m_textRenderer->End();
+            m_spriteRenderer->Begin();
+            m_spriteRenderer->DrawSprite(m_whiteTexture, tipX, tipY, tipW, tipH, 0.0f,
+                XMFLOAT4(0.08f, 0.08f, 0.15f, 0.95f));
+            m_spriteRenderer->End();
+            m_textRenderer->Begin();
+
+            m_textRenderer->DrawText(trapName.c_str(), tipX + 5.0f, tipY + 2.0f, 13.0f,
+                D2D1::ColorF(trapColor.x, trapColor.y, trapColor.z));
+            m_textRenderer->DrawText(detailText, tipX + 5.0f, tipY + 20.0f, 11.0f,
+                D2D1::ColorF(D2D1::ColorF::LightGray));
+        }
+    }
+
     m_textRenderer->End();
 
     m_spriteRenderer->Begin();
@@ -960,6 +1016,37 @@ void BattleUI::DrawTargetIndicators(const BattleUIContext& ctx)
         XMVECTOR clipPos = XMVector4Transform(worldPos, view * proj);
         XMFLOAT4 clip;
         XMStoreFloat4(&clip, clipPos);
+
+        if (data->mainEffect.type == CardEffectType::PlaceTrap)
+        {
+            auto& cell = ctx.gridMap->GetCell(ctx.playerCol, ctx.playerRow);
+            if (cell.trap.active)
+            {
+                // プレイヤーの頭上に×マーク
+                float pitch = XMConvertToRadians(-Renderer3D::BILLBOARD_PITCH);
+                XMVECTOR worldPos = XMVectorSet(
+                    ctx.player->worldX,
+                    ctx.player->worldY + ctx.player->height * cos(pitch),
+                    ctx.player->worldZ + 0.5f - ctx.player->height * sin(pitch),
+                    1.0f);
+                XMMATRIX view = ctx.renderer3D->GetViewMatrix();
+                XMMATRIX proj = ctx.renderer3D->GetProjectionMatrix();
+                XMVECTOR clipPos = XMVector4Transform(worldPos, view * proj);
+                XMFLOAT4 clip;
+                XMStoreFloat4(&clip, clipPos);
+                if (clip.w > 0.0f)
+                {
+                    float sx = (clip.x / clip.w + 1.0f) * 0.5f * m_screenWidth;
+                    float sy = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;
+                    m_spriteRenderer->DrawSprite(m_whiteTexture,
+                        sx - 12.0f, sy - 62.0f, 24.0f, 4.0f, 0.78f,
+                        XMFLOAT4(1.0f, 0.2f, 0.2f, 0.9f));
+                    m_spriteRenderer->DrawSprite(m_whiteTexture,
+                        sx - 12.0f, sy - 62.0f, 24.0f, 4.0f, -0.78f,
+                        XMFLOAT4(1.0f, 0.2f, 0.2f, 0.9f));
+                }
+            }
+        }
 
         if (clip.w > 0.0f)
         {

@@ -3,6 +3,7 @@
 #include "CardData.h"
 #include "EnemyActionType.h"
 #include "BuffType.h"
+#include "GridMap.h"
 #include <string>
 #include <windows.h>
 
@@ -60,6 +61,7 @@ inline CardEffectType StringToCardEffectType(const std::string& str)
     if (str == "CreateCard")  return CardEffectType::CreateCard;
     if (str == "Knockback")   return CardEffectType::Knockback;
     if (str == "Pull")        return CardEffectType::Pull;
+    if (str == "PlaceTrap") return CardEffectType::PlaceTrap;
     return CardEffectType::None;
 }
 
@@ -86,4 +88,12 @@ inline BuffType StringToBuffType(const std::string& str)
     if (str == "Burn")        return BuffType::Burn;
     if (str == "Poison")      return BuffType::Poison;
     return BuffType::AttackUp;
+}
+
+inline TrapType StringToTrapType(const std::string& str)
+{
+    if (str == "Explosion") return TrapType::Explosion;
+    if (str == "Root") return TrapType::Root;
+    if (str == "Poison") return TrapType::Poison;
+    return TrapType::None;
 }

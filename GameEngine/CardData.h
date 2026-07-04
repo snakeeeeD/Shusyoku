@@ -16,6 +16,7 @@ enum class CardEffectType
     CreateCard,  // カード生成
     Knockback,   // ノックバック
     Pull,        // 引き寄せ
+    PlaceTrap,   // 罠セット
 };
 
 // カードレアリティ
@@ -34,6 +35,7 @@ struct CardEffectData
     int            duration = 0;      // バフ・デバフ用
     std::string    buffType = "";     // "Poison", "AttackUp"など
     std::string    cardId = "";       // CreateCard用
+    std::string trapType = "";  // "Explosion", "Root", "Poison"
     bool           hasEffect = false;
 };
 

@@ -252,6 +252,51 @@
         "duration": 2,
         "buffType": "DefenseUp"
       }
+    },
+
+    {
+      "id": "explosion_trap",
+      "name": "爆発の罠",
+      "type": "Skill",
+      "cost": 1,
+      "range": 0,
+      "rangeType": "Single",
+      "description": "足元に{value}ダメージの罠を設置",
+      "mainEffect": {
+        "type": "PlaceTrap",
+        "trapType": "Explosion",
+        "value": 15
+      }
+    },
+    {
+      "id": "root_trap",
+      "name": "拘束の罠",
+      "type": "Skill",
+      "cost": 1,
+      "range": 0,
+      "rangeType": "Single",
+      "description": "足元に拘束の罠を設置（{value}T）",
+      "mainEffect": {
+        "type": "PlaceTrap",
+        "trapType": "Root",
+        "value": 1,
+        "duration": 2
+      }
+    },
+    {
+      "id": "poison_trap",
+      "name": "毒の罠",
+      "type": "Skill",
+      "cost": 1,
+      "range": 0,
+      "rangeType": "Single",
+      "description": "足元に毒{value}の罠を設置",
+      "mainEffect": {
+        "type": "PlaceTrap",
+        "trapType": "Poison",
+        "value": 5,
+        "duration": 3
+      }
     }
   ]
 }

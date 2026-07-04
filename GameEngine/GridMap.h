@@ -16,10 +16,21 @@ enum class CellType
 	Wall
 };
 
+enum class TrapType { None, Explosion, Root, Poison };
+
+struct TrapData {
+	TrapType type = TrapType::None;
+	int value = 0;       // ダメージ量やデバフ値
+	int duration = 0;    // デバフ持続ターン
+	bool active = false; // 罠があるか
+};
+
+
 struct Cell
 {
 	CellType type;
 	GameObject gameObject;
+	TrapData trap;
 };
 
 class GridMap
@@ -35,7 +46,6 @@ public:
 		int col;
 		int row;
 	};
-
 
 	void Init(int cols, int rows, float cellSize);
 	void Draw(class SpriteRenderer* renderer);

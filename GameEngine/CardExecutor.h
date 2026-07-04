@@ -51,6 +51,8 @@ public:
     static MovePreview PreviewPull(Enemy* target, int playerCol, int playerRow,
         int distance, GridMap* gridMap, std::vector<Enemy*>& enemies);
 
+    static void TriggerTrap(Cell& cell, Enemy* enemy);
+
 private:
     std::vector<Enemy*> GetEnemiesInRange(
         const CardData& data,
