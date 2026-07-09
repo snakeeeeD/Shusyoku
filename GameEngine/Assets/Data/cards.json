@@ -292,7 +292,7 @@
       "description": "{value}マス先まで移動",
       "mainEffect": {
         "type": "None",
-        "value": 2
+        "value": 3
       }
     },
 

@@ -12,7 +12,7 @@ Enemy::Enemy()
 {
     width = 1.0f;
     height = 1.0f;
-    worldY = 0.0f;
+    worldY = 0.05f;
 }
 void Enemy::Init(const std::string& id)
 {

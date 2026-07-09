@@ -3,6 +3,8 @@
 #include "Renderer3D.h"
 #include <algorithm>
 #include <cmath>
+#include <queue>
+#include <map>
 
 std::vector<std::pair<int, int>> BattleHighlighter::GetCandidates(
     int centerCol, int centerRow, RangeType rangeType, int range)
@@ -135,6 +137,135 @@ void BattleHighlighter::UpdatePlayerHighlight(
 {
     ClearPlayerHighlight(gridMap);
     if (!data) return;
+
+    // Moveカード: BFS で到達可能マスのみハイライト
+    if (data->type == CardType::Move)
+    {
+        int actualRange = player->GetBuffManager().GetFinalMoveRange(data->range);
+        float pulse = sin(timer * 2.0f);
+        float hoverBrightness = 0.3f + 0.7f * ((pulse + 1.0f) / 2.0f);
+
+        // BFS
+        std::queue<std::pair<int, int>> bfsQueue;
+        std::map<std::pair<int, int>, int> bfsDist;
+        std::map<std::pair<int, int>, std::pair<int, int>> bfsParent;
+
+        auto startPos = std::make_pair(centerCol, centerRow);
+        bfsQueue.push(startPos);
+        bfsDist[startPos] = 0;
+        bfsParent[startPos] = { -1, -1 };
+
+        const int dirs[4][2] = { {0,1},{0,-1},{1,0},{-1,0} };
+
+        while (!bfsQueue.empty())
+        {
+            auto [col, row] = bfsQueue.front();
+            bfsQueue.pop();
+
+            if (bfsDist[{col, row}] >= actualRange)
+                continue;
+
+            for (int d = 0; d < 4; d++)
+            {
+                int nc = col + dirs[d][0];
+                int nr = row + dirs[d][1];
+                if (nc < 0 || nc >= gridMap->GetCols()
+                    || nr < 0 || nr >= gridMap->GetRows())
+                    continue;
+
+                auto np = std::make_pair(nc, nr);
+                if (bfsDist.count(np))
+                    continue;
+
+                auto& ncell = gridMap->GetCell(nc, nr);
+                if (ncell.type != CellType::Empty)
+                    continue;
+
+                bfsDist[np] = bfsDist[{col, row}] + 1;
+                bfsParent[np] = { col, row };
+                bfsQueue.push(np);
+            }
+        }
+
+        // ホバー先への経路復元
+        std::vector<std::pair<int, int>> pathToHovered;
+        auto hoverPos = std::make_pair(hoveredCell.first, hoveredCell.second);
+        if (hoveredCell.first >= 0 && bfsDist.count(hoverPos))
+        {
+            auto cur = hoverPos;
+            while (cur != startPos)
+            {
+                pathToHovered.push_back(cur);
+                cur = bfsParent[cur];
+            }
+        }
+
+        // 到達可能マスをハイライト
+        for (auto& [pos, d] : bfsDist)
+        {
+            if (pos == startPos) continue;
+            auto [col, row] = pos;
+
+            m_playerHighlightCells.push_back({ col, row });
+            auto& cell = gridMap->GetCell(col, row);
+
+            bool isHovered = (col == hoveredCell.first && row == hoveredCell.second);
+
+            bool isOnPath = false;
+            for (auto& p : pathToHovered)
+                if (p.first == col && p.second == row) { isOnPath = true; break; }
+
+            bool isDangerCell = false;
+            for (auto enemy : enemies)
+            {
+                const EnemyAction* action = enemy->GetNextAction();
+                if (!action || action->type != EnemyActionType::Attack) continue;
+                if (IsInEnemyRange(col, row, action, enemy->gridCol, enemy->gridRow))
+                {
+                    int finalDamage = action->value - player->GetBlock();
+                    if (finalDamage > 0) isDangerCell = true;
+                    break;
+                }
+            }
+
+            if (isHovered)
+            {
+                cell.gameObject.color = XMFLOAT4(0.2f, hoverBrightness, 0.4f, 1.0f);
+            }
+            else if (isOnPath)
+            {
+                cell.gameObject.color = XMFLOAT4(0.3f, 0.85f, 0.5f, 1.0f);
+            }
+            else if (isDangerCell)
+            {
+                float blink = 0.6f + 0.4f * sin(timer * 2.0f);
+                cell.gameObject.color = XMFLOAT4(blink, blink, 0.1f, 1.0f);
+            }
+            else
+            {
+                float brightness = 0.7f - (float)(d - 1) / (float)max(1, actualRange) * 0.3f;
+                brightness = max(0.4f, min(0.7f, brightness));
+                cell.gameObject.color = XMFLOAT4(0.2f, brightness, 0.4f, 1.0f);
+            }
+        }
+        // 到達不可マス（範囲内だが経路なし）
+        auto allCandidates = GetCandidates(centerCol, centerRow, data->rangeType, actualRange);
+        for (auto& [col, row] : allCandidates)
+        {
+            if (col < 0 || col >= gridMap->GetCols()) continue;
+            if (row < 0 || row >= gridMap->GetRows()) continue;
+            if (col == centerCol && row == centerRow) continue;
+            if (bfsDist.count({ col, row })) continue;
+
+            auto& cell = gridMap->GetCell(col, row);
+            if (cell.type == CellType::Enemy || cell.type == CellType::Boss) continue;
+
+            m_playerHighlightCells.push_back({ col, row });
+            m_outOfRangeCells.push_back({ col, row });
+            cell.gameObject.color = XMFLOAT4(0.25f, 0.25f, 0.25f, 1.0f);
+        }
+        return;
+    }
 
     auto candidates = GetCandidates(centerCol, centerRow, data->rangeType, data->range);
 

@@ -114,22 +114,6 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         for (int col = 0; col < m_gridMap->GetCols(); col++)
             m_gridMap->GetCell(col, row).gameObject.texture = m_whiteTexture;
 
-    // テスト用地形（確認後に削除）
-    auto placeTerrain = [&](int col, int row, const std::string& id) {
-        const TerrainDef* def = TerrainDataBase::Get(id);
-        if (!def) return;
-        auto& cell = m_gridMap->GetCell(col, row);
-        cell.tileEffect.active = true;
-        cell.tileEffect.id = id;
-        cell.tileEffect.value = def->value;
-        cell.tileEffect.duration = def->duration;
-        cell.tileEffect.persistent = def->persistent;
-        };
-    placeTerrain(2, 2, "fire");
-    placeTerrain(3, 2, "thorn");
-    placeTerrain(4, 2, "swamp");
-    placeTerrain(5, 2, "ice");
-
     // プレイヤー初期位置
     m_playerCol = m_gridMap->GetCols() / 2;
     m_playerRow = m_gridMap->GetRows() / 2;
@@ -597,6 +581,31 @@ void BattleScene::Draw()
         }
     }
 
+    // 移動不可マスの×マーク（深度テストOFF、敵より先に描画）
+    auto& blockedCells = m_highlighter.GetOutOfRangeCells();
+    if (!blockedCells.empty())
+    {
+        m_renderer3D->SetDepthEnabled(false);
+        for (auto& [col, row] : blockedCells)
+        {
+            float cx = (col - m_gridMap->GetCols() / 2.0f) * 1.1f;
+            float cz = (row - m_gridMap->GetRows() / 2.0f) * 1.1f;
+
+            m_renderer3D->DrawTileEx(m_whiteTexture, cx, cz,
+                0.7f, 0.06f, XM_PIDIV4,
+                XMFLOAT4(0.8f, 0.2f, 0.2f, 0.7f));
+            m_renderer3D->DrawTileEx(m_whiteTexture, cx, cz,
+                0.7f, 0.06f, -XM_PIDIV4,
+                XMFLOAT4(0.8f, 0.2f, 0.2f, 0.7f));
+        }
+        m_renderer3D->SetDepthEnabled(true);
+    }
+
+
+    m_player->Draw3D(m_renderer3D);
+    for (auto enemy : m_enemies)
+        enemy->Draw3D(m_renderer3D);
+
     // 罠設置不可マーク（フラグだけ保存）
     float trapBlockX = -1, trapBlockY = -1;
     float trapAngle1 = 0, trapAngle2 = 0, trapLen = 0;
@@ -642,11 +651,7 @@ void BattleScene::Draw()
             }
         }
     }
-
-    m_player->Draw3D(m_renderer3D);
-    for (auto enemy : m_enemies)
-        enemy->Draw3D(m_renderer3D);
-
+   
     // 罠設置不可×マーク描画
     if (trapBlockX >= 0)
     {

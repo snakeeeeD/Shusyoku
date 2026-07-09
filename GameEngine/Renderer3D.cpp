@@ -88,6 +88,25 @@ bool Renderer3D::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         return false;
     if (FAILED(m_device->CreateDepthStencilView(depthTexture.Get(), nullptr, m_depthStencilView.GetAddressOf())))
         return false;
+    D3D11_DEPTH_STENCIL_DESC dsDesc = {};
+    dsDesc.DepthEnable = TRUE;
+    dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+    dsDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+    if (FAILED(m_device->CreateDepthStencilState(&dsDesc, m_depthStencilState.GetAddressOf())))
+        return false;
+
+    D3D11_DEPTH_STENCIL_DESC dsNoWrite = {};
+    dsNoWrite.DepthEnable = TRUE;
+    dsNoWrite.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+    dsNoWrite.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+    if (FAILED(m_device->CreateDepthStencilState(&dsNoWrite, m_depthNoWriteState.GetAddressOf())))
+        return false;
+
+    D3D11_DEPTH_STENCIL_DESC dsDisabled = {};
+    dsDisabled.DepthEnable = FALSE;
+    dsDisabled.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+    if (FAILED(m_device->CreateDepthStencilState(&dsDisabled, m_depthDisabledState.GetAddressOf())))
+        return false;
 
     return true;
 }
@@ -240,6 +259,7 @@ void Renderer3D::Begin()
     m_context->OMSetBlendState(m_blendState.Get(), blendFactor, 0xffffffff);
 
     m_context->RSSetState(m_rasterState.Get());
+    m_context->OMSetDepthStencilState(m_depthStencilState.Get(), 0);
 }
 
 void Renderer3D::End()
@@ -251,12 +271,49 @@ void Renderer3D::End()
     if (rtv) rtv->Release();
 }
 
+void Renderer3D::SetDepthWrite(bool enabled)
+{
+    if (enabled)
+        m_context->OMSetDepthStencilState(m_depthStencilState.Get(), 0);
+    else
+        m_context->OMSetDepthStencilState(m_depthNoWriteState.Get(), 0);
+}
+
+void Renderer3D::SetDepthEnabled(bool enabled)
+{
+    if (enabled)
+        m_context->OMSetDepthStencilState(m_depthStencilState.Get(), 0);
+    else
+        m_context->OMSetDepthStencilState(m_depthDisabledState.Get(), 0);
+}
+
 void Renderer3D::DrawTile(ID3D11ShaderResourceView* texture,
     float x, float z, float size,
     const XMFLOAT4& color)
 {
     XMMATRIX world = XMMatrixScaling(size, 1.0f, size) *
         XMMatrixTranslation(x, 0.0f, z);
+
+    ConstantBuffer3D cb;
+    cb.World = XMMatrixTranspose(world);
+    cb.View = XMMatrixTranspose(m_viewMatrix);
+    cb.Projection = XMMatrixTranspose(m_projectionMatrix);
+    cb.Color = color;
+
+    m_context->UpdateSubresource(m_constantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+    m_context->VSSetConstantBuffers(0, 1, m_constantBuffer.GetAddressOf());
+    m_context->PSSetConstantBuffers(0, 1, m_constantBuffer.GetAddressOf());
+    m_context->PSSetShaderResources(0, 1, &texture);
+    m_context->DrawIndexed(6, 0, 0);
+}
+
+void Renderer3D::DrawTileEx(ID3D11ShaderResourceView* texture,
+    float x, float z, float width, float depth,
+    float rotationY, const XMFLOAT4& color)
+{
+    XMMATRIX world = XMMatrixScaling(width, 1.0f, depth) *
+        XMMatrixRotationY(rotationY) *
+        XMMatrixTranslation(x, 0.03f, z);
 
     ConstantBuffer3D cb;
     cb.World = XMMatrixTranspose(world);

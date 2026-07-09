@@ -38,6 +38,11 @@ public:
         float x, float z, float size,
         const XMFLOAT4& color = XMFLOAT4(1, 1, 1, 1));
 
+    void DrawTileEx(ID3D11ShaderResourceView* texture,
+        float x, float z, float width, float depth,
+        float rotationY,
+        const XMFLOAT4& color = XMFLOAT4(1, 1, 1, 1));
+
     // カメラ設定
     void SetCamera(XMFLOAT3 pos, XMFLOAT3 target, XMFLOAT3 up);
 
@@ -53,6 +58,9 @@ public:
     // HPバー用
     static constexpr float BILLBOARD_PITCH = -60.0f;        // ビルボードの傾き角度
     static float GetBillboardPitch() { return BILLBOARD_PITCH; }
+
+    void SetDepthWrite(bool enabled);
+    void SetDepthEnabled(bool enabled);
 
 private:
     bool CreateShaders();
@@ -72,6 +80,8 @@ private:
     ComPtr<ID3D11RasterizerState> m_rasterState;
     ComPtr<ID3D11DepthStencilState> m_depthStencilState;
     ComPtr<ID3D11DepthStencilView> m_depthStencilView;
+    ComPtr<ID3D11DepthStencilState> m_depthNoWriteState;
+    ComPtr<ID3D11DepthStencilState> m_depthDisabledState;
 
     ComPtr<ID3D11Buffer> m_billboardVertexBuffer;
 

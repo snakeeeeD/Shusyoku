@@ -550,49 +550,49 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             }
         }
 
-        if (ctx.outOfRangeCells && !ctx.outOfRangeCells->empty())
-        {
-            XMMATRIX vp = ctx.renderer3D->GetViewMatrix() * ctx.renderer3D->GetProjectionMatrix();
+        //if (ctx.outOfRangeCells && !ctx.outOfRangeCells->empty())
+        //{
+        //    XMMATRIX vp = ctx.renderer3D->GetViewMatrix() * ctx.renderer3D->GetProjectionMatrix();
 
-            auto toScreen = [&](float wx, float wz, float& outX, float& outY) -> bool {
-                XMVECTOR w = XMVectorSet(wx, 0.01f, wz, 1.0f);
-                XMVECTOR c = XMVector4Transform(w, vp);
-                XMFLOAT4 cl;
-                XMStoreFloat4(&cl, c);
-                if (cl.w <= 0) return false;
-                outX = (cl.x / cl.w + 1.0f) * 0.5f * m_screenWidth;
-                outY = (1.0f - cl.y / cl.w) * 0.5f * m_screenHeight;
-                return true;
-                };
+        //    auto toScreen = [&](float wx, float wz, float& outX, float& outY) -> bool {
+        //        XMVECTOR w = XMVectorSet(wx, 0.01f, wz, 1.0f);
+        //        XMVECTOR c = XMVector4Transform(w, vp);
+        //        XMFLOAT4 cl;
+        //        XMStoreFloat4(&cl, c);
+        //        if (cl.w <= 0) return false;
+        //        outX = (cl.x / cl.w + 1.0f) * 0.5f * m_screenWidth;
+        //        outY = (1.0f - cl.y / cl.w) * 0.5f * m_screenHeight;
+        //        return true;
+        //        };
 
-            for (auto& [col, row] : *ctx.outOfRangeCells)
-            {
-                float cx = (col - ctx.gridMap->GetCols() / 2.0f) * 1.1f;
-                float cz = (row - ctx.gridMap->GetRows() / 2.0f) * 1.1f;
-                float half = 0.4f;
+        //    for (auto& [col, row] : *ctx.outOfRangeCells)
+        //    {
+        //        float cx = (col - ctx.gridMap->GetCols() / 2.0f) * 1.1f;
+        //        float cz = (row - ctx.gridMap->GetRows() / 2.0f) * 1.1f;
+        //        float half = 0.4f;
 
-                float sx, sy, rx, ry, bx, by;
-                if (toScreen(cx, cz, sx, sy) &&
-                    toScreen(cx + half, cz, rx, ry) &&
-                    toScreen(cx, cz + half, bx, by))
-                {
-                    float hw = rx - sx;
-                    float hh = by - sy;
-                    float angle1 = atan2f(hh, hw);
-                    float angle2 = atan2f(hh, -hw);
-                    float len = sqrtf(hw * hw + hh * hh) * 2.0f;
+        //        float sx, sy, rx, ry, bx, by;
+        //        if (toScreen(cx, cz, sx, sy) &&
+        //            toScreen(cx + half, cz, rx, ry) &&
+        //            toScreen(cx, cz + half, bx, by))
+        //        {
+        //            float hw = rx - sx;
+        //            float hh = by - sy;
+        //            float angle1 = atan2f(hh, hw);
+        //            float angle2 = atan2f(hh, -hw);
+        //            float len = sqrtf(hw * hw + hh * hh) * 2.0f;
 
-                    m_spriteRenderer->DrawSprite(m_whiteTexture,
-                        sx - len / 2.0f, sy - 2.5f,
-                        len, 5.0f, angle1,
-                        XMFLOAT4(1.0f, 0.1f, 0.1f, 0.8f));
-                    m_spriteRenderer->DrawSprite(m_whiteTexture,
-                        sx - len / 2.0f, sy - 2.5f,
-                        len, 5.0f, angle2,
-                        XMFLOAT4(1.0f, 0.1f, 0.1f, 0.8f));
-                }
-            }
-        }
+        //            m_spriteRenderer->DrawSprite(m_whiteTexture,
+        //                sx - len / 2.0f, sy - 2.5f,
+        //                len, 5.0f, angle1,
+        //                XMFLOAT4(1.0f, 0.1f, 0.1f, 0.8f));
+        //            m_spriteRenderer->DrawSpriteEx(m_whiteTexture,
+        //                sx - len / 2.0f, sy - 2.5f,
+        //                len, 5.0f, angle2,
+        //                XMFLOAT4(1.0f, 0.1f, 0.1f, 0.8f));
+        //        }
+        //    }
+        //}
 
         m_spriteRenderer->End();
         m_textRenderer->Begin();
