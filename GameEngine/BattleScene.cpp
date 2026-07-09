@@ -50,7 +50,6 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     m_showDiscardPile = false;
     m_showExhaustPile = false;
 
-    m_enemyTurnTimer = ENEMY_TURN_DELAY;
     m_hoveredCell = { -1, -1 };
     m_rightClickDragged = false;
 
@@ -199,15 +198,17 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         };
     m_turnManager.onEnemyTurnStart = [this]()
         {
-            m_enemyTurnTimer = ENEMY_TURN_DELAY;
-            for (auto enemy : m_enemies) {
+            for (auto enemy : m_enemies)
                 enemy->ResetBlock();
-            }
             m_battleUI->StartDiscardEffects();
             for (auto card : m_hand.GetCards())
                 m_deck.DiscardCard(card->GetId());
             m_hand.Clear();
             m_battleUI->ClearCardAnimations();
+
+            m_enemyPhase = EnemyTurnPhase::WaitStart;
+            m_currentEnemyIdx = 0;
+            m_enemyActionDelay = 0.8f;
         };
 
     const EncounterData* encounter = EncounterDataBase::GetRandom(1);
@@ -264,6 +265,14 @@ void BattleScene::Update(float deltaTime)
     m_player->UpdateDisplayHp(deltaTime);
     for (auto enemy : m_enemies)
         enemy->UpdateDisplayHp(deltaTime);
+
+    m_player->UpdateMove(deltaTime);
+    for (auto enemy : m_enemies)
+    {
+        enemy->UpdateMove(deltaTime);
+        enemy->UpdateLunge(deltaTime);
+    }
+
 
     // カメラズーム（マウスホイール）
     int wheelDelta = m_input.GetMouseWheelDelta();
@@ -419,41 +428,93 @@ void BattleScene::Update(float deltaTime)
         {
             m_highlighter.ClearPlayerHighlight(m_gridMap);
             m_highlighter.ClearEnemyHighlight(m_gridMap);
-            m_enemyTurnTimer -= deltaTime;
-            if (m_enemyTurnTimer <= 0.0f)
+
+            switch (m_enemyPhase)
             {
-                for (auto enemy : m_enemies)
+            case EnemyTurnPhase::WaitStart:
+                m_enemyActionDelay -= deltaTime;
+                if (m_enemyActionDelay <= 0)
                 {
-                    auto dmg = enemy->GetBuffManager().GetTurnEndDamage();
-                    if (dmg.total() > 0)
-                    {
-                        enemy->TakeDamage(dmg.total());
-                        if (enemy->GetHp() <= 0)
-                            continue;
-                    }
+                    if (m_enemies.empty())
+                        m_enemyPhase = EnemyTurnPhase::EndTurn;
+                    else
+                        m_enemyPhase = EnemyTurnPhase::ProcessEnemy;
+                }
+                break;
 
-                    int damage = enemy->Think(m_playerCol, m_playerRow, m_gridMap, m_player);
-                    if (damage > 0)
-                    {
-                        m_player->TakeDamage(damage);
-                    }
+            case EnemyTurnPhase::ProcessEnemy:
+            {
+                while (m_currentEnemyIdx < (int)m_enemies.size()
+                    && m_enemies[m_currentEnemyIdx]->GetHp() <= 0)
+                    m_currentEnemyIdx++;
 
-                    // 罠チェック
-                    auto& cell = m_gridMap->GetCell(enemy->gridCol, enemy->gridRow);
-                    if (cell.tileEffect.active)
+                if (m_currentEnemyIdx >= (int)m_enemies.size())
+                {
+                    m_enemyPhase = EnemyTurnPhase::EndTurn;
+                    break;
+                }
+
+                Enemy* enemy = m_enemies[m_currentEnemyIdx];
+
+                auto dmg = enemy->GetBuffManager().GetTurnEndDamage();
+                if (dmg.total() > 0)
+                {
+                    enemy->TakeDamage(dmg.total());
+                    if (enemy->GetHp() <= 0)
                     {
-                        CardExecutor::TriggerTrap(cell, enemy, enemy->gridCol, enemy->gridRow, m_gridMap, m_enemies);
+                        m_enemyPhase = EnemyTurnPhase::WaitAction;
+                        m_enemyActionDelay = ENEMY_ACTION_PAUSE;
+                        break;
                     }
                 }
 
-                ProcessDeadEnemies();
+                int damage = enemy->Think(m_playerCol, m_playerRow, m_gridMap, m_player);
+                if (damage > 0)
+                    m_player->TakeDamage(damage);
 
-                // 敵のバフ更新
+                auto& cell = m_gridMap->GetCell(enemy->gridCol, enemy->gridRow);
+                if (cell.tileEffect.active)
+                    CardExecutor::TriggerTrap(cell, enemy, enemy->gridCol, enemy->gridRow, m_gridMap, m_enemies);
+
+                m_enemyPhase = EnemyTurnPhase::WaitAction;
+                m_enemyActionDelay = ENEMY_ACTION_PAUSE;
+                break;
+            }
+
+            case EnemyTurnPhase::WaitAction:
+            {
+                m_enemyActionDelay -= deltaTime;
+
+                bool anyMoving = false;
+                for (auto enemy : m_enemies)
+                    if (enemy->IsMoving() || enemy->IsLunging()) anyMoving = true;
+
+                if (m_enemyActionDelay <= 0 && !anyMoving)
+                {
+                    m_enemyPhase = EnemyTurnPhase::NextEnemy;
+                    m_enemyActionDelay = ENEMY_BETWEEN_PAUSE;
+                }
+                break;
+            }
+
+            case EnemyTurnPhase::NextEnemy:
+                m_enemyActionDelay -= deltaTime;
+                if (m_enemyActionDelay <= 0)
+                {
+                    m_currentEnemyIdx++;
+                    if (m_currentEnemyIdx >= (int)m_enemies.size())
+                        m_enemyPhase = EnemyTurnPhase::EndTurn;
+                    else
+                        m_enemyPhase = EnemyTurnPhase::ProcessEnemy;
+                }
+                break;
+
+            case EnemyTurnPhase::EndTurn:
+                ProcessDeadEnemies();
                 for (auto enemy : m_enemies)
                     enemy->GetBuffManager().OnTurnEnd();
-
-                m_enemyTurnTimer = ENEMY_TURN_DELAY;
                 m_turnManager.EndTurn();
+                break;
             }
         }
 
@@ -752,8 +813,9 @@ void BattleScene::HandleInput()
                         m_playerRow = newPlayerRow;
                         m_player->gridCol = m_playerCol;
                         m_player->gridRow = m_playerRow;
-                        m_player->worldX = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                        m_player->worldZ = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                        float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                        float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                        m_player->StartMove(px, pz);
 
                         auto& movedCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
 
@@ -806,8 +868,9 @@ void BattleScene::HandleInput()
                                 m_gridMap->SetCellType(m_playerCol, m_playerRow, CellType::Player);
                                 m_player->gridCol = m_playerCol;
                                 m_player->gridRow = m_playerRow;
-                                m_player->worldX = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                                m_player->worldZ = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                                float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                                float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                                m_player->StartMove(px, pz);
 
                                 auto& slideCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
                                 if (slideCell.tileEffect.active)
@@ -1050,8 +1113,9 @@ void BattleScene::HandleInput()
                             m_playerRow = newPlayerRow;
                             m_player->gridCol = m_playerCol;
                             m_player->gridRow = m_playerRow;
-                            m_player->worldX = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                            m_player->worldZ = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                            float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                            float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                            m_player->StartMove(px, pz);
 
                             auto& movedCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
 
@@ -1103,8 +1167,9 @@ void BattleScene::HandleInput()
                                     m_gridMap->SetCellType(m_playerCol, m_playerRow, CellType::Player);
                                     m_player->gridCol = m_playerCol;
                                     m_player->gridRow = m_playerRow;
-                                    m_player->worldX = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                                    m_player->worldZ = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                                    float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                                    float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                                    m_player->StartMove(px, pz);
 
                                     auto& slideCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
                                     if (slideCell.tileEffect.active)

@@ -3,6 +3,8 @@
 #include "BattleHighlighter.h"
 #include "TerrainDataBase.h"
 #include <algorithm>
+#include <queue>
+#include <map>
 
 Enemy* CardExecutor::GetEnemyAt(int col, int row, std::vector<Enemy*>& enemies)
 {
@@ -204,6 +206,10 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                         if (gridMap->GetCell(nextCol, nextRow).type != CellType::Empty)
                             break;
 
+                        auto& passCell = gridMap->GetCell(nextCol, nextRow);
+                        if (passCell.tileEffect.active)
+                            TriggerTerrain(passCell, player);
+
                         moveCol = nextCol;
                         moveRow = nextRow;
                     }
@@ -288,6 +294,16 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                     && gridMap->GetCell(destCol, destRow).type == CellType::Empty)
                 {
                     gridMap->SetCellType(playerCol, playerRow, CellType::Empty);
+                    int cx = playerCol, cy = playerRow;
+                    while (cx != destCol || cy != destRow)
+                    {
+                        cx += dx;
+                        cy += dy;
+                        if (cx == destCol && cy == destRow) break;
+                        auto& passCell = gridMap->GetCell(cx, cy);
+                        if (passCell.tileEffect.active)
+                            TriggerTerrain(passCell, player);
+                    }
                     outNewPlayerCol = destCol;
                     outNewPlayerRow = destRow;
                     gridMap->SetCellType(destCol, destRow, CellType::Player);
@@ -311,63 +327,127 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
         }
         break;
     }
-    case CardType::Move:
-    {
-        auto& cell = gridMap->GetCell(targetCol, targetRow);
-        if (cell.type != CellType::Empty)
-        {
-            return result;
-        }
-        int dc = abs(playerCol - targetCol);
-        int dr = abs(playerRow - targetRow);
-        int moveRange = player->GetBuffManager().GetFinalMoveRange(data.range);
-        if ((dc + dr) > moveRange)
-        {
-            return result;
-        }
-        player->UseEnergy(data.cost);
-        gridMap->SetCellType(playerCol, playerRow, CellType::Empty);
-        outNewPlayerCol = targetCol;
-        outNewPlayerRow = targetRow;
-        gridMap->SetCellType(targetCol, targetRow, CellType::Player);
-        // 移動距離
-        int moveDist = dc + dr;
+       case CardType::Move:
+       {
+           auto& cell = gridMap->GetCell(targetCol, targetRow);
+           if (cell.type != CellType::Empty)
+               return result;
 
-        // Burn: 移動するたびダメージ
-        if (player->GetBuffManager().HasBuff(BuffType::Burn))
-            player->TakeDamage(player->GetBuffManager().GetBuffValue(BuffType::Burn) * moveDist);
+           int moveRange = player->GetBuffManager().GetFinalMoveRange(data.range);
 
-        // Momentum: 移動するたびブロック+
-        if (player->GetBuffManager().HasBuff(BuffType::Momentum))
-            player->AddBlock(player->GetBuffManager().GetBuffValue(BuffType::Momentum) * moveDist);
+           // BFS で経路探索（敵マスは通れない）
+           std::queue<std::pair<int, int>> bfsQueue;
+           std::map<std::pair<int, int>, int> dist;
+           std::map<std::pair<int, int>, std::pair<int, int>> parent;
 
-        // Charge: 移動距離に応じて次の攻撃ダメージ+（AttackUpに加算）
-        if (player->GetBuffManager().HasBuff(BuffType::Charge))
-        {
-            int bonus = player->GetBuffManager().GetBuffValue(BuffType::Charge) * moveDist;
-            Buff atkBuff;
-            atkBuff.type = BuffType::AttackUp;
-            atkBuff.value = player->GetBuffManager().GetBuffValue(BuffType::AttackUp) + bonus;
-            atkBuff.duration = 1;
-            atkBuff.name = L"チャージ攻撃UP";
-            atkBuff.description = L"";
-            player->GetBuffManager().AddBuff(atkBuff);
-        }
+           auto startPos = std::make_pair(playerCol, playerRow);
+           auto goalPos = std::make_pair(targetCol, targetRow);
 
-        // HitAndRun: 移動時に隣接する敵にダメージ
-        if (player->GetBuffManager().HasBuff(BuffType::HitAndRun))
-        {
-            int hitDmg = player->GetBuffManager().GetBuffValue(BuffType::HitAndRun);
-            for (auto enemy : enemies)
-            {
-                int ex = abs(targetCol - enemy->gridCol);
-                int ey = abs(targetRow - enemy->gridRow);
-                if (ex + ey == 1)
-                    enemy->TakeDamage(hitDmg);
-            }
-        }
-        break;
-    }
+           bfsQueue.push(startPos);
+           dist[startPos] = 0;
+           parent[startPos] = { -1, -1 };
+
+           const int dirs[4][2] = { {0,1},{0,-1},{1,0},{-1,0} };
+           bool found = false;
+
+           while (!bfsQueue.empty())
+           {
+               auto [col, row] = bfsQueue.front();
+               bfsQueue.pop();
+
+               if (col == targetCol && row == targetRow)
+               {
+                   found = true;
+                   break;
+               }
+
+               if (dist[{col, row}] >= moveRange)
+                   continue;
+
+               for (int d = 0; d < 4; d++)
+               {
+                   int nc = col + dirs[d][0];
+                   int nr = row + dirs[d][1];
+
+                   if (nc < 0 || nc >= gridMap->GetCols()
+                       || nr < 0 || nr >= gridMap->GetRows())
+                       continue;
+
+                   auto np = std::make_pair(nc, nr);
+                   if (dist.count(np))
+                       continue;
+
+                   auto& ncell = gridMap->GetCell(nc, nr);
+                   if (ncell.type != CellType::Empty)
+                       continue;
+
+                   dist[np] = dist[{col, row}] + 1;
+                   parent[np] = { col, row };
+                   bfsQueue.push(np);
+               }
+           }
+
+           if (!found)
+               return result;
+
+           // 経路復元
+           std::vector<std::pair<int, int>> path;
+           auto cur = goalPos;
+           while (cur != startPos)
+           {
+               path.push_back(cur);
+               cur = parent[cur];
+           }
+           std::reverse(path.begin(), path.end());
+
+           player->UseEnergy(data.cost);
+           gridMap->SetCellType(playerCol, playerRow, CellType::Empty);
+           outNewPlayerCol = targetCol;
+           outNewPlayerRow = targetRow;
+           gridMap->SetCellType(targetCol, targetRow, CellType::Player);
+
+           // 通過マスの地形効果（最後のマスはBattleScene側で処理）
+           for (int i = 0; i < (int)path.size() - 1; i++)
+           {
+               auto& passCell = gridMap->GetCell(path[i].first, path[i].second);
+               if (passCell.tileEffect.active)
+                   TriggerTerrain(passCell, player);
+           }
+
+           // 移動距離（実際の経路長）
+           int moveDist = (int)path.size();
+
+           if (player->GetBuffManager().HasBuff(BuffType::Burn))
+               player->TakeDamage(player->GetBuffManager().GetBuffValue(BuffType::Burn) * moveDist);
+
+           if (player->GetBuffManager().HasBuff(BuffType::Momentum))
+               player->AddBlock(player->GetBuffManager().GetBuffValue(BuffType::Momentum) * moveDist);
+
+           if (player->GetBuffManager().HasBuff(BuffType::Charge))
+           {
+               int bonus = player->GetBuffManager().GetBuffValue(BuffType::Charge) * moveDist;
+               Buff atkBuff;
+               atkBuff.type = BuffType::AttackUp;
+               atkBuff.value = player->GetBuffManager().GetBuffValue(BuffType::AttackUp) + bonus;
+               atkBuff.duration = 1;
+               atkBuff.name = L"チャージ攻撃UP";
+               atkBuff.description = L"";
+               player->GetBuffManager().AddBuff(atkBuff);
+           }
+
+           if (player->GetBuffManager().HasBuff(BuffType::HitAndRun))
+           {
+               int hitDmg = player->GetBuffManager().GetBuffValue(BuffType::HitAndRun);
+               for (auto enemy : enemies)
+               {
+                   int ex = abs(targetCol - enemy->gridCol);
+                   int ey = abs(targetRow - enemy->gridRow);
+                   if (ex + ey == 1)
+                       enemy->TakeDamage(hitDmg);
+               }
+           }
+           break;
+       }
     case CardType::Skill:
     {
         // 罠設置不可チェック（エナジー消費前）

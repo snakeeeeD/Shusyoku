@@ -120,6 +120,8 @@ int Enemy::Think(int playerCol, int playerRow, GridMap* gridMap, Player* player)
                 debuff.name = info.name;
                 player->GetBuffManager().AddBuff(debuff);
             }
+            StartLunge(player->worldX, player->worldZ);
+            return m_buffManager.GetFinalAttack(m_nextAction.value);
             // 攻撃
             return m_buffManager.GetFinalAttack(m_nextAction.value);
         }
@@ -208,8 +210,9 @@ void Enemy::MoveToward(int playerCol, int playerRow, GridMap* gridMap)
 
             gridMap->SetCellType(gridCol, gridRow, CellType::Enemy);
 
-            worldX = (gridCol - gridMap->GetCols() / 2.0f) * 1.1f;
-            worldZ = (gridRow - gridMap->GetRows() / 2.0f) * 1.1f;
+            float newX = (gridCol - gridMap->GetCols() / 2.0f) * 1.1f;
+            float newZ = (gridRow - gridMap->GetRows() / 2.0f) * 1.1f;
+            StartMove(newX, newZ);
 
             return;
         }
@@ -259,11 +262,11 @@ void Enemy::DecideNextAction()
         cumulative += action.chance;
         if (roll < cumulative)
         {
-            m_nextAction = action; // コピー
+            m_nextAction = action;
             m_hasNextAction = true;
             return;
         }
     }
-    m_nextAction = data->actions.back(); // コピー
+    m_nextAction = data->actions.back();
     m_hasNextAction = true;
 }

@@ -23,6 +23,14 @@
 #include <utility>
 #include <functional>
 
+enum class EnemyTurnPhase {
+    WaitStart,
+    ProcessEnemy,
+    WaitAction,
+    NextEnemy,
+    EndTurn
+};
+
 class BattleScene : public Scene
 {
 public:
@@ -96,8 +104,11 @@ private:
     bool m_showExhaustPile;
     bool m_rightClickDragged;
 
-    float m_enemyTurnTimer;
-    static constexpr float ENEMY_TURN_DELAY = 5.5f;
+    EnemyTurnPhase m_enemyPhase = EnemyTurnPhase::WaitStart;
+    int m_currentEnemyIdx = 0;
+    float m_enemyActionDelay = 0;
+    static constexpr float ENEMY_ACTION_PAUSE = 0.5f;
+    static constexpr float ENEMY_BETWEEN_PAUSE = 1.5f;
 
     std::pair<int, int> m_hoveredCell;
 
