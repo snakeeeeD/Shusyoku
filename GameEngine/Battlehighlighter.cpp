@@ -135,6 +135,132 @@ void BattleHighlighter::UpdatePlayerHighlight(
     ClearPlayerHighlight(gridMap);
     if (!data) return;
 
+    //if (data->dash)
+    //{
+    //    int dx = 0, dy = 0;
+    //    if (hoveredCell.first > centerCol) dx = 1;
+    //    else if (hoveredCell.first < centerCol) dx = -1;
+    //    if (hoveredCell.second > centerRow) dy = 1;
+    //    else if (hoveredCell.second < centerRow) dy = -1;
+
+    //    float pulse = sin(timer * 2.0f);
+    //    float hoverBrightness = 0.3f + 0.7f * ((pulse + 1.0f) / 2.0f);
+
+    //    // 全range内マスを薄くハイライト
+    //    auto candidates = GetCandidates(centerCol, centerRow, data->rangeType, data->range);
+    //    for (auto& [col, row] : candidates)
+    //    {
+    //        if (col < 0 || col >= gridMap->GetCols()) continue;
+    //        if (row < 0 || row >= gridMap->GetRows()) continue;
+    //        auto& cell = gridMap->GetCell(col, row);
+    //        m_playerHighlightCells.push_back({ col, row });
+    //        cell.gameObject.color = XMFLOAT4(0.4f, 0.2f, 0.2f, 1.0f);
+    //    }
+
+    //    // ライン走査して到達点と敵を特定
+    //    if ((dx != 0) != (dy != 0))
+    //    {
+    //        int col = centerCol;
+    //        int row = centerRow;
+    //        int moveCol = centerCol;
+    //        int moveRow = centerRow;
+    //        bool hitEnemy = false;
+
+    //        for (int step = 0; step < data->range; step++)
+    //        {
+    //            col += dx;
+    //            row += dy;
+    //            if (col < 0 || col >= gridMap->GetCols()
+    //                || row < 0 || row >= gridMap->GetRows())
+    //                break;
+
+    //            // 敵チェック
+    //            bool found = false;
+    //            for (auto enemy : enemies)
+    //            {
+    //                for (auto& [ec, er] : enemy->GetGridShape())
+    //                {
+    //                    if (enemy->gridCol + ec == col && enemy->gridRow + er == row)
+    //                    {
+    //                        found = true;
+    //                        break;
+    //                    }
+    //                }
+    //                if (found) break;
+    //            }
+    //            if (found)
+    //            {
+    //                hitEnemy = true;
+    //                // 敵マスを赤く
+    //                auto& enemyCell = gridMap->GetCell(col, row);
+    //                enemyCell.gameObject.color = XMFLOAT4(hoverBrightness, 0.2f, 0.2f, 1.0f);
+    //                break;
+    //            }
+
+    //            if (gridMap->GetCell(col, row).type != CellType::Empty)
+    //                break;
+
+    //            moveCol = col;
+    //            moveRow = row;
+    //        }
+
+    //        // 移動先マスを緑にハイライト
+    //        if (moveCol != centerCol || moveRow != centerRow)
+    //        {
+    //            auto& destCell = gridMap->GetCell(moveCol, moveRow);
+    //            destCell.gameObject.color = XMFLOAT4(0.2f, hoverBrightness, 0.2f, 1.0f);
+    //        }
+    //    }
+
+    //    return;
+    //}
+
+    //if (data->pierce)
+    //{
+    //    int dx = 0, dy = 0;
+    //    if (hoveredCell.first > centerCol) dx = 1;
+    //    else if (hoveredCell.first < centerCol) dx = -1;
+    //    if (hoveredCell.second > centerRow) dy = 1;
+    //    else if (hoveredCell.second < centerRow) dy = -1;
+
+    //    float pulse = sin(timer * 2.0f);
+    //    float hoverBrightness = 0.3f + 0.7f * ((pulse + 1.0f) / 2.0f);
+
+    //    auto candidates = GetCandidates(centerCol, centerRow, data->rangeType, data->range);
+    //    for (auto& [col, row] : candidates)
+    //    {
+    //        if (col < 0 || col >= gridMap->GetCols()) continue;
+    //        if (row < 0 || row >= gridMap->GetRows()) continue;
+    //        m_playerHighlightCells.push_back({ col, row });
+    //        gridMap->GetCell(col, row).gameObject.color = XMFLOAT4(0.4f, 0.2f, 0.2f, 1.0f);
+    //    }
+
+    //    if ((dx != 0) != (dy != 0))
+    //    {
+    //        int col = centerCol;
+    //        int row = centerRow;
+    //        for (int step = 0; step < data->range; step++)
+    //        {
+    //            col += dx;
+    //            row += dy;
+    //            if (col < 0 || col >= gridMap->GetCols()
+    //                || row < 0 || row >= gridMap->GetRows())
+    //                break;
+    //            if (gridMap->GetCell(col, row).type == CellType::Wall)
+    //                break;
+
+    //            bool isEnemy = (gridMap->GetCell(col, row).type == CellType::Enemy
+    //                || gridMap->GetCell(col, row).type == CellType::Boss);
+    //            if (isEnemy)
+    //                gridMap->GetCell(col, row).gameObject.color = XMFLOAT4(hoverBrightness, 0.2f, 0.2f, 1.0f);
+    //            else
+    //                gridMap->GetCell(col, row).gameObject.color = XMFLOAT4(0.6f, 0.3f, 0.3f, 1.0f);
+    //        }
+    //    }
+
+    //    return;
+    //}
+
     auto candidates = GetCandidates(centerCol, centerRow, data->rangeType, data->range);
 
     float pulse = sin(timer * 2.0f);
@@ -182,6 +308,19 @@ void BattleHighlighter::UpdatePlayerHighlight(
 
         // マウスが乗っているマスかどうか
         bool isHovered = (col == hoveredCell.first && row == hoveredCell.second);
+        bool isOnHoveredLine = false;
+        if (data->type == CardType::Attack && hoveredCell.first >= 0)
+        {
+            int hdx = hoveredCell.first - centerCol;
+            int hdy = hoveredCell.second - centerRow;
+            int cdx = col - centerCol;
+            int cdy = row - centerRow;
+
+            if (hdx == 0 && cdx == 0 && hdy != 0 && cdy != 0 && ((hdy > 0) == (cdy > 0)))
+                isOnHoveredLine = true;
+            if (hdy == 0 && cdy == 0 && hdx != 0 && cdx != 0 && ((hdx > 0) == (cdx > 0)))
+                isOnHoveredLine = true;
+        }
         bool isEnemy = (cell.type == CellType::Enemy || cell.type == CellType::Boss);
 
         // 攻撃カードは敵マスのみホバー有効
@@ -256,12 +395,14 @@ void BattleHighlighter::UpdatePlayerHighlight(
             {
                 if (data->type == CardType::Attack)
                     cell.gameObject.color = XMFLOAT4(finalBrightness, 0.2f, 0.2f, 1.0f);
-                else if (data->type == CardType::Move)
-                    cell.gameObject.color = XMFLOAT4(0.2f, finalBrightness, 0.2f, 1.0f);
-                else if (data->type == CardType::Skill)
-                    cell.gameObject.color = XMFLOAT4(0.2f, 0.2f, finalBrightness, 1.0f);
-                else if (data->type == CardType::Power)
-                    cell.gameObject.color = XMFLOAT4(finalBrightness, 0.2f, finalBrightness, 1.0f);
+                // ... Move/Skill/Power ...
+            }
+            else if (data->type == CardType::Attack && isOnHoveredLine)
+            {
+                if (isEnemy)
+                    cell.gameObject.color = XMFLOAT4(finalBrightness, 0.2f, 0.2f, 1.0f);
+                else
+                    cell.gameObject.color = XMFLOAT4(0.35f, 0.15f, 0.15f, 1.0f);
             }
             else if (data->type == CardType::Move && isDangerCell)
             {
@@ -279,6 +420,8 @@ void BattleHighlighter::UpdatePlayerHighlight(
                 else if (data->type == CardType::Power)
                     cell.gameObject.color = XMFLOAT4(finalBrightness, 0.2f, finalBrightness, 1.0f);
             }
+
+
         }
     }
 }

@@ -41,6 +41,9 @@ void CardDataBase::Init()
             else data.rarity = CardRarity::Common;
 
             data.exhaust = c.value("exhaust", false);
+            data.pierce = c.value("pierce", false);
+            data.dash = c.value("dash", false);
+            data.selfDamage = c.value("selfDamage", 0);
 
             // mainEffect
             data.mainEffect.hasEffect = true;

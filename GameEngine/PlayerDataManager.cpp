@@ -20,10 +20,10 @@ void PlayerDataManager::Init()
 	m_data.hp = 50;
 	m_data.maxHp = 50;
 	m_data.deck = {
-		"strike", "strike", "strike", "Spin Slash", "poison_blade",
-		"defend", "defend",
-		"move", "move", "dash",
-		"power_attack", "buff_defense"
+		"ATK_strike", "ATK_strike", "ATK_strike", "ATK_Spin Slash", "ATK_poison_blade",
+		"SKL_defend", "SKL_defend",
+		"MOV_move", "MOV_move", "dash",
+		"POW_power_attack", "POW_buff_defense"
 	};
 	m_data.currentNodeIndex = 0;
 	m_data.clearedNodes.clear();
@@ -115,10 +115,10 @@ void PlayerDataManager::Load()
 		m_data.hp = 50;
 		m_data.maxHp = 50;
 		m_data.deck = {
-	   "strike", "strike", "strike", "Spin Slash", "poison_blade",
-	   "defend", "defend",
-	   "move",   "move",   "dash",
-	   "power_attack", "buff_defense"
+"ATK_strike", "ATK_strike", "ATK_strike", "ATK_Spin Slash", "ATK_poison_blade",
+		"SKL_defend", "SKL_defend",
+		"MOV_move", "MOV_move", "dash",
+		"POW_power_attack", "POW_buff_defense"
 		};
 	}
 }
@@ -143,9 +143,9 @@ void PlayerDataManager::StartNewGame()
 	m_data.hp = 50;
 	m_data.maxHp = 50;
 	m_data.deck = {
-	   "strike", "strike", "strike", "Spin Slash", "poison_blade",
-	   "defend", "defend", "defend", "defend",
-	   "move",   "move",   "dash",
+	   "ATK_strike", "ATK_strike", "ATK_strike", "ATK_Spin Slash", "ATK_poison_blade",
+	   "SKL_defend", "SKL_defend", "SKL_defend", "SKL_defend",
+	   "MOV_move",   "MOV_move",   "MOV_dash",
 	};
 	m_data.currentNodeIndex = 0;
 	m_data.clearedNodes.clear();

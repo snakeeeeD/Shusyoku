@@ -151,9 +151,6 @@
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\10-BattleHighlighter">
       <UniqueIdentifier>{55a2d2db-1139-41ef-abd4-ff1300ed5b7d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\20-CardExecutor">
-      <UniqueIdentifier>{e558de08-1903-4f83-a1fe-2300134a9059}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ソース ファイル\02-Scene\40-FieldScene">
       <UniqueIdentifier>{3b3bd69a-1c69-4760-af55-037ff746ddcd}</UniqueIdentifier>
     </Filter>
@@ -175,15 +172,6 @@
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\11-BattleUI">
       <UniqueIdentifier>{434ce89c-361e-402c-995f-dc1aa0b969ec}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\30-EncounterData">
-      <UniqueIdentifier>{69296338-09c9-4909-ae3a-c2195de116c6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\30-EncounterData\00-EncounterData">
-      <UniqueIdentifier>{70f5b741-f07a-4a8a-83db-bc636b9b2582}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\30-EncounterData\01-EncounterDataBase">
-      <UniqueIdentifier>{01ad420e-2937-4cb7-9639-a1114fe24821}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\01-BattleSceneDebug">
       <UniqueIdentifier>{b5716a26-0561-4416-b19d-44770a85ae46}</UniqueIdentifier>
     </Filter>
@@ -195,6 +183,18 @@
     </Filter>
     <Filter Include="ソース ファイル\03-Object関連\30-Card\30-Buff\20-BuffInfo">
       <UniqueIdentifier>{cd732ea9-71eb-4e8c-bd5a-91c453b5d577}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\06-CardExecutor">
+      <UniqueIdentifier>{e558de08-1903-4f83-a1fe-2300134a9059}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\20-EncounterData">
+      <UniqueIdentifier>{69296338-09c9-4909-ae3a-c2195de116c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\20-EncounterData\00-EncounterData">
+      <UniqueIdentifier>{70f5b741-f07a-4a8a-83db-bc636b9b2582}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\20-EncounterData\01-EncounterDataBase">
+      <UniqueIdentifier>{01ad420e-2937-4cb7-9639-a1114fe24821}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -325,7 +325,7 @@
       <Filter>ソース ファイル\02-Scene\20-BattleScene\10-BattleHighlighter</Filter>
     </ClInclude>
     <ClInclude Include="CardExecutor.h">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\20-CardExecutor</Filter>
+      <Filter>ソース ファイル\03-Object関連\30-Card\06-CardExecutor</Filter>
     </ClInclude>
     <ClInclude Include="FieldNode.h">
       <Filter>ソース ファイル\02-Scene\40-FieldScene\01-FieldNode</Filter>
@@ -343,10 +343,10 @@
       <Filter>ソース ファイル\02-Scene\20-BattleScene\11-BattleUI</Filter>
     </ClInclude>
     <ClInclude Include="EncounterData.h">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\30-EncounterData\00-EncounterData</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\20-EncounterData\00-EncounterData</Filter>
     </ClInclude>
     <ClInclude Include="EncounterDataBase.h">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\30-EncounterData\01-EncounterDataBase</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\20-EncounterData\01-EncounterDataBase</Filter>
     </ClInclude>
     <ClInclude Include="External\imgui\imgui.h">
       <Filter>ヘッダー ファイル</Filter>
@@ -438,7 +438,7 @@
       <Filter>ソース ファイル\02-Scene\20-BattleScene\10-BattleHighlighter</Filter>
     </ClCompile>
     <ClCompile Include="CardExecutor.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\20-CardExecutor</Filter>
+      <Filter>ソース ファイル\03-Object関連\30-Card\06-CardExecutor</Filter>
     </ClCompile>
     <ClCompile Include="FieldScene.cpp">
       <Filter>ソース ファイル\02-Scene\40-FieldScene\00-FieldScene</Filter>
@@ -447,7 +447,7 @@
       <Filter>ソース ファイル\02-Scene\20-BattleScene\11-BattleUI</Filter>
     </ClCompile>
     <ClCompile Include="EncounterDataBase.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\30-EncounterData\01-EncounterDataBase</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\20-EncounterData\01-EncounterDataBase</Filter>
     </ClCompile>
     <ClCompile Include="BattleSceneDebug.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\01-BattleSceneDebug</Filter>

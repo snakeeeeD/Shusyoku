@@ -98,15 +98,201 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
         }
         else
         {
+            if (data.pierce)
+            {
+                int dx = 0, dy = 0;
+                if (targetCol > playerCol) dx = 1;
+                else if (targetCol < playerCol) dx = -1;
+                if (targetRow > playerRow) dy = 1;
+                else if (targetRow < playerRow) dy = -1;
+
+                if ((dx != 0 && dy != 0) || (dx == 0 && dy == 0))
+                    return result;
+
+                // 先にライン上に敵がいるか確認
+                bool hasTarget = false;
+                int col = playerCol;
+                int row = playerRow;
+                for (int step = 0; step < data.range; step++)
+                {
+                    col += dx;
+                    row += dy;
+                    if (col < 0 || col >= gridMap->GetCols()
+                        || row < 0 || row >= gridMap->GetRows())
+                        break;
+                    auto& cell = gridMap->GetCell(col, row);
+                    if (cell.type == CellType::Wall)
+                        break;
+                    if (GetEnemyAt(col, row, enemies))
+                        hasTarget = true;
+                }
+
+                if (!hasTarget)
+                    return result;
+
+                player->UseEnergy(data.cost);
+
+                col = playerCol;
+                row = playerRow;
+                for (int step = 0; step < data.range; step++)
+                {
+                    col += dx;
+                    row += dy;
+                    if (col < 0 || col >= gridMap->GetCols()
+                        || row < 0 || row >= gridMap->GetRows())
+                        break;
+                    auto& cell = gridMap->GetCell(col, row);
+                    if (cell.type == CellType::Wall)
+                        break;
+                    Enemy* enemy = GetEnemyAt(col, row, enemies);
+                    if (enemy)
+                    {
+                        enemy->TakeDamage(player->GetBuffManager().GetFinalAttack(data.mainEffect.value));
+                        if (enemy->GetBuffManager().HasBuff(BuffType::Thorns))
+                            player->TakeDamage(enemy->GetBuffManager().GetBuffValue(BuffType::Thorns));
+                        CardEffect::ApplyOnHitEffect(data.onHitEffect, enemy->GetBuffManager());
+                    }
+                }
+
+                result.cardUsed = true;
+                break;
+            }
+
             Enemy* target = GetEnemyAt(targetCol, targetRow, enemies);
             int range = data.range;
             if (player->GetBuffManager().HasBuff(BuffType::Reposition))
                 range += player->GetBuffManager().GetBuffValue(BuffType::Reposition);
-            if (!target || GetMinDistToEnemy(playerCol, playerRow, target) > range)
+            if (!target)
+            {
+                // dashで空マスクリック → 移動のみ
+                if (data.dash)
+                {
+                    // 方向を決定
+                    int dx = 0, dy = 0;
+                    if (targetCol > playerCol) dx = 1;
+                    else if (targetCol < playerCol) dx = -1;
+                    if (targetRow > playerRow) dy = 1;
+                    else if (targetRow < playerRow) dy = -1;
+
+                    // 縦か横のみ（斜め不可）
+                    if ((dx != 0 && dy != 0) || (dx == 0 && dy == 0))
+                        return result;
+
+                    player->UseEnergy(data.cost);
+
+                    int moveCol = playerCol;
+                    int moveRow = playerRow;
+                    Enemy* hitEnemy = nullptr;
+
+                    for (int step = 0; step < data.range; step++)
+                    {
+                        int nextCol = moveCol + dx;
+                        int nextRow = moveRow + dy;
+
+                        if (nextCol < 0 || nextCol >= gridMap->GetCols()
+                            || nextRow < 0 || nextRow >= gridMap->GetRows())
+                            break;
+
+                        Enemy* enemy = GetEnemyAt(nextCol, nextRow, enemies);
+                        if (enemy)
+                        {
+                            hitEnemy = enemy;
+                            break;
+                        }
+
+                        if (gridMap->GetCell(nextCol, nextRow).type != CellType::Empty)
+                            break;
+
+                        moveCol = nextCol;
+                        moveRow = nextRow;
+                    }
+
+                    // 移動
+                    if (moveCol != playerCol || moveRow != playerRow)
+                    {
+                        gridMap->SetCellType(playerCol, playerRow, CellType::Empty);
+                        outNewPlayerCol = moveCol;
+                        outNewPlayerRow = moveRow;
+                        gridMap->SetCellType(moveCol, moveRow, CellType::Player);
+
+                        int moveDist = abs(moveCol - playerCol) + abs(moveRow - playerRow);
+
+                        if (player->GetBuffManager().HasBuff(BuffType::Burn))
+                            player->TakeDamage(player->GetBuffManager().GetBuffValue(BuffType::Burn) * moveDist);
+
+                        if (player->GetBuffManager().HasBuff(BuffType::Momentum))
+                            player->AddBlock(player->GetBuffManager().GetBuffValue(BuffType::Momentum) * moveDist);
+
+                        if (player->GetBuffManager().HasBuff(BuffType::Charge))
+                        {
+                            int bonus = player->GetBuffManager().GetBuffValue(BuffType::Charge) * moveDist;
+                            Buff atkBuff;
+                            atkBuff.type = BuffType::AttackUp;
+                            atkBuff.value = player->GetBuffManager().GetBuffValue(BuffType::AttackUp) + bonus;
+                            atkBuff.duration = 1;
+                            atkBuff.name = L"チャージ攻撃UP";
+                            atkBuff.description = L"";
+                            player->GetBuffManager().AddBuff(atkBuff);
+                        }
+
+                        if (player->GetBuffManager().HasBuff(BuffType::HitAndRun))
+                        {
+                            int hitDmg = player->GetBuffManager().GetBuffValue(BuffType::HitAndRun);
+                            for (auto enemy : enemies)
+                            {
+                                int ex = abs(moveCol - enemy->gridCol);
+                                int ey = abs(moveRow - enemy->gridRow);
+                                if (ex + ey == 1)
+                                    enemy->TakeDamage(hitDmg);
+                            }
+                        }
+                    }
+
+                    // ダメージ
+                    if (hitEnemy)
+                    {
+                        hitEnemy->TakeDamage(player->GetBuffManager().GetFinalAttack(data.mainEffect.value));
+                        if (hitEnemy->GetBuffManager().HasBuff(BuffType::Thorns))
+                            player->TakeDamage(hitEnemy->GetBuffManager().GetBuffValue(BuffType::Thorns));
+                        CardEffect::ApplyOnHitEffect(data.onHitEffect, hitEnemy->GetBuffManager());
+                    }
+
+                    result.cardUsed = true;
+                    break;
+                }
+                
+                return result;
+            }
+            if (GetMinDistToEnemy(playerCol, playerRow, target) > range)
             {
                 return result;
             }
             player->UseEnergy(data.cost);
+
+            // dash: 敵の手前まで移動
+            if (data.dash && target)
+            {
+                int dx = 0, dy = 0;
+                if (playerCol < target->gridCol) dx = 1;
+                else if (playerCol > target->gridCol) dx = -1;
+                if (playerRow < target->gridRow) dy = 1;
+                else if (playerRow > target->gridRow) dy = -1;
+
+                int destCol = target->gridCol - dx;
+                int destRow = target->gridRow - dy;
+
+                if ((destCol != playerCol || destRow != playerRow)
+                    && destCol >= 0 && destCol < gridMap->GetCols()
+                    && destRow >= 0 && destRow < gridMap->GetRows()
+                    && gridMap->GetCell(destCol, destRow).type == CellType::Empty)
+                {
+                    gridMap->SetCellType(playerCol, playerRow, CellType::Empty);
+                    outNewPlayerCol = destCol;
+                    outNewPlayerRow = destRow;
+                    gridMap->SetCellType(destCol, destRow, CellType::Player);
+                }
+            }
+
             target->TakeDamage(player->GetBuffManager().GetFinalAttack(data.mainEffect.value));
             // Thorns反射
             if (target->GetBuffManager().HasBuff(BuffType::Thorns))
@@ -300,6 +486,8 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
 
     hand.RemoveCard(cardIndex);
     result.success = true;
+    if (data.selfDamage > 0)
+        player->TakeDamage(data.selfDamage);
     result.cardUsed = true;
     return result;
 }

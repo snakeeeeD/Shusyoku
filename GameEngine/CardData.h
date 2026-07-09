@@ -49,9 +49,13 @@ struct CardData
     RangeType    rangeType;
     std::wstring description;
     CardRarity rarity = CardRarity::Common;
-    bool exhaust = false;
 
     CardEffectData   mainEffect;   // メイン効果（ダメージ量やブロック量など）
     CardEffectData   onHitEffect;  // ヒット時効果（攻撃カードのみ）
     CardEffectData   subEffect;    // サブ効果（ドロー/エネルギー/回復/自己バフ）
+
+    bool exhaust = false;   // 廃棄カードフラグ
+    bool pierce = false;    // 貫通フラグ
+    bool dash = false;      // moveカード以外に移動効果があるかフラグ
+    int selfDamage = 0;     // 自傷ダメージ
 };

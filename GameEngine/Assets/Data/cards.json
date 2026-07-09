@@ -1,7 +1,7 @@
 {
   "cards": [
     {
-      "id": "strike",
+      "id": "ATK_strike",
       "name": "ストライク",
       "type": "Attack",
       "rarity": "Common",
@@ -15,7 +15,7 @@
       }
     },
     {
-      "id": "pommel_strike",
+      "id": "ATK_pommel_strike",
       "name": "柄打ち",
       "type": "Attack",
       "cost": 1,
@@ -32,7 +32,7 @@
       }
     },
     {
-      "id": "Spin Slash",
+      "id": "ATK_Spin Slash",
       "name": "回転切り",
       "type": "Attack",
       "rarity": "Uncommon",
@@ -46,7 +46,7 @@
       }
     },
     {
-      "id": "poison_blade",
+      "id": "ATK_poison_blade",
       "name": "毒刃",
       "type": "Attack",
       "rarity": "Uncommon",
@@ -66,7 +66,7 @@
       }
     },
     {
-      "id": "knife",
+      "id": "ATK_knife",
       "name": "ナイフ",
       "type": "Attack",
       "cost": 0,
@@ -80,7 +80,21 @@
       }
     },
     {
-      "id": "shield_bash",
+      "id": "ATK_dash_attack",
+      "name": "猪突猛進",
+      "type": "Attack",
+      "cost": 2,
+      "range": 4,
+      "rangeType": "Cross",
+      "description": "4マス以内に突進し{value}ダメージ",
+      "dash": true,
+      "mainEffect": {
+        "type": "Damage",
+        "value": 8
+      }
+    },
+    {
+      "id": "ATK_shield_bash",
       "name": "シールドバッシュ",
       "type": "Attack",
       "rarity": "Uncommon",
@@ -98,7 +112,7 @@
       }
     },
     {
-      "id": "hook",
+      "id": "ATK_hook",
       "name": "フック",
       "type": "Attack",
       "rarity": "Uncommon",
@@ -115,9 +129,38 @@
         "value": 2
       }
     },
+    {
+      "id": "ATK_reckless_strike",
+      "name": "捨て身",
+      "type": "Attack",
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "自傷5。敵に{value}ダメージ",
+      "selfDamage": 5,
+      "mainEffect": {
+        "type": "Damage",
+        "value": 20
+      }
+    },
 
     {
-      "id": "defend",
+      "id": "ATK_piercing_beam",
+      "name": "貫通ビーム",
+      "type": "Attack",
+      "cost": 2,
+      "range": 5,
+      "rangeType": "Cross",
+      "description": "直線上の敵全員に{value}ダメージ",
+      "pierce": true,
+      "mainEffect": {
+        "type": "Damage",
+        "value": 7
+      }
+    },
+
+    {
+      "id": "SKL_defend",
       "name": "ディフェンド",
       "type": "Skill",
       "rarity": "Common",
@@ -131,7 +174,7 @@
       }
     },
     {
-      "id": "protect",
+      "id": "SKL_protect",
       "name": "鉄壁",
       "type": "Skill",
       "rarity": "Common",
@@ -145,7 +188,7 @@
       }
     },
     {
-      "id": "first_aid",
+      "id": "SKL_first_aid",
       "name": "応急手当",
       "type": "Skill",
       "rarity": "Uncommon",
@@ -159,7 +202,7 @@
       }
     },
     {
-      "id": "adrenaline",
+      "id": "SKL_adrenaline",
       "name": "アドレナリン",
       "type": "Skill",
       "rarity": "Uncommon",
@@ -177,7 +220,7 @@
       }
     },
     {
-      "id": "blade_dance",
+      "id": "SKL_blade_dance",
       "name": "剣の舞",
       "type": "Skill",
       "rarity": "Uncommon",
@@ -193,7 +236,7 @@
     },
 
     {
-      "id": "move",
+      "id": "MOV_move",
       "name": "ステップ",
       "type": "Move",
       "rarity": "Common",
@@ -207,7 +250,7 @@
       }
     },
     {
-      "id": "dash",
+      "id": "MOV_dash",
       "name": "ダッシュ",
       "type": "Move",
       "rarity": "Uncommon",
@@ -222,7 +265,7 @@
     },
 
     {
-      "id": "power_attack",
+      "id": "POW_power_attack",
       "name": "戦士の誓い",
       "type": "Power",
       "rarity": "Rare",
@@ -238,7 +281,7 @@
       }
     },
     {
-      "id": "buff_defense",
+      "id": "POW_buff_defense",
       "name": "鉄の意志",
       "type": "Power",
       "rarity": "Rare",
@@ -255,7 +298,7 @@
     },
 
     {
-      "id": "explosion_trap",
+      "id": "SKL_Trap_explosion_trap",
       "name": "爆発の罠",
       "type": "Skill",
       "cost": 1,
@@ -269,7 +312,7 @@
       }
     },
     {
-      "id": "root_trap",
+      "id": "SKL_Trap_root_trap",
       "name": "拘束の罠",
       "type": "Skill",
       "cost": 1,
@@ -284,7 +327,7 @@
       }
     },
     {
-      "id": "poison_trap",
+      "id": "SKL_Trap_poison_trap",
       "name": "毒の罠",
       "type": "Skill",
       "cost": 1,

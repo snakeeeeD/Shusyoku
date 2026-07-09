@@ -420,9 +420,6 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             D2D1::ColorF(D2D1::ColorF::White));
     }
 
-    if (ctx.showDrawPile || ctx.showDiscardPile || ctx.showExhaustPile)
-        DrawPileViewer(ctx);
-
     wchar_t hpText[64];
     swprintf_s(hpText, L"%d / %d", ctx.player->GetHp(), ctx.player->GetMaxHp());
     m_textRenderer->DrawText(hpText, 20.0f, 2.0f, 45.0f,
@@ -453,8 +450,6 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     }
 
     // 敵UI
-    if (!ctx.showDrawPile && !ctx.showDiscardPile)
-    {
         m_textRenderer->End();
         m_spriteRenderer->Begin();
 
@@ -637,7 +632,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 buffIconX += iconSize + 20.0f;
             }
         }
-    }
+    
 
     if (ctx.turnManager->IsPlayerTurn())
         m_textRenderer->DrawText(L"プレイヤーターン", 500.0f, 20.0f, 24.0f,
@@ -796,6 +791,13 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         }
     }
 
+    if (ctx.showDrawPile || ctx.showDiscardPile || ctx.showExhaustPile)
+    {
+        m_textRenderer->End();
+        DrawPileViewer(ctx);
+        m_textRenderer->Begin();
+    }
+
     m_textRenderer->End();
 
     m_spriteRenderer->Begin();
@@ -813,6 +815,119 @@ void BattleUI::DrawTargetIndicators(const BattleUIContext& ctx)
     if (data->type == CardType::Attack)
     {
         XMFLOAT4 arrowColor(1.0f, 0.3f, 0.1f, 1.0f);
+
+        if (data->dash && ctx.hoveredCell.first >= 0)
+        {
+            int dx = 0, dy = 0;
+            if (ctx.hoveredCell.first > ctx.playerCol) dx = 1;
+            else if (ctx.hoveredCell.first < ctx.playerCol) dx = -1;
+            if (ctx.hoveredCell.second > ctx.playerRow) dy = 1;
+            else if (ctx.hoveredCell.second < ctx.playerRow) dy = -1;
+
+            if ((dx != 0) != (dy != 0))
+            {
+                int col = ctx.playerCol;
+                int row = ctx.playerRow;
+                int moveCol = ctx.playerCol;
+                int moveRow = ctx.playerRow;
+                Enemy* hitEnemy = nullptr;
+
+                for (int step = 0; step < data->range; step++)
+                {
+                    col += dx;
+                    row += dy;
+                    if (col < 0 || col >= ctx.gridMap->GetCols()
+                        || row < 0 || row >= ctx.gridMap->GetRows())
+                        break;
+
+                    for (auto enemy : *ctx.enemies)
+                    {
+                        for (auto& [ec, er] : enemy->GetGridShape())
+                        {
+                            if (enemy->gridCol + ec == col && enemy->gridRow + er == row)
+                            {
+                                hitEnemy = enemy;
+                                goto dashFound;
+                            }
+                        }
+                    }
+
+                    if (ctx.gridMap->GetCell(col, row).type != CellType::Empty)
+                        break;
+
+                    moveCol = col;
+                    moveRow = row;
+                }
+            dashFound:
+
+                if (hitEnemy)
+                {
+                    // 敵に赤矢印
+                    float sx, sy;
+                    if (GetEnemyScreenPos(hitEnemy, ctx.renderer3D, sx, sy))
+                        DrawArrowIndicator(sx, sy, XMFLOAT4(1.0f, 0.3f, 0.1f, 1.0f), ctx.highlightTimer);
+                }
+
+                // 移動先に緑矢印
+                if (moveCol != ctx.playerCol || moveRow != ctx.playerRow)
+                {
+                    float wx, wz;
+                    GridToWorld(ctx.gridMap, moveCol, moveRow, wx, wz);
+                    XMVECTOR worldPos = XMVectorSet(wx - 0.5f, 0.5f, wz - 0.5f, 1.0f);
+                    XMVECTOR clipPos = XMVector4Transform(worldPos,
+                        ctx.renderer3D->GetViewMatrix() * ctx.renderer3D->GetProjectionMatrix());
+                    XMFLOAT4 clip;
+                    XMStoreFloat4(&clip, clipPos);
+                    if (clip.w > 0.0f)
+                    {
+                        float sx = (clip.x / clip.w + 1.0f) * 0.5f * m_screenWidth;
+                        float sy = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;
+                        DrawArrowIndicator(sx, sy, XMFLOAT4(0.2f, 0.9f, 0.3f, 1.0f), ctx.highlightTimer);
+                    }
+                }
+            }
+            return;
+        }
+
+        if (data->pierce && ctx.hoveredCell.first >= 0)
+        {
+            int dx = 0, dy = 0;
+            if (ctx.hoveredCell.first > ctx.playerCol) dx = 1;
+            else if (ctx.hoveredCell.first < ctx.playerCol) dx = -1;
+            if (ctx.hoveredCell.second > ctx.playerRow) dy = 1;
+            else if (ctx.hoveredCell.second < ctx.playerRow) dy = -1;
+
+            if ((dx != 0) != (dy != 0))
+            {
+                int col = ctx.playerCol;
+                int row = ctx.playerRow;
+                for (int step = 0; step < data->range; step++)
+                {
+                    col += dx;
+                    row += dy;
+                    if (col < 0 || col >= ctx.gridMap->GetCols()
+                        || row < 0 || row >= ctx.gridMap->GetRows())
+                        break;
+
+                    if (ctx.gridMap->GetCell(col, row).type == CellType::Wall)
+                        break;
+
+                    for (auto enemy : *ctx.enemies)
+                    {
+                        for (auto& [ec, er] : enemy->GetGridShape())
+                        {
+                            if (enemy->gridCol + ec == col && enemy->gridRow + er == row)
+                            {
+                                float sx, sy;
+                                if (GetEnemyScreenPos(enemy, ctx.renderer3D, sx, sy))
+                                    DrawArrowIndicator(sx, sy, XMFLOAT4(1.0f, 0.3f, 0.1f, 1.0f), ctx.highlightTimer);
+                            }
+                        }
+                    }
+                }
+            }
+            return;
+        }
 
         auto candidates = BattleHighlighter::GetCandidates(
             ctx.playerCol, ctx.playerRow, data->rangeType, data->range);
@@ -1111,6 +1226,8 @@ void BattleUI::DrawArrowIndicator(float sx, float sy, const XMFLOAT4& color, flo
 
 void BattleUI::DrawPileViewer(const BattleUIContext& ctx)
 {
+    m_textRenderer->Begin();
+
     const auto& pile = ctx.showDrawPile
         ? ctx.deck->GetDrawPile()
         : ctx.showDiscardPile
@@ -1183,6 +1300,8 @@ void BattleUI::DrawPileViewer(const BattleUIContext& ctx)
             cx + 5.0f, cy + 26.0f, 11.0f,
             D2D1::ColorF(D2D1::ColorF::LightGray));
     }
+
+    m_textRenderer->End();
 }
 
 void BattleUI::StartDrawCardEffect(const std::string& cardId)
