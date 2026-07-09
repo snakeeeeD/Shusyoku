@@ -85,9 +85,12 @@ struct BattleUIContext
     bool showDiscardPile;
     bool showExhaustPile;
     bool isPlayerTurn;
+    bool cardSelecting = false;
     float cameraZoom;
 
     int screenWidth, screenHeight;
+
+    const std::vector<std::pair<int, int>>* outOfRangeCells = nullptr;
 };
 
 class BattleUI

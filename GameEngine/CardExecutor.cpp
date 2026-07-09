@@ -1,6 +1,7 @@
 #include "CardExecutor.h"
 #include "CardEffect.h"
 #include "BattleHighlighter.h"
+#include "TerrainDataBase.h"
 #include <algorithm>
 
 Enemy* CardExecutor::GetEnemyAt(int col, int row, std::vector<Enemy*>& enemies)
@@ -373,7 +374,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
         if (data.mainEffect.type == CardEffectType::PlaceTrap)
         {
             auto& cell = gridMap->GetCell(playerCol, playerRow);
-            if (cell.trap.active)
+            if (cell.tileEffect.active)
                 return result;
         }
 
@@ -414,16 +415,22 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
         case CardEffectType::PlaceTrap:
         {
             auto& cell = gridMap->GetCell(playerCol, playerRow);
-            if (cell.trap.active)
+            if (cell.tileEffect.active)
             {
-                return result;  // 既に罠がある → 使えない
+                return result;
             }
-            cell.trap.active = true;
-            cell.trap.type = StringToTrapType(data.mainEffect.trapType);
-            cell.trap.value = data.mainEffect.value;
-            cell.trap.duration = data.mainEffect.duration;
+            cell.tileEffect.active = true;
+            cell.tileEffect.id = data.mainEffect.trapType;
+            cell.tileEffect.value = data.mainEffect.value;
+            cell.tileEffect.duration = data.mainEffect.duration;
+            const TerrainDef* tDef = TerrainDataBase::Get(data.mainEffect.trapType);
+            if (tDef) cell.tileEffect.persistent = tDef->persistent;
             break;
         }
+        case CardEffectType::Search:
+        case CardEffectType::Salvage:
+            result.pendingSelection = data.mainEffect.type;
+            break;
         default:
             break;
         }
@@ -492,39 +499,83 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     return result;
 }
 
-void CardExecutor::TriggerTrap(Cell& cell, Enemy* enemy)
+void CardExecutor::TriggerTrap(Cell& cell, Enemy* enemy, int col, int row,
+    GridMap* gridMap, std::vector<Enemy*>& enemies)
 {
-    if (!cell.trap.active) return;
+    if (!cell.tileEffect.active) return;
+    if (cell.tileEffect.persistent) return;
 
-    switch (cell.trap.type)
+    const TerrainDef* def = TerrainDataBase::Get(cell.tileEffect.id);
+    if (!def) return;
+
+    if (def->effect == "Damage")
     {
-    case TrapType::Explosion:
-        enemy->TakeDamage(cell.trap.value);
-        break;
-    case TrapType::Root:
+        enemy->TakeDamage(cell.tileEffect.value);
+
+        if (def->aoe)
+        {
+            int halfDmg = cell.tileEffect.value / 2;
+            for (int dr = -1; dr <= 1; dr++)
+            {
+                for (int dc = -1; dc <= 1; dc++)
+                {
+                    if (dc == 0 && dr == 0) continue;
+                    int nc = col + dc;
+                    int nr = row + dr;
+                    if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows())
+                        continue;
+                    Enemy* nearby = GetEnemyAt(nc, nr, enemies);
+                    if (nearby && nearby != enemy)
+                        nearby->TakeDamage(halfDmg);
+                }
+            }
+        }
+    }
+    else if (def->effect == "ApplyDebuff")
     {
-        Buff root;
-        root.type = BuffType::Root;
-        root.value = cell.trap.value;
-        root.duration = cell.trap.duration;
-        root.name = L"拘束";
-        root.description = L"";
-        enemy->GetBuffManager().AddBuff(root);
-        break;
+        Buff debuff;
+        debuff.type = StringToBuffType(def->buffType);
+        debuff.value = cell.tileEffect.value;
+        debuff.duration = def->buffDuration;
+        debuff.name = def->name;
+        debuff.description = L"";
+        enemy->GetBuffManager().AddBuff(debuff);
     }
-    case TrapType::Poison:
+
+    if (!cell.tileEffect.persistent)
+        cell.tileEffect = TileEffect();
+}
+
+void CardExecutor::TriggerTerrain(Cell& cell, Player* player)
+{
+    if (!cell.tileEffect.active) return;
+    if (!cell.tileEffect.persistent) return;  // 罠はここでは発動しない
+
+    const TerrainDef* def = TerrainDataBase::Get(cell.tileEffect.id);
+    if (!def) return;
+
+    if (def->effect == "Damage")
     {
-        Buff poison;
-        poison.type = BuffType::Poison;
-        poison.value = cell.trap.value;
-        poison.duration = cell.trap.duration;
-        poison.name = L"毒";
-        poison.description = L"";
-        enemy->GetBuffManager().AddBuff(poison);
-        break;
+        player->TakeDamage(cell.tileEffect.value);
     }
+    else if (def->effect == "ApplyDebuff")
+    {
+        Buff debuff;
+        debuff.type = StringToBuffType(def->buffType);
+        debuff.value = cell.tileEffect.value;
+        debuff.duration = def->buffDuration;
+        debuff.name = def->name;
+        debuff.description = L"";
+        player->GetBuffManager().AddBuff(debuff);
     }
-    cell.trap = TrapData();  // 発動後リセット
+
+    // duration管理（-1は永続）
+    if (cell.tileEffect.duration > 0)
+    {
+        cell.tileEffect.duration--;
+        if (cell.tileEffect.duration <= 0)
+            cell.tileEffect = TileEffect();
+    }
 }
 
 
@@ -579,7 +630,7 @@ void CardExecutor::ApplyKnockback(Enemy* target, int playerCol, int playerRow,
         target->worldX = (nextCol - gridMap->GetCols() / 2.0f) * 1.1f;
         target->worldZ = (nextRow - gridMap->GetRows() / 2.0f) * 1.1f;
         auto& passedCell = gridMap->GetCell(nextCol, nextRow);
-        TriggerTrap(passedCell, target);
+        TriggerTrap(passedCell, target, nextCol, nextRow, gridMap, enemies);
         moved++;
     }
 }
@@ -654,8 +705,9 @@ void CardExecutor::ApplyPull(Enemy* target, int playerCol, int playerRow,
         gridMap->SetCellType(nextCol, nextRow, CellType::Enemy);
         target->worldX = (nextCol - gridMap->GetCols() / 2.0f) * 1.1f;
         target->worldZ = (nextRow - gridMap->GetRows() / 2.0f) * 1.1f;
+
         auto& passedCell = gridMap->GetCell(nextCol, nextRow);
-        TriggerTrap(passedCell, target);
+        TriggerTrap(passedCell, target, nextCol, nextRow, gridMap, enemies);
         moved++;
     }
 }

@@ -196,6 +196,9 @@
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\20-EncounterData\01-EncounterDataBase">
       <UniqueIdentifier>{01ad420e-2937-4cb7-9639-a1114fe24821}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\30-terrains">
+      <UniqueIdentifier>{a90b7bf3-b552-4b02-9d98-957744dbd470}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -360,6 +363,9 @@
     <ClInclude Include="BuffInfo.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\30-Buff\20-BuffInfo</Filter>
     </ClInclude>
+    <ClInclude Include="TerrainDataBase.h">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\30-terrains</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SpriteRenderer.cpp">
@@ -469,6 +475,9 @@
     </ClCompile>
     <ClCompile Include="External\imgui\backends\imgui_impl_win32.cpp">
       <Filter>ソース ファイル\06-ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="TerrainDataBase.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\30-terrains</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

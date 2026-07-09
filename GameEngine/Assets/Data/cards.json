@@ -4,6 +4,7 @@
       "id": "ATK_strike",
       "name": "ストライク",
       "type": "Attack",
+      "tags": [ "Melee" ],
       "rarity": "Common",
       "cost": 1,
       "range": 1,
@@ -236,6 +237,37 @@
     },
 
     {
+      "id": "SKL_search",
+      "name": "探索",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "山札からカードを1枚\n選んで手札に加える",
+      "exhaust": true,
+      "mainEffect": {
+        "type": "Search",
+        "value": 1
+      }
+    },
+    {
+      "id": "SKL_salvage",
+      "name": "回収",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "捨て札からカードを1枚\n選んで手札に加える",
+      "exhaust": true,
+      "mainEffect": {
+        "type": "Salvage",
+        "value": 1
+      }
+    },
+
+    {
       "id": "MOV_move",
       "name": "ステップ",
       "type": "Move",
@@ -307,7 +339,7 @@
       "description": "足元に{value}ダメージの罠を設置",
       "mainEffect": {
         "type": "PlaceTrap",
-        "trapType": "Explosion",
+        "trapType": "explosion",
         "value": 15
       }
     },
@@ -321,7 +353,7 @@
       "description": "足元に拘束の罠を設置（{value}T）",
       "mainEffect": {
         "type": "PlaceTrap",
-        "trapType": "Root",
+        "trapType": "root",
         "value": 1,
         "duration": 2
       }
@@ -336,7 +368,7 @@
       "description": "足元に毒{value}の罠を設置",
       "mainEffect": {
         "type": "PlaceTrap",
-        "trapType": "Poison",
+        "trapType": "poison",
         "value": 5,
         "duration": 3
       }

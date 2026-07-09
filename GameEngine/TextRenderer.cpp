@@ -86,7 +86,7 @@ void TextRenderer::DrawText(const wchar_t* text,
 
     m_brush->SetColor(color);
 
-    D2D1_RECT_F rect = D2D1::RectF(x, y, x + 500.0f, y + size + 10.0f);
+    D2D1_RECT_F rect = D2D1::RectF(x, y, x + 500.0f, y + 200.0f);
     m_d2dRenderTarget->DrawTextW(text, (UINT32)wcslen(text),
         format.Get(), rect, m_brush.Get());
 }

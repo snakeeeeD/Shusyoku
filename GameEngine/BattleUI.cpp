@@ -1,6 +1,8 @@
 #include "BattleUI.h"
 #include "BuffInfo.h"
 #include "CardExecutor.h"
+#include "TerrainDataBase.h"
+#include "GameUtils.h"
 #include <algorithm>
 
 using namespace DirectX;
@@ -186,7 +188,7 @@ std::wstring BattleUI::GetCardEffectText(const CardData* data, Player* player) c
         result.replace(pos, placeholder.size(), std::to_wstring(actualValue));
 
     if (data->exhaust)
-        result += L" [消滅]";
+        result += L" \n[消滅]";
 
     return result;
 }
@@ -548,6 +550,50 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             }
         }
 
+        if (ctx.outOfRangeCells && !ctx.outOfRangeCells->empty())
+        {
+            XMMATRIX vp = ctx.renderer3D->GetViewMatrix() * ctx.renderer3D->GetProjectionMatrix();
+
+            auto toScreen = [&](float wx, float wz, float& outX, float& outY) -> bool {
+                XMVECTOR w = XMVectorSet(wx, 0.01f, wz, 1.0f);
+                XMVECTOR c = XMVector4Transform(w, vp);
+                XMFLOAT4 cl;
+                XMStoreFloat4(&cl, c);
+                if (cl.w <= 0) return false;
+                outX = (cl.x / cl.w + 1.0f) * 0.5f * m_screenWidth;
+                outY = (1.0f - cl.y / cl.w) * 0.5f * m_screenHeight;
+                return true;
+                };
+
+            for (auto& [col, row] : *ctx.outOfRangeCells)
+            {
+                float cx = (col - ctx.gridMap->GetCols() / 2.0f) * 1.1f;
+                float cz = (row - ctx.gridMap->GetRows() / 2.0f) * 1.1f;
+                float half = 0.4f;
+
+                float sx, sy, rx, ry, bx, by;
+                if (toScreen(cx, cz, sx, sy) &&
+                    toScreen(cx + half, cz, rx, ry) &&
+                    toScreen(cx, cz + half, bx, by))
+                {
+                    float hw = rx - sx;
+                    float hh = by - sy;
+                    float angle1 = atan2f(hh, hw);
+                    float angle2 = atan2f(hh, -hw);
+                    float len = sqrtf(hw * hw + hh * hh) * 2.0f;
+
+                    m_spriteRenderer->DrawSprite(m_whiteTexture,
+                        sx - len / 2.0f, sy - 2.5f,
+                        len, 5.0f, angle1,
+                        XMFLOAT4(1.0f, 0.1f, 0.1f, 0.8f));
+                    m_spriteRenderer->DrawSprite(m_whiteTexture,
+                        sx - len / 2.0f, sy - 2.5f,
+                        len, 5.0f, angle2,
+                        XMFLOAT4(1.0f, 0.1f, 0.1f, 0.8f));
+                }
+            }
+        }
+
         m_spriteRenderer->End();
         m_textRenderer->Begin();
 
@@ -742,52 +788,40 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         && ctx.hoveredCell.second < ctx.gridMap->GetRows())
     {
         auto& hCell = ctx.gridMap->GetCell(ctx.hoveredCell.first, ctx.hoveredCell.second);
-        if (hCell.trap.active)
+        if (hCell.tileEffect.active)
         {
-            std::wstring trapName;
-            XMFLOAT4 trapColor;
-            switch (hCell.trap.type)
+            const TerrainDef* def = TerrainDataBase::Get(hCell.tileEffect.id);
+            if (def)
             {
-            case TrapType::Explosion:
-                trapName = L"爆発の罠";
-                trapColor = XMFLOAT4(1.0f, 0.3f, 0.0f, 1.0f);
-                break;
-            case TrapType::Root:
-                trapName = L"拘束の罠";
-                trapColor = XMFLOAT4(0.2f, 0.8f, 0.2f, 1.0f);
-                break;
-            case TrapType::Poison:
-                trapName = L"毒の罠";
-                trapColor = XMFLOAT4(0.5f, 0.0f, 0.8f, 1.0f);
-                break;
-            default:
-                trapName = L"罠";
-                trapColor = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
-                break;
+                wchar_t detailText[64];
+                if (def->effect == "Damage")
+                    swprintf_s(detailText, L"ダメージ: %d", hCell.tileEffect.value);
+                else if (def->effect == "Slide")
+                    swprintf_s(detailText, L"移動方向に滑る");
+                else
+                {
+                    BuffType bt = StringToBuffType(def->buffType);
+                    const auto& info = BuffInfo::Get(bt);
+                    swprintf_s(detailText, L"%s: %d (%dT)", info.name.c_str(), hCell.tileEffect.value, def->buffDuration);
+                }
+
+                float tipX = (float)ctx.mousePos.x + 15.0f;
+                float tipY = (float)ctx.mousePos.y - 50.0f;
+                float tipW = 150.0f;
+                float tipH = 40.0f;
+
+                m_textRenderer->End();
+                m_spriteRenderer->Begin();
+                m_spriteRenderer->DrawSprite(m_whiteTexture, tipX, tipY, tipW, tipH, 0.0f,
+                    XMFLOAT4(0.08f, 0.08f, 0.15f, 0.95f));
+                m_spriteRenderer->End();
+                m_textRenderer->Begin();
+
+                m_textRenderer->DrawText(def->name.c_str(), tipX + 5.0f, tipY + 2.0f, 13.0f,
+                    D2D1::ColorF(def->color.x, def->color.y, def->color.z));
+                m_textRenderer->DrawText(detailText, tipX + 5.0f, tipY + 20.0f, 11.0f,
+                    D2D1::ColorF(D2D1::ColorF::LightGray));
             }
-
-            wchar_t detailText[64];
-            if (hCell.trap.type == TrapType::Explosion)
-                swprintf_s(detailText, L"ダメージ: %d", hCell.trap.value);
-            else
-                swprintf_s(detailText, L"効果: %d (%dT)", hCell.trap.value, hCell.trap.duration);
-
-            float tipX = (float)ctx.mousePos.x + 15.0f;
-            float tipY = (float)ctx.mousePos.y - 50.0f;
-            float tipW = 150.0f;
-            float tipH = 40.0f;
-
-            m_textRenderer->End();
-            m_spriteRenderer->Begin();
-            m_spriteRenderer->DrawSprite(m_whiteTexture, tipX, tipY, tipW, tipH, 0.0f,
-                XMFLOAT4(0.08f, 0.08f, 0.15f, 0.95f));
-            m_spriteRenderer->End();
-            m_textRenderer->Begin();
-
-            m_textRenderer->DrawText(trapName.c_str(), tipX + 5.0f, tipY + 2.0f, 13.0f,
-                D2D1::ColorF(trapColor.x, trapColor.y, trapColor.z));
-            m_textRenderer->DrawText(detailText, tipX + 5.0f, tipY + 20.0f, 11.0f,
-                D2D1::ColorF(D2D1::ColorF::LightGray));
         }
     }
 
@@ -1135,7 +1169,7 @@ void BattleUI::DrawTargetIndicators(const BattleUIContext& ctx)
         if (data->mainEffect.type == CardEffectType::PlaceTrap)
         {
             auto& cell = ctx.gridMap->GetCell(ctx.playerCol, ctx.playerRow);
-            if (cell.trap.active)
+            if (cell.tileEffect.active)
             {
                 // プレイヤーの頭上に×マーク
                 float pitch = XMConvertToRadians(-Renderer3D::BILLBOARD_PITCH);
@@ -1179,7 +1213,7 @@ void BattleUI::DrawTargetIndicators(const BattleUIContext& ctx)
 
         int dc = abs(ctx.playerCol - ctx.hoveredCell.first);
         int dr = abs(ctx.playerRow - ctx.hoveredCell.second);
-        if ((dc + dr) > data->range) return;
+        if ((dc + dr) > ctx.player->GetBuffManager().GetFinalMoveRange(data->range)) return;
 
         XMFLOAT4 arrowColor(0.2f, 0.9f, 0.3f, 1.0f);
 
@@ -1234,7 +1268,11 @@ void BattleUI::DrawPileViewer(const BattleUIContext& ctx)
         ? ctx.deck->GetDiscardPile()
         : ctx.deck->GetExhaustPile();
 
-    const wchar_t* title = ctx.showDrawPile ? L"山札"
+    const wchar_t* title;
+    if (ctx.cardSelecting)
+        title = ctx.showDrawPile ? L"山札から選択" : L"捨て札から選択";
+    else
+        title = ctx.showDrawPile ? L"山札"
         : ctx.showDiscardPile ? L"捨て札"
         : L"廃棄札";
 
@@ -1251,8 +1289,12 @@ void BattleUI::DrawPileViewer(const BattleUIContext& ctx)
     m_textRenderer->DrawText(title, bgX + 20.0f, bgY + 10.0f, 24.0f,
         D2D1::ColorF(D2D1::ColorF::White));
 
-    m_textRenderer->DrawText(L"[枠外クリックで閉じる]", bgX + bgW - 150.0f, bgY + 10.0f, 16.0f,
-        D2D1::ColorF(D2D1::ColorF::Gray));
+    if (ctx.cardSelecting)
+        m_textRenderer->DrawText(L"[カードをクリックして選択]", bgX + bgW - 220.0f, bgY + 10.0f, 16.0f,
+            D2D1::ColorF(D2D1::ColorF::Yellow));
+    else
+        m_textRenderer->DrawText(L"[枠外クリックで閉じる]", bgX + bgW - 150.0f, bgY + 10.0f, 16.0f,
+            D2D1::ColorF(D2D1::ColorF::Gray));
 
     std::vector<std::string> displayPile = pile;
 
@@ -1283,6 +1325,19 @@ void BattleUI::DrawPileViewer(const BattleUIContext& ctx)
         case CardType::Move:   cardColor = XMFLOAT4(0.1f, 0.4f, 0.2f, 1.0f); break;
         case CardType::Power:  cardColor = XMFLOAT4(0.4f, 0.1f, 0.4f, 1.0f); break;
         default:               cardColor = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f); break;
+        }
+
+        if (ctx.cardSelecting)
+        {
+            if (ctx.mousePos.x >= cx && ctx.mousePos.x <= cx + cardW
+                && ctx.mousePos.y >= cy && ctx.mousePos.y <= cy + cardH)
+            {
+                cardColor = XMFLOAT4(
+                    min(1.0f, cardColor.x + 0.3f),
+                    min(1.0f, cardColor.y + 0.3f),
+                    min(1.0f, cardColor.z + 0.3f),
+                    1.0f);
+            }
         }
 
         m_spriteRenderer->Begin();

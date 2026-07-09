@@ -1,0 +1,91 @@
+﻿{
+  "terrains": [
+    {
+      "id": "explosion",
+      "name": "爆発罠",
+      "texture": "",
+      "color": [ 1.0, 0.5, 0.0, 0.5 ],
+      "effect": "Damage",
+      "value": 8,
+      "persistent": false,
+      "duration": 0,
+      "aoe": true
+    },
+    {
+      "id": "root",
+      "name": "拘束罠",
+      "texture": "",
+      "color": [ 0.2, 0.8, 0.2, 0.5 ],
+      "effect": "ApplyDebuff",
+      "value": 1,
+      "buffType": "Root",
+      "buffDuration": 2,
+      "persistent": false,
+      "duration": 0
+    },
+    {
+      "id": "poison",
+      "name": "毒罠",
+      "texture": "",
+      "color": [ 0.5, 0.0, 0.8, 0.5 ],
+      "effect": "ApplyDebuff",
+      "value": 2,
+      "buffType": "Poison",
+      "buffDuration": 3,
+      "persistent": false,
+      "duration": 0
+    },
+    {
+      "id": "fire",
+      "name": "炎",
+      "texture": "",
+      "color": [ 1.0, 0.3, 0.0, 0.5 ],
+      "effect": "ApplyDebuff",
+      "value": 2,
+      "buffType": "Burn",
+      "buffDuration": 2,
+      "persistent": true,
+      "duration": 3,
+      "animFrames": 0,
+      "animSpeed": 0.0
+    },
+    {
+      "id": "thorn",
+      "name": "棘",
+      "texture": "",
+      "color": [ 0.4, 0.7, 0.2, 0.5 ],
+      "effect": "Damage",
+      "value": 2,
+      "persistent": true,
+      "duration": -1,
+      "animFrames": 0,
+      "animSpeed": 0.0
+    },
+    {
+      "id": "swamp",
+      "name": "沼",
+      "texture": "",
+      "color": [ 0.3, 0.2, 0.1, 0.5 ],
+      "effect": "ApplyDebuff",
+      "value": 1,
+      "buffType": "Slow",
+      "buffDuration": 1,
+      "persistent": true,
+      "duration": -1,
+      "animFrames": 0,
+      "animSpeed": 0.0
+    },
+    {
+      "id": "ice",
+      "name": "氷",
+      "texture": "",
+      "color": [ 0.3, 0.7, 1.0, 0.5 ],
+      "effect": "Slide",
+      "value": 0,
+      "persistent": true,
+      "duration": -1,
+      "animFrames": 0,
+      "animSpeed": 0.0
+    }
+  ]
+}

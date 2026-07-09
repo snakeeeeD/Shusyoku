@@ -49,7 +49,13 @@ public:
         return m_playerHighlightCells;
     }
 
+    const std::vector<std::pair<int, int>>& GetOutOfRangeCells() const
+    {
+        return m_outOfRangeCells;
+    }
+
 private:
     std::vector<std::pair<int, int>> m_playerHighlightCells;
     std::vector<std::pair<int, int>> m_enemyHighlightCells;
+    std::vector<std::pair<int, int>> m_outOfRangeCells;
 };

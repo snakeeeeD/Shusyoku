@@ -61,6 +61,8 @@ inline CardEffectType StringToCardEffectType(const std::string& str)
     if (str == "CreateCard")  return CardEffectType::CreateCard;
     if (str == "Knockback")   return CardEffectType::Knockback;
     if (str == "Pull")        return CardEffectType::Pull;
+    if (str == "Search")    return CardEffectType::Search;
+    if (str == "Salvage")   return CardEffectType::Salvage;
     if (str == "PlaceTrap") return CardEffectType::PlaceTrap;
     return CardEffectType::None;
 }
@@ -88,12 +90,4 @@ inline BuffType StringToBuffType(const std::string& str)
     if (str == "Burn")        return BuffType::Burn;
     if (str == "Poison")      return BuffType::Poison;
     return BuffType::AttackUp;
-}
-
-inline TrapType StringToTrapType(const std::string& str)
-{
-    if (str == "Explosion") return TrapType::Explosion;
-    if (str == "Root") return TrapType::Root;
-    if (str == "Poison") return TrapType::Poison;
-    return TrapType::None;
 }

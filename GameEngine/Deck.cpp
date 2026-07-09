@@ -67,3 +67,14 @@ std::string Deck::DrawSpecificCard(const std::string& id)
     }
     return "";
 }
+
+std::string Deck::SalvageCard(const std::string& id)
+{
+    auto it = std::find(m_discardPile.begin(), m_discardPile.end(), id);
+    if (it != m_discardPile.end())
+    {
+        m_discardPile.erase(it);
+        return id;
+    }
+    return "";
+}

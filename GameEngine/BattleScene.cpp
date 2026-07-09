@@ -1,6 +1,7 @@
 ﻿#include "BattleScene.h"
 #include "TextureLoader.h"
 #include "CardExecutor.h"
+#include "TerrainDataBase.h"
 #include <algorithm>
 #include <cstdio>
 
@@ -113,6 +114,22 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     for (int row = 0; row < m_gridMap->GetRows(); row++)
         for (int col = 0; col < m_gridMap->GetCols(); col++)
             m_gridMap->GetCell(col, row).gameObject.texture = m_whiteTexture;
+
+    // テスト用地形（確認後に削除）
+    auto placeTerrain = [&](int col, int row, const std::string& id) {
+        const TerrainDef* def = TerrainDataBase::Get(id);
+        if (!def) return;
+        auto& cell = m_gridMap->GetCell(col, row);
+        cell.tileEffect.active = true;
+        cell.tileEffect.id = id;
+        cell.tileEffect.value = def->value;
+        cell.tileEffect.duration = def->duration;
+        cell.tileEffect.persistent = def->persistent;
+        };
+    placeTerrain(2, 2, "fire");
+    placeTerrain(3, 2, "thorn");
+    placeTerrain(4, 2, "swamp");
+    placeTerrain(5, 2, "ice");
 
     // プレイヤー初期位置
     m_playerCol = m_gridMap->GetCols() / 2;
@@ -321,9 +338,10 @@ void BattleScene::Update(float deltaTime)
         m_renderer3D->SetCamera(zoomedPos, target, XMFLOAT3(0.0f, 1.0f, 0.0f));
 
         // ハイライト更新
-        if (m_selectedCardIndex >= 0 && m_selectedCardIndex < (int)m_hand.GetCards().size())
+        int highlightCardIndex = m_selectedCardIndex >= 0 ? m_selectedCardIndex : m_hoveredCardIndex;
+        if (highlightCardIndex >= 0 && highlightCardIndex < (int)m_hand.GetCards().size())
         {
-            const CardData* data = m_hand.GetCards()[m_selectedCardIndex]->GetData();
+            const CardData* data = m_hand.GetCards()[highlightCardIndex]->GetData();
 
             RECT cardArea = { 0, 0, 0, 0 };
             if (!m_hand.GetCards().empty())
@@ -342,6 +360,10 @@ void BattleScene::Update(float deltaTime)
                 m_highlightTimer, m_hoveredCell,
                 m_renderer3D, m_screenWidth, m_screenHeight,
                 cardArea);
+        }
+        else
+        {
+            m_highlighter.ClearPlayerHighlight(m_gridMap);
         }
 
         // ハイライト明滅タイマーを更新
@@ -418,9 +440,9 @@ void BattleScene::Update(float deltaTime)
 
                     // 罠チェック
                     auto& cell = m_gridMap->GetCell(enemy->gridCol, enemy->gridRow);
-                    if (cell.trap.active)
+                    if (cell.tileEffect.active)
                     {
-                        CardExecutor::TriggerTrap(cell, enemy);
+                        CardExecutor::TriggerTrap(cell, enemy, enemy->gridCol, enemy->gridRow, m_gridMap, m_enemies);
                     }
                 }
 
@@ -435,10 +457,11 @@ void BattleScene::Update(float deltaTime)
             }
         }
 
-        if (m_selectedCardIndex >= 0)
+        int highlightCardIndex2 = m_selectedCardIndex >= 0 ? m_selectedCardIndex : m_hoveredCardIndex;
+        if (highlightCardIndex2 >= 0 && highlightCardIndex2 < (int)m_hand.GetCards().size())
         {
             const CardData* data =
-                m_hand.GetCards()[m_selectedCardIndex]->GetData();
+                m_hand.GetCards()[highlightCardIndex2]->GetData();
 
             // 手札エリアの範囲を計算
             RECT cardArea = { 0, 0, 0, 0 };
@@ -458,6 +481,10 @@ void BattleScene::Update(float deltaTime)
                 m_highlightTimer, m_hoveredCell,
                 m_renderer3D, m_screenWidth, m_screenHeight,
                 cardArea);
+        }
+        else
+        {
+            m_highlighter.ClearPlayerHighlight(m_gridMap);
         }
     }
 }
@@ -493,20 +520,18 @@ void BattleScene::Draw()
         for (int col = 0; col < m_gridMap->GetCols(); col++)
         {
             auto& cell = m_gridMap->GetCell(col, row);
-            if (cell.trap.active)
+            if (cell.tileEffect.active)
             {
                 float x = (col - m_gridMap->GetCols() / 2.0f) * 1.1f;
                 float z = (row - m_gridMap->GetRows() / 2.0f) * 1.1f;
 
-                XMFLOAT4 trapColor;
-                switch (cell.trap.type)
-                {
-                case TrapType::Explosion: trapColor = XMFLOAT4(1.0f, 0.3f, 0.0f, 0.5f); break;
-                case TrapType::Root:      trapColor = XMFLOAT4(0.2f, 0.8f, 0.2f, 0.5f); break;
-                case TrapType::Poison:    trapColor = XMFLOAT4(0.5f, 0.0f, 0.8f, 0.5f); break;
-                default:                  trapColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.5f); break;
-                }
-                m_renderer3D->DrawTile(m_whiteTexture, x, z, 0.8f, trapColor);
+                const TerrainDef* def = TerrainDataBase::Get(cell.tileEffect.id);
+                XMFLOAT4 terrainColor = def ? def->color : XMFLOAT4(1, 1, 1, 0.5f);
+
+                if (def && !def->texture.empty())
+                    m_renderer3D->DrawTile(TextureManager::Get(def->texture), x, z, 0.8f, XMFLOAT4(1, 1, 1, 1));
+                else
+                    m_renderer3D->DrawTile(m_whiteTexture, x, z, 0.8f, terrainColor);
             }
         }
     }
@@ -521,7 +546,7 @@ void BattleScene::Draw()
         if (selData && selData->mainEffect.type == CardEffectType::PlaceTrap)
         {
             auto& playerCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
-            if (playerCell.trap.active)
+            if (playerCell.tileEffect.active)
             {
                 float cx = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
                 float cz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
@@ -595,6 +620,7 @@ void BattleScene::Draw()
     ctx.highlightTimer = m_highlightTimer;
     ctx.battleResult = m_battleResult;
     ctx.showDrawPile = m_showDrawPile;
+    ctx.cardSelecting = m_cardSelecting;
     ctx.showDiscardPile = m_showDiscardPile;
     ctx.showExhaustPile = m_showExhaustPile;
     ctx.screenWidth = m_screenWidth;
@@ -602,6 +628,7 @@ void BattleScene::Draw()
     ctx.cameraZoom = m_cameraZoom;
     ctx.isPlayerTurn = m_turnManager.IsPlayerTurn();
     ctx.mousePos = m_input.GetMousePos();
+    ctx.outOfRangeCells = &m_highlighter.GetOutOfRangeCells();
 
     m_battleUI->Draw(ctx);
 }
@@ -719,12 +746,81 @@ void BattleScene::HandleInput()
                 {
                     if (newPlayerCol != m_playerCol || newPlayerRow != m_playerRow)
                     {
+                        int oldCol = m_playerCol;
+                        int oldRow = m_playerRow;
                         m_playerCol = newPlayerCol;
                         m_playerRow = newPlayerRow;
                         m_player->gridCol = m_playerCol;
                         m_player->gridRow = m_playerRow;
                         m_player->worldX = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
                         m_player->worldZ = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+
+                        auto& movedCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
+
+                        // 氷チェック（TriggerTerrainでdurationが消える前に）
+                        bool isSlide = false;
+                        int slideDx = 0, slideDy = 0;
+                        if (movedCell.tileEffect.active)
+                        {
+                            const TerrainDef* def = TerrainDataBase::Get(movedCell.tileEffect.id);
+                            if (def && def->effect == "Slide")
+                            {
+                                isSlide = true;
+                                int dx = m_playerCol - oldCol;
+                                int dy = m_playerRow - oldRow;
+                                if (dx != 0 && dy != 0)
+                                {
+                                    if (rand() % 2 == 0)
+                                        slideDx = dx > 0 ? 1 : -1;
+                                    else
+                                        slideDy = dy > 0 ? 1 : -1;
+                                }
+                                else
+                                {
+                                    slideDx = (dx > 0) ? 1 : (dx < 0) ? -1 : 0;
+                                    slideDy = (dy > 0) ? 1 : (dy < 0) ? -1 : 0;
+                                }
+                            }
+                        }
+
+                        CardExecutor::TriggerTerrain(movedCell, m_player);
+
+                        if (isSlide && (slideDx != 0 || slideDy != 0))
+                        {
+                            while (true)
+                            {
+                                int nextCol = m_playerCol + slideDx;
+                                int nextRow = m_playerRow + slideDy;
+
+                                if (nextCol < 0 || nextCol >= m_gridMap->GetCols() ||
+                                    nextRow < 0 || nextRow >= m_gridMap->GetRows())
+                                    break;
+
+                                auto& nextCell = m_gridMap->GetCell(nextCol, nextRow);
+                                if (nextCell.type != CellType::Empty)
+                                    break;
+
+                                m_gridMap->SetCellType(m_playerCol, m_playerRow, CellType::Empty);
+                                m_playerCol = nextCol;
+                                m_playerRow = nextRow;
+                                m_gridMap->SetCellType(m_playerCol, m_playerRow, CellType::Player);
+                                m_player->gridCol = m_playerCol;
+                                m_player->gridRow = m_playerRow;
+                                m_player->worldX = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                                m_player->worldZ = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+
+                                auto& slideCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
+                                if (slideCell.tileEffect.active)
+                                {
+                                    const TerrainDef* slideDef = TerrainDataBase::Get(slideCell.tileEffect.id);
+                                    if (slideDef && slideDef->effect == "Slide")
+                                        continue;
+
+                                    CardExecutor::TriggerTerrain(slideCell, m_player);
+                                }
+                                break;
+                            }
+                        }
                     }
 
                     for (auto& drawnId : execResult.drawnCards)
@@ -779,7 +875,7 @@ void BattleScene::HandleInput()
                     hitX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
                     hitY = cardHoverY;
                     hitW = CARD_HOVER_W;
-                    hitH = CARD_HOVER_H;
+                    hitH = (float)m_screenHeight - cardHoverY;
                 }
             }
             else
@@ -836,6 +932,73 @@ void BattleScene::HandleInput()
         }
 
         // ビューワー外クリックで閉じる
+        else if (m_cardSelecting && (m_showDrawPile || m_showDiscardPile))
+        {
+            float bgX = m_screenWidth / 2.0f - 300.0f;
+            float bgY = 50.0f;
+            const float cardW = 160.0f;
+            const float cardH = 50.0f;
+            const float padding = 10.0f;
+            const int cols = 3;
+
+            const auto& pile = m_showDrawPile
+                ? m_deck.GetDrawPile()
+                : m_deck.GetDiscardPile();
+
+            std::vector<std::string> displayPile = pile;
+            if (m_showDrawPile)
+                std::sort(displayPile.begin(), displayPile.end());
+
+            bool cardClicked = false;
+            for (int i = 0; i < (int)displayPile.size(); i++)
+            {
+                int col = i % cols;
+                int row = i / cols;
+                float cx = bgX + 20.0f + col * (cardW + padding);
+                float cy = bgY + 50.0f + row * (cardH + padding);
+
+                if (mousePos.x >= cx && mousePos.x <= cx + cardW
+                    && mousePos.y >= cy && mousePos.y <= cy + cardH)
+                {
+                    std::string selectedId = displayPile[i];
+                    std::string result;
+                    if (m_selectingType == CardEffectType::Search)
+                        result = m_deck.DrawSpecificCard(selectedId);
+                    else if (m_selectingType == CardEffectType::Salvage)
+                        result = m_deck.SalvageCard(selectedId);
+
+                    if (!result.empty())
+                    {
+                        m_hand.AddCard(result);
+                        m_battleUI->StartDrawCardEffect(result);
+                    }
+
+                    cardClicked = true;
+                    break;
+                }
+            }
+
+            if (cardClicked)
+            {
+                m_cardSelecting = false;
+                m_selectingType = CardEffectType::None;
+                m_showDrawPile = false;
+                m_showDiscardPile = false;
+            }
+            else
+            {
+                // ビューワー外クリックで選択キャンセル
+                bool outsideBg = mousePos.x < bgX || mousePos.x > bgX + 600.0f
+                    || mousePos.y < bgY || mousePos.y > bgY + 580.0f;
+                if (outsideBg)
+                {
+                    m_cardSelecting = false;
+                    m_selectingType = CardEffectType::None;
+                    m_showDrawPile = false;
+                    m_showDiscardPile = false;
+                }
+            }
+        }
         else if (m_showDrawPile || m_showDiscardPile || m_showExhaustPile)
         {
             float bgX = m_screenWidth / 2.0f - 300.0f;
@@ -879,15 +1042,84 @@ void BattleScene::HandleInput()
                 if (execResult.cardUsed)
                 {
                     // プレイヤー座標を更新
-                    if (newPlayerCol != m_playerCol || newPlayerRow != m_playerRow)
-                    {
-                        m_playerCol = newPlayerCol;
-                        m_playerRow = newPlayerRow;
-                        m_player->gridCol = m_playerCol;
-                        m_player->gridRow = m_playerRow;
-                        m_player->worldX = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                        m_player->worldZ = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
-                    }
+                        if (newPlayerCol != m_playerCol || newPlayerRow != m_playerRow)
+                        {
+                            int oldCol = m_playerCol;
+                            int oldRow = m_playerRow;
+                            m_playerCol = newPlayerCol;
+                            m_playerRow = newPlayerRow;
+                            m_player->gridCol = m_playerCol;
+                            m_player->gridRow = m_playerRow;
+                            m_player->worldX = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                            m_player->worldZ = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+
+                            auto& movedCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
+
+                            bool isSlide = false;
+                            int slideDx = 0, slideDy = 0;
+                            if (movedCell.tileEffect.active)
+                            {
+                                const TerrainDef* def = TerrainDataBase::Get(movedCell.tileEffect.id);
+                                if (def && def->effect == "Slide")
+                                {
+                                    isSlide = true;
+                                    int dx = m_playerCol - oldCol;
+                                    int dy = m_playerRow - oldRow;
+                                    if (dx != 0 && dy != 0)
+                                    {
+                                        if (rand() % 2 == 0)
+                                            slideDx = dx > 0 ? 1 : -1;
+                                        else
+                                            slideDy = dy > 0 ? 1 : -1;
+                                    }
+                                    else
+                                    {
+                                        slideDx = (dx > 0) ? 1 : (dx < 0) ? -1 : 0;
+                                        slideDy = (dy > 0) ? 1 : (dy < 0) ? -1 : 0;
+                                    }
+                                }
+                            }
+
+                            CardExecutor::TriggerTerrain(movedCell, m_player);
+
+                            if (isSlide && (slideDx != 0 || slideDy != 0))
+                            {
+                                while (true)
+                                {
+                                    int nextCol = m_playerCol + slideDx;
+                                    int nextRow = m_playerRow + slideDy;
+
+                                    if (nextCol < 0 || nextCol >= m_gridMap->GetCols() ||
+                                        nextRow < 0 || nextRow >= m_gridMap->GetRows())
+                                        break;
+
+                                    auto& nextCell = m_gridMap->GetCell(nextCol, nextRow);
+                                    if (nextCell.type != CellType::Empty)
+                                        break;
+
+                                    m_gridMap->SetCellType(m_playerCol, m_playerRow, CellType::Empty);
+                                    m_playerCol = nextCol;
+                                    m_playerRow = nextRow;
+                                    m_gridMap->SetCellType(m_playerCol, m_playerRow, CellType::Player);
+                                    m_player->gridCol = m_playerCol;
+                                    m_player->gridRow = m_playerRow;
+                                    m_player->worldX = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                                    m_player->worldZ = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+
+                                    auto& slideCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
+                                    if (slideCell.tileEffect.active)
+                                    {
+                                        const TerrainDef* slideDef = TerrainDataBase::Get(slideCell.tileEffect.id);
+                                        if (slideDef && slideDef->effect == "Slide")
+                                            continue;
+
+                                        CardExecutor::TriggerTerrain(slideCell, m_player);
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    
 
 
                     for (auto& drawnId : execResult.drawnCards)
@@ -897,6 +1129,17 @@ void BattleScene::HandleInput()
                     m_battleUI->OnCardRemoved(m_selectedCardIndex);
 
                     ProcessDeadEnemies();
+
+                    if (execResult.pendingSelection != CardEffectType::None)
+                    {
+                        m_cardSelecting = true;
+                        m_selectingType = execResult.pendingSelection;
+                        if (m_selectingType == CardEffectType::Search)
+                            m_showDrawPile = true;
+                        else if (m_selectingType == CardEffectType::Salvage)
+                            m_showDiscardPile = true;
+                    }
+
                     m_selectedCardIndex = -1;
                     cardJustUsed = true;
                 }
@@ -941,7 +1184,7 @@ void BattleScene::HandleInput()
                     hitX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
                     hitY = cardHoverY;
                     hitW = CARD_HOVER_W;
-                    hitH = CARD_HOVER_H;
+                    hitH = (float)m_screenHeight - cardHoverY;
                 }
             }
             else

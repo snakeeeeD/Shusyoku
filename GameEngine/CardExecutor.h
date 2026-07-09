@@ -17,6 +17,7 @@ public:
         bool success;
         bool cardUsed;
         std::vector<std::string> drawnCards;
+        CardEffectType pendingSelection = CardEffectType::None;
     };
 
     struct MovePreview 
@@ -51,7 +52,10 @@ public:
     static MovePreview PreviewPull(Enemy* target, int playerCol, int playerRow,
         int distance, GridMap* gridMap, std::vector<Enemy*>& enemies);
 
-    static void TriggerTrap(Cell& cell, Enemy* enemy);
+    static void TriggerTrap(Cell& cell, Enemy* enemy, int col, int row,
+        GridMap* gridMap, std::vector<Enemy*>& enemies);
+
+    static void TriggerTerrain(Cell& cell, Player* player);
 
 private:
     std::vector<Enemy*> GetEnemiesInRange(

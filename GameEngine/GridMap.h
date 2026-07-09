@@ -2,6 +2,8 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include <vector>
+#include <string>
+
 #include "GameObject.h"
 
 using namespace DirectX;
@@ -16,21 +18,19 @@ enum class CellType
 	Wall
 };
 
-enum class TrapType { None, Explosion, Root, Poison };
-
-struct TrapData {
-	TrapType type = TrapType::None;
-	int value = 0;       // ダメージ量やデバフ値
-	int duration = 0;    // デバフ持続ターン
-	bool active = false; // 罠があるか
+struct TileEffect {
+	std::string id = "";
+	int value = 0;
+	int duration = 0;
+	bool persistent = false;
+	bool active = false;
 };
-
 
 struct Cell
 {
 	CellType type;
 	GameObject gameObject;
-	TrapData trap;
+	TileEffect tileEffect;
 };
 
 class GridMap

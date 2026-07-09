@@ -105,6 +105,9 @@ private:
 
     void ProcessDeadEnemies();
 
+    bool m_cardSelecting = false;
+    CardEffectType m_selectingType = CardEffectType::None;
+
     std::string m_battleEnemyId;
 
     BattleHighlighter m_highlighter;

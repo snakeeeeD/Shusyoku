@@ -17,7 +17,7 @@ public:
     int GetMaxEnergy() const { return m_maxEnergy; }
     float GetDisplayHp() const { return m_displayHp; }
     BuffManager& GetBuffManager() { return m_buffManager; }
-
+    const BuffManager& GetBuffManager() const { return m_buffManager; }
 
     // セッター
     void SetHp(int hp) { m_hp = hp; }

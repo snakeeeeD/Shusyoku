@@ -3,6 +3,7 @@
 #include "CardDataBase.h"
 #include "PlayerDataManager.h"
 #include "EncounterDataBase.h"
+#include "TerrainDataBase.h"
 
 SceneManager::SceneManager() : m_currentScene(nullptr)
 {
@@ -29,6 +30,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	EnemyDataBase::Init();
 	EncounterDataBase::Init();
 	CardDataBase::Init();
+	TerrainDataBase::Load("Assets/Data/terrains.json");
 	PlayerDataManager::Init();
 
 	TextureManager::Load("white", L"Assets/Test/White.png");

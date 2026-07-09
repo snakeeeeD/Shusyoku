@@ -1,5 +1,7 @@
 #pragma once
 #include <string>
+#include <vector>
+
 #include "CardType.h"
 
 // カード効果の種類
@@ -16,6 +18,8 @@ enum class CardEffectType
     CreateCard,  // カード生成
     Knockback,   // ノックバック
     Pull,        // 引き寄せ
+    Search,      // 山札検索
+    Salvage,     // 捨て札回収
     PlaceTrap,   // 罠セット
 };
 

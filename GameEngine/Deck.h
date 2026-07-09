@@ -12,6 +12,7 @@ public:
     void AddCard(const std::string& id);
     std::string DrawCard();
     std::string DrawSpecificCard(const std::string& id);
+    std::string SalvageCard(const std::string& id);
     void DiscardCard(const std::string& id);
     void ExhaustCard(const std::string& id);
     void ShuffleDrawPile();
