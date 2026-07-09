@@ -265,6 +265,11 @@ void BattleScene::Update(float deltaTime)
     for (auto enemy : m_enemies)
         enemy->UpdateDisplayHp(deltaTime);
 
+    m_player->UpdateMove(deltaTime);
+    for (auto enemy : m_enemies)
+        enemy->UpdateMove(deltaTime);
+
+
     // カメラズーム（マウスホイール）
     int wheelDelta = m_input.GetMouseWheelDelta();
     if (wheelDelta != 0)
@@ -752,8 +757,9 @@ void BattleScene::HandleInput()
                         m_playerRow = newPlayerRow;
                         m_player->gridCol = m_playerCol;
                         m_player->gridRow = m_playerRow;
-                        m_player->worldX = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                        m_player->worldZ = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                        float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                        float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                        m_player->StartMove(px, pz);
 
                         auto& movedCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
 
@@ -806,8 +812,9 @@ void BattleScene::HandleInput()
                                 m_gridMap->SetCellType(m_playerCol, m_playerRow, CellType::Player);
                                 m_player->gridCol = m_playerCol;
                                 m_player->gridRow = m_playerRow;
-                                m_player->worldX = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                                m_player->worldZ = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                                float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                                float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                                m_player->StartMove(px, pz);
 
                                 auto& slideCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
                                 if (slideCell.tileEffect.active)
@@ -1050,8 +1057,9 @@ void BattleScene::HandleInput()
                             m_playerRow = newPlayerRow;
                             m_player->gridCol = m_playerCol;
                             m_player->gridRow = m_playerRow;
-                            m_player->worldX = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                            m_player->worldZ = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                            float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                            float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                            m_player->StartMove(px, pz);
 
                             auto& movedCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
 
@@ -1103,8 +1111,9 @@ void BattleScene::HandleInput()
                                     m_gridMap->SetCellType(m_playerCol, m_playerRow, CellType::Player);
                                     m_player->gridCol = m_playerCol;
                                     m_player->gridRow = m_playerRow;
-                                    m_player->worldX = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                                    m_player->worldZ = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                                    float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                                    float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                                    m_player->StartMove(px, pz);
 
                                     auto& slideCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
                                     if (slideCell.tileEffect.active)
