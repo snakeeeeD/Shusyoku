@@ -41,14 +41,15 @@ struct CardEffectData
 
 struct CardData
 {
-    std::string  id;
-    std::wstring name;
-    CardType     type;
-    int          cost;
-    int          range;
-    RangeType    rangeType;
-    std::wstring description;
-    CardRarity rarity = CardRarity::Common;
+    std::string  id;                                // カードのID
+    std::wstring name;                              // カードの名前
+    CardType     type;                              // カードの種類
+    int          cost;                              // カードのコスト
+    int          range;                             // 射程距離
+    RangeType    rangeType;                         // 効果範囲の種類
+    std::wstring description;                       // カードの説明文
+    CardRarity rarity = CardRarity::Common;         // レアリティ
+    std::vector<std::string> tags;                  // カードの軸用のタグ
 
     CardEffectData   mainEffect;   // メイン効果（ダメージ量やブロック量など）
     CardEffectData   onHitEffect;  // ヒット時効果（攻撃カードのみ）

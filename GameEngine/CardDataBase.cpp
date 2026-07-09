@@ -39,6 +39,11 @@ void CardDataBase::Init()
             if (rarityStr == "Uncommon") data.rarity = CardRarity::Uncommon;
             else if (rarityStr == "Rare") data.rarity = CardRarity::Rare;
             else data.rarity = CardRarity::Common;
+            if (c.contains("tags"))
+            {
+                for (auto& t : c["tags"])
+                    data.tags.push_back(t);
+            }
 
             data.exhaust = c.value("exhaust", false);
             data.pierce = c.value("pierce", false);
