@@ -268,10 +268,14 @@ void BattleScene::Update(float deltaTime)
 
     m_player->UpdateMove(deltaTime);
     for (auto enemy : m_enemies)
+<<<<<<< HEAD
     {
         enemy->UpdateMove(deltaTime);
         enemy->UpdateLunge(deltaTime);
     }
+=======
+        enemy->UpdateMove(deltaTime);
+>>>>>>> 99adc18dd3d2e1b3809901e85f6813834f4ca810
 
 
     // カメラズーム（マウスホイール）

@@ -61,6 +61,7 @@ public:
     }
 
     bool IsMoving() const { return m_isMoving; }
+<<<<<<< HEAD
 
     // ランジ（攻撃突進）アニメーション
     float m_lungeOriginX = 0, m_lungeOriginZ = 0;
@@ -109,4 +110,6 @@ public:
     }
 
     bool IsLunging() const { return m_isLunging; }
+=======
+>>>>>>> 99adc18dd3d2e1b3809901e85f6813834f4ca810
 };
