@@ -44,7 +44,8 @@ public:
         Hand& hand, int cardIndex,
         Deck& deck,
         int& outNewPlayerCol,
-        int& outNewPlayerRow
+        int& outNewPlayerRow,
+        const std::vector<std::pair<int, int>>* explicitPath = nullptr
     );
 
     static MovePreview PreviewKnockback(Enemy* target, int playerCol, int playerRow,

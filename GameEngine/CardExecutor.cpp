@@ -57,7 +57,8 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     Player* player, std::vector<Enemy*>& enemies,
     GridMap* gridMap, int playerCol, int playerRow,
     Hand& hand, int cardIndex, Deck& deck,
-    int& outNewPlayerCol, int& outNewPlayerRow)
+    int& outNewPlayerCol, int& outNewPlayerRow,
+    const std::vector<std::pair<int, int>>* explicitPath)
 {
     outNewPlayerCol = playerCol;
     outNewPlayerRow = playerRow;
@@ -327,78 +328,89 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
         }
         break;
     }
-       case CardType::Move:
-       {
-           auto& cell = gridMap->GetCell(targetCol, targetRow);
-           if (cell.type != CellType::Empty)
-               return result;
+             case CardType::Move:
+             {
+                 int moveRange = player->GetBuffManager().GetFinalMoveRange(data.range);
 
-           int moveRange = player->GetBuffManager().GetFinalMoveRange(data.range);
+                 std::vector<std::pair<int, int>> path;
 
-           // BFS Ç≈åoòHíTçıÅiìGÉ}ÉXÇÕí ÇÍÇ»Ç¢Åj
-           std::queue<std::pair<int, int>> bfsQueue;
-           std::map<std::pair<int, int>, int> dist;
-           std::map<std::pair<int, int>, std::pair<int, int>> parent;
+                 if (explicitPath && !explicitPath->empty())
+                 {
+                     // éËìÆåoòHÅFåüèÿÇµÇƒçÃóp
+                     if ((int)explicitPath->size() > moveRange)
+                         return result;
 
-           auto startPos = std::make_pair(playerCol, playerRow);
-           auto goalPos = std::make_pair(targetCol, targetRow);
+                     int pc = playerCol, pr = playerRow;
+                     for (auto& [c, r] : *explicitPath)
+                     {
+                         if (c < 0 || c >= gridMap->GetCols() || r < 0 || r >= gridMap->GetRows())
+                             return result;
+                         if (abs(c - pc) + abs(r - pr) != 1)
+                             return result;
+                         if (gridMap->GetCell(c, r).type != CellType::Empty)
+                             return result;
+                         pc = c; pr = r;
+                     }
+                     path = *explicitPath;
+                     targetCol = path.back().first;
+                     targetRow = path.back().second;
+                 }
+                 else
+                 {
+                     auto& cell = gridMap->GetCell(targetCol, targetRow);
+                     if (cell.type != CellType::Empty)
+                         return result;
 
-           bfsQueue.push(startPos);
-           dist[startPos] = 0;
-           parent[startPos] = { -1, -1 };
+                     // BFS Ç≈åoòHíTçı
+                     std::queue<std::pair<int, int>> bfsQueue;
+                     std::map<std::pair<int, int>, int> dist;
+                     std::map<std::pair<int, int>, std::pair<int, int>> parent;
 
-           const int dirs[4][2] = { {0,1},{0,-1},{1,0},{-1,0} };
-           bool found = false;
+                     auto startPos = std::make_pair(playerCol, playerRow);
+                     auto goalPos = std::make_pair(targetCol, targetRow);
 
-           while (!bfsQueue.empty())
-           {
-               auto [col, row] = bfsQueue.front();
-               bfsQueue.pop();
+                     bfsQueue.push(startPos);
+                     dist[startPos] = 0;
+                     parent[startPos] = { -1, -1 };
 
-               if (col == targetCol && row == targetRow)
-               {
-                   found = true;
-                   break;
-               }
+                     const int dirs[4][2] = { {0,1},{0,-1},{1,0},{-1,0} };
+                     bool found = false;
 
-               if (dist[{col, row}] >= moveRange)
-                   continue;
+                     while (!bfsQueue.empty())
+                     {
+                         auto [col, row] = bfsQueue.front();
+                         bfsQueue.pop();
 
-               for (int d = 0; d < 4; d++)
-               {
-                   int nc = col + dirs[d][0];
-                   int nr = row + dirs[d][1];
+                         if (col == targetCol && row == targetRow) { found = true; break; }
+                         if (dist[{col, row}] >= moveRange) continue;
 
-                   if (nc < 0 || nc >= gridMap->GetCols()
-                       || nr < 0 || nr >= gridMap->GetRows())
-                       continue;
+                         for (int d = 0; d < 4; d++)
+                         {
+                             int nc = col + dirs[d][0];
+                             int nr = row + dirs[d][1];
+                             if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) continue;
+                             auto np = std::make_pair(nc, nr);
+                             if (dist.count(np)) continue;
+                             if (gridMap->GetCell(nc, nr).type != CellType::Empty) continue;
+                             dist[np] = dist[{col, row}] + 1;
+                             parent[np] = { col, row };
+                             bfsQueue.push(np);
+                         }
+                     }
 
-                   auto np = std::make_pair(nc, nr);
-                   if (dist.count(np))
-                       continue;
+                     if (!found) return result;
 
-                   auto& ncell = gridMap->GetCell(nc, nr);
-                   if (ncell.type != CellType::Empty)
-                       continue;
+                     auto cur = goalPos;
+                     while (cur != startPos)
+                     {
+                         path.push_back(cur);
+                         cur = parent[cur];
+                     }
+                     std::reverse(path.begin(), path.end());
+                 }
 
-                   dist[np] = dist[{col, row}] + 1;
-                   parent[np] = { col, row };
-                   bfsQueue.push(np);
-               }
-           }
-
-           if (!found)
-               return result;
-
-           // åoòHïúå≥
-           std::vector<std::pair<int, int>> path;
-           auto cur = goalPos;
-           while (cur != startPos)
-           {
-               path.push_back(cur);
-               cur = parent[cur];
-           }
-           std::reverse(path.begin(), path.end());
+                 if (path.empty())
+                     return result;
 
            player->UseEnergy(data.cost);
            gridMap->SetCellType(playerCol, playerRow, CellType::Empty);

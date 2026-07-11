@@ -54,8 +54,11 @@ public:
         return m_outOfRangeCells;
     }
 
+    void SetTravelPath(const std::vector<std::pair<int, int>>* p) { m_travelPath = p; }
+
 private:
     std::vector<std::pair<int, int>> m_playerHighlightCells;
     std::vector<std::pair<int, int>> m_enemyHighlightCells;
     std::vector<std::pair<int, int>> m_outOfRangeCells;
+    const std::vector<std::pair<int, int>>* m_travelPath = nullptr;
 };

@@ -145,6 +145,8 @@ void BattleHighlighter::UpdatePlayerHighlight(
         float pulse = sin(timer * 2.0f);
         float hoverBrightness = 0.3f + 0.7f * ((pulse + 1.0f) / 2.0f);
 
+        bool pathMaxed = m_travelPath && (int)m_travelPath->size() >= actualRange;
+
         // BFS
         std::queue<std::pair<int, int>> bfsQueue;
         std::map<std::pair<int, int>, int> bfsDist;
@@ -187,20 +189,7 @@ void BattleHighlighter::UpdatePlayerHighlight(
             }
         }
 
-        // ホバー先への経路復元
-        std::vector<std::pair<int, int>> pathToHovered;
-        auto hoverPos = std::make_pair(hoveredCell.first, hoveredCell.second);
-        if (hoveredCell.first >= 0 && bfsDist.count(hoverPos))
-        {
-            auto cur = hoverPos;
-            while (cur != startPos)
-            {
-                pathToHovered.push_back(cur);
-                cur = bfsParent[cur];
-            }
-        }
-
-        // 到達可能マスをハイライト
+        // 到達可能マスをハイライト（経路はマウスが通った道 = m_travelPath）
         for (auto& [pos, d] : bfsDist)
         {
             if (pos == startPos) continue;
@@ -212,8 +201,9 @@ void BattleHighlighter::UpdatePlayerHighlight(
             bool isHovered = (col == hoveredCell.first && row == hoveredCell.second);
 
             bool isOnPath = false;
-            for (auto& p : pathToHovered)
-                if (p.first == col && p.second == row) { isOnPath = true; break; }
+            if (m_travelPath)
+                for (auto& p : *m_travelPath)
+                    if (p.first == col && p.second == row) { isOnPath = true; break; }
 
             bool isDangerCell = false;
             for (auto enemy : enemies)
@@ -228,7 +218,7 @@ void BattleHighlighter::UpdatePlayerHighlight(
                 }
             }
 
-            if (isHovered)
+            if (isHovered && !pathMaxed)
             {
                 cell.gameObject.color = XMFLOAT4(0.2f, hoverBrightness, 0.4f, 1.0f);
             }

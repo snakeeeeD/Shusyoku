@@ -138,4 +138,12 @@ private:
     int m_debugRank;
     int m_debugEncounterIndex;
     std::string m_currentEncounterId;  // 今のテンプレート情報を覚えておく
+
+    bool m_pathBuilding = false;
+    bool m_moveReleaseSuppress = false;
+    std::vector<std::pair<int, int>> m_movePath;
+    std::pair<int, int> m_backtrackCell = { -999, -999 };
+    std::pair<int, int> m_suppressCell = { -999, -999 };
+    int m_backtrackFrames = 0;
+    bool m_moveDragging = false;
 };

@@ -91,6 +91,7 @@ struct BattleUIContext
     int screenWidth, screenHeight;
 
     const std::vector<std::pair<int, int>>* outOfRangeCells = nullptr;
+    const std::vector<std::pair<int, int>>* travelPath = nullptr;
 };
 
 class BattleUI

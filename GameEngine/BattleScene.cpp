@@ -4,6 +4,9 @@
 #include "TerrainDataBase.h"
 #include <algorithm>
 #include <cstdio>
+#include <queue>
+#include <map>
+#include <set>
 
 #ifdef _DEBUG
 #include "External/imgui/imgui.h"
@@ -266,7 +269,35 @@ void BattleScene::Update(float deltaTime)
         m_cameraZoom = max(ZOOM_MIN, min(ZOOM_MAX, m_cameraZoom));
     }
 
-    // カメラパン（右ドラッグ）
+    // 右クリック（ボタン1）：Moveカード
+    if (m_input.GetMouseButtonTrigger(1)
+        && m_selectedCardIndex >= 0
+        && m_selectedCardIndex < (int)m_hand.GetCards().size()
+        && m_hand.GetCards()[m_selectedCardIndex]->GetData()->type == CardType::Move)
+    {
+        POINT mp = m_input.GetMousePos();
+        auto rc = m_gridMap->GetClickedCell3D(
+            mp,
+            m_renderer3D->GetViewMatrix(),
+            m_renderer3D->GetProjectionMatrix(),
+            m_screenWidth, m_screenHeight);
+
+        if (rc.cell)
+        {
+            // グリッド上：経路リセット（カードは維持）
+            m_movePath.clear();
+            m_moveReleaseSuppress = true;
+            m_suppressCell = { rc.col, rc.row };
+        }
+        else
+        {
+            // グリッド外：カード選択解除
+            m_selectedCardIndex = -1;
+            m_movePath.clear();
+        }
+    }
+
+    // カメラパン（中ボタンドラッグ）
     if (m_input.GetMouseButtonPress(2))
     {
         POINT mousePos = m_input.GetMousePos();
@@ -301,8 +332,9 @@ void BattleScene::Update(float deltaTime)
     {
         if (m_isDraggingCamera && !m_rightClickDragged)
         {
-            // ドラッグせずに離した＝単押し→カード選択解除
-            if (m_selectedCardIndex >= 0)
+            // ドラッグせずに離した＝単押し→カード選択解除（Moveカードは除く）
+            if (m_selectedCardIndex >= 0
+                && m_hand.GetCards()[m_selectedCardIndex]->GetData()->type != CardType::Move)
                 m_selectedCardIndex = -1;
         }
         m_isDraggingCamera = false;
@@ -346,6 +378,8 @@ void BattleScene::Update(float deltaTime)
                 float topY = m_screenHeight - CARD_HIDE_Y_OFFSET;
                 cardArea = { (LONG)leftX, (LONG)topY, (LONG)rightX, (LONG)m_screenHeight };
             }
+
+            m_highlighter.SetTravelPath(&m_movePath);
 
             m_highlighter.UpdatePlayerHighlight(
                 m_playerCol, m_playerRow, data,
@@ -520,6 +554,8 @@ void BattleScene::Update(float deltaTime)
                 cardArea = { (LONG)leftX, (LONG)topY, (LONG)rightX, (LONG)m_screenHeight };
             }
 
+            m_highlighter.SetTravelPath(&m_movePath);
+
             m_highlighter.UpdatePlayerHighlight(
                 m_playerCol, m_playerRow, data,
                 m_enemies, m_gridMap, m_player,
@@ -605,6 +641,20 @@ void BattleScene::Draw()
     m_player->Draw3D(m_renderer3D);
     for (auto enemy : m_enemies)
         enemy->Draw3D(m_renderer3D);
+
+    // 移動経路の終点に半透明プレイヤー（長押し中）
+    if (m_pathBuilding && !m_movePath.empty())
+    {
+        int gc = m_movePath.back().first;
+        int gr = m_movePath.back().second;
+        float gx = (gc - m_gridMap->GetCols() / 2.0f) * 1.1f;
+        float gz = (gr - m_gridMap->GetRows() / 2.0f) * 1.1f;
+        m_renderer3D->DrawBillboard(
+            TextureManager::Get("player"),
+            gx, m_player->worldY, gz,
+            m_player->width, m_player->height, 0.0f,
+            XMFLOAT4(0.5f, 0.7f, 1.0f, 0.3f));
+    }
 
     // 罠設置不可マーク（フラグだけ保存）
     float trapBlockX = -1, trapBlockY = -1;
@@ -695,6 +745,7 @@ void BattleScene::Draw()
     ctx.isPlayerTurn = m_turnManager.IsPlayerTurn();
     ctx.mousePos = m_input.GetMousePos();
     ctx.outOfRangeCells = &m_highlighter.GetOutOfRangeCells();
+    ctx.travelPath = &m_movePath;
 
     m_battleUI->Draw(ctx);
 }
@@ -751,6 +802,182 @@ void BattleScene::HandleInput()
         m_highlighter.ClearPlayerHighlight(m_gridMap);
     }
 
+    // === 移動カード：手動経路構築 ===
+    bool selectedIsMove = false;
+    int moveRangeSel = 0;
+    if (m_selectedCardIndex >= 0 && m_selectedCardIndex < (int)cards.size())
+    {
+        const CardData* sd = cards[m_selectedCardIndex]->GetData();
+        if (sd && sd->type == CardType::Move)
+        {
+            selectedIsMove = true;
+            moveRangeSel = m_player->GetBuffManager().GetFinalMoveRange(sd->range);
+        }
+    }
+
+    if (selectedIsMove)
+    {
+        if (!m_pathBuilding) m_movePath.clear();   // 選択直後にリセット
+        m_pathBuilding = true;
+
+        // 右クリックキャンセル中：カーソルを別マスに動かすまで経路を出さない
+        if (m_moveReleaseSuppress
+            && m_hoveredCell.first == m_suppressCell.first
+            && m_hoveredCell.second == m_suppressCell.second)
+        {
+            m_movePath.clear();
+        }
+        else if (m_hoveredCell.first >= 0)
+        {
+            m_moveReleaseSuppress = false;   // カーソルが動いたら再開
+            int hc = m_hoveredCell.first, hr = m_hoveredCell.second;
+
+            int tipCol = m_movePath.empty() ? m_playerCol : m_movePath.back().first;
+            int tipRow = m_movePath.empty() ? m_playerRow : m_movePath.back().second;
+
+            int idx = -1;
+            for (int i = 0; i < (int)m_movePath.size(); i++)
+                if (m_movePath[i].first == hc && m_movePath[i].second == hr) { idx = i; break; }
+
+            bool onTip = (hc == tipCol && hr == tipRow);
+            bool onPlayer = (hc == m_playerCol && hr == m_playerRow);
+            bool isRetract = onPlayer || (idx >= 0 && idx < (int)m_movePath.size() - 1);
+
+            if (onTip)
+            {
+                // 先端の上：何もしない
+                m_backtrackFrames = 0;
+            }
+            else if (isRetract)
+            {
+                // 戻す：数フレーム安定してから（縦の一瞬のブレで誤爆させない）
+                if (hc == m_backtrackCell.first && hr == m_backtrackCell.second)
+                    m_backtrackFrames++;
+                else { m_backtrackCell = { hc, hr }; m_backtrackFrames = 1; }
+
+                if (m_backtrackFrames >= 4)
+                {
+                    if (onPlayer) m_movePath.clear();
+                    else m_movePath.resize(idx + 1);
+                }
+            }
+            else
+            {
+                m_backtrackFrames = 0;
+                int distTip = abs(hc - tipCol) + abs(hr - tipRow);
+
+                if (distTip == 1)
+                {
+                    int budget = moveRangeSel - (int)m_movePath.size();
+                    if (budget > 0 && m_gridMap->GetCell(hc, hr).type == CellType::Empty)
+                    {
+                        // 余裕あり：そのまま1マス追加
+                        m_movePath.push_back({ hc, hr });
+                    }
+                    else if (m_gridMap->GetCell(hc, hr).type == CellType::Empty)
+                    {
+                        // 最大到達中：後ろから1マスずつ戻して、届く接頭辞を探す
+                        const int dirs[4][2] = { {0,1},{0,-1},{1,0},{-1,0} };
+                        for (int keep = (int)m_movePath.size() - 1; keep >= 0; keep--)
+                        {
+                            int b = moveRangeSel - keep;
+                            int ptc = (keep == 0) ? m_playerCol : m_movePath[keep - 1].first;
+                            int ptr = (keep == 0) ? m_playerRow : m_movePath[keep - 1].second;
+
+                            std::set<std::pair<int, int>> blocked;
+                            for (int i = 0; i < keep; i++) blocked.insert(m_movePath[i]);
+                            blocked.insert({ m_playerCol, m_playerRow });
+                            blocked.erase({ ptc, ptr });
+
+                            std::queue<std::pair<int, int>> q;
+                            std::map<std::pair<int, int>, std::pair<int, int>> par;
+                            std::map<std::pair<int, int>, int> dist;
+                            auto start = std::make_pair(ptc, ptr);
+                            q.push(start); dist[start] = 0; par[start] = { -1, -1 };
+
+                            bool found = false;
+                            while (!q.empty())
+                            {
+                                auto [cc, rr] = q.front(); q.pop();
+                                if (cc == hc && rr == hr) { found = true; break; }
+                                if (dist[{cc, rr}] >= b) continue;
+                                for (int d = 0; d < 4; d++)
+                                {
+                                    int nc = cc + dirs[d][0], nr = rr + dirs[d][1];
+                                    if (nc < 0 || nc >= m_gridMap->GetCols() || nr < 0 || nr >= m_gridMap->GetRows()) continue;
+                                    auto np = std::make_pair(nc, nr);
+                                    if (dist.count(np)) continue;
+                                    if (blocked.count(np)) continue;
+                                    if (m_gridMap->GetCell(nc, nr).type != CellType::Empty) continue;
+                                    dist[np] = dist[{cc, rr}] + 1;
+                                    par[np] = { cc, rr };
+                                    q.push(np);
+                                }
+                            }
+
+                            if (found)
+                            {
+                                std::vector<std::pair<int, int>> conn;
+                                auto cur = std::make_pair(hc, hr);
+                                while (cur != start) { conn.push_back(cur); cur = par[cur]; }
+                                std::reverse(conn.begin(), conn.end());
+
+                                m_movePath.resize(keep);
+                                for (auto& c : conn) m_movePath.push_back(c);
+                                break;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // 離れたマス：プレイヤーから自動最短経路（手動経路を破棄）
+                    m_movePath.clear();
+
+                    std::queue<std::pair<int, int>> q;
+                    std::map<std::pair<int, int>, std::pair<int, int>> par;
+                    std::map<std::pair<int, int>, int> dist;
+                    auto start = std::make_pair(m_playerCol, m_playerRow);
+                    q.push(start); dist[start] = 0; par[start] = { -1, -1 };
+
+                    const int dirs[4][2] = { {0,1},{0,-1},{1,0},{-1,0} };
+                    bool found = false;
+
+                    while (!q.empty())
+                    {
+                        auto [cc, rr] = q.front(); q.pop();
+                        if (cc == hc && rr == hr) { found = true; break; }
+                        if (dist[{cc, rr}] >= moveRangeSel) continue;
+
+                        for (int d = 0; d < 4; d++)
+                        {
+                            int nc = cc + dirs[d][0], nr = rr + dirs[d][1];
+                            if (nc < 0 || nc >= m_gridMap->GetCols() || nr < 0 || nr >= m_gridMap->GetRows()) continue;
+                            auto np = std::make_pair(nc, nr);
+                            if (dist.count(np)) continue;
+                            if (m_gridMap->GetCell(nc, nr).type != CellType::Empty) continue;
+                            dist[np] = dist[{cc, rr}] + 1;
+                            par[np] = { cc, rr };
+                            q.push(np);
+                        }
+                    }
+
+                    if (found)
+                    {
+                        auto cur = std::make_pair(hc, hr);
+                        while (cur != start) { m_movePath.push_back(cur); cur = par[cur]; }
+                        std::reverse(m_movePath.begin(), m_movePath.end());
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        m_pathBuilding = false;
+        m_movePath.clear();
+    }
+
     bool isOnCard = false;
     bool cardJustUsed = false;
 
@@ -764,11 +991,23 @@ void BattleScene::HandleInput()
             CardData dataCopy = *card->GetData();
             CardType ct = dataCopy.type;
 
+            const std::vector<std::pair<int, int>>* usePath = nullptr;
+            bool moveCanceled = false;
+            if (ct == CardType::Move)
+            {
+                if (m_moveReleaseSuppress)
+                    moveCanceled = true;                        // 右クリックでキャンセル済み
+                else if (m_pathBuilding && !m_movePath.empty())
+                    usePath = &m_movePath;                       // 手動経路で移動
+                else if (m_pathBuilding && m_movePath.empty())
+                    moveCanceled = true;                         // プレイヤー上で離した＝キャンセル
+            }
+
             int targetCol = m_playerCol;
             int targetRow = m_playerRow;
-            bool canTry = true;
+            bool canTry = !moveCanceled;
 
-            if (ct == CardType::Attack || ct == CardType::Move)
+            if ((ct == CardType::Attack || ct == CardType::Move) && !usePath && !moveCanceled)
             {
                 auto result = m_gridMap->GetClickedCell3D(
                     releasePos,
@@ -805,7 +1044,8 @@ void BattleScene::HandleInput()
                     m_player, m_enemies, m_gridMap,
                     m_playerCol, m_playerRow,
                     m_hand, m_selectedCardIndex, m_deck,
-                    newPlayerCol, newPlayerRow
+                    newPlayerCol, newPlayerRow,
+                    usePath
                 );
 
                 if (execResult.cardUsed)
@@ -900,12 +1140,21 @@ void BattleScene::HandleInput()
                     m_selectedCardIndex = -1;
                     cardJustUsed = true;
 
+
+
                     // ドロー効果のアニメーション
                     for (auto& drawnId : execResult.drawnCards)
                         m_battleUI->StartDrawCardEffect(drawnId);
                 }
             }
         }
+    }
+
+    if (m_input.GetMouseButtonRelease(0))
+    {
+        m_pathBuilding = false;
+        m_movePath.clear();
+        m_moveReleaseSuppress = false;
     }
 
     if (m_input.GetMouseButtonTrigger(0))
@@ -1084,7 +1333,8 @@ void BattleScene::HandleInput()
     
         if (result.cell && !isOnCard)
         {
-            if (m_selectedCardIndex >= 0)
+            if (m_selectedCardIndex >= 0
+                && m_hand.GetCards()[m_selectedCardIndex]->GetData()->type != CardType::Move)
             {
                 const Card* card = m_hand.GetCards()[m_selectedCardIndex];
                 std::string cardId = card->GetId();
@@ -1215,9 +1465,10 @@ void BattleScene::HandleInput()
                 }
             }
         }
-        else if (m_selectedCardIndex >= 0 && !isOnCard)
-        {
-            m_selectedCardIndex = -1;
+            else if (m_selectedCardIndex >= 0 && !isOnCard
+                && m_hand.GetCards()[m_selectedCardIndex]->GetData()->type != CardType::Move)
+                {
+                    m_selectedCardIndex = -1;
         }
     }
 

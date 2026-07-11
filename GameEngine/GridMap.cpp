@@ -90,42 +90,44 @@ GridMap::ClickResult GridMap::GetClickedCell3D(POINT mousePos,
             float worldZ = (row - m_rows / 2.0f) * 1.1f;
 
             // タイルの4隅の座標（ワールド空間）
-            XMFLOAT3 corners[4] = {
-                XMFLOAT3(worldX - 0.5f, 0.0f, worldZ - 0.5f),
-                XMFLOAT3(worldX + 0.5f, 0.0f, worldZ - 0.5f),
-                XMFLOAT3(worldX + 0.5f, 0.0f, worldZ + 0.5f),
-                XMFLOAT3(worldX - 0.5f, 0.0f, worldZ + 0.5f)
+             XMFLOAT3 corners[4] = {
+                XMFLOAT3(worldX - 0.55f, 0.0f, worldZ - 0.55f),
+                XMFLOAT3(worldX + 0.55f, 0.0f, worldZ - 0.55f),
+                XMFLOAT3(worldX + 0.55f, 0.0f, worldZ + 0.55f),
+                XMFLOAT3(worldX - 0.55f, 0.0f, worldZ + 0.55f)
             };
 
-            // 4隅をスクリーン座標に変換
-            float minScreenX = FLT_MAX, maxScreenX = -FLT_MAX;
-            float minScreenY = FLT_MAX, maxScreenY = -FLT_MAX;
-
+            // 4隅をスクリーン座標に変換（順序を保持）
+            XMFLOAT2 sc[4];
+            bool allFront = true;
             for (int i = 0; i < 4; i++)
             {
                 XMVECTOR worldPos = XMLoadFloat3(&corners[i]);
                 XMVECTOR viewPos = XMVector3Transform(worldPos, viewMatrix);
                 XMVECTOR projPos = XMVector3Transform(viewPos, projMatrix);
 
-                // 同次座標で割る
                 XMFLOAT4 proj;
                 XMStoreFloat4(&proj, projPos);
 
-                if (proj.w > 0.0f)  // カメラの前にある
-                {
-                    float screenX = (proj.x / proj.w + 1.0f) * 0.5f * screenWidth;
-                    float screenY = (1.0f - proj.y / proj.w) * 0.5f * screenHeight;
+                if (proj.w <= 0.0f) { allFront = false; break; }
 
-                    minScreenX = min(minScreenX, screenX);
-                    maxScreenX = max(maxScreenX, screenX);
-                    minScreenY = min(minScreenY, screenY);
-                    maxScreenY = max(maxScreenY, screenY);
-                }
+                sc[i].x = (proj.x / proj.w + 1.0f) * 0.5f * screenWidth;
+                sc[i].y = (1.0f - proj.y / proj.w) * 0.5f * screenHeight;
             }
+            if (!allFront) continue;
 
-            // マウス座標が範囲内にあるかチェック
-            if (mousePos.x >= minScreenX && mousePos.x <= maxScreenX &&
-                mousePos.y >= minScreenY && mousePos.y <= maxScreenY)
+            // 凸四角形の内側判定（各辺の外積の符号がすべて一致すれば内側）
+            float mx = (float)mousePos.x, my = (float)mousePos.y;
+            int posCnt = 0, negCnt = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                XMFLOAT2 a = sc[i];
+                XMFLOAT2 b = sc[(i + 1) % 4];
+                float cross = (b.x - a.x) * (my - a.y) - (b.y - a.y) * (mx - a.x);
+                if (cross > 0.0f) posCnt++;
+                else if (cross < 0.0f) negCnt++;
+            }
+            if (posCnt == 0 || negCnt == 0)
             {
                 return { &m_cells[row][col], col, row };
             }
