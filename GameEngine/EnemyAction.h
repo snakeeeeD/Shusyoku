@@ -2,6 +2,7 @@
 #include "EnemyActionType.h"
 #include "CardType.h" 
 #include <string>
+#include <vector>
 
 struct EnemyAction
 {
@@ -18,4 +19,6 @@ struct EnemyAction
     std::string onHitBuffType;
     int onHitValue = 0;
     int onHitDuration = 0;
+
+    std::vector<EnemyAction> subActions;   // メイン行動に続けて実行する追加行動
 };

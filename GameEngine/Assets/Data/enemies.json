@@ -53,7 +53,18 @@
           "range": 1,
           "rangeType": "Adjacent",
           "chance": 50,
-          "description": "8ダメージ"
+          "description": "8ダメージ＋攻撃UP",
+          "subActions": [
+            {
+              "type": "Buf",
+              "value": 3,
+              "range": 0,
+              "rangeType": "None",
+              "description": "攻撃力UP",
+              "buffType": "AttackUp",
+              "duration": 2
+            }
+          ]
         },
         {
           "type": "Defend",

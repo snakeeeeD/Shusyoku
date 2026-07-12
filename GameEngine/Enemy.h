@@ -29,7 +29,11 @@ public:
 	// セッター
 	void SetHp(int hp) { m_HP = hp; }
 
-	int Think(int playerCol, int playerRow, class GridMap* gridMap, class Player* player);
+	int ExecuteAction(int actionIdx, int playerCol, int playerRow, class GridMap* gridMap, class Player* player);
+
+	int GetActionIndex() const { return m_actionIndex; }
+	void SetActionIndex(int i) { m_actionIndex = i; }
+	bool HasMoreActions() const { return m_actionIndex < (int)m_plannedActions.size(); }
 
 	void UpdateDisplayHp(float deltaTime) {
 		float speed = 0.5f;
@@ -70,6 +74,8 @@ private:
 	std::string m_textureName;
 	std::string m_id;
 	EnemyAction m_nextAction;
+	std::vector<EnemyAction> m_plannedActions;   // このターンの実行プラン（メイン＋サブ）
+	int m_actionIndex = 0;
 	bool m_hasNextAction;
 	bool IsInRange(int targetCol, int targetRow, int range, RangeType rangeType) const;
 

@@ -9,6 +9,27 @@ using json = nlohmann::json;
 
 std::unordered_map<std::string, EnemyData> EnemyDataBase::m_data;
 
+static EnemyAction ParseAction(const json& a)
+{
+    EnemyAction action;
+    action.type = StringToActionType(a["type"]);
+    action.value = a.value("value", 0);
+    action.range = a.value("range", 0);
+    action.rangeType = StringToRangeType(a.value("rangeType", "Adjacent"));
+    action.chance = a.value("chance", 0);
+    action.description = ToWString(a.value("description", std::string("")));
+    action.buffType = a.value("buffType", "");
+    action.duration = a.value("duration", 0);
+    action.onHitBuffType = a.value("onHitBuffType", "");
+    action.onHitValue = a.value("onHitValue", 0);
+    action.onHitDuration = a.value("onHitDuration", 0);
+
+    if (a.contains("subActions") && a["subActions"].is_array())
+        for (const auto& sub : a["subActions"])
+            action.subActions.push_back(ParseAction(sub));
+
+    return action;
+}
 
 void EnemyDataBase::Init()
 {
@@ -68,41 +89,7 @@ void EnemyDataBase::Init()
                 if (e.contains("actions") && e["actions"].is_array())
                 {
                     for (const auto& actionJson : e["actions"])
-                    {
-                        EnemyAction action;
-
-                        // typeを文字列から変換
-                        std::string typeStr = actionJson["type"];
-                        action.type = StringToActionType(typeStr);
-
-                        action.value = actionJson["value"];
-                        action.range = actionJson["range"];
-                        action.rangeType = StringToRangeType(actionJson.value("rangeType", "Adjacent"));
-                        action.chance = actionJson["chance"];
-
-                        // rangeType を読み込む
-                        if (actionJson.contains("rangeType"))
-                        {
-                            std::string rangeTypeStr = actionJson["rangeType"];
-                            action.rangeType = StringToRangeType(rangeTypeStr);
-                        }
-                        else
-                        {
-                            action.rangeType = RangeType::Adjacent;  // デフォルト
-                        }
-
-                        // descriptionをUTF-8からwstringに変換
-                        std::string descStr = actionJson["description"];
-                        action.description = ToWString(descStr);
-                        action.buffType = actionJson.value("buffType", "");
-                        action.duration = actionJson.value("duration", 0);
-
-                        action.onHitBuffType = actionJson.value("onHitBuffType", "");
-                        action.onHitValue = actionJson.value("onHitValue", 0);
-                        action.onHitDuration = actionJson.value("onHitDuration", 0);
-
-                        data.actions.push_back(action);
-                    }
+                        data.actions.push_back(ParseAction(actionJson));
                 }
                 if (e.contains("gridShape"))
                 {

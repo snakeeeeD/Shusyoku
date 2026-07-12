@@ -96,71 +96,63 @@ bool Enemy::IsInRange(int targetCol, int targetRow, int range, RangeType rangeTy
     }
 }
 
-int Enemy::Think(int playerCol, int playerRow, GridMap* gridMap, Player* player)
+int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow, GridMap* gridMap, Player* player)
 {
-    if (!m_hasNextAction) return 0;
+    if (actionIdx < 0 || actionIdx >= (int)m_plannedActions.size()) return 0;
+    const EnemyAction& act = m_plannedActions[actionIdx];
 
-    int dc = abs(gridCol - playerCol);
-    int dr = abs(gridRow - playerRow);
-    int dist = dc + dr;
-
-    if (m_nextAction.type == EnemyActionType::Attack)
+    if (act.type == EnemyActionType::Attack)
     {
-        // 範囲内にいるかチェック
-        if (IsInRange(playerCol, playerRow, m_nextAction.range, m_nextAction.rangeType))
+        if (IsInRange(playerCol, playerRow, act.range, act.rangeType))
         {
-            // 攻撃命中時デバフ
-            if (!m_nextAction.onHitBuffType.empty() && player)
+            if (!act.onHitBuffType.empty() && player)
             {
                 Buff debuff;
-                debuff.type = StringToBuffType(m_nextAction.onHitBuffType);
-                debuff.value = m_nextAction.onHitValue;
-                debuff.duration = m_nextAction.onHitDuration;
+                debuff.type = StringToBuffType(act.onHitBuffType);
+                debuff.value = act.onHitValue;
+                debuff.duration = act.onHitDuration;
                 const auto& info = BuffInfo::Get(debuff.type);
                 debuff.name = info.name;
                 player->GetBuffManager().AddBuff(debuff);
             }
             StartLunge(player->worldX, player->worldZ);
-            return m_buffManager.GetFinalAttack(m_nextAction.value);
-            // 攻撃
-            return m_buffManager.GetFinalAttack(m_nextAction.value);
+            return m_buffManager.GetFinalAttack(act.value);
         }
         else
         {
-            // 射程外なら近づく
             MoveToward(playerCol, playerRow, gridMap);
             return 0;
         }
     }
-    else if (m_nextAction.type == EnemyActionType::Move)
+    else if (act.type == EnemyActionType::Move)
     {
         MoveToward(playerCol, playerRow, gridMap);
         return 0;
     }
-    else if (m_nextAction.type == EnemyActionType::Defend)
+    else if (act.type == EnemyActionType::Defend)
     {
-        AddBlock(m_buffManager.GetFinalBlock(m_nextAction.value));
+        AddBlock(m_buffManager.GetFinalBlock(act.value));
         return 0;
     }
-    else if (m_nextAction.type == EnemyActionType::Buf)
+    else if (act.type == EnemyActionType::Buf)
     {
         Buff buff;
-        buff.type = StringToBuffType(m_nextAction.buffType);
-        buff.value = m_nextAction.value;
-        buff.duration = m_nextAction.duration;
+        buff.type = StringToBuffType(act.buffType);
+        buff.value = act.value;
+        buff.duration = act.duration;
         const auto& info = BuffInfo::Get(buff.type);
         buff.name = info.name;
         m_buffManager.AddBuff(buff);
         return 0;
     }
-    else if (m_nextAction.type == EnemyActionType::Debuf)
+    else if (act.type == EnemyActionType::Debuf)
     {
         if (player)
         {
             Buff debuff;
-            debuff.type = StringToBuffType(m_nextAction.buffType);
-            debuff.value = m_nextAction.value;
-            debuff.duration = m_nextAction.duration;
+            debuff.type = StringToBuffType(act.buffType);
+            debuff.value = act.value;
+            debuff.duration = act.duration;
             const auto& info = BuffInfo::Get(debuff.type);
             debuff.name = info.name;
             player->GetBuffManager().AddBuff(debuff);
@@ -252,21 +244,27 @@ void Enemy::DecideNextAction()
     if (!data || data->actions.empty())
     {
         m_hasNextAction = false;
+        m_plannedActions.clear();
+        m_actionIndex = 0;
         return;
     }
 
     int roll = rand() % 100;
     int cumulative = 0;
+    const EnemyAction* picked = &data->actions.back();
     for (auto& action : data->actions)
     {
         cumulative += action.chance;
-        if (roll < cumulative)
-        {
-            m_nextAction = action;
-            m_hasNextAction = true;
-            return;
-        }
+        if (roll < cumulative) { picked = &action; break; }
     }
-    m_nextAction = data->actions.back();
+
+    m_nextAction = *picked;
     m_hasNextAction = true;
+
+    // 実行プラン = メイン行動 + サブ行動
+    m_plannedActions.clear();
+    m_plannedActions.push_back(*picked);
+    for (auto& sub : picked->subActions)
+        m_plannedActions.push_back(sub);
+    m_actionIndex = 0;
 }

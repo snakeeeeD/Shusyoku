@@ -334,6 +334,7 @@ void BattleScene::Update(float deltaTime)
         {
             // ドラッグせずに離した＝単押し→カード選択解除（Moveカードは除く）
             if (m_selectedCardIndex >= 0
+                && m_selectedCardIndex < (int)m_hand.GetCards().size()
                 && m_hand.GetCards()[m_selectedCardIndex]->GetData()->type != CardType::Move)
                 m_selectedCardIndex = -1;
         }
@@ -459,7 +460,6 @@ void BattleScene::Update(float deltaTime)
                         m_enemyPhase = EnemyTurnPhase::ProcessEnemy;
                 }
                 break;
-
             case EnemyTurnPhase::ProcessEnemy:
             {
                 while (m_currentEnemyIdx < (int)m_enemies.size()
@@ -474,21 +474,28 @@ void BattleScene::Update(float deltaTime)
 
                 Enemy* enemy = m_enemies[m_currentEnemyIdx];
 
-                auto dmg = enemy->GetBuffManager().GetTurnEndDamage();
-                if (dmg.total() > 0)
+                // 毒ダメージはこの敵の最初の行動時のみ
+                if (enemy->GetActionIndex() == 0)
                 {
-                    enemy->TakeDamage(dmg.total());
-                    if (enemy->GetHp() <= 0)
+                    auto dmg = enemy->GetBuffManager().GetTurnEndDamage();
+                    if (dmg.total() > 0)
                     {
-                        m_enemyPhase = EnemyTurnPhase::WaitAction;
-                        m_enemyActionDelay = ENEMY_ACTION_PAUSE;
-                        break;
+                        enemy->TakeDamage(dmg.total());
+                        if (enemy->GetHp() <= 0)
+                        {
+                            m_enemyPhase = EnemyTurnPhase::WaitAction;
+                            m_enemyActionDelay = ENEMY_ACTION_PAUSE;
+                            break;
+                        }
                     }
                 }
 
-                int damage = enemy->Think(m_playerCol, m_playerRow, m_gridMap, m_player);
+                // 現在の行動を実行
+                int ai = enemy->GetActionIndex();
+                int damage = enemy->ExecuteAction(ai, m_playerCol, m_playerRow, m_gridMap, m_player);
                 if (damage > 0)
                     m_player->TakeDamage(damage);
+                enemy->SetActionIndex(ai + 1);
 
                 auto& cell = m_gridMap->GetCell(enemy->gridCol, enemy->gridRow);
                 if (cell.tileEffect.active)
@@ -509,8 +516,19 @@ void BattleScene::Update(float deltaTime)
 
                 if (m_enemyActionDelay <= 0 && !anyMoving)
                 {
-                    m_enemyPhase = EnemyTurnPhase::NextEnemy;
-                    m_enemyActionDelay = ENEMY_BETWEEN_PAUSE;
+                    Enemy* enemy = (m_currentEnemyIdx < (int)m_enemies.size())
+                        ? m_enemies[m_currentEnemyIdx] : nullptr;
+
+                    // 同じ敵にまだ行動が残っていれば続けて実行
+                    if (enemy && enemy->GetHp() > 0 && enemy->HasMoreActions())
+                    {
+                        m_enemyPhase = EnemyTurnPhase::ProcessEnemy;
+                    }
+                    else
+                    {
+                        m_enemyPhase = EnemyTurnPhase::NextEnemy;
+                        m_enemyActionDelay = ENEMY_BETWEEN_PAUSE;
+                    }
                 }
                 break;
             }
