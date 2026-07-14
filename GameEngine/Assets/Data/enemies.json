@@ -226,6 +226,35 @@
           "description": "後退"
         }
       ]
+    },
+    {
+      "id": "caster",
+      "texture": "enemy_orc",
+      "hp": 35,
+      "attack": 9,
+      "width": 1.0,
+      "height": 1.0,
+      "actions": [
+        {
+          "type": "Attack",
+          "value": 9,
+          "range": 3,
+          "minRange": 2,
+          "rangeType": "Area",
+          "chance": 60,
+          "moveRange": 1,
+          "description": "波動9(2〜3マス)"
+        },
+        {
+          "type": "Attack",
+          "value": 5,
+          "range": 1,
+          "rangeType": "Adjacent",
+          "chance": 40,
+          "moveRange": 1,
+          "description": "至近5"
+        }
+      ]
     }
   ]
 }

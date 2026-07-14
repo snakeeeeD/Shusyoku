@@ -63,36 +63,30 @@ bool Enemy::IsAdjacentTo(int playerCol, int playerRow)
     return (dc + dr) == 1; // 上下左右1マス
 }
 
-bool Enemy::IsInRange(int targetCol, int targetRow, int range, RangeType rangeType) const
+bool Enemy::IsInRange(int targetCol, int targetRow, int range, RangeType rangeType, int minRange) const
 {
     int dc = abs(gridCol - targetCol);
     int dr = abs(gridRow - targetRow);
-
     switch (rangeType)
     {
-    case RangeType::None:
-        return false;
-
-    case RangeType::Adjacent:
-        // 隣接1マス
-        return (dc + dr) == 1;
-
+    case RangeType::None:     return false;
+    case RangeType::Adjacent: return (dc + dr) == 1;
     case RangeType::Cross:
-        // 十字（縦横のみ）
-        if (dc == 0 && dr > 0 && dr <= range) return true;  // 縦
-        if (dr == 0 && dc > 0 && dc <= range) return true;  // 横
+    {
+        int lo = minRange < 1 ? 1 : minRange;
+        if (dc == 0 && dr >= lo && dr <= range) return true;
+        if (dr == 0 && dc >= lo && dc <= range) return true;
         return false;
-
+    }
     case RangeType::Area:
-        // 正方形範囲
-        return max(dc, dr) <= range;
-
+    {
+        int c = max(dc, dr); return c >= minRange && c <= range && c > 0;
+    }
     case RangeType::Diamond:
-        // ひし形範囲
-        return (dc + dr) <= range;
-
-    default:
-        return false;
+    {
+        int m = dc + dr; return m >= minRange && m <= range && m > 0;
+    }
+    default: return false;
     }
 }
 
@@ -120,7 +114,7 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow, GridMap* g
         }
 
 
-        if (IsInRange(playerCol, playerRow, act.range, act.rangeType))
+        if (IsInRange(playerCol, playerRow, act.range, act.rangeType, act.minRange))
         {
   
             if (!act.onHitBuffType.empty() && player)

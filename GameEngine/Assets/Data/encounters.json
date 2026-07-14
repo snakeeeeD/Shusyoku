@@ -60,10 +60,21 @@
     },
     {
       "rank": 2,
-      "weight": 50,
+      "weight": 30,
       "enemies": [
         {
           "id": "brute",
+          "col": 2,
+          "row": 1
+        }
+      ]
+    },
+    {
+      "rank": 2,
+      "weight": 20,
+      "enemies": [
+        {
+          "id": "caster",
           "col": 2,
           "row": 1
         }

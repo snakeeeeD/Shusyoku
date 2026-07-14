@@ -24,4 +24,5 @@ struct EnemyAction
 
     int moveRange = 1;   // 移動/追跡で詰めるマス数
     bool unavoidable = false;   // trueなら位置に関係なく必中
+    int minRange = 0;   // これ未満の距離は攻撃されない
 };

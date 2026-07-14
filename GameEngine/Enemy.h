@@ -78,7 +78,7 @@ private:
 	std::vector<EnemyAction> m_plannedActions;   // このターンの実行プラン（メイン＋サブ）
 	int m_actionIndex = 0;
 	bool m_hasNextAction;
-	bool IsInRange(int targetCol, int targetRow, int range, RangeType rangeType) const;
+	bool IsInRange(int targetCol, int targetRow, int range, RangeType rangeType, int minRange = 0) const;
 
 	bool m_immovable = false;
 

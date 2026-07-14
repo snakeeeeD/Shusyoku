@@ -85,9 +85,9 @@ bool BattleHighlighter::IsInEnemyRange(
     switch (action->rangeType)
     {
     case RangeType::Adjacent:    return (dc + dr) == 1;
-    case RangeType::Cross:       return (dc == 0 || dr == 0) && (dc + dr) <= action->range;
-    case RangeType::Area:        return max(dc, dr) <= action->range;
-    case RangeType::Diamond:     return (dc + dr) <= action->range;
+    case RangeType::Cross:   return (dc == 0 || dr == 0) && (dc + dr) >= action->minRange && (dc + dr) <= action->range;
+    case RangeType::Area:    return max(dc, dr) >= action->minRange && max(dc, dr) <= action->range;
+    case RangeType::Diamond: return (dc + dr) >= action->minRange && (dc + dr) <= action->range;
     case RangeType::Diagonal:    return (dc == dr) && dc <= action->range;
     case RangeType::DiagonalCross:
         return ((dc == 0 || dr == 0) || (dc == dr)) && max(dc, dr) <= action->range;
@@ -455,7 +455,7 @@ void BattleHighlighter::UpdateEnemyHighlight(
     for (auto enemy : enemies)
         enemy->color = WHITE;
 
-    // --- A: 全攻撃敵の範囲を常時表示 ---
+    // 全攻撃敵の範囲を常時表示
     for (auto enemy : enemies)
     {
         const EnemyAction* action = enemy->GetNextAction();
@@ -474,6 +474,7 @@ void BattleHighlighter::UpdateEnemyHighlight(
             int dc = abs(col - enemy->gridCol);
             int dr = abs(row - enemy->gridRow);
             int dist = (action->rangeType == RangeType::Area) ? max(dc, dr) : (dc + dr);
+            if (action->minRange > 0 && dist < action->minRange) continue;
             float alpha = 0.6f - (float)(dist - 1) / (float)max(1, action->range) * 0.25f;
             alpha = max(0.2f, min(0.6f, alpha));
             cell.gameObject.color = XMFLOAT4(alpha, alpha, 0.0f, 1.0f);
@@ -481,7 +482,7 @@ void BattleHighlighter::UpdateEnemyHighlight(
         }
     }
 
-    // --- B: プレイヤーに当たる敵 ---
+    // プレイヤーに当たる敵
     std::vector<Enemy*> threats;
     for (auto enemy : enemies)
     {
@@ -495,7 +496,7 @@ void BattleHighlighter::UpdateEnemyHighlight(
     }
     if (threats.empty()) return;
 
-    // --- C: 点滅と切り替えを同一クロックに。暗い所(=p:0)で切り替わる ---
+    // 点滅と切り替えを同一クロックに
     const float PI = 3.14159f;
     const float TWO_PI = 6.28318f;
     m_enemyCycleTimer += 0.0048f;
@@ -511,10 +512,10 @@ void BattleHighlighter::UpdateEnemyHighlight(
         ? XMFLOAT4(1.0f, 0.5f, 0.0f, 1.0f)    // オレンジ
         : XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f);   // 黄
 
-    // 敵本体：アクティブだけ 白⇄危険色 で脈動（切替時は白＝継ぎ目が消える）
+    // 敵本体：アクティブだけ 白⇄危険色 で脈動
     active->color = lerp(WHITE, dangerHue, p);
 
-    // プレイヤーのマス：危険色で点滅（切替時は暗くなって色替えが見えない）
+    // プレイヤーのマス：危険色で点滅
     float b = 0.15f + 0.85f * p;
     auto& pcell = gridMap->GetCell(playerCol, playerRow);
     pcell.gameObject.color = XMFLOAT4(dangerHue.x * b, dangerHue.y * b, dangerHue.z * b, 1.0f);

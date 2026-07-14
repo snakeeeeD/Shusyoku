@@ -24,6 +24,7 @@ static EnemyAction ParseAction(const json& a)
     action.onHitValue = a.value("onHitValue", 0);
     action.onHitDuration = a.value("onHitDuration", 0);
     action.unavoidable = a.value("unavoidable", false);
+    action.minRange = a.value("minRange", 0);
 
     if (a.contains("subActions") && a["subActions"].is_array())
         for (const auto& sub : a["subActions"])
