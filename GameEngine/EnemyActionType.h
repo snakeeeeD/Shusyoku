@@ -7,5 +7,6 @@ enum class EnemyActionType
 	Defend,	// 防御
 	Debuf,	// デバフ
 	Buf,	// バフ
+	Retreat,	// 後退
 };
 

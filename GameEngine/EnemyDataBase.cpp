@@ -23,6 +23,7 @@ static EnemyAction ParseAction(const json& a)
     action.onHitBuffType = a.value("onHitBuffType", "");
     action.onHitValue = a.value("onHitValue", 0);
     action.onHitDuration = a.value("onHitDuration", 0);
+    action.unavoidable = a.value("unavoidable", false);
 
     if (a.contains("subActions") && a["subActions"].is_array())
         for (const auto& sub : a["subActions"])

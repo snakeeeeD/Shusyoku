@@ -45,7 +45,7 @@
       "attack": 8,
       "width": 1.0,
       "height": 1.0,
-      "immovable" :  true,
+      "immovable": true,
       "actions": [
         {
           "type": "Attack",
@@ -168,6 +168,62 @@
           "rangeType": "Area",
           "chance": 25,
           "description": "範囲攻撃8ダメージ"
+        }
+      ]
+    },
+    {
+      "id": "brute",
+      "texture": "enemy_orc",
+      "hp": 45,
+      "attack": 10,
+      "width": 1.2,
+      "height": 1.2,
+      "actions": [
+        {
+          "type": "Attack",
+          "value": 12,
+          "range": 1,
+          "rangeType": "Adjacent",
+          "chance": 60,
+          "moveRange": 2,
+          "description": "強打12（隣接）"
+        },
+        {
+          "type": "Attack",
+          "value": 7,
+          "range": 2,
+          "rangeType": "Area",
+          "chance": 40,
+          "moveRange": 2,
+          "description": "薙ぎ払い7（周囲3x3）"
+        }
+      ]
+    },
+    {
+      "id": "archer",
+      "texture": "enemy_archer",
+      "hp": 28,
+      "attack": 6,
+      "width": 1.0,
+      "height": 1.0,
+      "actions": [
+        {
+          "type": "Attack",
+          "value": 6,
+          "range": 0,
+          "rangeType": "None",
+          "chance": 55,
+          "unavoidable": true,
+          "description": "狙撃6（必中）"
+        },
+        {
+          "type": "Retreat",
+          "value": 0,
+          "range": 0,
+          "rangeType": "None",
+          "chance": 45,
+          "moveRange": 2,
+          "description": "後退"
         }
       ]
     }

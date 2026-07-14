@@ -61,4 +61,7 @@ private:
     std::vector<std::pair<int, int>> m_enemyHighlightCells;
     std::vector<std::pair<int, int>> m_outOfRangeCells;
     const std::vector<std::pair<int, int>>* m_travelPath = nullptr;
+
+    float m_enemyCycleTimer = 0.0f;
+
 };

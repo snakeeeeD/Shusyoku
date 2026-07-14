@@ -35,6 +35,7 @@ inline EnemyActionType StringToActionType(const std::string& str)
     if (str == "Move")   return EnemyActionType::Move;
     if (str == "Buf")    return EnemyActionType::Buf;
     if (str == "Debuf")  return EnemyActionType::Debuf;
+    if (str == "Retreat") return EnemyActionType::Retreat;
     return EnemyActionType::Attack;
 }
 

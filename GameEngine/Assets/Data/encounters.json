@@ -57,6 +57,33 @@
           "row": 2
         }
       ]
+    },
+    {
+      "rank": 2,
+      "weight": 50,
+      "enemies": [
+        {
+          "id": "brute",
+          "col": 2,
+          "row": 1
+        }
+      ]
+    },
+    {
+      "rank": 2,
+      "weight": 50,
+      "enemies": [
+        {
+          "id": "archer",
+          "col": 2,
+          "row": 1
+        },
+        {
+          "id": "slime",
+          "col": 4,
+          "row": 2
+        }
+      ]
     }
   ]
 }

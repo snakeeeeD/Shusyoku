@@ -21,4 +21,7 @@ struct EnemyAction
     int onHitDuration = 0;
 
     std::vector<EnemyAction> subActions;   // メイン行動に続けて実行する追加行動
+
+    int moveRange = 1;   // 移動/追跡で詰めるマス数
+    bool unavoidable = false;   // trueなら位置に関係なく必中
 };

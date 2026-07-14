@@ -43,6 +43,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	TextureManager::Load("enemy_goblin", L"Assets/Enemy/goblin.png");
 	TextureManager::Load("enemy_orc", L"Assets/Enemy/orc.png");
 	TextureManager::Load("enemy_dragon_red", L"Assets/Enemy/dragon_red.png");
+	TextureManager::Load("enemy_archer", L"Assets/Enemy/archer.png");
 
 	m_textRenderer = new TextRenderer();
 	if (!m_textRenderer->Init(device, context, swapChain))

@@ -51,7 +51,8 @@ public:
 		return m_hasNextAction ? &m_nextAction : nullptr;
 	}
 
-	void MoveToward(int playerCol, int playerRow, class GridMap* gridMap);
+	void MoveToward(int playerCol, int playerRow, class GridMap* gridMap, int steps = 1);
+	void MoveAway(int playerCol, int playerRow, class GridMap* gridMap, int steps = 1);
 
 	void AddBlock(int amount);
 	void ResetBlock();

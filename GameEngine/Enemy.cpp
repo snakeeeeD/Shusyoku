@@ -103,8 +103,26 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow, GridMap* g
 
     if (act.type == EnemyActionType::Attack)
     {
+        if (act.unavoidable)
+        {
+            // 位置に関係なく必中
+            if (!act.onHitBuffType.empty() && player)
+            {
+                Buff debuff;
+                debuff.type = StringToBuffType(act.onHitBuffType);
+                debuff.value = act.onHitValue;
+                debuff.duration = act.onHitDuration;
+                const auto& info = BuffInfo::Get(debuff.type);
+                debuff.name = info.name;
+                player->GetBuffManager().AddBuff(debuff);
+            }
+            return m_buffManager.GetFinalAttack(act.value);
+        }
+
+
         if (IsInRange(playerCol, playerRow, act.range, act.rangeType))
         {
+  
             if (!act.onHitBuffType.empty() && player)
             {
                 Buff debuff;
@@ -120,13 +138,13 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow, GridMap* g
         }
         else
         {
-            MoveToward(playerCol, playerRow, gridMap);
+            MoveToward(playerCol, playerRow, gridMap, act.moveRange);
             return 0;
         }
     }
     else if (act.type == EnemyActionType::Move)
     {
-        MoveToward(playerCol, playerRow, gridMap);
+        MoveToward(playerCol, playerRow, gridMap, act.moveRange);
         return 0;
     }
     else if (act.type == EnemyActionType::Defend)
@@ -143,6 +161,11 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow, GridMap* g
         const auto& info = BuffInfo::Get(buff.type);
         buff.name = info.name;
         m_buffManager.AddBuff(buff);
+        return 0;
+    }
+    else if (act.type == EnemyActionType::Retreat)
+    {
+        MoveAway(playerCol, playerRow, gridMap, act.moveRange);
         return 0;
     }
     else if (act.type == EnemyActionType::Debuf)
@@ -163,52 +186,99 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow, GridMap* g
     return 0;
 }
 
-void Enemy::MoveToward(int playerCol, int playerRow, GridMap* gridMap)
+void Enemy::MoveToward(int playerCol, int playerRow, GridMap* gridMap, int steps)
 {
     if (m_buffManager.HasBuff(BuffType::Root))
         return;
-    int dc = playerCol - gridCol;
-    int dr = playerRow - gridRow;
+    if (m_immovable) return;                       // 動けない敵は追わない
+    if (m_buffManager.HasBuff(BuffType::Root)) return;
 
-    std::vector<std::pair<int, int>> candidates;
-
-    // 優先方向
-    if (abs(dc) >= abs(dr))
+    for (int step = 0; step < steps; step++)
     {
-        candidates.push_back({ gridCol + (dc > 0 ? 1 : -1), gridRow });
-        if (dr != 0)
-            candidates.push_back({ gridCol, gridRow + (dr > 0 ? 1 : -1) });
-    }
-    else
-    {
-        candidates.push_back({ gridCol, gridRow + (dr > 0 ? 1 : -1) });
-        if (dc != 0)
-            candidates.push_back({ gridCol + (dc > 0 ? 1 : -1), gridRow });
-    }
+        int dc = playerCol - gridCol;
+        int dr = playerRow - gridRow;
 
-    for (auto& [newCol, newRow] : candidates)
-    {
-        if (newCol < 0 || newCol >= gridMap->GetCols()) continue;
-        if (newRow < 0 || newRow >= gridMap->GetRows()) continue;
+        if (abs(dc) + abs(dr) <= 1) break;         // 隣接したら詰め終わり
 
-        auto& cell = gridMap->GetCell(newCol, newRow);
-
-        if (cell.type == CellType::Empty)
+        std::vector<std::pair<int, int>> candidates;
+        if (abs(dc) >= abs(dr))
         {
-            gridMap->SetCellType(gridCol, gridRow, CellType::Empty);
+            candidates.push_back({ gridCol + (dc > 0 ? 1 : -1), gridRow });
+            if (dr != 0)
+                candidates.push_back({ gridCol, gridRow + (dr > 0 ? 1 : -1) });
+        }
+        else
+        {
+            candidates.push_back({ gridCol, gridRow + (dr > 0 ? 1 : -1) });
+            if (dc != 0)
+                candidates.push_back({ gridCol + (dc > 0 ? 1 : -1), gridRow });
+        }
 
+        bool moved = false;
+        for (auto& [newCol, newRow] : candidates)
+        {
+            if (newCol < 0 || newCol >= gridMap->GetCols()) continue;
+            if (newRow < 0 || newRow >= gridMap->GetRows()) continue;
+            if (gridMap->GetCell(newCol, newRow).type != CellType::Empty) continue;
+
+            gridMap->SetCellType(gridCol, gridRow, CellType::Empty);
             gridCol = newCol;
             gridRow = newRow;
-
             gridMap->SetCellType(gridCol, gridRow, CellType::Enemy);
-
-            float newX = (gridCol - gridMap->GetCols() / 2.0f) * 1.1f;
-            float newZ = (gridRow - gridMap->GetRows() / 2.0f) * 1.1f;
-            StartMove(newX, newZ);
-
-            return;
+            moved = true;
+            break;
         }
+        if (!moved) break;                         // 詰まったら終了
     }
+
+    // 最終位置へスライドアニメ（複数歩でも1回の滑らかな移動）
+    float newX = (gridCol - gridMap->GetCols() / 2.0f) * 1.1f;
+    float newZ = (gridRow - gridMap->GetRows() / 2.0f) * 1.1f;
+    StartMove(newX, newZ);
+}
+
+void Enemy::MoveAway(int playerCol, int playerRow, GridMap* gridMap, int steps)
+{
+    if (m_immovable) return;
+    if (m_buffManager.HasBuff(BuffType::Root)) return;
+
+    for (int step = 0; step < steps; step++)
+    {
+        int dc = playerCol - gridCol;
+        int dr = playerRow - gridRow;
+
+        // プレイヤーと逆方向へ
+        std::vector<std::pair<int, int>> candidates;
+        if (abs(dc) >= abs(dr))
+        {
+            if (dc != 0) candidates.push_back({ gridCol - (dc > 0 ? 1 : -1), gridRow });
+            if (dr != 0) candidates.push_back({ gridCol, gridRow - (dr > 0 ? 1 : -1) });
+        }
+        else
+        {
+            if (dr != 0) candidates.push_back({ gridCol, gridRow - (dr > 0 ? 1 : -1) });
+            if (dc != 0) candidates.push_back({ gridCol - (dc > 0 ? 1 : -1), gridRow });
+        }
+
+        bool moved = false;
+        for (auto& [nc, nr] : candidates)
+        {
+            if (nc < 0 || nc >= gridMap->GetCols()) continue;
+            if (nr < 0 || nr >= gridMap->GetRows()) continue;
+            if (gridMap->GetCell(nc, nr).type != CellType::Empty) continue;
+
+            gridMap->SetCellType(gridCol, gridRow, CellType::Empty);
+            gridCol = nc; gridRow = nr;
+            gridMap->SetCellType(gridCol, gridRow, CellType::Enemy);
+            moved = true;
+            break;
+        }
+        if (!moved) break;
+    }
+
+    float newX = (gridCol - gridMap->GetCols() / 2.0f) * 1.1f;
+    float newZ = (gridRow - gridMap->GetRows() / 2.0f) * 1.1f;
+    StartMove(newX, newZ);
 }
 
 void Enemy::TakeDamage(int damage)
