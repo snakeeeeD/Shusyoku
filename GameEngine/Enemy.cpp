@@ -86,6 +86,13 @@ bool Enemy::IsInRange(int targetCol, int targetRow, int range, RangeType rangeTy
     {
         int m = dc + dr; return m >= minRange && m <= range && m > 0;
     }
+    case RangeType::Cone:
+    {
+        int oc = targetCol - gridCol, orr = targetRow - gridRow;
+        int along = oc * m_aimDx + orr * m_aimDy;        // is•ûŒü‚Ì‹——£
+        int perp = abs(oc * m_aimDy - orr * m_aimDx);   // ‰¡‚ÌƒYƒŒ
+        return along >= 1 && along <= range && perp <= along - 1;
+    }
     default: return false;
     }
 }
@@ -394,5 +401,12 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
     m_plannedActions.clear();
     m_plannedActions.push_back(*picked);
     for (auto& sub : picked->subActions) m_plannedActions.push_back(sub);
+
+    {
+        int dcA = playerCol - gridCol, drA = playerRow - gridRow;
+        if (abs(dcA) >= abs(drA)) { m_aimDx = (dcA > 0) ? 1 : (dcA < 0) ? -1 : 0; m_aimDy = 0; }
+        else { m_aimDx = 0; m_aimDy = (drA > 0) ? 1 : (drA < 0) ? -1 : 0; }
+    }
+
     m_actionIndex = 0;
 }

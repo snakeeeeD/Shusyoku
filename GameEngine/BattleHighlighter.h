@@ -5,6 +5,7 @@
 #include "Player.h"
 #include <vector>
 #include <utility>
+#include <map>
 
 class Renderer3D;
 
@@ -20,7 +21,8 @@ public:
     static bool IsInEnemyRange(
         int col, int row,
         const EnemyAction* action,
-        int enemyCol, int enemyRow);
+        int enemyCol, int enemyRow, 
+        int rangeBonus = 0);
 
     void UpdatePlayerHighlight(
         int centerCol, int centerRow,
@@ -54,6 +56,8 @@ public:
         return m_outOfRangeCells;
     }
 
+    const std::map<std::pair<int, int>, int>& GetThreatCells() const { return m_threatCounts; }
+
     void SetTravelPath(const std::vector<std::pair<int, int>>* p) { m_travelPath = p; }
 
 private:
@@ -63,5 +67,7 @@ private:
     const std::vector<std::pair<int, int>>* m_travelPath = nullptr;
 
     float m_enemyCycleTimer = 0.0f;
-
+    std::map<std::pair<int, int>, XMFLOAT4> m_cellColors;
+    std::map<std::pair<int, int>, int> m_threatCounts;
+    std::map<std::pair<int, int>, std::vector<int>> m_threatEnemies;
 };

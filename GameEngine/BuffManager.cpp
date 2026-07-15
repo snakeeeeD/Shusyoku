@@ -8,7 +8,9 @@ BuffManager::BuffManager() {}
 void BuffManager::AddBuff(const Buff& buff)
 {
     // 毒・攻撃UPはスタック（加算）
-    if (buff.type == BuffType::Poison || buff.type == BuffType::AttackUp)
+    if (buff.type == BuffType::Poison || 
+        buff.type == BuffType::AttackUp || 
+        buff.type == BuffType::RangeUp)
     {
         for (auto& b : m_buffs)
         {

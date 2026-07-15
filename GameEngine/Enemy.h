@@ -21,6 +21,8 @@ public:
 	int GetMaxHp() const { return m_maxHP; }
 	int GetAttack() const { return m_attack; }
 	int GetBlock() const { return m_block; }
+	int GetAimDx() const { return m_aimDx; }
+	int GetAimDy() const { return m_aimDy; }
 	float GetDisplayHp() const { return m_displayHp; }
 	BuffManager& GetBuffManager() { return m_buffManager; }
 	const std::string& GetTextureName() const { return m_textureName; }
@@ -60,6 +62,7 @@ public:
 
 	bool IsBoss() const { return m_isBoss; }
 	bool IsImmovable() const { return m_immovable; }
+	bool IsInRange(int targetCol, int targetRow, int range, RangeType rangeType, int minRange = 0) const;
 
 	const std::vector<std::pair<int, int>>& GetGridShape() const { return m_gridShape; }
 
@@ -73,13 +76,14 @@ private:
 	bool m_isBoss;
 	float m_displayHp;
 
+	int m_aimDx = 0, m_aimDy = 0;
+
 	std::string m_textureName;
 	std::string m_id;
 	EnemyAction m_nextAction;
 	std::vector<EnemyAction> m_plannedActions;   // このターンの実行プラン（メイン＋サブ）
 	int m_actionIndex = 0;
 	bool m_hasNextAction;
-	bool IsInRange(int targetCol, int targetRow, int range, RangeType rangeType, int minRange = 0) const;
 
 	bool m_immovable = false;
 

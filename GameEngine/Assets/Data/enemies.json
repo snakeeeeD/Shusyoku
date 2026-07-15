@@ -99,10 +99,19 @@
           "dash": true,
           "value": 10,
           "range": 3,
-          "rangeType": "cross",
+          "rangeType": "Cross",
           "moveRange": 3,
           "chance": 100,
           "description": "突進10"
+        },
+        {
+          "type": "Attack",
+          "value": 8,
+          "range": 3,
+          "rangeType": "Cone",
+          "chance": 100,
+          "moveRange": 1,
+          "description": "扇薙ぎ8"
         }
       ]
     },
@@ -285,21 +294,22 @@
           "type": "Attack",
           "value": 5,
           "range": 1,
-          "rangeType": "Adjacent",
+          "rangeType": "Cross",
           "chance": 40,
           "moveRange": 1,
           "description": "至近5"
         },
         {
-          "type": "Attack",
-          "condition": "turnAbove",
-          "conditionValue": 4,
-          "value": 8,
-          "range": 2,
-          "rangeType": "Area",
+          "type": "Buf",
+          "condition": "turnMultiple",
+          "conditionValue": 3,
+          "buffType": "RangeUp",
+          "value": 1,
+          "duration": -1,
           "chance": 100,
-          "moveRange": 1,
-          "description": "激昂・波動(4T〜)"
+          "range": 0,
+          "rangeType": "None",
+          "description": "射程UP(3の倍数)"
         }
       ]
     }

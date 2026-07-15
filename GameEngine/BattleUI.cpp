@@ -605,7 +605,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 float iconX = barX;
                 float iconY = barY - iconSize - 2.0f;
                 wchar_t valueBuf[16];
-                int shownVal = action->value;
+                           int shownVal = action->value;
                 if (action->type == EnemyActionType::Attack)
                     shownVal = enemy->GetBuffManager().GetFinalAttack(action->value);
                 else if (action->type == EnemyActionType::Defend)

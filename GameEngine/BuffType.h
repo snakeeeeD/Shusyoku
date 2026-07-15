@@ -8,6 +8,7 @@ enum class BuffType
 
     // UŒ‚Œn
     AttackUp,       // UŒ‚—ÍƒAƒbƒv
+    RangeUp,        // UŒ‚”ÍˆÍ+
 
     // –hŒäŒn
     DefenseUp,      // –hŒä—ÍƒAƒbƒv

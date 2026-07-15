@@ -657,6 +657,35 @@ void BattleScene::Draw()
         m_renderer3D->SetDepthEnabled(true);
     }
 
+        // 敵の危険：コーナーマーク（重なりは入れ子）
+    {
+        const auto& threats = m_highlighter.GetThreatCells();
+        if (!threats.empty())
+        {
+            m_renderer3D->SetDepthEnabled(false);
+            XMFLOAT4 markCol(0.9f, 0.2f, 0.2f, 0.9f);   // 危険＝赤
+            for (auto& [pos, count] : threats)
+            {
+                float cx = (pos.first - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                float cz = (pos.second - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                int rings = min(count, 3);
+                for (int r = 0; r < rings; r++)
+                {
+                    float inset = 0.42f - r * 0.11f;
+                    float L = 0.16f, T = 0.045f;
+                    for (int sx = -1; sx <= 1; sx += 2)
+                        for (int sz = -1; sz <= 1; sz += 2)
+                        {
+                            m_renderer3D->DrawTileEx(m_whiteTexture,
+                                cx + sx * (inset - L / 2), cz + sz * inset, L, T, 0.0f, markCol);
+                            m_renderer3D->DrawTileEx(m_whiteTexture,
+                                cx + sx * inset, cz + sz * (inset - L / 2), T, L, 0.0f, markCol);
+                        }
+                }
+            }
+            m_renderer3D->SetDepthEnabled(true);
+        }
+    }
 
     m_player->Draw3D(m_renderer3D);
     for (auto enemy : m_enemies)

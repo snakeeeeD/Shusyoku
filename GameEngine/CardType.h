@@ -18,5 +18,6 @@ enum class RangeType
     Diagonal,   // 斜め4方向
     DiagonalCross, // 十字＋斜め（全8方向）
     Line,       // 直線（貫通）
+    Cone,       // 扇形（プレイヤー方向）
 };
 

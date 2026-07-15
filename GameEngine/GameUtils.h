@@ -14,6 +14,10 @@ inline RangeType StringToRangeType(const std::string& str)
     if (str == "Cross")    return RangeType::Cross;
     if (str == "Area")     return RangeType::Area;
     if (str == "Diamond")  return RangeType::Diamond;
+    if (str == "Diagonal")  return RangeType::Diagonal;
+    if (str == "DiagonalCross")  return RangeType::DiagonalCross;
+    if (str == "Line")  return RangeType::Line;
+    if (str == "Cone") return RangeType::Cone;
     return RangeType::None;
 }
 
@@ -72,6 +76,7 @@ inline BuffType StringToBuffType(const std::string& str)
 {
     // ƒoƒt
     if (str == "AttackUp")    return BuffType::AttackUp;
+    if (str == "RangeUp") return BuffType::RangeUp;
     if (str == "DefenseUp")   return BuffType::DefenseUp;
     if (str == "Barricade")   return BuffType::Barricade;
     if (str == "Thorns")      return BuffType::Thorns;
