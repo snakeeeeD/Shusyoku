@@ -45,6 +45,8 @@ private:
 
     std::wstring GetCardEffectText(const CardData* data) const;
 
+    bool m_readyForInput = false;
+
     static constexpr int   CHOICE_COUNT = 3;
     static constexpr float CARD_W = 150.0f;
     static constexpr float CARD_H = 200.0f;

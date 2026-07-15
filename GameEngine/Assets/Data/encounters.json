@@ -95,6 +95,17 @@
           "row": 2
         }
       ]
+    },
+    {
+      "rank": 2,
+      "weight": 50,
+      "enemies": [
+        {
+          "id": "orc",
+          "col": 2,
+          "row": 1
+        }
+      ]
     }
   ]
 }

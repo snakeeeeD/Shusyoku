@@ -348,17 +348,20 @@ void Enemy::ResetBlock()
 }
 
 
-bool Enemy::ConditionMet(const EnemyAction& a, int playerCol, int playerRow) const
+bool Enemy::ConditionMet(const EnemyAction& a, int playerCol, int playerRow, int turn) const
 {
     if (a.condition.empty()) return true;
     int dist = abs(gridCol - playerCol) + abs(gridRow - playerRow);
-    if (a.condition == "near")    return dist <= a.conditionValue;
-    if (a.condition == "far")     return dist >= a.conditionValue;
-    if (a.condition == "hpBelow") return m_HP * 100 / m_maxHP <= a.conditionValue;
+    if (a.condition == "near")     return dist <= a.conditionValue;
+    if (a.condition == "far")      return dist >= a.conditionValue;
+    if (a.condition == "hpBelow")  return m_HP * 100 / m_maxHP <= a.conditionValue;
+    if (a.condition == "turnAbove") return turn >= a.conditionValue;
+    if (a.condition == "turnMultiple") return turn > 0 && a.conditionValue > 0 && (turn % a.conditionValue) == 0;
+    if (a.condition == "turnExact")    return turn == a.conditionValue;
     return true;
 }
 
-void Enemy::DecideNextAction(int playerCol, int playerRow)
+void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
 {
     const EnemyData* data = EnemyDataBase::Get(m_id);
     if (!data || data->actions.empty())
@@ -366,17 +369,24 @@ void Enemy::DecideNextAction(int playerCol, int playerRow)
         m_hasNextAction = false; m_plannedActions.clear(); m_actionIndex = 0; return;
     }
 
-    std::vector<const EnemyAction*> valid;
-    int total = 0;
+    std::vector<const EnemyAction*> cond, uncond;
+    int totalC = 0, totalU = 0;
     for (auto& a : data->actions)
-        if (ConditionMet(a, playerCol, playerRow)) { valid.push_back(&a); total += a.chance; }
+    {
+        if (!ConditionMet(a, playerCol, playerRow, turn)) continue;
+        if (a.condition.empty()) { uncond.push_back(&a); totalU += a.chance; }
+        else { cond.push_back(&a);   totalC += a.chance; }
+    }
 
-    const EnemyAction* picked = valid.empty() ? &data->actions[0] : valid.back();
-    if (!valid.empty())
+    auto& pool = !cond.empty() ? cond : uncond;
+    int   total = !cond.empty() ? totalC : totalU;
+
+    const EnemyAction* picked = pool.empty() ? &data->actions[0] : pool.back();
+    if (!pool.empty())
     {
         int roll = rand() % max(1, total);
         int cum = 0;
-        for (auto* a : valid) { cum += a->chance; if (roll < cum) { picked = a; break; } }
+        for (auto* a : pool) { cum += a->chance; if (roll < cum) { picked = a; break; } }
     }
 
     m_nextAction = *picked;

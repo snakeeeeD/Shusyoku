@@ -45,6 +45,7 @@ bool CardSelectScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
 void CardSelectScene::GenerateChoices()
 {
+    m_readyForInput = false;
     m_choices.clear();
 
     // 全カードを重み付きで集める
@@ -55,8 +56,8 @@ void CardSelectScene::GenerateChoices()
     std::vector<WeightedCard> pool;
 
     std::vector<std::string> allIds = {
-        "strike", "defend", "move", "Spin Slash", "dash",
-        "poison_blade", "power_attack", "buff_defense"
+        "ATK_strike", "SKL_defend", "MOV_move", "ATK_Spin Slash", "MOV_dash",
+        "ATK_poison_blade", "POW_power_attack", "POW_buff_defense"
     };
 
     for (const auto& id : allIds)
@@ -167,6 +168,14 @@ void CardSelectScene::Draw()
 
 void CardSelectScene::HandleInput()
 {
+    // シーン移行時のクリック持ち越しを無視（一度離すまで）
+    if (!m_readyForInput)
+    {
+        if (!m_input.GetMouseButtonPress(0))
+            m_readyForInput = true;
+        return;
+    }
+
     POINT mousePos = m_input.GetMousePos();
 
     const float totalW = CHOICE_COUNT * CARD_W + (CHOICE_COUNT - 1) * 30.0f;

@@ -491,7 +491,7 @@ void BattleHighlighter::UpdateEnemyHighlight(
         if (action->unavoidable)
             threats.push_back(enemy);
         else if (IsInEnemyRange(playerCol, playerRow, action, enemy->gridCol, enemy->gridRow)
-            && (action->value - player->GetBlock()) > 0)
+            && (enemy->GetBuffManager().GetFinalAttack(action->value) - player->GetBlock()) > 0)
             threats.push_back(enemy);
     }
     if (threats.empty()) return;

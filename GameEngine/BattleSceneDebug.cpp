@@ -35,7 +35,7 @@ void BattleScene::DrawImGui()
                 AddEnemy(ee.col, ee.row, ee.id);
         }
         for (auto enemy : m_enemies)
-            enemy->DecideNextAction(m_playerCol, m_playerRow);
+            enemy->DecideNextAction(m_playerCol, m_playerRow, m_turnCount);
     }
 
     ImGui::Separator();

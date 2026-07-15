@@ -99,7 +99,7 @@
           "dash": true,
           "value": 10,
           "range": 3,
-          "rangeType": "Adjacent",
+          "rangeType": "cross",
           "moveRange": 3,
           "chance": 100,
           "description": "突進10"
@@ -138,6 +138,29 @@
           "rangeType": "None",
           "chance": 20,
           "description": "8ブロック"
+        },
+        {
+          "type": "Buf",
+          "condition": "turnMultiple",
+          "conditionValue": 3,
+          "buffType": "AttackUp",
+          "value": 3,
+          "duration": -1,
+          "chance": 100,
+          "range": 0,
+          "rangeType": "None",
+          "description": "攻撃UP(3の倍数)"
+        },
+        {
+          "type": "Attack",
+          "condition": "turnExact",
+          "conditionValue": 7,
+          "value": 30,
+          "range": 5,
+          "rangeType": "Area",
+          "chance": 100,
+          "moveRange": 2,
+          "description": "一撃"
         }
       ]
     },
@@ -266,6 +289,17 @@
           "chance": 40,
           "moveRange": 1,
           "description": "至近5"
+        },
+        {
+          "type": "Attack",
+          "condition": "turnAbove",
+          "conditionValue": 4,
+          "value": 8,
+          "range": 2,
+          "rangeType": "Area",
+          "chance": 100,
+          "moveRange": 1,
+          "description": "激昂・波動(4T〜)"
         }
       ]
     }

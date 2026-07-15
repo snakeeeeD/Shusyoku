@@ -69,6 +69,8 @@ private:
     int m_playerCol;
     int m_playerRow;
 
+    int m_turnCount = 0;
+
     TurnManager m_turnManager;
 
     BattleResult m_battleResult;

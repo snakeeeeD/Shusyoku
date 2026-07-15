@@ -605,7 +605,12 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 float iconX = barX;
                 float iconY = barY - iconSize - 2.0f;
                 wchar_t valueBuf[16];
-                swprintf_s(valueBuf, L"%d", action->value);
+                int shownVal = action->value;
+                if (action->type == EnemyActionType::Attack)
+                    shownVal = enemy->GetBuffManager().GetFinalAttack(action->value);
+                else if (action->type == EnemyActionType::Defend)
+                    shownVal = enemy->GetBuffManager().GetFinalBlock(action->value);
+                swprintf_s(valueBuf, L"%d", shownVal);
                 m_textRenderer->DrawText(valueBuf,
                     iconX + iconSize + 3.0f + 1.0f, iconY + 1.0f + 1.0f,
                     14.0f, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));

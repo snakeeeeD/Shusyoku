@@ -45,7 +45,7 @@ public:
 
 	void TakeDamage(int damage);
 
-	void DecideNextAction(int playerCol, int playerRow);                   // Ÿ‚Ìs“®‚ğŒˆ’è
+	void DecideNextAction(int playerCol, int playerRow, int turn);               // Ÿ‚Ìs“®‚ğŒˆ’è
 	const EnemyAction* GetNextAction() const
 	{
 		return m_hasNextAction ? &m_nextAction : nullptr;
@@ -83,7 +83,7 @@ private:
 
 	bool m_immovable = false;
 
-	bool ConditionMet(const EnemyAction& a, int playerCol, int playerRow) const;
+	bool ConditionMet(const EnemyAction& a, int playerCol, int playerRow, int turn) const;
 
 	BuffManager m_buffManager;
 
