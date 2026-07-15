@@ -45,7 +45,7 @@ public:
 
 	void TakeDamage(int damage);
 
-	void DecideNextAction();                    // Ÿ‚Ìs“®‚ğŒˆ’è
+	void DecideNextAction(int playerCol, int playerRow);                   // Ÿ‚Ìs“®‚ğŒˆ’è
 	const EnemyAction* GetNextAction() const
 	{
 		return m_hasNextAction ? &m_nextAction : nullptr;
@@ -53,6 +53,7 @@ public:
 
 	void MoveToward(int playerCol, int playerRow, class GridMap* gridMap, int steps = 1);
 	void MoveAway(int playerCol, int playerRow, class GridMap* gridMap, int steps = 1);
+	void MoveDash(int playerCol, int playerRow, class GridMap* gridMap, int steps = 1);
 
 	void AddBlock(int amount);
 	void ResetBlock();
@@ -81,6 +82,8 @@ private:
 	bool IsInRange(int targetCol, int targetRow, int range, RangeType rangeType, int minRange = 0) const;
 
 	bool m_immovable = false;
+
+	bool ConditionMet(const EnemyAction& a, int playerCol, int playerRow) const;
 
 	BuffManager m_buffManager;
 

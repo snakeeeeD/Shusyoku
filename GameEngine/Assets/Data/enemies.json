@@ -45,7 +45,6 @@
       "attack": 8,
       "width": 1.0,
       "height": 1.0,
-      "immovable": true,
       "actions": [
         {
           "type": "Attack",
@@ -67,6 +66,27 @@
           ]
         },
         {
+          "type": "Attack",
+          "value": 8,
+          "range": 1,
+          "condition": "near",
+          "conditionValue": 1,
+          "rangeType": "Adjacent",
+          "moveRange": 1,
+          "chance": 100,
+          "description": "斬って離脱",
+          "subActions": [
+            {
+              "type": "Retreat",
+              "moveRange": 2,
+              "value": 0,
+              "range": 0,
+              "rangeType": "None",
+              "description": "離脱"
+            }
+          ]
+        },
+        {
           "type": "Defend",
           "value": 5,
           "range": 0,
@@ -75,22 +95,14 @@
           "description": "5ブロック"
         },
         {
-          "type": "Buf",
-          "value": 3,
-          "range": 0,
-          "rangeType": "None",
-          "chance": 20,
-          "description": "攻撃力UP",
-          "buffType": "AttackUp",
-          "duration": 2
-        },
-        {
-          "type": "Move",
-          "value": 0,
-          "range": 0,
-          "rangeType": "None",
-          "chance": 10,
-          "description": "移動"
+          "type": "Attack",
+          "dash": true,
+          "value": 10,
+          "range": 3,
+          "rangeType": "Adjacent",
+          "moveRange": 3,
+          "chance": 100,
+          "description": "突進10"
         }
       ]
     },
@@ -208,22 +220,23 @@
       "height": 1.0,
       "actions": [
         {
-          "type": "Attack",
-          "value": 6,
+          "type": "Retreat",
+          "condition": "near",
+          "conditionValue": 2,
+          "moveRange": 5,
+          "chance": 100,
           "range": 0,
           "rangeType": "None",
-          "chance": 55,
-          "unavoidable": true,
-          "description": "狙撃6（必中）"
+          "description": "後退"
         },
         {
-          "type": "Retreat",
-          "value": 0,
+          "type": "Attack",
+          "unavoidable": true,
+          "value": 6,
+          "chance": 20,
           "range": 0,
           "rangeType": "None",
-          "chance": 45,
-          "moveRange": 2,
-          "description": "後退"
+          "description": "狙撃6(必中)"
         }
       ]
     },

@@ -132,7 +132,24 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow, GridMap* g
         }
         else
         {
-            MoveToward(playerCol, playerRow, gridMap, act.moveRange);
+            if (act.dash)
+                MoveDash(playerCol, playerRow, gridMap, act.moveRange);
+            else
+                MoveToward(playerCol, playerRow, gridMap, act.moveRange);
+
+            if (act.dash && IsInRange(playerCol, playerRow, act.range, act.rangeType, act.minRange))
+            {
+                if (!act.onHitBuffType.empty() && player)
+                {
+                    Buff debuff;
+                    debuff.type = StringToBuffType(act.onHitBuffType);
+                    debuff.value = act.onHitValue;
+                    debuff.duration = act.onHitDuration;
+                    debuff.name = BuffInfo::Get(debuff.type).name;
+                    player->GetBuffManager().AddBuff(debuff);
+                }
+                return m_buffManager.GetFinalAttack(act.value);
+            }
             return 0;
         }
     }
@@ -275,6 +292,35 @@ void Enemy::MoveAway(int playerCol, int playerRow, GridMap* gridMap, int steps)
     StartMove(newX, newZ);
 }
 
+void Enemy::MoveDash(int playerCol, int playerRow, GridMap* gridMap, int steps)
+{
+    if (m_immovable) return;
+    if (m_buffManager.HasBuff(BuffType::Root)) return;
+
+    int dc = playerCol - gridCol;
+    int dr = playerRow - gridRow;
+    int sx = 0, sy = 0;
+    if (abs(dc) >= abs(dr)) sx = (dc > 0) ? 1 : (dc < 0) ? -1 : 0;
+    else                    sy = (dr > 0) ? 1 : (dr < 0) ? -1 : 0;
+    if (sx == 0 && sy == 0) return;
+
+    for (int i = 0; i < steps; i++)
+    {
+        int nc = gridCol + sx, nr = gridRow + sy;
+        if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) break;
+        if (nc == playerCol && nr == playerRow) break;          // プレイヤーに重ならない
+        if (gridMap->GetCell(nc, nr).type != CellType::Empty) break;
+
+        gridMap->SetCellType(gridCol, gridRow, CellType::Empty);
+        gridCol = nc; gridRow = nr;
+        gridMap->SetCellType(gridCol, gridRow, CellType::Enemy);
+    }
+
+    float newX = (gridCol - gridMap->GetCols() / 2.0f) * 1.1f;
+    float newZ = (gridRow - gridMap->GetRows() / 2.0f) * 1.1f;
+    StartMove(newX, newZ);
+}
+
 void Enemy::TakeDamage(int damage)
 {
     // Vulnerable: 50%増
@@ -302,33 +348,41 @@ void Enemy::ResetBlock()
 }
 
 
-void Enemy::DecideNextAction()
+bool Enemy::ConditionMet(const EnemyAction& a, int playerCol, int playerRow) const
+{
+    if (a.condition.empty()) return true;
+    int dist = abs(gridCol - playerCol) + abs(gridRow - playerRow);
+    if (a.condition == "near")    return dist <= a.conditionValue;
+    if (a.condition == "far")     return dist >= a.conditionValue;
+    if (a.condition == "hpBelow") return m_HP * 100 / m_maxHP <= a.conditionValue;
+    return true;
+}
+
+void Enemy::DecideNextAction(int playerCol, int playerRow)
 {
     const EnemyData* data = EnemyDataBase::Get(m_id);
     if (!data || data->actions.empty())
     {
-        m_hasNextAction = false;
-        m_plannedActions.clear();
-        m_actionIndex = 0;
-        return;
+        m_hasNextAction = false; m_plannedActions.clear(); m_actionIndex = 0; return;
     }
 
-    int roll = rand() % 100;
-    int cumulative = 0;
-    const EnemyAction* picked = &data->actions.back();
-    for (auto& action : data->actions)
+    std::vector<const EnemyAction*> valid;
+    int total = 0;
+    for (auto& a : data->actions)
+        if (ConditionMet(a, playerCol, playerRow)) { valid.push_back(&a); total += a.chance; }
+
+    const EnemyAction* picked = valid.empty() ? &data->actions[0] : valid.back();
+    if (!valid.empty())
     {
-        cumulative += action.chance;
-        if (roll < cumulative) { picked = &action; break; }
+        int roll = rand() % max(1, total);
+        int cum = 0;
+        for (auto* a : valid) { cum += a->chance; if (roll < cum) { picked = a; break; } }
     }
 
     m_nextAction = *picked;
     m_hasNextAction = true;
-
-    // 実行プラン = メイン行動 + サブ行動
     m_plannedActions.clear();
     m_plannedActions.push_back(*picked);
-    for (auto& sub : picked->subActions)
-        m_plannedActions.push_back(sub);
+    for (auto& sub : picked->subActions) m_plannedActions.push_back(sub);
     m_actionIndex = 0;
 }

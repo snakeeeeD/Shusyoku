@@ -148,7 +148,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
                 m_player->TakeDamage(dmg.total());
 
             for (auto enemy : m_enemies)
-                enemy->DecideNextAction();
+                enemy->DecideNextAction(m_playerCol, m_playerRow);
 
             // 山札と捨て札から移動カードを探す
             std::vector<std::string> moveCardIds;
@@ -206,7 +206,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     }
 
     for (auto enemy : m_enemies)
-        enemy->DecideNextAction();
+        enemy->DecideNextAction(m_playerCol, m_playerRow);
 
      m_input.SetWindowHandle(hWnd);
 

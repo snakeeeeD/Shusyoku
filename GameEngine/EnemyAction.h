@@ -25,4 +25,9 @@ struct EnemyAction
     int moveRange = 1;   // 移動/追跡で詰めるマス数
     bool unavoidable = false;   // trueなら位置に関係なく必中
     int minRange = 0;   // これ未満の距離は攻撃されない
+
+    std::string condition;    // "" =常時, "near", "far", "hpBelow"
+    int conditionValue = 0;
+
+    bool dash = false;   // 射程外なら詰めて同ターンに攻撃
 };
