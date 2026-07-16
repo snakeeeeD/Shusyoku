@@ -92,6 +92,8 @@ struct BattleUIContext
 
     const std::vector<std::pair<int, int>>* outOfRangeCells = nullptr;
     const std::vector<std::pair<int, int>>* travelPath = nullptr;
+
+    int selectedEnemy = -1;
 };
 
 class BattleUI
@@ -116,6 +118,7 @@ public:
     void ClearCardAnimations() { m_cardAnims.clear(); }
 
     TextRenderer* GetTextRenderer() { return m_textRenderer; }
+    int GetPanelHoveredEnemy() const { return m_panelHoveredEnemy; }
 
 private:
     SpriteRenderer* m_spriteRenderer = nullptr;
@@ -150,7 +153,6 @@ private:
     void DrawPlayCardEffects();
     void DrawDiscardEffects();
     void DrawPlayerOffScreenIndicator(const BattleUIContext& ctx);
-    void DrawEnemyGridHighlight(const BattleUIContext& ctx);
 
     BuffType m_hoveredBuffType = BuffType::AttackUp;
     int m_hoveredBuffEnemy = -1;

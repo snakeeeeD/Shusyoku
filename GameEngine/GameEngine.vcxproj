@@ -175,6 +175,7 @@
     <ClInclude Include="Player.h" />
     <ClInclude Include="PlayerData.h" />
     <ClInclude Include="PlayerDataManager.h" />
+    <ClInclude Include="RangeShape.h" />
     <ClInclude Include="Renderer3D.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Scene.h" />

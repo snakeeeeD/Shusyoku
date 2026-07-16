@@ -55,7 +55,7 @@ public:
 
 	void MoveToward(int playerCol, int playerRow, class GridMap* gridMap, int steps = 1);
 	void MoveAway(int playerCol, int playerRow, class GridMap* gridMap, int steps = 1);
-	void MoveDash(int playerCol, int playerRow, class GridMap* gridMap, int steps = 1);
+	bool MoveDash(int playerCol, int playerRow, class GridMap* gridMap, int steps = 1);
 
 	void AddBlock(int amount);
 	void ResetBlock();
@@ -63,6 +63,9 @@ public:
 	bool IsBoss() const { return m_isBoss; }
 	bool IsImmovable() const { return m_immovable; }
 	bool IsInRange(int targetCol, int targetRow, int range, RangeType rangeType, int minRange = 0) const;
+
+	bool IsThreateningCell(int col, int row, const EnemyAction& a) const;                 // íPàÍÇÃê^é¿
+	std::vector<std::pair<int, int>> GetThreatCells(const EnemyAction& a, class GridMap* gridMap) const;
 
 	const std::vector<std::pair<int, int>>& GetGridShape() const { return m_gridShape; }
 

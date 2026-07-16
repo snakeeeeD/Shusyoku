@@ -148,4 +148,6 @@ private:
     std::pair<int, int> m_suppressCell = { -999, -999 };
     int m_backtrackFrames = 0;
     bool m_moveDragging = false;
+
+    int m_selectedEnemyRange = -1;
 };

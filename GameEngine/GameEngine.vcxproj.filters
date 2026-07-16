@@ -199,6 +199,9 @@
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\30-terrains">
       <UniqueIdentifier>{a90b7bf3-b552-4b02-9d98-957744dbd470}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\04-Game内関連\30-RangeShape">
+      <UniqueIdentifier>{9550edd4-b65e-4c11-8041-49e196721bfb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -365,6 +368,9 @@
     </ClInclude>
     <ClInclude Include="TerrainDataBase.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\30-terrains</Filter>
+    </ClInclude>
+    <ClInclude Include="RangeShape.h">
+      <Filter>ソース ファイル\04-Game内関連\30-RangeShape</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

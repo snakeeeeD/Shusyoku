@@ -98,7 +98,7 @@
           "type": "Attack",
           "dash": true,
           "value": 10,
-          "range": 3,
+          "range": 1,
           "rangeType": "Cross",
           "moveRange": 3,
           "chance": 100,

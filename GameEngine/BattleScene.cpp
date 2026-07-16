@@ -299,7 +299,7 @@ void BattleScene::Update(float deltaTime)
         }
     }
 
-    // カメラパン（中ボタンドラッグ）
+    // カメラパン（右クリックドラッグ）
     if (m_input.GetMouseButtonPress(2))
     {
         POINT mousePos = m_input.GetMousePos();
@@ -364,6 +364,9 @@ void BattleScene::Update(float deltaTime)
             m_cameraOffsetZ + 6.0f * m_cameraZoom
         );
         m_renderer3D->SetCamera(zoomedPos, target, XMFLOAT3(0.0f, 1.0f, 0.0f));
+
+        int hi = m_battleUI->GetPanelHoveredEnemy();
+        m_highlighter.SetSelectedEnemy(hi >= 0 ? hi : m_selectedEnemyRange);
 
         // ハイライト更新
         int highlightCardIndex = m_selectedCardIndex >= 0 ? m_selectedCardIndex : m_hoveredCardIndex;
@@ -657,31 +660,29 @@ void BattleScene::Draw()
         m_renderer3D->SetDepthEnabled(true);
     }
 
-        // 敵の危険：コーナーマーク（重なりは入れ子）
+    // 選択/ホバー中の敵をコーナーマークで囲む
     {
-        const auto& threats = m_highlighter.GetThreatCells();
-        if (!threats.empty())
+        int hi = m_battleUI->GetPanelHoveredEnemy();
+        int target = (hi >= 0) ? hi : m_selectedEnemyRange;
+        if (target >= 0 && target < (int)m_enemies.size())
         {
+            Enemy* e = m_enemies[target];
             m_renderer3D->SetDepthEnabled(false);
-            XMFLOAT4 markCol(0.9f, 0.2f, 0.2f, 0.9f);   // 危険＝赤
-            for (auto& [pos, count] : threats)
+            XMFLOAT4 line(0.2f, 0.7f, 1.0f, 1.0f);
+            const float H = 0.5f, L = 0.18f, T = 0.05f;   // 半径・角の長さ・太さ
+
+            for (auto& [dc, dr] : e->GetGridShape())
             {
-                float cx = (pos.first - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                float cz = (pos.second - m_gridMap->GetRows() / 2.0f) * 1.1f;
-                int rings = min(count, 3);
-                for (int r = 0; r < rings; r++)
-                {
-                    float inset = 0.42f - r * 0.11f;
-                    float L = 0.16f, T = 0.045f;
-                    for (int sx = -1; sx <= 1; sx += 2)
-                        for (int sz = -1; sz <= 1; sz += 2)
-                        {
-                            m_renderer3D->DrawTileEx(m_whiteTexture,
-                                cx + sx * (inset - L / 2), cz + sz * inset, L, T, 0.0f, markCol);
-                            m_renderer3D->DrawTileEx(m_whiteTexture,
-                                cx + sx * inset, cz + sz * (inset - L / 2), T, L, 0.0f, markCol);
-                        }
-                }
+                float cx = (e->gridCol + dc - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                float cz = (e->gridRow + dr - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                for (int sx = -1; sx <= 1; sx += 2)
+                    for (int sz = -1; sz <= 1; sz += 2)
+                    {
+                        m_renderer3D->DrawTileEx(m_whiteTexture,
+                            cx + sx * (H - L / 2), cz + sz * H, L, T, 0.0f, line);
+                        m_renderer3D->DrawTileEx(m_whiteTexture,
+                            cx + sx * H, cz + sz * (H - L / 2), T, L, 0.0f, line);
+                    }
             }
             m_renderer3D->SetDepthEnabled(true);
         }
@@ -795,6 +796,7 @@ void BattleScene::Draw()
     ctx.mousePos = m_input.GetMousePos();
     ctx.outOfRangeCells = &m_highlighter.GetOutOfRangeCells();
     ctx.travelPath = &m_movePath;
+    ctx.selectedEnemy = m_selectedEnemyRange;
 
     m_battleUI->Draw(ctx);
 }
@@ -813,6 +815,22 @@ void BattleScene::HandleInput()
     float drawPileY = m_screenHeight - 60.0f;
     float discardX = 80.0f;
     float discardY = m_screenHeight - 60.0f;
+
+    if (m_input.GetMouseButtonTrigger(0) && m_selectedCardIndex < 0
+        && m_input.GetMousePos().x < m_screenWidth - 250.0f      // パネル上は無視
+        && m_input.GetMousePos().y < m_screenHeight - 150.0f)     // 手札エリアも無視
+    {
+        auto rc = m_gridMap->GetClickedCell3D(m_input.GetMousePos(),
+            m_renderer3D->GetViewMatrix(), m_renderer3D->GetProjectionMatrix(),
+            m_screenWidth, m_screenHeight);
+        int found = -1;
+        if (rc.cell)
+            for (int i = 0; i < (int)m_enemies.size(); i++)
+                for (auto& [dc, dr] : m_enemies[i]->GetGridShape())
+                    if (m_enemies[i]->gridCol + dc == rc.col && m_enemies[i]->gridRow + dr == rc.row)
+                        found = i;
+        m_selectedEnemyRange = (found >= 0 && found != m_selectedEnemyRange) ? found : -1;
+    }
 
     // カード選択中はマウスのマスにハイライト
     if (m_selectedCardIndex >= 0)
@@ -1646,6 +1664,7 @@ void BattleScene::HandleInput()
                 if (mp.x >= panelX && mp.x <= panelX + panelW
                     && mp.y >= entryY && mp.y <= entryY + entryH)
                 {
+                    m_selectedEnemyRange = (m_selectedEnemyRange == i) ? -1 : i;
                     m_cameraOffsetX = m_enemies[i]->worldX;
                     m_cameraOffsetZ = m_enemies[i]->worldZ;
                     break;
@@ -1681,6 +1700,18 @@ void BattleScene::ProcessDeadEnemies()
         if (enemy->GetHp() <= 0)
             toDelete.push_back(enemy);
 
+    if (toDelete.empty()) return;   // 何も死んでなければ何もしない
+
+    // 選択中の敵を覚えておく（死んでいたら解除）
+    Enemy* selected = nullptr;
+    if (m_selectedEnemyRange >= 0 && m_selectedEnemyRange < (int)m_enemies.size())
+    {
+        selected = m_enemies[m_selectedEnemyRange];
+        for (auto d : toDelete)
+            if (d == selected) { selected = nullptr; break; }
+    }
+
+
     for (auto enemy : toDelete)
     {
         for (auto& [dc, dr] : enemy->GetGridShape())
@@ -1694,5 +1725,13 @@ void BattleScene::ProcessDeadEnemies()
             m_enemies.end()
         );
         delete enemy;
+    }
+
+    // 削除後に選択中の敵の新しいindexを探し直す
+    m_selectedEnemyRange = -1;
+    if (selected)
+    {
+        for (int i = 0; i < (int)m_enemies.size(); i++)
+            if (m_enemies[i] == selected) { m_selectedEnemyRange = i; break; }
     }
 }

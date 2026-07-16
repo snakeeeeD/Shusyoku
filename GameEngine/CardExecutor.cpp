@@ -2,6 +2,7 @@
 #include "CardEffect.h"
 #include "BattleHighlighter.h"
 #include "TerrainDataBase.h"
+#include "RangeShape.h"
 #include <algorithm>
 #include <queue>
 #include <map>
@@ -13,18 +14,6 @@ Enemy* CardExecutor::GetEnemyAt(int col, int row, std::vector<Enemy*>& enemies)
             if (enemy->gridCol + dc == col && enemy->gridRow + dr == row)
                 return enemy;
     return nullptr;
-}
-
-int CardExecutor::GetMinDistToEnemy(int playerCol, int playerRow, Enemy* enemy)
-{
-    int minDist = INT_MAX;
-    for (auto& [dc, dr] : enemy->GetGridShape())
-    {
-        int dist = abs(playerCol - (enemy->gridCol + dc))
-            + abs(playerRow - (enemy->gridRow + dr));
-        minDist = min(minDist, dist);
-    }
-    return minDist;
 }
 
 std::vector<Enemy*> CardExecutor::GetEnemiesInRange(
@@ -271,10 +260,16 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 
                 return result;
             }
-            if (GetMinDistToEnemy(playerCol, playerRow, target) > range)
-            {
+            // 表示している形状と同じ判定（敵は複数マス占有しうるので、どれか1マスでも範囲内ならOK）
+            bool inShape = false;
+            for (auto& [dc, dr] : target->GetGridShape())
+                if (RangeShape::Contains(playerCol, playerRow,
+                    target->gridCol + dc, target->gridRow + dr, data.rangeType, range))
+                {
+                    inShape = true; break;
+                }
+            if (!inShape)
                 return result;
-            }
             player->UseEnergy(data.cost);
 
             // dash: 敵の手前まで移動

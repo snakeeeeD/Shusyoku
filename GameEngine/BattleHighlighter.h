@@ -17,13 +17,6 @@ public:
         int centerCol, int centerRow,
         RangeType rangeType, int range);
 
-    // 敵の攻撃範囲内かチェック（rangeType対応）
-    static bool IsInEnemyRange(
-        int col, int row,
-        const EnemyAction* action,
-        int enemyCol, int enemyRow, 
-        int rangeBonus = 0);
-
     void UpdatePlayerHighlight(
         int centerCol, int centerRow,
         const CardData* data,
@@ -60,6 +53,8 @@ public:
 
     void SetTravelPath(const std::vector<std::pair<int, int>>* p) { m_travelPath = p; }
 
+    void SetSelectedEnemy(int i) { m_selectedEnemy = i; }
+
 private:
     std::vector<std::pair<int, int>> m_playerHighlightCells;
     std::vector<std::pair<int, int>> m_enemyHighlightCells;
@@ -70,4 +65,6 @@ private:
     std::map<std::pair<int, int>, XMFLOAT4> m_cellColors;
     std::map<std::pair<int, int>, int> m_threatCounts;
     std::map<std::pair<int, int>, std::vector<int>> m_threatEnemies;
+
+    int m_selectedEnemy = -1;
 };

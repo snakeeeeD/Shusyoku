@@ -3,6 +3,7 @@
 #include "CardExecutor.h"
 #include "TerrainDataBase.h"
 #include "GameUtils.h"
+#include "RangeShape.h"
 #include <algorithm>
 
 using namespace DirectX;
@@ -220,7 +221,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     playerBar.poisonDmg = ctx.player->GetBuffManager().GetTurnEndDamage().total();
     playerBar.hasBurn = ctx.player->GetBuffManager().HasBuff(BuffType::Burn);
     DrawHPBar(20.0f, 60.0f, 200.0f, 30.0f, playerBar, ctx.highlightTimer);
-    DrawEnemyGridHighlight(ctx);
+
 
     if (ctx.player->GetBlock() > 0)
     {
@@ -949,15 +950,12 @@ void BattleUI::DrawTargetIndicators(const BattleUIContext& ctx)
                     if (enemy->gridCol + dc == ctx.hoveredCell.first &&
                         enemy->gridRow + dr == ctx.hoveredCell.second)
                     {
-                        int minDist = INT_MAX;
                         for (auto& [dc2, dr2] : enemy->GetGridShape())
-                        {
-                            int dist = abs(ctx.playerCol - (enemy->gridCol + dc2))
-                                + abs(ctx.playerRow - (enemy->gridRow + dr2));
-                            minDist = min(minDist, dist);
-                        }
-                        if (minDist <= data->range)
-                            inRange = true;
+                            if (RangeShape::Contains(ctx.playerCol, ctx.playerRow,
+                                enemy->gridCol + dc2, enemy->gridRow + dr2, data->rangeType, data->range))
+                            {
+                                inRange = true; break;
+                            }
                         break;
                     }
                 }
@@ -1632,11 +1630,32 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
                 && mp.y >= entryY && mp.y <= entryY + detailH);
         bool isHover = isEntryHover || isDetailHover;
 
-        XMFLOAT4 bgColor = isHover
-            ? XMFLOAT4(0.45f, 0.45f, 0.25f, 0.9f)
+        bool isSel = (ctx.selectedEnemy == i);
+        XMFLOAT4 bgColor = (isHover || isSel)
+            ? XMFLOAT4(0.2f, 0.5f, 0.7f, 0.9f)      // 水色＝グリッドの強調色と対応
             : XMFLOAT4(0.45f, 0.45f, 0.25f, 0.7f);
+
         m_spriteRenderer->DrawSprite(m_whiteTexture, panelX, entryY,
             panelW, entryH, 0.0f, bgColor);
+
+        if (isHover || isSel)
+        {
+            XMFLOAT4 line(0.2f, 0.7f, 1.0f, 1.0f);
+            const float th = 3.0f, L = 14.0f;
+            float rx = panelX + panelW, by = entryY + entryH;
+            // 左上
+            m_spriteRenderer->DrawSprite(m_whiteTexture, panelX, entryY, L, th, 0.0f, line);
+            m_spriteRenderer->DrawSprite(m_whiteTexture, panelX, entryY, th, L, 0.0f, line);
+            // 右上
+            m_spriteRenderer->DrawSprite(m_whiteTexture, rx - L, entryY, L, th, 0.0f, line);
+            m_spriteRenderer->DrawSprite(m_whiteTexture, rx - th, entryY, th, L, 0.0f, line);
+            // 左下
+            m_spriteRenderer->DrawSprite(m_whiteTexture, panelX, by - th, L, th, 0.0f, line);
+            m_spriteRenderer->DrawSprite(m_whiteTexture, panelX, by - L, th, L, 0.0f, line);
+            // 右下
+            m_spriteRenderer->DrawSprite(m_whiteTexture, rx - L, by - th, L, th, 0.0f, line);
+            m_spriteRenderer->DrawSprite(m_whiteTexture, rx - th, by - L, th, L, 0.0f, line);
+        }
 
         // アイコン
         ID3D11ShaderResourceView* tex = TextureManager::Get(enemy->GetTextureName());
@@ -1833,29 +1852,3 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
     m_textRenderer->End();
 }
 
-void BattleUI::DrawEnemyGridHighlight(const BattleUIContext& ctx)
-{
-    if (m_panelHoveredEnemy < 0) return;
-    if (m_panelHoveredEnemy >= (int)ctx.enemies->size()) return;
-
-    Enemy* enemy = (*ctx.enemies)[m_panelHoveredEnemy];
-    float footX, footY;
-    if (!GetEnemyFootPos(enemy, ctx.renderer3D, footX, footY)) return;
-
-    float scale = 1.0f / ctx.cameraZoom;
-    float size = 70.0f * scale;
-    float thickness = 3.0f * scale;
-    XMFLOAT4 color(1.0f, 1.0f, 0.0f, 0.8f);
-
-    float left = footX - size / 2.0f;
-    float top = footY - size;
-
-    // 上
-    m_spriteRenderer->DrawSprite(m_whiteTexture, left, top, size, thickness, 0.0f, color);
-    // 下
-    m_spriteRenderer->DrawSprite(m_whiteTexture, left, top + size, size, thickness, 0.0f, color);
-    // 左
-    m_spriteRenderer->DrawSprite(m_whiteTexture, left, top, thickness, size, 0.0f, color);
-    // 右
-    m_spriteRenderer->DrawSprite(m_whiteTexture, left + size - thickness, top, thickness, size + thickness, 0.0f, color);
-}

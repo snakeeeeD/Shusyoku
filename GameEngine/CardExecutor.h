@@ -66,10 +66,6 @@ private:
 
     static Enemy* GetEnemyAt(int col, int row, std::vector<Enemy*>& enemies);
 
-    int GetMinDistToEnemy(
-        int playerCol, int playerRow,
-        Enemy* enemy);
-
     void ApplyKnockback(Enemy* target, int playerCol, int playerRow,
         int distance, GridMap* gridMap, std::vector<Enemy*>& enemies);
     void ApplyPull(Enemy* target, int playerCol, int playerRow,

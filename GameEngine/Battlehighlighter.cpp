@@ -1,99 +1,23 @@
 ﻿#include "BattleHighlighter.h"
 #include "EnemyActionType.h"
 #include "Renderer3D.h"
+#include "RangeShape.h"
 #include <algorithm>
 #include <cmath>
 #include <queue>
 #include <map>
+#include <set>
 
 std::vector<std::pair<int, int>> BattleHighlighter::GetCandidates(
     int centerCol, int centerRow, RangeType rangeType, int range)
 {
-    std::vector<std::pair<int, int>> candidates;
-
-    switch (rangeType)
-    {
-    case RangeType::Adjacent:
-        candidates = {
-            {centerCol,     centerRow - 1},
-            {centerCol,     centerRow + 1},
-            {centerCol - 1, centerRow    },
-            {centerCol + 1, centerRow    },
-        };
-        break;
-    case RangeType::Cross:
-        for (int i = 1; i <= range; i++)
-        {
-            candidates.push_back({ centerCol,     centerRow - i });
-            candidates.push_back({ centerCol,     centerRow + i });
-            candidates.push_back({ centerCol - i, centerRow });
-            candidates.push_back({ centerCol + i, centerRow });
-        }
-        break;
-    case RangeType::Area:
-        for (int dr = -range; dr <= range; dr++)
-            for (int dc = -range; dc <= range; dc++)
-                if (max(abs(dc), abs(dr)) <= range)
-                    candidates.push_back({ centerCol + dc, centerRow + dr });
-        break;
-    case RangeType::Diamond:
-        for (int dr = -range; dr <= range; dr++)
-            for (int dc = -range; dc <= range; dc++)
-                if (abs(dc) + abs(dr) <= range && (dc != 0 || dr != 0))
-                    candidates.push_back({ centerCol + dc, centerRow + dr });
-        break;
-    case RangeType::Diagonal:
-        for (int i = 1; i <= range; i++)
-        {
-            candidates.push_back({ centerCol + i, centerRow + i });
-            candidates.push_back({ centerCol + i, centerRow - i });
-            candidates.push_back({ centerCol - i, centerRow + i });
-            candidates.push_back({ centerCol - i, centerRow - i });
-        }
-        break;
-    case RangeType::DiagonalCross:
-        for (int i = 1; i <= range; i++)
-        {
-            candidates.push_back({ centerCol,     centerRow - i });
-            candidates.push_back({ centerCol,     centerRow + i });
-            candidates.push_back({ centerCol - i, centerRow });
-            candidates.push_back({ centerCol + i, centerRow });
-            candidates.push_back({ centerCol + i, centerRow + i });
-            candidates.push_back({ centerCol + i, centerRow - i });
-            candidates.push_back({ centerCol - i, centerRow + i });
-            candidates.push_back({ centerCol - i, centerRow - i });
-        }
-        break;
-    case RangeType::None:
-        candidates.push_back({ centerCol, centerRow });
-        break;
-    default:
-        break;
-    }
-
-    return candidates;
-}
-
-bool BattleHighlighter::IsInEnemyRange(
-    int col, int row,
-    const EnemyAction* action,
-    int enemyCol, int enemyRow,
-    int rangeBonus)
-{
-    int dc = abs(col - enemyCol);
-    int dr = abs(row - enemyRow);
-
-    switch (action->rangeType)
-    {
-    case RangeType::Adjacent:    return (dc + dr) == 1;
-    case RangeType::Cross:   return (dc == 0 || dr == 0) && (dc + dr) >= action->minRange && (dc + dr) <= action->range;
-    case RangeType::Area:    return max(dc, dr) >= action->minRange && max(dc, dr) <= action->range;
-    case RangeType::Diamond: return (dc + dr) >= action->minRange && (dc + dr) <= action->range;
-    case RangeType::Diagonal:    return (dc == dr) && dc <= action->range;
-    case RangeType::DiagonalCross:
-        return ((dc == 0 || dr == 0) || (dc == dr)) && max(dc, dr) <= action->range;
-    default:                     return (dc + dr) <= action->range;
-    }
+    std::vector<std::pair<int, int>> out;
+    int R = (range < 1) ? 1 : range;
+    for (int dr = -R; dr <= R; dr++)
+        for (int dc = -R; dc <= R; dc++)
+            if (RangeShape::Contains(centerCol, centerRow, centerCol + dc, centerRow + dr, rangeType, range))
+                out.push_back({ centerCol + dc, centerRow + dr });
+    return out;
 }
 
 void BattleHighlighter::ClearPlayerHighlight(GridMap* gridMap)
@@ -211,7 +135,7 @@ void BattleHighlighter::UpdatePlayerHighlight(
             {
                 const EnemyAction* action = enemy->GetNextAction();
                 if (!action || action->type != EnemyActionType::Attack) continue;
-                if (enemy->IsInRange(col, row, action->range, action->rangeType, action->minRange))
+                if (enemy->IsThreateningCell(col, row, *action))
                 {
                     int finalDamage = action->value - player->GetBlock();
                     if (finalDamage > 0) isDangerCell = true;
@@ -340,25 +264,24 @@ void BattleHighlighter::UpdatePlayerHighlight(
         // 攻撃カードで射程内の敵マスは自動でホバー扱い
         if (data->type == CardType::Attack && isEnemy && !isHovered)
         {
-            // 射程内か確認
-            int minDist = INT_MAX;
+            // 射程内か確認（表示形状と同じ判定）
+            bool inShape = false;
             for (auto enemy : enemies)
             {
+                bool isThisEnemy = false;
                 for (auto& [dc, dr] : enemy->GetGridShape())
-                {
-                    if (enemy->gridCol + dc == col && enemy->gridRow + dr == row)
+                    if (enemy->gridCol + dc == col && enemy->gridRow + dr == row) { isThisEnemy = true; break; }
+                if (!isThisEnemy) continue;
+
+                for (auto& [dc2, dr2] : enemy->GetGridShape())
+                    if (RangeShape::Contains(centerCol, centerRow,
+                        enemy->gridCol + dc2, enemy->gridRow + dr2, data->rangeType, data->range))
                     {
-                        for (auto& [dc2, dr2] : enemy->GetGridShape())
-                        {
-                            int dist = abs(centerCol - (enemy->gridCol + dc2))
-                                + abs(centerRow - (enemy->gridRow + dr2));
-                            minDist = min(minDist, dist);
-                        }
-                        break;
+                        inShape = true; break;
                     }
-                }
+                break;
             }
-            if (minDist <= data->range)
+            if (inShape)
                 isHovered = true;
         }
 
@@ -369,7 +292,7 @@ void BattleHighlighter::UpdatePlayerHighlight(
             const EnemyAction* action = enemy->GetNextAction();
             if (!action || action->type != EnemyActionType::Attack) continue;
 
-            if (enemy->IsInRange(col, row, action->range, action->rangeType, action->minRange))
+            if (enemy->IsThreateningCell(col, row, *action))
             {
                 int finalDamage = action->value - player->GetBlock();
                 if (finalDamage > 0) isDangerCell = true;
@@ -531,47 +454,55 @@ void BattleHighlighter::UpdateEnemyHighlight(
     ClearEnemyHighlight(gridMap);
     for (auto e : enemies) e->color = XMFLOAT4(1, 1, 1, 1);
 
-    for (auto enemy : enemies)
+    std::map<std::pair<int, int>, int> cellDist;
+    std::set<std::pair<int, int>> selCells;   // 選択した敵のマス
+    for (int ei = 0; ei < (int)enemies.size(); ei++)
     {
+        Enemy* enemy = enemies[ei];
         const EnemyAction* action = enemy->GetNextAction();
         if (!action || action->type != EnemyActionType::Attack) continue;
         int rng = action->range + enemy->GetBuffManager().GetBuffValue(BuffType::RangeUp);
+        RangeType rt = action->rangeType;
+        if (action->dash)
+        {
+            if (rt == RangeType::Adjacent) 
+            {
+                rt = RangeType::Diamond; 
+                rng = 1 + action->moveRange;
+            }
+            else rng += action->moveRange;
+        }
 
         auto add = [&](int col, int row, int dist) {
             if (col < 0 || col >= gridMap->GetCols() || row < 0 || row >= gridMap->GetRows()) return;
-            auto& cell = gridMap->GetCell(col, row);
-            if (cell.type == CellType::Enemy || cell.type == CellType::Boss) return;
-            float a = 0.6f - (float)(dist - 1) / (float)max(1, rng) * 0.25f;
-            a = max(0.2f, min(0.6f, a));
-            cell.gameObject.color = XMFLOAT4(a, a, 0.0f, 1.0f);
-            m_enemyHighlightCells.push_back({ col, row });
+            auto& c = gridMap->GetCell(col, row);
+            if (c.type == CellType::Enemy || c.type == CellType::Boss) return;
+            auto it = cellDist.find({ col, row });
+            if (it == cellDist.end() || dist < it->second) cellDist[{col, row}] = dist;
+            if (ei == m_selectedEnemy) selCells.insert({ col, row });
             };
 
-        if (action->unavoidable)
-        {
-            auto& cell = gridMap->GetCell(playerCol, playerRow);
-            cell.gameObject.color = XMFLOAT4(0.8f, 0.4f, 0.0f, 1.0f);
-            m_enemyHighlightCells.push_back({ playerCol, playerRow });
-            continue;
-        }
+        if (action->unavoidable) { add(playerCol, playerRow, 1); continue; }
 
-        if (action->rangeType == RangeType::Cone)
+        if (action->unavoidable) { add(playerCol, playerRow, 1); continue; }
+
+        for (auto& [c, r] : enemy->GetThreatCells(*action, gridMap))
         {
-            int adx = enemy->GetAimDx(), ady = enemy->GetAimDy();
-            for (int a = 1; a <= rng; a++)
-                for (int b = -(a - 1); b <= a - 1; b++)
-                    add(enemy->gridCol + a * adx + b * (-ady), enemy->gridRow + a * ady + b * adx, a);
-        }
-        else
-        {
-            auto cand = GetCandidates(enemy->gridCol, enemy->gridRow, action->rangeType, rng);
-            for (auto& [col, row] : cand)
-            {
-                int dc = abs(col - enemy->gridCol), dr = abs(row - enemy->gridRow);
-                int dist = (action->rangeType == RangeType::Area) ? max(dc, dr) : (dc + dr);
-                if (action->minRange > 0 && dist < action->minRange) continue;
-                add(col, row, dist);
-            }
+            int dist = abs(c - enemy->gridCol) + abs(r - enemy->gridRow);
+            add(c, r, dist);
         }
     }
+
+    m_enemyCycleTimer += 0.005f;
+    for (auto& [pos, dist] : cellDist)
+    {
+        float w = 0.5f + 0.5f * sin(m_enemyCycleTimer - dist * 0.8f);
+        float br = 0.25f + 0.45f * w;
+        XMFLOAT4 c = selCells.count(pos)
+            ? XMFLOAT4(0.2f * br, 0.7f * br, br, 1.0f)    // 選択敵＝水色系
+            : XMFLOAT4(br, br * 0.75f, 0.0f, 1.0f);       // 通常＝黄
+        gridMap->GetCell(pos.first, pos.second).gameObject.color = c;
+        m_enemyHighlightCells.push_back(pos);
+    }
+
 }

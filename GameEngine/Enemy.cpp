@@ -4,6 +4,7 @@
 #include "Player.h"
 #include "BuffInfo.h"
 #include "GameUtils.h"
+#include "RangeShape.h"
 
 Enemy::Enemy()
     : m_HP(30), m_maxHP(30), m_attack(5)
@@ -65,36 +66,9 @@ bool Enemy::IsAdjacentTo(int playerCol, int playerRow)
 
 bool Enemy::IsInRange(int targetCol, int targetRow, int range, RangeType rangeType, int minRange) const
 {
-    int dc = abs(gridCol - targetCol);
-    int dr = abs(gridRow - targetRow);
-    switch (rangeType)
-    {
-    case RangeType::None:     return false;
-    case RangeType::Adjacent: return (dc + dr) == 1;
-    case RangeType::Cross:
-    {
-        int lo = minRange < 1 ? 1 : minRange;
-        if (dc == 0 && dr >= lo && dr <= range) return true;
-        if (dr == 0 && dc >= lo && dc <= range) return true;
-        return false;
-    }
-    case RangeType::Area:
-    {
-        int c = max(dc, dr); return c >= minRange && c <= range && c > 0;
-    }
-    case RangeType::Diamond:
-    {
-        int m = dc + dr; return m >= minRange && m <= range && m > 0;
-    }
-    case RangeType::Cone:
-    {
-        int oc = targetCol - gridCol, orr = targetRow - gridRow;
-        int along = oc * m_aimDx + orr * m_aimDy;        // 進行方向の距離
-        int perp = abs(oc * m_aimDy - orr * m_aimDx);   // 横のズレ
-        return along >= 1 && along <= range && perp <= along - 1;
-    }
-    default: return false;
-    }
+    range += m_buffManager.GetBuffValue(BuffType::RangeUp);
+    return RangeShape::Contains(gridCol, gridRow, targetCol, targetRow,
+        rangeType, range, minRange, m_aimDx, m_aimDy);
 }
 
 int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow, GridMap* gridMap, Player* player)
@@ -140,23 +114,23 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow, GridMap* g
         else
         {
             if (act.dash)
-                MoveDash(playerCol, playerRow, gridMap, act.moveRange);
-            else
-                MoveToward(playerCol, playerRow, gridMap, act.moveRange);
-
-            if (act.dash && IsInRange(playerCol, playerRow, act.range, act.rangeType, act.minRange))
             {
-                if (!act.onHitBuffType.empty() && player)
+                if (MoveDash(playerCol, playerRow, gridMap, act.moveRange))
                 {
-                    Buff debuff;
-                    debuff.type = StringToBuffType(act.onHitBuffType);
-                    debuff.value = act.onHitValue;
-                    debuff.duration = act.onHitDuration;
-                    debuff.name = BuffInfo::Get(debuff.type).name;
-                    player->GetBuffManager().AddBuff(debuff);
+                    if (!act.onHitBuffType.empty() && player)
+                    {
+                        Buff debuff;
+                        debuff.type = StringToBuffType(act.onHitBuffType);
+                        debuff.value = act.onHitValue;
+                        debuff.duration = act.onHitDuration;
+                        debuff.name = BuffInfo::Get(debuff.type).name;
+                        player->GetBuffManager().AddBuff(debuff);
+                    }
+                    return m_buffManager.GetFinalAttack(act.value);
                 }
-                return m_buffManager.GetFinalAttack(act.value);
+                return 0;
             }
+            MoveToward(playerCol, playerRow, gridMap, act.moveRange);
             return 0;
         }
     }
@@ -299,24 +273,19 @@ void Enemy::MoveAway(int playerCol, int playerRow, GridMap* gridMap, int steps)
     StartMove(newX, newZ);
 }
 
-void Enemy::MoveDash(int playerCol, int playerRow, GridMap* gridMap, int steps)
+bool Enemy::MoveDash(int playerCol, int playerRow, GridMap* gridMap, int steps)
 {
-    if (m_immovable) return;
-    if (m_buffManager.HasBuff(BuffType::Root)) return;
+    if (m_immovable) return false;
+    if (m_buffManager.HasBuff(BuffType::Root)) return false;
+    if (m_aimDx == 0 && m_aimDy == 0) return false;
 
-    int dc = playerCol - gridCol;
-    int dr = playerRow - gridRow;
-    int sx = 0, sy = 0;
-    if (abs(dc) >= abs(dr)) sx = (dc > 0) ? 1 : (dc < 0) ? -1 : 0;
-    else                    sy = (dr > 0) ? 1 : (dr < 0) ? -1 : 0;
-    if (sx == 0 && sy == 0) return;
-
+    bool hit = false;
     for (int i = 0; i < steps; i++)
     {
-        int nc = gridCol + sx, nr = gridRow + sy;
+        int nc = gridCol + m_aimDx, nr = gridRow + m_aimDy;
         if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) break;
-        if (nc == playerCol && nr == playerRow) break;          // プレイヤーに重ならない
-        if (gridMap->GetCell(nc, nr).type != CellType::Empty) break;
+        if (nc == playerCol && nr == playerRow) { hit = true; break; }      // ぶつかった＝ヒット
+        if (gridMap->GetCell(nc, nr).type != CellType::Empty) break;        // 障害物で停止
 
         gridMap->SetCellType(gridCol, gridRow, CellType::Empty);
         gridCol = nc; gridRow = nr;
@@ -326,6 +295,7 @@ void Enemy::MoveDash(int playerCol, int playerRow, GridMap* gridMap, int steps)
     float newX = (gridCol - gridMap->GetCols() / 2.0f) * 1.1f;
     float newZ = (gridRow - gridMap->GetRows() / 2.0f) * 1.1f;
     StartMove(newX, newZ);
+    return hit;
 }
 
 void Enemy::TakeDamage(int damage)
@@ -409,4 +379,24 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
     }
 
     m_actionIndex = 0;
+}
+
+bool Enemy::IsThreateningCell(int col, int row, const EnemyAction& a) const
+{
+    if (a.dash)   // 突進＝狙う向きの直線
+    {
+        for (int i = 1; i <= a.moveRange; i++)
+            if (gridCol + m_aimDx * i == col && gridRow + m_aimDy * i == row) return true;
+        return false;
+    }
+    return IsInRange(col, row, a.range, a.rangeType, a.minRange);   // 形状はここが全部知ってる
+}
+
+std::vector<std::pair<int, int>> Enemy::GetThreatCells(const EnemyAction& a, GridMap* gridMap) const
+{
+    std::vector<std::pair<int, int>> out;
+    for (int r = 0; r < gridMap->GetRows(); r++)
+        for (int c = 0; c < gridMap->GetCols(); c++)
+            if (IsThreateningCell(c, r, a)) out.push_back({ c, r });
+    return out;
 }
