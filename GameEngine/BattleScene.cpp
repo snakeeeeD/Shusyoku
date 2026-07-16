@@ -2,6 +2,7 @@
 #include "TextureLoader.h"
 #include "CardExecutor.h"
 #include "TerrainDataBase.h"
+#include "RangeShape.h"
 #include <algorithm>
 #include <cstdio>
 #include <queue>
@@ -256,6 +257,24 @@ void BattleScene::Update(float deltaTime)
         enemy->UpdateDisplayHp(deltaTime);
 
     m_player->UpdateMove(deltaTime);
+
+    // 経路を1マスずつ歩く
+    if (!m_playerWalkPath.empty() && !m_player->IsMoving())
+    {
+        m_playerWalkIndex++;
+        if (m_playerWalkIndex < (int)m_playerWalkPath.size())
+        {
+            auto& n = m_playerWalkPath[m_playerWalkIndex];
+            float wx = (n.first - m_gridMap->GetCols() / 2.0f) * 1.1f;
+            float wz = (n.second - m_gridMap->GetRows() / 2.0f) * 1.1f;
+            m_player->StartMove(wx, wz, 0.25f);
+        }
+        else
+        {
+            m_playerWalkPath.clear();   // 到着
+            m_playerWalkIndex = 0;
+        }
+    }
     for (auto enemy : m_enemies)
     {
         enemy->UpdateMove(deltaTime);
@@ -271,31 +290,26 @@ void BattleScene::Update(float deltaTime)
         m_cameraZoom = max(ZOOM_MIN, min(ZOOM_MAX, m_cameraZoom));
     }
 
-    // 右クリック（ボタン1）：Moveカード
+    // 右クリック（ボタン1）：経路キャンセル → カード選択キャンセル の二段階
     if (m_input.GetMouseButtonTrigger(1)
         && m_selectedCardIndex >= 0
-        && m_selectedCardIndex < (int)m_hand.GetCards().size()
-        && m_hand.GetCards()[m_selectedCardIndex]->GetData()->type == CardType::Move)
+        && m_selectedCardIndex < (int)m_hand.GetCards().size())
     {
-        POINT mp = m_input.GetMousePos();
-        auto rc = m_gridMap->GetClickedCell3D(
-            mp,
-            m_renderer3D->GetViewMatrix(),
-            m_renderer3D->GetProjectionMatrix(),
-            m_screenWidth, m_screenHeight);
+        bool isMove = (m_hand.GetCards()[m_selectedCardIndex]->GetData()->type == CardType::Move);
 
-        if (rc.cell)
+        if (isMove && !m_movePath.empty())
         {
-            // グリッド上：経路リセット（カードは維持）
+            // 経路がある → 経路だけキャンセル（カードは維持）
             m_movePath.clear();
             m_moveReleaseSuppress = true;
-            m_suppressCell = { rc.col, rc.row };
+            m_suppressCell = m_hoveredCell;
         }
         else
         {
-            // グリッド外：カード選択解除
+            // 経路が無い or 移動以外のカード → カード選択解除
             m_selectedCardIndex = -1;
             m_movePath.clear();
+            m_moveReleaseSuppress = false;
         }
     }
 
@@ -607,6 +621,38 @@ void BattleScene::Draw()
     // 3D描画
     m_renderer3D->Begin();
 
+    // 選択中のマスを浮かせる（滑らかに）
+    {
+        std::set<std::pair<int, int>> raised;
+        if (m_selectedCardIndex >= 0 && m_selectedCardIndex < (int)m_hand.GetCards().size())
+        {
+            const CardData* d = m_hand.GetCards()[m_selectedCardIndex]->GetData();
+            if (d->type == CardType::Move)
+            {
+                for (auto& p : m_movePath) raised.insert(p);
+            }
+            else if (m_hoveredCell.first >= 0)
+            {
+                // 効果範囲内のマスだけ浮かせる
+                int range = d->range;
+                if (m_player->GetBuffManager().HasBuff(BuffType::Reposition))
+                    range += m_player->GetBuffManager().GetBuffValue(BuffType::Reposition);
+
+                if (RangeShape::Contains(m_playerCol, m_playerRow,
+                    m_hoveredCell.first, m_hoveredCell.second, d->rangeType, range))
+                    raised.insert({ m_hoveredCell.first, m_hoveredCell.second });
+            }
+        }
+
+        for (int row = 0; row < m_gridMap->GetRows(); row++)
+            for (int col = 0; col < m_gridMap->GetCols(); col++)
+            {
+                auto& cell = m_gridMap->GetCell(col, row);
+                float target = raised.count({ col, row }) ? 0.30f : 0.0f;
+                cell.gameObject.worldY += (target - cell.gameObject.worldY) * 0.2f;   // 補間
+            }
+    }
+
     for (int row = 0; row < m_gridMap->GetRows(); row++)
     {
         for (int col = 0; col < m_gridMap->GetCols(); col++)
@@ -614,7 +660,9 @@ void BattleScene::Draw()
             float x = (col - m_gridMap->GetCols() / 2.0f) * 1.1f;
             float z = (row - m_gridMap->GetRows() / 2.0f) * 1.1f;
             auto& cell = m_gridMap->GetCell(col, row);
-            m_renderer3D->DrawTile(m_whiteTexture, x, z, 1.0f, cell.gameObject.color);
+            float t = cell.gameObject.worldY / 0.10f;              // 0=通常, 1=浮ききった状態
+            float size = 1.0f + 0.02f * t;                          // 少しだけ拡大
+            m_renderer3D->DrawTile(m_whiteTexture, x, z, size, cell.gameObject.color, cell.gameObject.worldY);
         }
     }
 
@@ -629,16 +677,22 @@ void BattleScene::Draw()
                 float x = (col - m_gridMap->GetCols() / 2.0f) * 1.1f;
                 float z = (row - m_gridMap->GetRows() / 2.0f) * 1.1f;
 
+                float t = cell.gameObject.worldY / 0.10f;
+
                 const TerrainDef* def = TerrainDataBase::Get(cell.tileEffect.id);
                 XMFLOAT4 terrainColor = def ? def->color : XMFLOAT4(1, 1, 1, 0.5f);
 
                 if (def && !def->texture.empty())
-                    m_renderer3D->DrawTile(TextureManager::Get(def->texture), x, z, 0.8f, XMFLOAT4(1, 1, 1, 1));
+                    m_renderer3D->DrawTile(TextureManager::Get(def->texture), x, z, 0.8f + 0.064f * t, XMFLOAT4(1, 1, 1, 1), cell.gameObject.worldY + 0.01f);
                 else
-                    m_renderer3D->DrawTile(m_whiteTexture, x, z, 0.8f, terrainColor);
+                    m_renderer3D->DrawTile(m_whiteTexture, x, z, 0.8f + 0.064f * t, terrainColor, cell.gameObject.worldY + 0.01f);
             }
         }
     }
+
+    // 敵は乗っているマスの高さに合わせる
+    for (auto enemy : m_enemies)
+        enemy->worldY = 0.05f + m_gridMap->GetCell(enemy->gridCol, enemy->gridRow).gameObject.worldY;
 
     // 移動不可マスの×マーク（深度テストOFF、敵より先に描画）
     auto& blockedCells = m_highlighter.GetOutOfRangeCells();
@@ -692,16 +746,17 @@ void BattleScene::Draw()
     for (auto enemy : m_enemies)
         enemy->Draw3D(m_renderer3D);
 
-    // 移動経路の終点に半透明プレイヤー（長押し中）
+    // 移動経路の終点に半透明プレイヤー
     if (m_pathBuilding && !m_movePath.empty())
     {
         int gc = m_movePath.back().first;
         int gr = m_movePath.back().second;
         float gx = (gc - m_gridMap->GetCols() / 2.0f) * 1.1f;
         float gz = (gr - m_gridMap->GetRows() / 2.0f) * 1.1f;
+        float gy = m_player->worldY + m_gridMap->GetCell(gc, gr).gameObject.worldY;   // ← マスの浮きぶん
         m_renderer3D->DrawBillboard(
             TextureManager::Get("player"),
-            gx, m_player->worldY, gz,
+            gx, gy, gz,
             m_player->width, m_player->height, 0.0f,
             XMFLOAT4(0.5f, 0.7f, 1.0f, 0.3f));
     }
@@ -1105,6 +1160,8 @@ void BattleScene::HandleInput()
                     + m_selectedCardIndex * (CARD_WIDTH + 10.0f);
                 float playCardY = m_screenHeight - 30.0f;
 
+                const CardData* dataPtr = card->GetData();
+
                 auto execResult = m_cardExecutor.Execute(
                     dataCopy, cardId,
                     targetCol, targetRow,
@@ -1127,7 +1184,20 @@ void BattleScene::HandleInput()
                         m_player->gridRow = m_playerRow;
                         float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
                         float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
-                        m_player->StartMove(px, pz);
+                        if (usePath && !usePath->empty())
+                        {
+                            m_playerWalkPath = *usePath;      // 経路を保存
+                            m_playerWalkIndex = 0;
+                            // 最初の1マスへ
+                            auto& f = m_playerWalkPath[0];
+                            float wx = (f.first - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                            float wz = (f.second - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                            m_player->StartMove(wx, wz, 0.12f, true);   // 1マスぶんの時間
+                        }
+                        else
+                        {
+                            m_player->StartMove(px, pz);
+                        }
 
                         auto& movedCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
 
@@ -1182,7 +1252,20 @@ void BattleScene::HandleInput()
                                 m_player->gridRow = m_playerRow;
                                 float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
                                 float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
-                                m_player->StartMove(px, pz);
+                                if (usePath && !usePath->empty())
+                                {
+                                    m_playerWalkPath = *usePath;      // 経路を保存
+                                    m_playerWalkIndex = 0;
+                                    // 最初の1マスへ
+                                    auto& f = m_playerWalkPath[0];
+                                    float wx = (f.first - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                                    float wz = (f.second - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                                    m_player->StartMove(wx, wz, 0.12f, true);   // 1マスぶんの時間
+                                }
+                                else
+                                {
+                                    m_player->StartMove(px, pz);
+                                }
 
                                 auto& slideCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
                                 if (slideCell.tileEffect.active)
@@ -1200,9 +1283,7 @@ void BattleScene::HandleInput()
 
                     for (auto& drawnId : execResult.drawnCards)
                         m_battleUI->StartDrawCardEffect(drawnId);
-
-                    m_battleUI->StartPlayCardEffect(dataCopy.type, playCardX, playCardY);
-                    m_battleUI->OnCardRemoved(m_selectedCardIndex);
+                    m_battleUI->StartPlayCardEffect(dataPtr, m_selectedCardIndex);
                     ProcessDeadEnemies();
                     m_selectedCardIndex = -1;
                     cardJustUsed = true;
@@ -1415,6 +1496,8 @@ void BattleScene::HandleInput()
                     + m_selectedCardIndex * (CARD_WIDTH + 10.0f);
                 float playCardY = m_screenHeight - 30.0f;
 
+                const CardData* dataPtr = card->GetData();
+
                 auto execResult = m_cardExecutor.Execute(
                     dataCopy, cardId,
                     result.col, result.row,
@@ -1511,9 +1594,7 @@ void BattleScene::HandleInput()
 
                     for (auto& drawnId : execResult.drawnCards)
                         m_battleUI->StartDrawCardEffect(drawnId);
-
-                    m_battleUI->StartPlayCardEffect(dataCopy.type, playCardX, playCardY);
-                    m_battleUI->OnCardRemoved(m_selectedCardIndex);
+                    m_battleUI->StartPlayCardEffect(dataPtr, m_selectedCardIndex);
 
                     ProcessDeadEnemies();
 

@@ -288,11 +288,10 @@ void Renderer3D::SetDepthEnabled(bool enabled)
 }
 
 void Renderer3D::DrawTile(ID3D11ShaderResourceView* texture,
-    float x, float z, float size,
-    const XMFLOAT4& color)
+    float x, float z, float size, const XMFLOAT4& color, float y)
 {
     XMMATRIX world = XMMatrixScaling(size, 1.0f, size) *
-        XMMatrixTranslation(x, 0.0f, z);
+        XMMatrixTranslation(x, y, z);
 
     ConstantBuffer3D cb;
     cb.World = XMMatrixTranspose(world);

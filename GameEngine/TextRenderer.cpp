@@ -69,11 +69,9 @@ void TextRenderer::End()
 }
 
 void TextRenderer::DrawText(const wchar_t* text,
-    float x, float y,
-    float size,
-    D2D1_COLOR_F color)
+    float x, float y, float size, D2D1_COLOR_F color,
+    float rotation, float pivotX, float pivotY)
 {
-    // フォントサイズが違う場合は新しいフォーマットを作成
     ComPtr<IDWriteTextFormat> format;
     m_dwriteFactory->CreateTextFormat(
         L"Arial", nullptr,
@@ -86,7 +84,15 @@ void TextRenderer::DrawText(const wchar_t* text,
 
     m_brush->SetColor(color);
 
+    if (rotation != 0.0f)
+        m_d2dRenderTarget->SetTransform(
+            D2D1::Matrix3x2F::Rotation(rotation * 180.0f / 3.14159f,
+                D2D1::Point2F(pivotX, pivotY)));
+
     D2D1_RECT_F rect = D2D1::RectF(x, y, x + 500.0f, y + 200.0f);
     m_d2dRenderTarget->DrawTextW(text, (UINT32)wcslen(text),
         format.Get(), rect, m_brush.Get());
+
+    if (rotation != 0.0f)
+        m_d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 }

@@ -33,8 +33,9 @@ public:
     float m_moveTimer = 0;
     float m_moveDuration = 0.25f;
     bool m_isMoving = false;
+    bool m_moveLinear = false;
 
-    void StartMove(float toX, float toZ, float duration = 1.6f)
+    void StartMove(float toX, float toZ, float duration = 1.6f, bool linear = false)
     {
         m_startWorldX = worldX;
         m_startWorldZ = worldZ;
@@ -42,6 +43,7 @@ public:
         m_targetWorldZ = toZ;
         m_moveTimer = 0;
         m_moveDuration = duration;
+        m_moveLinear = linear;
         m_isMoving = true;
     }
 
@@ -55,7 +57,7 @@ public:
             t = 1.0f;
             m_isMoving = false;
         }
-        float ease = t * t * (3.0f - 2.0f * t);
+        float ease = m_moveLinear ? t : t * t * (3.0f - 2.0f * t);
         worldX = m_startWorldX + (m_targetWorldX - m_startWorldX) * ease;
         worldZ = m_startWorldZ + (m_targetWorldZ - m_startWorldZ) * ease;
     }

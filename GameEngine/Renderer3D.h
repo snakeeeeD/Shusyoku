@@ -36,7 +36,7 @@ public:
     // è∞É^ÉCÉãï`âÊ
     void DrawTile(ID3D11ShaderResourceView* texture,
         float x, float z, float size,
-        const XMFLOAT4& color = XMFLOAT4(1, 1, 1, 1));
+        const XMFLOAT4& color = XMFLOAT4(1, 1, 1, 1), float y = 0.0f);
 
     void DrawTileEx(ID3D11ShaderResourceView* texture,
         float x, float z, float width, float depth,

@@ -43,6 +43,8 @@ struct DiscardCardEffect {
 
 struct CardAnimState {
     float currentX, currentY;
+    float currentScale = 1.0f;
+    float currentRot = 0.0f;
 };
 
 struct PlayCardEffect {
@@ -51,6 +53,7 @@ struct PlayCardEffect {
     float timer;
     bool done;
     CardType cardType;
+    const CardData* data = nullptr;
 };
 
 struct HPBarInfo
@@ -112,13 +115,17 @@ public:
     void UpdateCardAnimations(float deltaTime, int handSize, int hoveredIndex, 
         int selectedIndex, POINT mousePos, bool selectedNeedsTarget);
     void OnCardRemoved(int index);
-    void StartPlayCardEffect(CardType type, float fromX, float fromY);
     void UpdatePlayCardEffects(float deltaTime);
 
     void ClearCardAnimations() { m_cardAnims.clear(); }
 
+    void StartPlayCardEffect(CardType type, int cardIndex);
+    void StartPlayCardEffect(const CardData* data, int cardIndex);
+    void StartPlayCardEffect(CardType type, float fromX, float fromY);
+
     TextRenderer* GetTextRenderer() { return m_textRenderer; }
     int GetPanelHoveredEnemy() const { return m_panelHoveredEnemy; }
+
 
 private:
     SpriteRenderer* m_spriteRenderer = nullptr;
@@ -134,8 +141,8 @@ private:
     std::vector<PlayCardEffect> m_playCardEffects;
 
     static constexpr float CARD_WIDTH = 100.0f;
-    static constexpr float CARD_HEIGHT = 110.0f;
-    static constexpr float CARD_HIDE_Y_OFFSET = 30.0f;
+    static constexpr float CARD_HEIGHT = 140.0f;
+    static constexpr float CARD_HIDE_Y_OFFSET = 120.0f;
     static constexpr float CARD_HOVER_Y_OFFSET = 60.0f;
     static constexpr float CARD_HOVER_W = 110.0f;
     static constexpr float CARD_HOVER_H = 140.0f;
@@ -164,8 +171,10 @@ private:
 
     bool GetEnemyScreenPos(Enemy* enemy, Renderer3D* renderer3D, float& outX, float& outY) const;
     bool GetEnemyFootPos(Enemy* enemy, Renderer3D* renderer3D, float& outX, float& outY) const;
-    std::wstring GetCardEffectText(const CardData* data, Player* player) const;
-    bool IsCardBoosted(const CardData* data, Player* player) const;
 
     static void GridToWorld(GridMap* gridMap, int col, int row, float& outX, float& outZ);
+    void GetPlayEffectTransform(const PlayCardEffect& e, float& x, float& y, float& scale);
+    void DrawPlayCardEffectTexts(const BattleUIContext& ctx);
+
+    static constexpr float PLAY_EFFECT_DUR = 1.0f;
 };
