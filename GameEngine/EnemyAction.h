@@ -4,7 +4,7 @@
 #include <vector>
 
 // 効果を当てるための移動（効果の"前"に起きる／予告の危険範囲に含む）
-enum class ApproachType { None, Toward, Dash, Away };
+enum class ApproachType { None, Toward, Dash };
 
 // 何が起きるか
 enum class EffectKind { Damage, Block, Buff, Debuff, MoveToward, MoveAway };

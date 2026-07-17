@@ -90,7 +90,6 @@ inline ApproachType StringToApproach(const std::string& s)
 {
     if (s == "Toward") return ApproachType::Toward;
     if (s == "Dash")   return ApproachType::Dash;
-    if (s == "Away")   return ApproachType::Away;
     return ApproachType::None;
 }
 

@@ -147,6 +147,4 @@ private:
     int m_backtrackFrames = 0;
 
     int m_selectedEnemyRange = -1;
-    std::vector<std::pair<int, int>> m_playerWalkPath;   // Žc‚è‚ÌŒo˜H
-    int m_playerWalkIndex = 0;
 };

@@ -171,6 +171,7 @@
     <ClInclude Include="GameUtils.h" />
     <ClInclude Include="GridMap.h" />
     <ClInclude Include="Hand.h" />
+    <ClInclude Include="HighlightPalette.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="PlayerData.h" />

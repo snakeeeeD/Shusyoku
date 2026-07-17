@@ -1,4 +1,5 @@
 ﻿#include "BattleHighlighter.h"
+#include "HighlightPalette.h"
 #include "EnemyActionType.h"
 #include "EnemyIntentVisual.h"
 #include "Renderer3D.h"
@@ -151,23 +152,19 @@ void BattleHighlighter::UpdatePlayerHighlight(
             }
 
             if (isHovered && !pathMaxed)
-            {
-                cell.gameObject.color = XMFLOAT4(0.2f, hoverBrightness, 0.4f, 1.0f);
-            }
+                cell.gameObject.color = HighlightPalette::Scale(HighlightPalette::MoveRange, hoverBrightness);
             else if (isOnPath)
-            {
-                cell.gameObject.color = XMFLOAT4(0.3f, 0.85f, 0.5f, 1.0f);
-            }
+                cell.gameObject.color = HighlightPalette::MovePath;
             else if (isDangerCell)
             {
                 float blink = 0.6f + 0.4f * sin(timer * 2.0f);
-                cell.gameObject.color = XMFLOAT4(blink, blink, 0.1f, 1.0f);
+                cell.gameObject.color = HighlightPalette::Scale(HighlightPalette::Danger, blink);
             }
             else
             {
                 float brightness = 0.7f - (float)(d - 1) / (float)max(1, actualRange) * 0.3f;
                 brightness = max(0.4f, min(0.7f, brightness));
-                cell.gameObject.color = XMFLOAT4(0.2f, brightness, 0.4f, 1.0f);
+                cell.gameObject.color = HighlightPalette::Scale(HighlightPalette::MoveRange, brightness);
             }
         }
         // 到達不可マス（範囲内だが経路なし）
@@ -184,7 +181,7 @@ void BattleHighlighter::UpdatePlayerHighlight(
 
             m_playerHighlightCells.push_back({ col, row });
             m_outOfRangeCells.push_back({ col, row });
-            cell.gameObject.color = XMFLOAT4(0.25f, 0.25f, 0.25f, 1.0f);
+            cell.gameObject.color = HighlightPalette::Unreachable;
         }
         return;
     }
@@ -314,21 +311,13 @@ void BattleHighlighter::UpdatePlayerHighlight(
         }
 
         // 色設定
+        XMFLOAT4 base = HighlightPalette::ForCard(data->type);
+
         if (data->rangeType == RangeType::Area)
         {
-            if (isEnemy)
-            {
-                if (data->type == CardType::Attack)
-                    cell.gameObject.color = XMFLOAT4(finalBrightness, 0.2f, 0.2f, 1.0f);
-            }
-            else
-            {
-                float brightness = isAreaHovered ? finalBrightness : 0.6f;
-                if (data->type == CardType::Attack)
-                    cell.gameObject.color = XMFLOAT4(brightness, 0.2f, 0.2f, 1.0f);
-                else if (data->type == CardType::Move)
-                    cell.gameObject.color = XMFLOAT4(0.2f, brightness, 0.4f, 1.0f);
-            }
+            float brightness = isEnemy ? finalBrightness
+                : (isAreaHovered ? finalBrightness : 0.6f);
+            cell.gameObject.color = HighlightPalette::Scale(base, brightness);
         }
         else
         {
@@ -338,37 +327,18 @@ void BattleHighlighter::UpdatePlayerHighlight(
             brightness = max(0.4f, min(0.7f, brightness));
 
             if (isHovered)
-            {
-                if (data->type == CardType::Attack)
-                    cell.gameObject.color = XMFLOAT4(finalBrightness, 0.2f, 0.2f, 1.0f);
-                else if (data->type == CardType::Move)
-                    cell.gameObject.color = XMFLOAT4(0.2f, finalBrightness, 0.4f, 1.0f);
-            }
+                cell.gameObject.color = HighlightPalette::Scale(base, finalBrightness);
             else if (data->type == CardType::Attack && isOnHoveredLine)
-            {
-                if (isEnemy)
-                    cell.gameObject.color = XMFLOAT4(finalBrightness, 0.2f, 0.2f, 1.0f);
-                else
-                    cell.gameObject.color = XMFLOAT4(0.35f, 0.15f, 0.15f, 1.0f);
-            }
+                cell.gameObject.color = isEnemy
+                ? HighlightPalette::Scale(base, finalBrightness)
+                : HighlightPalette::AttackLine;
             else if (data->type == CardType::Move && isDangerCell)
             {
-                float blink =  0.6f + 0.4f * sin(timer * 2.0f);
-                cell.gameObject.color = XMFLOAT4(blink, blink, 0.1f, 1.0f);
+                float blink = 0.6f + 0.4f * sin(timer * 2.0f);
+                cell.gameObject.color = HighlightPalette::Scale(HighlightPalette::Danger, blink);
             }
             else
-            {
-                if (data->type == CardType::Attack)
-                    cell.gameObject.color = XMFLOAT4(brightness, 0.2f, 0.2f, 1.0f);
-                else if (data->type == CardType::Move)
-                    cell.gameObject.color = XMFLOAT4(0.2f, brightness, 0.4f, 1.0f);
-                else if (data->type == CardType::Skill)
-                    cell.gameObject.color = XMFLOAT4(0.2f, 0.2f, finalBrightness, 1.0f);
-                else if (data->type == CardType::Power)
-                    cell.gameObject.color = XMFLOAT4(finalBrightness, 0.2f, finalBrightness, 1.0f);
-            }
-
-
+                cell.gameObject.color = HighlightPalette::Scale(base, brightness);
         }
     }
 }
@@ -378,7 +348,7 @@ void BattleHighlighter::UpdateEnemyHighlight(
     int playerCol, int playerRow, float timer)
 {
     ClearEnemyHighlight(gridMap);
-    for (auto e : enemies) e->color = XMFLOAT4(1, 1, 1, 1);
+    for (auto e : enemies) e->color = HighlightPalette::EnemyNormal;
 
     std::map<std::pair<int, int>, int> cellDist;
     std::set<std::pair<int, int>> selCells;
@@ -414,9 +384,11 @@ void BattleHighlighter::UpdateEnemyHighlight(
     {
         float w = 0.5f + 0.5f * sin(m_enemyCycleTimer - dist * 0.8f);
         float br = 0.25f + 0.45f * w;
+
         XMFLOAT4 c = selCells.count(pos)
-            ? XMFLOAT4(br * 0.9, br * 0.9, 0.35f * br, 1.0f)   // 選択中：明るく脈動する黄
-            : XMFLOAT4(br * 0.55f, br * 0.4f, 0.0f, 1.0f);         // 他：暗く沈む
+            ? HighlightPalette::Scale(HighlightPalette::ThreatFocus, br * 1.4f)   // 同じ波・明るく
+            : HighlightPalette::Scale(HighlightPalette::Threat, br * 0.55f);      // 同じ波・沈む
+
         gridMap->GetCell(pos.first, pos.second).gameObject.color = c;
         m_enemyHighlightCells.push_back(pos);
     }

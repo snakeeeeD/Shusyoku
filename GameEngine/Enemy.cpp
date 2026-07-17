@@ -125,43 +125,39 @@ void Enemy::MoveAway(int playerCol, int playerRow, GridMap* gridMap, int steps)
     if (m_immovable) return;
     if (m_buffManager.HasBuff(BuffType::Root)) return;
 
+    const int dirs[4][2] = { {0,1},{0,-1},{1,0},{-1,0} };
+
+    std::vector<std::pair<float, float>> pts;
+
     for (int step = 0; step < steps; step++)
     {
-        int dc = playerCol - gridCol;
-        int dr = playerRow - gridRow;
+        int curDist = abs(playerCol - gridCol) + abs(playerRow - gridRow);
 
-        // プレイヤーと逆方向へ
-        std::vector<std::pair<int, int>> candidates;
-        if (abs(dc) >= abs(dr))
+        int bestCol = gridCol, bestRow = gridRow, bestDist = curDist;
+        for (int d = 0; d < 4; d++)
         {
-            if (dc != 0) candidates.push_back({ gridCol - (dc > 0 ? 1 : -1), gridRow });
-            if (dr != 0) candidates.push_back({ gridCol, gridRow - (dr > 0 ? 1 : -1) });
-        }
-        else
-        {
-            if (dr != 0) candidates.push_back({ gridCol, gridRow - (dr > 0 ? 1 : -1) });
-            if (dc != 0) candidates.push_back({ gridCol - (dc > 0 ? 1 : -1), gridRow });
-        }
-
-        bool moved = false;
-        for (auto& [nc, nr] : candidates)
-        {
-            if (nc < 0 || nc >= gridMap->GetCols()) continue;
-            if (nr < 0 || nr >= gridMap->GetRows()) continue;
+            int nc = gridCol + dirs[d][0];
+            int nr = gridRow + dirs[d][1];
+            if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) continue;
             if (gridMap->GetCell(nc, nr).type != CellType::Empty) continue;
 
-            gridMap->SetCellType(gridCol, gridRow, CellType::Empty);
-            gridCol = nc; gridRow = nr;
-            gridMap->SetCellType(gridCol, gridRow, CellType::Enemy);
-            moved = true;
-            break;
+            int nd = abs(playerCol - nc) + abs(playerRow - nr);
+            if (nd > bestDist) { bestDist = nd; bestCol = nc; bestRow = nr; }   // 一番離れられる所へ
         }
-        if (!moved) break;
+
+        if (bestDist == curDist) break;   // どこへ動いても離れられない＝行き止まり
+        gridMap->SetCellType(gridCol, gridRow, CellType::Empty);
+        gridCol = bestCol; gridRow = bestRow;
+        gridMap->SetCellType(gridCol, gridRow, CellType::Enemy);
+
+        pts.push_back({ (gridCol - gridMap->GetCols() / 2.0f) * 1.1f,
+                        (gridRow - gridMap->GetRows() / 2.0f) * 1.1f });   // ← 通過マスを記録
     }
+
 
     float newX = (gridCol - gridMap->GetCols() / 2.0f) * 1.1f;
     float newZ = (gridRow - gridMap->GetRows() / 2.0f) * 1.1f;
-    StartMove(newX, newZ);
+    if (!pts.empty()) StartWalk(pts, 0.7f);
 }
 
 bool Enemy::MoveDash(int playerCol, int playerRow, GridMap* gridMap, int steps)
@@ -277,33 +273,25 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
     const EnemyAction& act = m_plannedActions[actionIdx];
     const TargetSpec& tg = act.target;
 
-    // 1. 効果を当てるための移動
-    bool reached = true;
+    // 移動より前に「当たるか」を確定させる（＝予告と一致させる）
+    bool hitPlayer = tg.unavoidable
+        || IsInRange(playerCol, playerRow, tg.range, tg.rangeType, tg.minRange);
+
     if (!tg.unavoidable)
     {
         switch (tg.approach)
         {
         case ApproachType::Toward:
-            if (!IsInRange(playerCol, playerRow, tg.range, tg.rangeType, tg.minRange))
-                MoveToward(playerCol, playerRow, gridMap, tg.moveRange);
+            if (!hitPlayer) MoveToward(playerCol, playerRow, gridMap, tg.moveRange);  // 届かないなら詰めるだけ
             break;
         case ApproachType::Dash:
-            if (!IsInRange(playerCol, playerRow, tg.range, tg.rangeType, tg.minRange))
-                reached = MoveDash(playerCol, playerRow, gridMap, tg.moveRange);
-            break;
-        case ApproachType::Away:
-            MoveAway(playerCol, playerRow, gridMap, tg.moveRange);
+            if (!hitPlayer) hitPlayer = MoveDash(playerCol, playerRow, gridMap, tg.moveRange); // 突進は詰めて当てる
             break;
         default: break;
         }
     }
 
-    // 2. プレイヤーが範囲内か
-    bool hitPlayer = tg.unavoidable
-        || (tg.approach == ApproachType::Dash ? reached
-            : IsInRange(playerCol, playerRow, tg.range, tg.rangeType, tg.minRange));
-
-    // 3. 効果を順に適用
+    // 効果を順に適用
     int damage = 0;
     for (auto& e : act.effects)
     {

@@ -257,24 +257,7 @@ void BattleScene::Update(float deltaTime)
         enemy->UpdateDisplayHp(deltaTime);
 
     m_player->UpdateMove(deltaTime);
-
-    // 経路を1マスずつ歩く
-    if (!m_playerWalkPath.empty() && !m_player->IsMoving())
-    {
-        m_playerWalkIndex++;
-        if (m_playerWalkIndex < (int)m_playerWalkPath.size())
-        {
-            auto& n = m_playerWalkPath[m_playerWalkIndex];
-            float wx = (n.first - m_gridMap->GetCols() / 2.0f) * 1.1f;
-            float wz = (n.second - m_gridMap->GetRows() / 2.0f) * 1.1f;
-            m_player->StartMove(wx, wz, 0.25f);
-        }
-        else
-        {
-            m_playerWalkPath.clear();   // 到着
-            m_playerWalkIndex = 0;
-        }
-    }
+    
     for (auto enemy : m_enemies)
     {
         enemy->UpdateMove(deltaTime);
@@ -1186,13 +1169,11 @@ void BattleScene::HandleInput()
                         float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
                         if (usePath && !usePath->empty())
                         {
-                            m_playerWalkPath = *usePath;      // 経路を保存
-                            m_playerWalkIndex = 0;
-                            // 最初の1マスへ
-                            auto& f = m_playerWalkPath[0];
-                            float wx = (f.first - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                            float wz = (f.second - m_gridMap->GetRows() / 2.0f) * 1.1f;
-                            m_player->StartMove(wx, wz, 0.12f, true);   // 1マスぶんの時間
+                            std::vector<std::pair<float, float>> pts;
+                            for (auto& p : *usePath)
+                                pts.push_back({ (p.first - m_gridMap->GetCols() / 2.0f) * 1.1f,
+                                                (p.second - m_gridMap->GetRows() / 2.0f) * 1.1f });
+                            m_player->StartWalk(pts, 0.12f);
                         }
                         else
                         {
@@ -1252,20 +1233,7 @@ void BattleScene::HandleInput()
                                 m_player->gridRow = m_playerRow;
                                 float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
                                 float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
-                                if (usePath && !usePath->empty())
-                                {
-                                    m_playerWalkPath = *usePath;      // 経路を保存
-                                    m_playerWalkIndex = 0;
-                                    // 最初の1マスへ
-                                    auto& f = m_playerWalkPath[0];
-                                    float wx = (f.first - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                                    float wz = (f.second - m_gridMap->GetRows() / 2.0f) * 1.1f;
-                                    m_player->StartMove(wx, wz, 0.12f, true);   // 1マスぶんの時間
-                                }
-                                else
-                                {
-                                    m_player->StartMove(px, pz);
-                                }
+                                m_player->StartMove(px, pz);
 
                                 auto& slideCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
                                 if (slideCell.tileEffect.active)

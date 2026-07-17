@@ -440,12 +440,22 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                     m_hoveredBuffX = buffIconX;
                     m_hoveredBuffY = buffIconY;
                 }
-                m_spriteRenderer->DrawSprite(m_whiteTexture,
-                    buffIconX - 1.0f, buffIconY - 1.0f, iconSize + 2.0f, iconSize + 2.0f,
-                    0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
-                m_spriteRenderer->DrawSprite(m_whiteTexture,
-                    buffIconX, buffIconY, iconSize, iconSize, 0.0f,
-                    iconHover ? XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f) : buffColor);
+                    auto btex = TextureManager::Get(BuffInfo::Get(buff.type).texture);
+                if (btex)
+                {
+                    m_spriteRenderer->DrawSprite(btex,
+                        buffIconX, buffIconY, iconSize, iconSize, 0.0f,
+                        iconHover ? XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f) : XMFLOAT4(0.85f, 0.85f, 0.85f, 1.0f));
+                }
+                else
+                {
+                    m_spriteRenderer->DrawSprite(m_whiteTexture,
+                        buffIconX - 1.0f, buffIconY - 1.0f, iconSize + 2.0f, iconSize + 2.0f,
+                        0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
+                    m_spriteRenderer->DrawSprite(m_whiteTexture,
+                        buffIconX, buffIconY, iconSize, iconSize, 0.0f,
+                        iconHover ? XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f) : buffColor);
+                }
                 buffIconX += iconSize + 20.0f;
             }
 
@@ -456,19 +466,14 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 float iconY = barY - iconSize - 2.0f;
 
                 for (auto& act : enemy->GetPlannedActions())
-                    for (auto& e : act.effects)
-                    {
-                        if (!EnemyIntentVisual::ShouldShow(e)) continue;
-                        XMFLOAT4 iconColor = EnemyIntentVisual::GetIconColor(e);
-
-                        m_spriteRenderer->DrawSprite(m_whiteTexture,
-                            iconX - 1.0f, iconY - 1.0f, iconSize + 2.0f, iconSize + 2.0f,
-                            0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
-                        m_spriteRenderer->DrawSprite(m_whiteTexture,
-                            iconX, iconY, iconSize, iconSize, 0.0f, iconColor);
-
-                        iconX += EnemyIntentVisual::STEP;
-                    }
+                    for (auto& act : enemy->GetPlannedActions())
+                        for (auto& e : act.effects)
+                        {
+                            if (!EnemyIntentVisual::ShouldShow(e)) continue;
+                            EnemyIntentVisual::DrawIcon(m_spriteRenderer, m_whiteTexture, e,
+                                iconX, iconY, EnemyIntentVisual::ICON_SIZE);
+                            iconX += EnemyIntentVisual::STEP;
+                        }
             }
         }
 
@@ -532,14 +537,17 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                     {
                         if (!EnemyIntentVisual::ShouldShow(e)) continue;
 
-                        int shownVal = EnemyIntentVisual::GetDisplayValue(e, enemy->GetBuffManager());
-                        wchar_t buf[16];
-                        swprintf_s(buf, L"%d", shownVal);
+                        if (EnemyIntentVisual::HasValue(e))
+                        {
+                            int shownVal = EnemyIntentVisual::GetDisplayValue(e, enemy->GetBuffManager());
+                            wchar_t buf[16];
+                            swprintf_s(buf, L"%d", shownVal);
 
-                        m_textRenderer->DrawText(buf, ix + iconSize + 4.0f, iy + 2.0f, 14.0f,
-                            D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
-                        m_textRenderer->DrawText(buf, ix + iconSize + 3.0f, iy + 1.0f, 14.0f,
-                            D2D1::ColorF(D2D1::ColorF::White));
+                            m_textRenderer->DrawText(buf, ix + iconSize + 4.0f, iy + 2.0f, 14.0f,
+                                D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
+                            m_textRenderer->DrawText(buf, ix + iconSize + 3.0f, iy + 1.0f, 14.0f,
+                                D2D1::ColorF(D2D1::ColorF::White));
+                        }
 
                         ix += EnemyIntentVisual::STEP;
                     }
@@ -1686,21 +1694,8 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
         const EnemyAction* action = enemy->GetNextAction();
         if (action)
         {
-            std::wstring dispText = action->description;
-
-            // 説明文中の素の値を、バフ適用後の値に差し替え
-            for (auto& e : action->effects)
-            {
-                if (e.value <= 0) continue;
-                int finalVal = EnemyIntentVisual::GetDisplayValue(e, enemy->GetBuffManager());
-                if (finalVal == e.value) continue;
-
-                std::wstring oldNum = std::to_wstring(e.value);
-                std::wstring newNum = std::to_wstring(finalVal);
-                size_t pos = dispText.find(oldNum);
-                if (pos != std::wstring::npos)
-                    dispText.replace(pos, oldNum.size(), newNum);
-            }
+            std::wstring dispText =
+                EnemyIntentVisual::GetActionText(*action, enemy->GetBuffManager());
 
             m_textRenderer->DrawText(dispText.c_str(),
                 panelX + iconSize + 10.0f, entryY + 32.0f, 14.0f,
@@ -1713,16 +1708,10 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
             float detailX = panelX - 200.0f;
             float lineY = entryY + 5.0f;
 
-            const EnemyAction* act = enemy->GetNextAction();
             for (auto& act : enemy->GetPlannedActions())
             {
-                std::wstring actionText = act.description;
-                for (auto& e : act.effects)
-                {
-                    if (!EnemyIntentVisual::ShouldShow(e)) continue;
-                    actionText += L" " + std::to_wstring(
-                        EnemyIntentVisual::GetDisplayValue(e, enemy->GetBuffManager()));
-                }
+                std::wstring actionText =
+                    EnemyIntentVisual::GetActionText(act, enemy->GetBuffManager());
                 m_textRenderer->DrawText(actionText.c_str(),
                     detailX + 10.0f, lineY, 15.0f, D2D1::ColorF(1.0f, 0.8f, 0.3f));
                 lineY += 22.0f;

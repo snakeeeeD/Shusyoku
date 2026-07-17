@@ -1,6 +1,8 @@
 #pragma once
 #include <d3d11.h>
 #include <DirectXMath.h>
+#include <vector>
+#include <utility>
 using namespace DirectX;
 
 class GameObject
@@ -52,14 +54,35 @@ public:
         if (!m_isMoving) return;
         m_moveTimer += deltaTime;
         float t = m_moveTimer / m_moveDuration;
-        if (t >= 1.0f)
-        {
-            t = 1.0f;
-            m_isMoving = false;
-        }
+        if (t >= 1.0f) { t = 1.0f; m_isMoving = false; }
         float ease = m_moveLinear ? t : t * t * (3.0f - 2.0f * t);
         worldX = m_startWorldX + (m_targetWorldX - m_startWorldX) * ease;
         worldZ = m_startWorldZ + (m_targetWorldZ - m_startWorldZ) * ease;
+
+        // 経路が残っていれば次のマスへ（空白フレーム無しで連続）
+        if (!m_isMoving && !m_walkPoints.empty())
+        {
+            m_walkIndex++;
+            if (m_walkIndex < (int)m_walkPoints.size())
+                StartMove(m_walkPoints[m_walkIndex].first, m_walkPoints[m_walkIndex].second,
+                    m_walkStepDur, true);
+            else
+                m_walkPoints.clear();
+        }
+    }
+
+    std::vector<std::pair<float, float>> m_walkPoints;   // 通過するワールド座標
+    int   m_walkIndex = 0;
+    float m_walkStepDur = 0.12f;
+
+    // 経路に沿って1マスずつ等速で歩く
+    void StartWalk(const std::vector<std::pair<float, float>>& pts, float stepDur = 0.12f)
+    {
+        if (pts.empty()) return;
+        m_walkPoints = pts;
+        m_walkIndex = 0;
+        m_walkStepDur = stepDur;
+        StartMove(pts[0].first, pts[0].second, stepDur, true);
     }
 
     bool IsMoving() const { return m_isMoving; }

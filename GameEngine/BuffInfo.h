@@ -10,6 +10,7 @@ struct BuffInfo
     std::wstring name;
     std::wstring description;
     XMFLOAT4 color;
+    std::string texture;
 
     static const BuffInfo& Get(BuffType type)
     {

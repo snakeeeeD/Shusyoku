@@ -8,7 +8,7 @@
       "height": 1.0,
       "actions": [
         {
-          "description": "3ダメージ",
+          "description": "{0}ダメージ",
           "target": {
             "rangeType": "Adjacent",
             "range": 1,
@@ -24,7 +24,7 @@
           "select": { "chance": 40 }
         },
         {
-          "description": "2ダメージ+毒2",
+          "description": "{0}ダメージ+毒{1}",
           "target": {
             "rangeType": "Adjacent",
             "range": 1,
@@ -67,7 +67,7 @@
       "height": 1.0,
       "actions": [
         {
-          "description": "8ダメージ＋攻撃UP",
+          "description": "{0}ダメージ＋攻撃UP",
           "target": {
             "rangeType": "Adjacent",
             "range": 1
@@ -88,7 +88,7 @@
           "select": { "chance": 50 }
         },
         {
-          "description": "斬って離脱",
+          "description": "{0}斬って離脱",
           "target": {
             "rangeType": "Adjacent",
             "range": 1,
@@ -112,7 +112,7 @@
           }
         },
         {
-          "description": "5ブロック",
+          "description": "{0}ブロック",
           "target": { "rangeType": "None" },
           "effects": [
             {
@@ -123,7 +123,7 @@
           "select": { "chance": 20 }
         },
         {
-          "description": "突進10",
+          "description": "{0}ダメージ突進",
           "target": {
             "rangeType": "Cross",
             "range": 1,
@@ -139,7 +139,7 @@
           "select": { "chance": 100 }
         },
         {
-          "description": "扇薙ぎ8",
+          "description": "扇薙ぎ{0}ダメージ",
           "target": {
             "rangeType": "Cone",
             "range": 3,
@@ -165,7 +165,7 @@
       "height": 1.2,
       "actions": [
         {
-          "description": "12ダメージ",
+          "description": "{0}ダメージ",
           "target": {
             "rangeType": "Adjacent",
             "range": 1,
@@ -181,7 +181,7 @@
           "select": { "chance": 50 }
         },
         {
-          "description": "遠距離6ダメージ",
+          "description": "遠距離{0}ダメージ",
           "target": {
             "rangeType": "Cross",
             "range": 5
@@ -195,7 +195,7 @@
           "select": { "chance": 30 }
         },
         {
-          "description": "8ブロック",
+          "description": "{0}ブロック",
           "target": { "rangeType": "None" },
           "effects": [
             {
@@ -206,7 +206,7 @@
           "select": { "chance": 20 }
         },
         {
-          "description": "攻撃UP(3の倍数)",
+          "description": "攻撃UP+{0}",
           "target": { "rangeType": "None" },
           "effects": [
             {
@@ -224,7 +224,7 @@
           }
         },
         {
-          "description": "一撃",
+          "description": "一撃必殺",
           "target": {
             "rangeType": "Area",
             "range": 5,
@@ -261,7 +261,7 @@
       "isBoss": true,
       "actions": [
         {
-          "description": "20ダメージ",
+          "description": "{0}ダメージ",
           "target": {
             "rangeType": "Adjacent",
             "range": 1
@@ -275,7 +275,7 @@
           "select": { "chance": 40 }
         },
         {
-          "description": "炎ブレス15ダメージ",
+          "description": "炎ブレス{0}ダメージ",
           "target": {
             "rangeType": "Cross",
             "range": 3
@@ -289,7 +289,7 @@
           "select": { "chance": 35 }
         },
         {
-          "description": "範囲攻撃8ダメージ",
+          "description": "範囲攻撃{0}ダメージ",
           "target": {
             "rangeType": "Area",
             "range": 2
@@ -313,7 +313,7 @@
       "height": 1.2,
       "actions": [
         {
-          "description": "強打12（隣接）",
+          "description": "強打{0}",
           "target": {
             "rangeType": "Adjacent",
             "range": 1,
@@ -329,7 +329,7 @@
           "select": { "chance": 60 }
         },
         {
-          "description": "薙ぎ払い7（周囲5x5）",
+          "description": "薙ぎ払い{0}ダメージ",
           "target": {
             "rangeType": "Area",
             "range": 2,
@@ -356,12 +356,13 @@
       "actions": [
         {
           "description": "後退",
-          "target": {
-            "rangeType": "None",
-            "approach": "Away",
-            "moveRange": 5
-          },
-          "effects": [],
+          "target": { "rangeType": "None" },
+          "effects": [
+            {
+              "kind": "MoveAway",
+              "value": 2
+            }
+          ],
           "select": {
             "condition": "near",
             "conditionValue": 2,
@@ -369,7 +370,7 @@
           }
         },
         {
-          "description": "狙撃6(必中)",
+          "description": "狙撃{0}(必中)",
           "target": { "unavoidable": true },
           "effects": [
             {
@@ -390,7 +391,7 @@
       "height": 1.0,
       "actions": [
         {
-          "description": "波動9(2〜3マス)",
+          "description": "波動{0}",
           "target": {
             "rangeType": "Area",
             "range": 3,
@@ -407,7 +408,7 @@
           "select": { "chance": 60 }
         },
         {
-          "description": "至近5",
+          "description": "至近{0}ダメージ",
           "target": {
             "rangeType": "Cross",
             "range": 1,
@@ -423,7 +424,7 @@
           "select": { "chance": 40 }
         },
         {
-          "description": "射程UP(3の倍数)",
+          "description": "射程UP",
           "target": { "rangeType": "None" },
           "effects": [
             {
