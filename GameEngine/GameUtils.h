@@ -1,7 +1,7 @@
 #pragma once
 #include "CardType.h"
 #include "CardData.h"
-#include "EnemyActionType.h"
+#include "EnemyAction.h"
 #include "BuffType.h"
 #include "GridMap.h"
 #include <string>
@@ -29,18 +29,6 @@ inline CardType StringToCardType(const std::string& str)
     if (str == "Move")   return CardType::Move;
     if (str == "Power")  return CardType::Power;
     return CardType::Attack;
-}
-
-// •¶Žš—ñ‚©‚çEnemyActionType‚É•ÏŠ·
-inline EnemyActionType StringToActionType(const std::string& str)
-{
-    if (str == "Attack") return EnemyActionType::Attack;
-    if (str == "Defend") return EnemyActionType::Defend;
-    if (str == "Move")   return EnemyActionType::Move;
-    if (str == "Buf")    return EnemyActionType::Buf;
-    if (str == "Debuf")  return EnemyActionType::Debuf;
-    if (str == "Retreat") return EnemyActionType::Retreat;
-    return EnemyActionType::Attack;
 }
 
 // UTF-8•¶Žš—ñ‚©‚çwstring‚É•ÏŠ·
@@ -96,4 +84,29 @@ inline BuffType StringToBuffType(const std::string& str)
     if (str == "Burn")        return BuffType::Burn;
     if (str == "Poison")      return BuffType::Poison;
     return BuffType::AttackUp;
+}
+
+inline ApproachType StringToApproach(const std::string& s)
+{
+    if (s == "Toward") return ApproachType::Toward;
+    if (s == "Dash")   return ApproachType::Dash;
+    if (s == "Away")   return ApproachType::Away;
+    return ApproachType::None;
+}
+
+inline EffectKind StringToEffectKind(const std::string& s)
+{
+    if (s == "Block")      return EffectKind::Block;
+    if (s == "Buff")       return EffectKind::Buff;
+    if (s == "Debuff")     return EffectKind::Debuff;
+    if (s == "MoveToward") return EffectKind::MoveToward;
+    if (s == "MoveAway")   return EffectKind::MoveAway;
+    return EffectKind::Damage;
+}
+
+inline ApplyTo StringToApplyTo(const std::string& s)
+{
+    if (s == "Self")   return ApplyTo::Self;
+    if (s == "Allies") return ApplyTo::Allies;
+    return ApplyTo::Player;
 }

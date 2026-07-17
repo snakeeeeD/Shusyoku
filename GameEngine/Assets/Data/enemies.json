@@ -4,36 +4,57 @@
       "id": "slime",
       "texture": "enemy_slime",
       "hp": 20,
-      "attack": 3,
       "width": 1.0,
       "height": 1.0,
       "actions": [
         {
-          "type": "Attack",
-          "value": 3,
-          "range": 1,
-          "rangeType": "Adjacent",
-          "chance": 40,
-          "description": "3ダメージ"
+          "description": "3ダメージ",
+          "target": {
+            "rangeType": "Adjacent",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 1
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 3
+            }
+          ],
+          "select": { "chance": 40 }
         },
         {
-          "type": "Attack",
-          "value": 2,
-          "range": 1,
-          "rangeType": "Adjacent",
-          "chance": 30,
           "description": "2ダメージ+毒2",
-          "onHitBuffType": "Poison",
-          "onHitValue": 2,
-          "onHitDuration": 3
+          "target": {
+            "rangeType": "Adjacent",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 1
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 2
+            },
+            {
+              "kind": "Debuff",
+              "buff": "Poison",
+              "value": 2,
+              "duration": 3
+            }
+          ],
+          "select": { "chance": 30 }
         },
         {
-          "type": "Move",
-          "value": 0,
-          "range": 0,
-          "rangeType": "None",
-          "chance": 30,
-          "description": "移動"
+          "description": "移動",
+          "target": { "rangeType": "None" },
+          "effects": [
+            {
+              "kind": "MoveToward",
+              "value": 1
+            }
+          ],
+          "select": { "chance": 30 }
         }
       ]
     },
@@ -42,76 +63,96 @@
       "id": "goblin",
       "texture": "enemy_goblin",
       "hp": 40,
-      "attack": 8,
       "width": 1.0,
       "height": 1.0,
       "actions": [
         {
-          "type": "Attack",
-          "value": 8,
-          "range": 1,
-          "rangeType": "Adjacent",
-          "chance": 50,
           "description": "8ダメージ＋攻撃UP",
-          "subActions": [
+          "target": {
+            "rangeType": "Adjacent",
+            "range": 1
+          },
+          "effects": [
             {
-              "type": "Buf",
+              "kind": "Damage",
+              "value": 8
+            },
+            {
+              "kind": "Buff",
+              "buff": "AttackUp",
               "value": 3,
-              "range": 0,
-              "rangeType": "None",
-              "description": "攻撃力UP",
-              "buffType": "AttackUp",
-              "duration": 2
+              "duration": 2,
+              "applyTo": "Self"
             }
-          ]
+          ],
+          "select": { "chance": 50 }
         },
         {
-          "type": "Attack",
-          "value": 8,
-          "range": 1,
-          "condition": "near",
-          "conditionValue": 1,
-          "rangeType": "Adjacent",
-          "moveRange": 1,
-          "chance": 100,
           "description": "斬って離脱",
-          "subActions": [
+          "target": {
+            "rangeType": "Adjacent",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 1
+          },
+          "effects": [
             {
-              "type": "Retreat",
-              "moveRange": 2,
-              "value": 0,
-              "range": 0,
-              "rangeType": "None",
-              "description": "離脱"
+              "kind": "Damage",
+              "value": 8
+            },
+            {
+              "kind": "MoveAway",
+              "value": 2
             }
-          ]
+          ],
+          "select": {
+            "condition": "near",
+            "conditionValue": 1,
+            "chance": 100
+          }
         },
         {
-          "type": "Defend",
-          "value": 5,
-          "range": 0,
-          "rangeType": "None",
-          "chance": 20,
-          "description": "5ブロック"
+          "description": "5ブロック",
+          "target": { "rangeType": "None" },
+          "effects": [
+            {
+              "kind": "Block",
+              "value": 5
+            }
+          ],
+          "select": { "chance": 20 }
         },
         {
-          "type": "Attack",
-          "dash": true,
-          "value": 10,
-          "range": 1,
-          "rangeType": "Cross",
-          "moveRange": 3,
-          "chance": 100,
-          "description": "突進10"
+          "description": "突進10",
+          "target": {
+            "rangeType": "Cross",
+            "range": 1,
+            "approach": "Dash",
+            "moveRange": 3
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 10
+            }
+          ],
+          "select": { "chance": 100 }
         },
         {
-          "type": "Attack",
-          "value": 8,
-          "range": 3,
-          "rangeType": "Cone",
-          "chance": 100,
-          "moveRange": 1,
-          "description": "扇薙ぎ8"
+          "description": "扇薙ぎ8",
+          "target": {
+            "rangeType": "Cone",
+            "range": 3,
+            "approach": "Toward",
+            "moveRange": 1
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 8
+            }
+          ],
+          "select": { "chance": 100 }
         }
       ]
     },
@@ -120,56 +161,87 @@
       "id": "orc",
       "texture": "enemy_orc",
       "hp": 60,
-      "attack": 12,
       "width": 1.2,
       "height": 1.2,
       "actions": [
         {
-          "type": "Attack",
-          "value": 12,
-          "range": 1,
-          "rangeType": "Adjacent",
-          "chance": 50,
-          "description": "12ダメージ"
+          "description": "12ダメージ",
+          "target": {
+            "rangeType": "Adjacent",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 1
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 12
+            }
+          ],
+          "select": { "chance": 50 }
         },
         {
-          "type": "Attack",
-          "value": 6,
-          "range": 5,
-          "rangeType": "Cross",
-          "chance": 30,
-          "description": "遠距離6ダメージ"
+          "description": "遠距離6ダメージ",
+          "target": {
+            "rangeType": "Cross",
+            "range": 5
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 6
+            }
+          ],
+          "select": { "chance": 30 }
         },
         {
-          "type": "Defend",
-          "value": 8,
-          "range": 0,
-          "rangeType": "None",
-          "chance": 20,
-          "description": "8ブロック"
+          "description": "8ブロック",
+          "target": { "rangeType": "None" },
+          "effects": [
+            {
+              "kind": "Block",
+              "value": 8
+            }
+          ],
+          "select": { "chance": 20 }
         },
         {
-          "type": "Buf",
-          "condition": "turnMultiple",
-          "conditionValue": 3,
-          "buffType": "AttackUp",
-          "value": 3,
-          "duration": -1,
-          "chance": 100,
-          "range": 0,
-          "rangeType": "None",
-          "description": "攻撃UP(3の倍数)"
+          "description": "攻撃UP(3の倍数)",
+          "target": { "rangeType": "None" },
+          "effects": [
+            {
+              "kind": "Buff",
+              "buff": "AttackUp",
+              "value": 3,
+              "duration": -1,
+              "applyTo": "Self"
+            }
+          ],
+          "select": {
+            "condition": "turnMultiple",
+            "conditionValue": 3,
+            "chance": 100
+          }
         },
         {
-          "type": "Attack",
-          "condition": "turnExact",
-          "conditionValue": 7,
-          "value": 30,
-          "range": 5,
-          "rangeType": "Area",
-          "chance": 100,
-          "moveRange": 2,
-          "description": "一撃"
+          "description": "一撃",
+          "target": {
+            "rangeType": "Area",
+            "range": 5,
+            "approach": "Toward",
+            "moveRange": 2
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 30
+            }
+          ],
+          "select": {
+            "condition": "turnExact",
+            "conditionValue": 7,
+            "chance": 100
+          }
         }
       ]
     },
@@ -184,132 +256,189 @@
         [ 1, 1 ]
       ],
       "hp": 150,
-      "attack": 15,
       "width": 1.5,
       "height": 1.5,
       "isBoss": true,
       "actions": [
         {
-          "type": "Attack",
-          "value": 20,
-          "range": 1,
-          "rangeType": "Adjacent",
-          "chance": 40,
-          "description": "20ダメージ"
+          "description": "20ダメージ",
+          "target": {
+            "rangeType": "Adjacent",
+            "range": 1
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 20
+            }
+          ],
+          "select": { "chance": 40 }
         },
         {
-          "type": "Attack",
-          "value": 15,
-          "range": 3,
-          "rangeType": "Cross",
-          "chance": 35,
-          "description": "炎ブレス15ダメージ"
+          "description": "炎ブレス15ダメージ",
+          "target": {
+            "rangeType": "Cross",
+            "range": 3
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 15
+            }
+          ],
+          "select": { "chance": 35 }
         },
         {
-          "type": "Attack",
-          "value": 8,
-          "range": 2,
-          "rangeType": "Area",
-          "chance": 25,
-          "description": "範囲攻撃8ダメージ"
+          "description": "範囲攻撃8ダメージ",
+          "target": {
+            "rangeType": "Area",
+            "range": 2
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 8
+            }
+          ],
+          "select": { "chance": 25 }
         }
       ]
     },
+
     {
       "id": "brute",
       "texture": "enemy_orc",
       "hp": 45,
-      "attack": 10,
       "width": 1.2,
       "height": 1.2,
       "actions": [
         {
-          "type": "Attack",
-          "value": 12,
-          "range": 1,
-          "rangeType": "Adjacent",
-          "chance": 60,
-          "moveRange": 2,
-          "description": "強打12（隣接）"
+          "description": "強打12（隣接）",
+          "target": {
+            "rangeType": "Adjacent",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 2
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 12
+            }
+          ],
+          "select": { "chance": 60 }
         },
         {
-          "type": "Attack",
-          "value": 7,
-          "range": 2,
-          "rangeType": "Area",
-          "chance": 40,
-          "moveRange": 2,
-          "description": "薙ぎ払い7（周囲3x3）"
+          "description": "薙ぎ払い7（周囲5x5）",
+          "target": {
+            "rangeType": "Area",
+            "range": 2,
+            "approach": "Toward",
+            "moveRange": 2
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 7
+            }
+          ],
+          "select": { "chance": 40 }
         }
       ]
     },
+
     {
       "id": "archer",
       "texture": "enemy_archer",
       "hp": 28,
-      "attack": 6,
       "width": 1.0,
       "height": 1.0,
       "actions": [
         {
-          "type": "Retreat",
-          "condition": "near",
-          "conditionValue": 2,
-          "moveRange": 5,
-          "chance": 100,
-          "range": 0,
-          "rangeType": "None",
-          "description": "後退"
+          "description": "後退",
+          "target": {
+            "rangeType": "None",
+            "approach": "Away",
+            "moveRange": 5
+          },
+          "effects": [],
+          "select": {
+            "condition": "near",
+            "conditionValue": 2,
+            "chance": 100
+          }
         },
         {
-          "type": "Attack",
-          "unavoidable": true,
-          "value": 6,
-          "chance": 20,
-          "range": 0,
-          "rangeType": "None",
-          "description": "狙撃6(必中)"
+          "description": "狙撃6(必中)",
+          "target": { "unavoidable": true },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 6
+            }
+          ],
+          "select": { "chance": 20 }
         }
       ]
     },
+
     {
       "id": "caster",
       "texture": "enemy_orc",
       "hp": 35,
-      "attack": 9,
       "width": 1.0,
       "height": 1.0,
       "actions": [
         {
-          "type": "Attack",
-          "value": 9,
-          "range": 3,
-          "minRange": 2,
-          "rangeType": "Area",
-          "chance": 60,
-          "moveRange": 1,
-          "description": "波動9(2〜3マス)"
+          "description": "波動9(2〜3マス)",
+          "target": {
+            "rangeType": "Area",
+            "range": 3,
+            "minRange": 2,
+            "approach": "Toward",
+            "moveRange": 1
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 9
+            }
+          ],
+          "select": { "chance": 60 }
         },
         {
-          "type": "Attack",
-          "value": 5,
-          "range": 1,
-          "rangeType": "Cross",
-          "chance": 40,
-          "moveRange": 1,
-          "description": "至近5"
+          "description": "至近5",
+          "target": {
+            "rangeType": "Cross",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 1
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 5
+            }
+          ],
+          "select": { "chance": 40 }
         },
         {
-          "type": "Buf",
-          "condition": "turnMultiple",
-          "conditionValue": 3,
-          "buffType": "RangeUp",
-          "value": 1,
-          "duration": -1,
-          "chance": 100,
-          "range": 0,
-          "rangeType": "None",
-          "description": "射程UP(3の倍数)"
+          "description": "射程UP(3の倍数)",
+          "target": { "rangeType": "None" },
+          "effects": [
+            {
+              "kind": "Buff",
+              "buff": "RangeUp",
+              "value": 1,
+              "duration": -1,
+              "applyTo": "Self"
+            }
+          ],
+          "select": {
+            "condition": "turnMultiple",
+            "conditionValue": 3,
+            "chance": 100
+          }
         }
       ]
     }

@@ -2,6 +2,7 @@
 #include "BuffInfo.h"
 #include "CardExecutor.h"
 #include "CardVisual.h"
+#include "EnemyIntentVisual.h"
 #include "TerrainDataBase.h"
 #include "GameUtils.h"
 #include "RangeShape.h"
@@ -449,28 +450,25 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             }
 
             // --- 次の行動アイコン（頭上） ---
-            const EnemyAction* action = enemy->GetNextAction();
-            if (action)
             {
-                float iconSize = 18.0f;
+                float iconSize = EnemyIntentVisual::ICON_SIZE;
                 float iconX = barX;
                 float iconY = barY - iconSize - 2.0f;
 
-                XMFLOAT4 iconColor;
-                switch (action->type)
-                {
-                case EnemyActionType::Attack: iconColor = XMFLOAT4(0.9f, 0.2f, 0.2f, 1.0f); break;
-                case EnemyActionType::Defend: iconColor = XMFLOAT4(0.2f, 0.4f, 0.9f, 1.0f); break;
-                case EnemyActionType::Move:   iconColor = XMFLOAT4(0.2f, 0.8f, 0.3f, 1.0f); break;
-                case EnemyActionType::Buf:    iconColor = XMFLOAT4(1.0f, 0.8f, 0.0f, 1.0f); break;
-                case EnemyActionType::Debuf:  iconColor = XMFLOAT4(0.6f, 0.0f, 0.8f, 1.0f); break;
-                default:                      iconColor = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f); break;
-                }
-                m_spriteRenderer->DrawSprite(m_whiteTexture,
-                    iconX - 1.0f, iconY - 1.0f, iconSize + 2.0f, iconSize + 2.0f,
-                    0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
-                m_spriteRenderer->DrawSprite(m_whiteTexture,
-                    iconX, iconY, iconSize, iconSize, 0.0f, iconColor);
+                for (auto& act : enemy->GetPlannedActions())
+                    for (auto& e : act.effects)
+                    {
+                        if (!EnemyIntentVisual::ShouldShow(e)) continue;
+                        XMFLOAT4 iconColor = EnemyIntentVisual::GetIconColor(e);
+
+                        m_spriteRenderer->DrawSprite(m_whiteTexture,
+                            iconX - 1.0f, iconY - 1.0f, iconSize + 2.0f, iconSize + 2.0f,
+                            0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
+                        m_spriteRenderer->DrawSprite(m_whiteTexture,
+                            iconX, iconY, iconSize, iconSize, 0.0f, iconColor);
+
+                        iconX += EnemyIntentVisual::STEP;
+                    }
             }
         }
 
@@ -523,24 +521,28 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
             // 行動の数値（頭上）
             const EnemyAction* action = enemy->GetNextAction();
-            if (action && action->value > 0 && action->type != EnemyActionType::Move)
+            // 行動の数値（複合行動はすべて並べる）
             {
-                float iconSize = 18.0f;
-                float iconX = barX;
-                float iconY = barY - iconSize - 2.0f;
-                wchar_t valueBuf[16];
-                           int shownVal = action->value;
-                if (action->type == EnemyActionType::Attack)
-                    shownVal = enemy->GetBuffManager().GetFinalAttack(action->value);
-                else if (action->type == EnemyActionType::Defend)
-                    shownVal = enemy->GetBuffManager().GetFinalBlock(action->value);
-                swprintf_s(valueBuf, L"%d", shownVal);
-                m_textRenderer->DrawText(valueBuf,
-                    iconX + iconSize + 3.0f + 1.0f, iconY + 1.0f + 1.0f,
-                    14.0f, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
-                m_textRenderer->DrawText(valueBuf,
-                    iconX + iconSize + 3.0f, iconY + 1.0f,
-                    14.0f, D2D1::ColorF(D2D1::ColorF::White));
+                float iconSize = EnemyIntentVisual::ICON_SIZE;
+                float ix = barX;
+                float iy = barY - iconSize - 2.0f;
+
+                for (auto& act : enemy->GetPlannedActions())
+                    for (auto& e : act.effects)
+                    {
+                        if (!EnemyIntentVisual::ShouldShow(e)) continue;
+
+                        int shownVal = EnemyIntentVisual::GetDisplayValue(e, enemy->GetBuffManager());
+                        wchar_t buf[16];
+                        swprintf_s(buf, L"%d", shownVal);
+
+                        m_textRenderer->DrawText(buf, ix + iconSize + 4.0f, iy + 2.0f, 14.0f,
+                            D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
+                        m_textRenderer->DrawText(buf, ix + iconSize + 3.0f, iy + 1.0f, 14.0f,
+                            D2D1::ColorF(D2D1::ColorF::White));
+
+                        ix += EnemyIntentVisual::STEP;
+                    }
             }
 
             // バフ/デバフ数値
@@ -1540,7 +1542,7 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
         float detailX = panelX - 200.0f;
         // 詳細パネルの高さを計算
         float detailH = 10.0f;
-        if (enemy->GetNextAction()) detailH += 22.0f;
+        detailH += 22.0f * (float)enemy->GetPlannedActions().size();
         if (enemy->GetBlock() > 0) detailH += 18.0f;
         if (enemy->IsImmovable()) detailH += 20.0f;
         for (auto& buff : enemy->GetBuffManager().GetBuffs())
@@ -1629,7 +1631,7 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
         float detailX = panelX - 200.0f;
         float detailEntryY = panelY + hoveredEnemy * (entryH + 5.0f);
         float detailH = 10.0f;
-        if (hEnemy->GetNextAction()) detailH += 22.0f;
+        detailH += 22.0f * (float)hEnemy->GetPlannedActions().size();
         if (hEnemy->GetBlock() > 0) detailH += 18.0f;
         if (hEnemy->IsImmovable()) detailH += 20.0f;
         for (auto& buff : hEnemy->GetBuffManager().GetBuffs())
@@ -1685,24 +1687,21 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
         if (action)
         {
             std::wstring dispText = action->description;
-            if (action->type == EnemyActionType::Attack)
+
+            // 説明文中の素の値を、バフ適用後の値に差し替え
+            for (auto& e : action->effects)
             {
-                int finalVal = enemy->GetBuffManager().GetFinalAttack(action->value);
-                std::wstring oldNum = std::to_wstring(action->value);
+                if (e.value <= 0) continue;
+                int finalVal = EnemyIntentVisual::GetDisplayValue(e, enemy->GetBuffManager());
+                if (finalVal == e.value) continue;
+
+                std::wstring oldNum = std::to_wstring(e.value);
                 std::wstring newNum = std::to_wstring(finalVal);
                 size_t pos = dispText.find(oldNum);
                 if (pos != std::wstring::npos)
                     dispText.replace(pos, oldNum.size(), newNum);
             }
-            else if (action->type == EnemyActionType::Defend)
-            {
-                int finalVal = enemy->GetBuffManager().GetFinalBlock(action->value);
-                std::wstring oldNum = std::to_wstring(action->value);
-                std::wstring newNum = std::to_wstring(finalVal);
-                size_t pos = dispText.find(oldNum);
-                if (pos != std::wstring::npos)
-                    dispText.replace(pos, oldNum.size(), newNum);
-            }
+
             m_textRenderer->DrawText(dispText.c_str(),
                 panelX + iconSize + 10.0f, entryY + 32.0f, 14.0f,
                 D2D1::ColorF(D2D1::ColorF::Orange));
@@ -1715,17 +1714,17 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
             float lineY = entryY + 5.0f;
 
             const EnemyAction* act = enemy->GetNextAction();
-            if (act)
+            for (auto& act : enemy->GetPlannedActions())
             {
-                int displayValue = act->value;
-                if (act->type == EnemyActionType::Attack)
-                    displayValue = enemy->GetBuffManager().GetFinalAttack(act->value);
-                else if (act->type == EnemyActionType::Defend)
-                    displayValue = enemy->GetBuffManager().GetFinalBlock(act->value);
-                std::wstring actionText = act->description + L": " + std::to_wstring(displayValue);
+                std::wstring actionText = act.description;
+                for (auto& e : act.effects)
+                {
+                    if (!EnemyIntentVisual::ShouldShow(e)) continue;
+                    actionText += L" " + std::to_wstring(
+                        EnemyIntentVisual::GetDisplayValue(e, enemy->GetBuffManager()));
+                }
                 m_textRenderer->DrawText(actionText.c_str(),
-                    detailX + 10.0f, lineY, 15.0f,
-                    D2D1::ColorF(1.0f, 0.8f, 0.3f));
+                    detailX + 10.0f, lineY, 15.0f, D2D1::ColorF(1.0f, 0.8f, 0.3f));
                 lineY += 22.0f;
             }
 

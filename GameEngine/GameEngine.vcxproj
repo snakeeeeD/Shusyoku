@@ -153,9 +153,9 @@
     <ClInclude Include="EncounterDataBase.h" />
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="EnemyAction.h" />
-    <ClInclude Include="EnemyActionType.h" />
     <ClInclude Include="Enemydata.h" />
     <ClInclude Include="EnemyDataBase.h" />
+    <ClInclude Include="EnemyIntentVisual.h" />
     <ClInclude Include="External\imgui\imgui.h" />
     <ClInclude Include="External\imgui\backends\imgui_impl_dx11.h" />
     <ClInclude Include="External\imgui\backends\imgui_impl_win32.h" />

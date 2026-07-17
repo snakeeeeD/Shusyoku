@@ -7,9 +7,8 @@
 #include "RangeShape.h"
 
 Enemy::Enemy()
-    : m_HP(30), m_maxHP(30), m_attack(5)
+    : m_HP(30), m_maxHP(30)
     , m_block(0)
-    , m_hasNextAction(false)
 {
     width = 1.0f;
     height = 1.0f;
@@ -24,7 +23,6 @@ void Enemy::Init(const std::string& id)
 	m_HP = data->hp;
 	m_maxHP = data->hp;
     m_displayHp = (float)m_HP;
-	m_attack = data->attack;
 	width = data->width;
 	height = data->height;
     m_isBoss = data->isBoss;
@@ -69,113 +67,6 @@ bool Enemy::IsInRange(int targetCol, int targetRow, int range, RangeType rangeTy
     range += m_buffManager.GetBuffValue(BuffType::RangeUp);
     return RangeShape::Contains(gridCol, gridRow, targetCol, targetRow,
         rangeType, range, minRange, m_aimDx, m_aimDy);
-}
-
-int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow, GridMap* gridMap, Player* player)
-{
-    if (actionIdx < 0 || actionIdx >= (int)m_plannedActions.size()) return 0;
-    const EnemyAction& act = m_plannedActions[actionIdx];
-
-    if (act.type == EnemyActionType::Attack)
-    {
-        if (act.unavoidable)
-        {
-            // 位置に関係なく必中
-            if (!act.onHitBuffType.empty() && player)
-            {
-                Buff debuff;
-                debuff.type = StringToBuffType(act.onHitBuffType);
-                debuff.value = act.onHitValue;
-                debuff.duration = act.onHitDuration;
-                const auto& info = BuffInfo::Get(debuff.type);
-                debuff.name = info.name;
-                player->GetBuffManager().AddBuff(debuff);
-            }
-            return m_buffManager.GetFinalAttack(act.value);
-        }
-
-
-        if (IsInRange(playerCol, playerRow, act.range, act.rangeType, act.minRange))
-        {
-  
-            if (!act.onHitBuffType.empty() && player)
-            {
-                Buff debuff;
-                debuff.type = StringToBuffType(act.onHitBuffType);
-                debuff.value = act.onHitValue;
-                debuff.duration = act.onHitDuration;
-                const auto& info = BuffInfo::Get(debuff.type);
-                debuff.name = info.name;
-                player->GetBuffManager().AddBuff(debuff);
-            }
-            StartLunge(player->worldX, player->worldZ);
-            return m_buffManager.GetFinalAttack(act.value);
-        }
-        else
-        {
-            if (act.dash)
-            {
-                if (MoveDash(playerCol, playerRow, gridMap, act.moveRange))
-                {
-                    if (!act.onHitBuffType.empty() && player)
-                    {
-                        Buff debuff;
-                        debuff.type = StringToBuffType(act.onHitBuffType);
-                        debuff.value = act.onHitValue;
-                        debuff.duration = act.onHitDuration;
-                        debuff.name = BuffInfo::Get(debuff.type).name;
-                        player->GetBuffManager().AddBuff(debuff);
-                    }
-                    return m_buffManager.GetFinalAttack(act.value);
-                }
-                return 0;
-            }
-            MoveToward(playerCol, playerRow, gridMap, act.moveRange);
-            return 0;
-        }
-    }
-    else if (act.type == EnemyActionType::Move)
-    {
-        MoveToward(playerCol, playerRow, gridMap, act.moveRange);
-        return 0;
-    }
-    else if (act.type == EnemyActionType::Defend)
-    {
-        AddBlock(m_buffManager.GetFinalBlock(act.value));
-        return 0;
-    }
-    else if (act.type == EnemyActionType::Buf)
-    {
-        Buff buff;
-        buff.type = StringToBuffType(act.buffType);
-        buff.value = act.value;
-        buff.duration = act.duration;
-        const auto& info = BuffInfo::Get(buff.type);
-        buff.name = info.name;
-        m_buffManager.AddBuff(buff);
-        return 0;
-    }
-    else if (act.type == EnemyActionType::Retreat)
-    {
-        MoveAway(playerCol, playerRow, gridMap, act.moveRange);
-        return 0;
-    }
-    else if (act.type == EnemyActionType::Debuf)
-    {
-        if (player)
-        {
-            Buff debuff;
-            debuff.type = StringToBuffType(act.buffType);
-            debuff.value = act.value;
-            debuff.duration = act.duration;
-            const auto& info = BuffInfo::Get(debuff.type);
-            debuff.name = info.name;
-            player->GetBuffManager().AddBuff(debuff);
-        }
-        return 0;
-    }
-
-    return 0;
 }
 
 void Enemy::MoveToward(int playerCol, int playerRow, GridMap* gridMap, int steps)
@@ -327,14 +218,14 @@ void Enemy::ResetBlock()
 
 bool Enemy::ConditionMet(const EnemyAction& a, int playerCol, int playerRow, int turn) const
 {
-    if (a.condition.empty()) return true;
+    if (a.select.condition.empty()) return true;
     int dist = abs(gridCol - playerCol) + abs(gridRow - playerRow);
-    if (a.condition == "near")     return dist <= a.conditionValue;
-    if (a.condition == "far")      return dist >= a.conditionValue;
-    if (a.condition == "hpBelow")  return m_HP * 100 / m_maxHP <= a.conditionValue;
-    if (a.condition == "turnAbove") return turn >= a.conditionValue;
-    if (a.condition == "turnMultiple") return turn > 0 && a.conditionValue > 0 && (turn % a.conditionValue) == 0;
-    if (a.condition == "turnExact")    return turn == a.conditionValue;
+    if (a.select.condition == "near")     return dist <= a.select.conditionValue;
+    if (a.select.condition == "far")      return dist >= a.select.conditionValue;
+    if (a.select.condition == "hpBelow")  return m_HP * 100 / m_maxHP <= a.select.conditionValue;
+    if (a.select.condition == "turnAbove") return turn >= a.select.conditionValue;
+    if (a.select.condition == "turnMultiple") return turn > 0 && a.select.conditionValue > 0 && (turn % a.select.conditionValue) == 0;
+    if (a.select.condition == "turnExact")    return turn == a.select.conditionValue;
     return true;
 }
 
@@ -343,7 +234,7 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
     const EnemyData* data = EnemyDataBase::Get(m_id);
     if (!data || data->actions.empty())
     {
-        m_hasNextAction = false; m_plannedActions.clear(); m_actionIndex = 0; return;
+       return;
     }
 
     std::vector<const EnemyAction*> cond, uncond;
@@ -351,8 +242,8 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
     for (auto& a : data->actions)
     {
         if (!ConditionMet(a, playerCol, playerRow, turn)) continue;
-        if (a.condition.empty()) { uncond.push_back(&a); totalU += a.chance; }
-        else { cond.push_back(&a);   totalC += a.chance; }
+        if (a.select.condition.empty()) { uncond.push_back(&a); totalU += a.select.chance; }
+        else { cond.push_back(&a);   totalC += a.select.chance; }
     }
 
     auto& pool = !cond.empty() ? cond : uncond;
@@ -363,14 +254,12 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
     {
         int roll = rand() % max(1, total);
         int cum = 0;
-        for (auto* a : pool) { cum += a->chance; if (roll < cum) { picked = a; break; } }
+        for (auto* a : pool) { cum += a->select.chance; if (roll < cum) { picked = a; break; } }
     }
 
-    m_nextAction = *picked;
-    m_hasNextAction = true;
     m_plannedActions.clear();
     m_plannedActions.push_back(*picked);
-    for (auto& sub : picked->subActions) m_plannedActions.push_back(sub);
+    m_actionIndex = 0;
 
     {
         int dcA = playerCol - gridCol, drA = playerRow - gridRow;
@@ -381,15 +270,104 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
     m_actionIndex = 0;
 }
 
+int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
+    GridMap* gridMap, Player* player, std::vector<Enemy*>& enemies)
+{
+    if (actionIdx < 0 || actionIdx >= (int)m_plannedActions.size()) return 0;
+    const EnemyAction& act = m_plannedActions[actionIdx];
+    const TargetSpec& tg = act.target;
+
+    // 1. 効果を当てるための移動
+    bool reached = true;
+    if (!tg.unavoidable)
+    {
+        switch (tg.approach)
+        {
+        case ApproachType::Toward:
+            if (!IsInRange(playerCol, playerRow, tg.range, tg.rangeType, tg.minRange))
+                MoveToward(playerCol, playerRow, gridMap, tg.moveRange);
+            break;
+        case ApproachType::Dash:
+            if (!IsInRange(playerCol, playerRow, tg.range, tg.rangeType, tg.minRange))
+                reached = MoveDash(playerCol, playerRow, gridMap, tg.moveRange);
+            break;
+        case ApproachType::Away:
+            MoveAway(playerCol, playerRow, gridMap, tg.moveRange);
+            break;
+        default: break;
+        }
+    }
+
+    // 2. プレイヤーが範囲内か
+    bool hitPlayer = tg.unavoidable
+        || (tg.approach == ApproachType::Dash ? reached
+            : IsInRange(playerCol, playerRow, tg.range, tg.rangeType, tg.minRange));
+
+    // 3. 効果を順に適用
+    int damage = 0;
+    for (auto& e : act.effects)
+    {
+        switch (e.kind)
+        {
+        case EffectKind::MoveToward: MoveToward(playerCol, playerRow, gridMap, e.value); break;
+        case EffectKind::MoveAway:   MoveAway(playerCol, playerRow, gridMap, e.value);   break;
+
+        case EffectKind::Damage:
+            if (hitPlayer)
+            {
+                if (tg.approach != ApproachType::Dash && !tg.unavoidable && player)
+                    StartLunge(player->worldX, player->worldZ);
+                damage += m_buffManager.GetFinalAttack(e.value);
+            }
+            break;
+
+        case EffectKind::Block:
+            AddBlock(m_buffManager.GetFinalBlock(e.value));
+            break;
+
+        case EffectKind::Buff:
+        case EffectKind::Debuff:
+        {
+            Buff b;
+            b.type = StringToBuffType(e.buff);
+            b.value = e.value;
+            b.duration = e.duration;
+            b.name = BuffInfo::Get(b.type).name;
+            b.description = L"";
+
+            if (e.applyTo == ApplyTo::Self)
+                m_buffManager.AddBuff(b);
+            else if (e.applyTo == ApplyTo::Player)
+            {
+                if (hitPlayer && player) player->GetBuffManager().AddBuff(b);
+            }
+            else // Allies：範囲内の他の敵
+            {
+                for (auto other : enemies)
+                {
+                    if (other == this || other->GetHp() <= 0) continue;
+                    if (IsInRange(other->gridCol, other->gridRow, tg.range, tg.rangeType, tg.minRange))
+                        other->GetBuffManager().AddBuff(b);
+                }
+            }
+            break;
+        }
+        }
+    }
+    return damage;
+}
+
 bool Enemy::IsThreateningCell(int col, int row, const EnemyAction& a) const
 {
-    if (a.dash)   // 突進＝狙う向きの直線
+    const TargetSpec& tg = a.target;
+    if (tg.unavoidable) return true;          // どこにいても当たる
+    if (tg.approach == ApproachType::Dash)
     {
-        for (int i = 1; i <= a.moveRange; i++)
+        for (int i = 1; i <= tg.moveRange; i++)
             if (gridCol + m_aimDx * i == col && gridRow + m_aimDy * i == row) return true;
         return false;
     }
-    return IsInRange(col, row, a.range, a.rangeType, a.minRange);   // 形状はここが全部知ってる
+    return IsInRange(col, row, tg.range, tg.rangeType, tg.minRange);
 }
 
 std::vector<std::pair<int, int>> Enemy::GetThreatCells(const EnemyAction& a, GridMap* gridMap) const

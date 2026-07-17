@@ -103,12 +103,6 @@
     <Filter Include="ソース ファイル\03-Object関連\30-Card\20-Deck">
       <UniqueIdentifier>{37f43bd4-1723-4690-9621-0992e8ecdf1d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\03-EnemyActionType">
-      <UniqueIdentifier>{c4f83080-b102-4cbd-aa13-c50a578f082f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\04-EnemyAction">
-      <UniqueIdentifier>{c215bf98-a6ef-4960-96d3-e482707daa7e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ヘッダー ファイル\Json">
       <UniqueIdentifier>{b6b947cf-179c-4981-83f8-b268c53c536a}</UniqueIdentifier>
     </Filter>
@@ -202,6 +196,12 @@
     <Filter Include="ソース ファイル\04-Game内関連\30-RangeShape">
       <UniqueIdentifier>{9550edd4-b65e-4c11-8041-49e196721bfb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\03-EnemyAction">
+      <UniqueIdentifier>{c215bf98-a6ef-4960-96d3-e482707daa7e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\03-EnemyIntentVisual">
+      <UniqueIdentifier>{724baa5e-0e10-4733-a462-84a71c43a7f7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -285,11 +285,8 @@
     <ClInclude Include="Deck.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\20-Deck</Filter>
     </ClInclude>
-    <ClInclude Include="EnemyActionType.h">
-      <Filter>ソース ファイル\03-Object関連\20-Enemy\03-EnemyActionType</Filter>
-    </ClInclude>
     <ClInclude Include="EnemyAction.h">
-      <Filter>ソース ファイル\03-Object関連\20-Enemy\04-EnemyAction</Filter>
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\03-EnemyAction</Filter>
     </ClInclude>
     <ClInclude Include="External\nlohmann\json.hpp">
       <Filter>ヘッダー ファイル\Json</Filter>
@@ -371,6 +368,9 @@
     </ClInclude>
     <ClInclude Include="RangeShape.h">
       <Filter>ソース ファイル\04-Game内関連\30-RangeShape</Filter>
+    </ClInclude>
+    <ClInclude Include="EnemyIntentVisual.h">
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\03-EnemyIntentVisual</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -9,32 +9,54 @@ using json = nlohmann::json;
 
 std::unordered_map<std::string, EnemyData> EnemyDataBase::m_data;
 
+static TargetSpec ParseTarget(const json& j)
+{
+    TargetSpec t;
+    if (!j.is_object()) return t;
+    t.rangeType = StringToRangeType(j.value("rangeType", "Adjacent"));
+    t.range = j.value("range", 1);
+    t.minRange = j.value("minRange", 0);
+    t.unavoidable = j.value("unavoidable", false);
+    t.approach = StringToApproach(j.value("approach", "None"));
+    t.moveRange = j.value("moveRange", 1);
+    return t;
+}
+
+static Effect ParseEffect(const json& j)
+{
+    Effect e;
+    e.kind = StringToEffectKind(j.value("kind", "Damage"));
+    e.value = j.value("value", 0);
+    e.buff = j.value("buff", "");
+    e.duration = j.value("duration", 0);
+
+    // 既定の適用先（kind ごと）
+    ApplyTo def = (e.kind == EffectKind::Block || e.kind == EffectKind::Buff)
+        ? ApplyTo::Self : ApplyTo::Player;
+    e.applyTo = j.contains("applyTo") ? StringToApplyTo(j["applyTo"]) : def;
+    return e;
+}
+
+static SelectRule ParseSelect(const json& j)
+{
+    SelectRule s;
+    if (!j.is_object()) return s;
+    s.condition = j.value("condition", "");
+    s.conditionValue = j.value("conditionValue", 0);
+    s.chance = j.value("chance", 100);
+    return s;
+}
+
 static EnemyAction ParseAction(const json& a)
 {
-    EnemyAction action;
-    action.type = StringToActionType(a["type"]);
-    action.value = a.value("value", 0);
-    action.range = a.value("range", 0);
-    action.rangeType = StringToRangeType(a.value("rangeType", "Adjacent"));
-    action.chance = a.value("chance", 0);
-    action.description = ToWString(a.value("description", std::string("")));
-    action.buffType = a.value("buffType", "");
-    action.duration = a.value("duration", 0);
-    action.onHitBuffType = a.value("onHitBuffType", "");
-    action.onHitValue = a.value("onHitValue", 0);
-    action.onHitDuration = a.value("onHitDuration", 0);
-    action.unavoidable = a.value("unavoidable", false);
-    action.minRange = a.value("minRange", 0);
-    action.condition = a.value("condition", "");
-    action.conditionValue = a.value("conditionValue", 0);
-    action.moveRange = a.value("moveRange", 1);
-    action.dash = a.value("dash", false);
-
-    if (a.contains("subActions") && a["subActions"].is_array())
-        for (const auto& sub : a["subActions"])
-            action.subActions.push_back(ParseAction(sub));
-
-    return action;
+    EnemyAction act;
+    act.description = ToWString(a.value("description", std::string("")));
+    if (a.contains("target")) act.target = ParseTarget(a["target"]);
+    if (a.contains("select")) act.select = ParseSelect(a["select"]);
+    if (a.contains("effects") && a["effects"].is_array())
+        for (const auto& e : a["effects"])
+            act.effects.push_back(ParseEffect(e));
+    return act;
 }
 
 void EnemyDataBase::Init()
@@ -85,7 +107,6 @@ void EnemyDataBase::Init()
                 data.id = e["id"];
                 data.textureName = e["texture"];
                 data.hp = e["hp"];
-                data.attack = e.value("attack", 0);
                 data.width = e["width"];
                 data.height = e["height"];
                 data.isBoss = e.value("isBoss", false);

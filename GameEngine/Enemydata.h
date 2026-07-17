@@ -8,7 +8,6 @@ struct EnemyData
     std::string id;          // Enemy‚Ì–¼‘O
     std::string textureName; // TextureManager‚ÌƒL[
     int hp;
-    int attack;
     float width;
     float height;
     bool isBoss;

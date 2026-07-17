@@ -1,5 +1,6 @@
 ﻿#include "BattleHighlighter.h"
 #include "EnemyActionType.h"
+#include "EnemyIntentVisual.h"
 #include "Renderer3D.h"
 #include "RangeShape.h"
 #include <algorithm>
@@ -134,10 +135,16 @@ void BattleHighlighter::UpdatePlayerHighlight(
             for (auto enemy : enemies)
             {
                 const EnemyAction* action = enemy->GetNextAction();
-                if (!action || action->type != EnemyActionType::Attack) continue;
-                if (enemy->IsThreateningCell(col, row, *action))
+                if (!action || !EnemyIntentVisual::IsHarmful(*action)) continue;
+                // 必中は自分のマスだけ危険。それ以外は形状で判定
+                bool threat = action->target.unavoidable
+                    ? (col == centerCol && row == centerRow)
+                    : enemy->IsThreateningCell(col, row, *action);
+
+                if (threat)
                 {
-                    int finalDamage = action->value - player->GetBlock();
+                    int finalDamage = EnemyIntentVisual::GetTotalDamage(*action, enemy->GetBuffManager())
+                        - player->GetBlock();
                     if (finalDamage > 0) isDangerCell = true;
                     break;
                 }
@@ -290,11 +297,17 @@ void BattleHighlighter::UpdatePlayerHighlight(
         for (auto enemy : enemies)
         {
             const EnemyAction* action = enemy->GetNextAction();
-            if (!action || action->type != EnemyActionType::Attack) continue;
+            if (!action || !EnemyIntentVisual::IsHarmful(*action)) continue;
 
-            if (enemy->IsThreateningCell(col, row, *action))
+            // 必中は自分のマスだけ危険。それ以外は形状で判定
+            bool threat = action->target.unavoidable
+                ? (col == centerCol && row == centerRow)
+                : enemy->IsThreateningCell(col, row, *action);
+
+            if (threat)
             {
-                int finalDamage = action->value - player->GetBlock();
+                int finalDamage = EnemyIntentVisual::GetTotalDamage(*action, enemy->GetBuffManager())
+                    - player->GetBlock();
                 if (finalDamage > 0) isDangerCell = true;
                 break;
             }
@@ -360,93 +373,6 @@ void BattleHighlighter::UpdatePlayerHighlight(
     }
 }
 
-//void BattleHighlighter::UpdateEnemyHighlight(
-//    const std::vector<Enemy*>& enemies,
-//    GridMap* gridMap,
-//    const Player* player,
-//    int playerCol, int playerRow,
-//    float timer)
-//{
-//    ClearEnemyHighlight(gridMap);
-//    for (auto e : enemies) e->color = XMFLOAT4(1, 1, 1, 1);   // 本体は塗らない
-//
-//    static const XMFLOAT4 palette[] = {
-//        { 0.2f, 0.6f, 1.0f, 1.0f }, { 1.0f, 0.5f, 0.1f, 1.0f },
-//        { 0.4f, 0.9f, 0.3f, 1.0f }, { 0.9f, 0.3f, 0.9f, 1.0f },
-//        { 1.0f, 0.85f, 0.2f, 1.0f },
-//    };
-//    const int PN = 5;
-//    auto lerp = [](const XMFLOAT4& a, const XMFLOAT4& b, float k) {
-//        return XMFLOAT4(a.x + (b.x - a.x) * k, a.y + (b.y - a.y) * k,
-//            a.z + (b.z - a.z) * k, a.w + (b.w - a.w) * k);
-//        };
-//
-//    std::map<std::pair<int, int>, std::vector<std::pair<int, float>>> cellThreats;
-//
-//    for (int ei = 0; ei < (int)enemies.size(); ei++)
-//    {
-//        Enemy* enemy = enemies[ei];
-//        const EnemyAction* action = enemy->GetNextAction();
-//        if (!action || action->type != EnemyActionType::Attack) continue;
-//
-//        int rng = action->range + enemy->GetBuffManager().GetBuffValue(BuffType::RangeUp);
-//        auto addCell = [&](int col, int row, int dist) {
-//            if (col < 0 || col >= gridMap->GetCols() || row < 0 || row >= gridMap->GetRows()) return;
-//            auto& c = gridMap->GetCell(col, row);
-//            if (c.type == CellType::Enemy || c.type == CellType::Boss) return;
-//            float fade = 1.0f - (float)(dist - 1) / (float)max(1, rng) * 0.5f;
-//            fade = max(0.4f, min(1.0f, fade));
-//            cellThreats[{col, row}].push_back({ ei, fade });
-//            };
-//
-//        if (action->unavoidable) { cellThreats[{playerCol, playerRow}].push_back({ ei, 1.0f }); continue; }
-//
-//        if (action->rangeType == RangeType::Cone)
-//        {
-//            int adx = enemy->GetAimDx(), ady = enemy->GetAimDy();
-//            for (int a = 1; a <= rng; a++)
-//                for (int b = -(a - 1); b <= a - 1; b++)
-//                    addCell(enemy->gridCol + a * adx + b * (-ady), enemy->gridRow + a * ady + b * adx, a);
-//        }
-//        else
-//        {
-//            auto candidates = GetCandidates(enemy->gridCol, enemy->gridRow, action->rangeType, rng);
-//            for (auto& [col, row] : candidates)
-//            {
-//                int dc = abs(col - enemy->gridCol), dr = abs(row - enemy->gridRow);
-//                int dist = (action->rangeType == RangeType::Area) ? max(dc, dr) : (dc + dr);
-//                if (action->minRange > 0 && dist < action->minRange) continue;
-//                addCell(col, row, dist);
-//            }
-//        }
-//    }
-//
-//    m_enemyCycleTimer += 0.0048f;
-//    int cyc = (int)(m_enemyCycleTimer / 6.28318f);
-//    float pulse = 0.55f + 0.45f * sin(timer * 3.0f);   // 自分のマス用の点滅
-//
-//    std::map<std::pair<int, int>, XMFLOAT4> next;
-//    for (auto& [pos, list] : cellThreats)
-//    {
-//        int pick = (list.size() == 1) ? 0 : (cyc % (int)list.size());
-//        XMFLOAT4 base = palette[list[pick].first % PN];
-//        float fade = list[pick].second;
-//        XMFLOAT4 target(base.x * fade, base.y * fade, base.z * fade, 1.0f);
-//
-//        auto it = m_cellColors.find(pos);
-//        XMFLOAT4 cur = (it == m_cellColors.end()) ? target : lerp(it->second, target, 0.005f);  // じんわり
-//        next[pos] = cur;
-//
-//        XMFLOAT4 show = cur;
-//        if (pos.first == playerCol && pos.second == playerRow)   // 自分が乗ってるマスは点滅強調
-//            show = XMFLOAT4(cur.x * pulse, cur.y * pulse, cur.z * pulse, 1.0f);
-//
-//        gridMap->GetCell(pos.first, pos.second).gameObject.color = show;
-//        m_enemyHighlightCells.push_back(pos);
-//    }
-//    m_cellColors = next;
-//}
-
 void BattleHighlighter::UpdateEnemyHighlight(
     const std::vector<Enemy*>& enemies, GridMap* gridMap, const Player* player,
     int playerCol, int playerRow, float timer)
@@ -455,41 +381,31 @@ void BattleHighlighter::UpdateEnemyHighlight(
     for (auto e : enemies) e->color = XMFLOAT4(1, 1, 1, 1);
 
     std::map<std::pair<int, int>, int> cellDist;
-    std::set<std::pair<int, int>> selCells;   // 選択した敵のマス
+    std::set<std::pair<int, int>> selCells;
     for (int ei = 0; ei < (int)enemies.size(); ei++)
     {
         Enemy* enemy = enemies[ei];
         const EnemyAction* action = enemy->GetNextAction();
-        if (!action || action->type != EnemyActionType::Attack) continue;
-        int rng = action->range + enemy->GetBuffManager().GetBuffValue(BuffType::RangeUp);
-        RangeType rt = action->rangeType;
-        if (action->dash)
+        if (!action || !EnemyIntentVisual::IsHarmful(*action)) continue;
+
+        if (action->target.unavoidable)
         {
-            if (rt == RangeType::Adjacent) 
-            {
-                rt = RangeType::Diamond; 
-                rng = 1 + action->moveRange;
-            }
-            else rng += action->moveRange;
+            // 必中：どこにいても当たるので、プレイヤーのマスだけ示す
+            auto it = cellDist.find({ playerCol, playerRow });
+            if (it == cellDist.end() || 1 < it->second) cellDist[{playerCol, playerRow}] = 1;
+            if (ei == m_selectedEnemy) selCells.insert({ playerCol, playerRow });
+            continue;
         }
-
-        auto add = [&](int col, int row, int dist) {
-            if (col < 0 || col >= gridMap->GetCols() || row < 0 || row >= gridMap->GetRows()) return;
-            auto& c = gridMap->GetCell(col, row);
-            if (c.type == CellType::Enemy || c.type == CellType::Boss) return;
-            auto it = cellDist.find({ col, row });
-            if (it == cellDist.end() || dist < it->second) cellDist[{col, row}] = dist;
-            if (ei == m_selectedEnemy) selCells.insert({ col, row });
-            };
-
-        if (action->unavoidable) { add(playerCol, playerRow, 1); continue; }
-
-        if (action->unavoidable) { add(playerCol, playerRow, 1); continue; }
-
         for (auto& [c, r] : enemy->GetThreatCells(*action, gridMap))
         {
+            auto& cell = gridMap->GetCell(c, r);
+            if (cell.type == CellType::Enemy || cell.type == CellType::Boss) continue;
+
             int dist = abs(c - enemy->gridCol) + abs(r - enemy->gridRow);
-            add(c, r, dist);
+            auto it = cellDist.find({ c, r });
+            if (it == cellDist.end() || dist < it->second) cellDist[{c, r}] = dist;
+
+            if (ei == m_selectedEnemy) selCells.insert({ c, r });
         }
     }
 
@@ -499,8 +415,8 @@ void BattleHighlighter::UpdateEnemyHighlight(
         float w = 0.5f + 0.5f * sin(m_enemyCycleTimer - dist * 0.8f);
         float br = 0.25f + 0.45f * w;
         XMFLOAT4 c = selCells.count(pos)
-            ? XMFLOAT4(0.2f * br, 0.7f * br, br, 1.0f)    // 選択敵＝水色系
-            : XMFLOAT4(br, br * 0.75f, 0.0f, 1.0f);       // 通常＝黄
+            ? XMFLOAT4(br * 0.9, br * 0.9, 0.35f * br, 1.0f)   // 選択中：明るく脈動する黄
+            : XMFLOAT4(br * 0.55f, br * 0.4f, 0.0f, 1.0f);         // 他：暗く沈む
         gridMap->GetCell(pos.first, pos.second).gameObject.color = c;
         m_enemyHighlightCells.push_back(pos);
     }

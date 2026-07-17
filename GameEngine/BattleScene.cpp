@@ -511,7 +511,7 @@ void BattleScene::Update(float deltaTime)
 
                 // 現在の行動を実行
                 int ai = enemy->GetActionIndex();
-                int damage = enemy->ExecuteAction(ai, m_playerCol, m_playerRow, m_gridMap, m_player);
+                int damage = enemy->ExecuteAction(ai, m_playerCol, m_playerRow, m_gridMap, m_player, m_enemies);
                 if (damage > 0)
                     m_player->TakeDamage(damage);
                 enemy->SetActionIndex(ai + 1);
@@ -1321,10 +1321,10 @@ void BattleScene::HandleInput()
             float hitX, hitY, hitW, hitH;
             if (i == m_selectedCardIndex)
             {
-                hitX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
+                hitX = cardX - (CARD_WIDTH - CARD_WIDTH) / 2.0f;
                 hitY = cardHoverY + 40.0f;
-                hitW = CARD_HOVER_W;
-                hitH = CARD_HOVER_H;
+                hitW = CARD_WIDTH;
+                hitH = CARD_HEIGHT;
             }
             else if (i == m_prevHoveredCardIndex)
             {
@@ -1337,9 +1337,9 @@ void BattleScene::HandleInput()
                 }
                 else
                 {
-                    hitX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
+                    hitX = cardX - (CARD_WIDTH - CARD_WIDTH) / 2.0f;
                     hitY = cardHoverY;
-                    hitW = CARD_HOVER_W;
+                    hitW = CARD_WIDTH;
                     hitH = (float)m_screenHeight - cardHoverY;
                 }
             }
@@ -1634,10 +1634,10 @@ void BattleScene::HandleInput()
 
             if (i == m_selectedCardIndex)
             {
-                hitX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
+                hitX = cardX - (CARD_WIDTH - CARD_WIDTH) / 2.0f;
                 hitY = cardHoverY + 40.0f;
-                hitW = CARD_HOVER_W;
-                hitH = CARD_HOVER_H;
+                hitW = CARD_WIDTH;
+                hitH = CARD_HEIGHT;
             }
             else if (i == m_prevHoveredCardIndex)
             {
@@ -1650,9 +1650,9 @@ void BattleScene::HandleInput()
                 }
                 else
                 {
-                    hitX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
+                    hitX = cardX - (CARD_WIDTH - CARD_WIDTH) / 2.0f;
                     hitY = cardHoverY;
-                    hitW = CARD_HOVER_W;
+                    hitW = CARD_WIDTH;
                     hitH = (float)m_screenHeight - cardHoverY;
                 }
             }
@@ -1693,15 +1693,15 @@ void BattleScene::HandleInput()
                 && mousePos.y >= cardHideY && mousePos.y <= cardHideY + CARD_HEIGHT;
 
             // 大きいカードの位置の判定
-            float hoverDrawX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
-            bool hoverBig = mousePos.x >= hoverDrawX && mousePos.x <= hoverDrawX + CARD_HOVER_W
-                && mousePos.y >= cardHoverY && mousePos.y <= cardHoverY + CARD_HOVER_H;
+            float hoverDrawX = cardX - (CARD_WIDTH - CARD_WIDTH) / 2.0f;
+            bool hoverBig = mousePos.x >= hoverDrawX && mousePos.x <= hoverDrawX + CARD_WIDTH
+                && mousePos.y >= cardHoverY && mousePos.y <= cardHoverY + CARD_HEIGHT;
 
             // 選択中の判定
-            float selectedDrawX = cardX - (CARD_HOVER_W - CARD_WIDTH) / 2.0f;
+            float selectedDrawX = cardX - (CARD_WIDTH - CARD_WIDTH) / 2.0f;
             bool hoverSelected = (i == m_selectedCardIndex)
-                && mousePos.x >= selectedDrawX && mousePos.x <= selectedDrawX + CARD_HOVER_W
-                && mousePos.y >= cardHoverY + 40.0f && mousePos.y <= cardHoverY + 40.0f + CARD_HOVER_H;
+                && mousePos.x >= selectedDrawX && mousePos.x <= selectedDrawX + CARD_WIDTH
+                && mousePos.y >= cardHoverY + 40.0f && mousePos.y <= cardHoverY + 40.0f + CARD_HEIGHT;
 
             if (hoverNormal || hoverBig || hoverSelected)
             {

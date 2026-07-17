@@ -93,8 +93,6 @@ private:
     static constexpr float CARD_HEIGHT = 110.0f;
     static constexpr float CARD_HIDE_Y_OFFSET = 30.0f;
     static constexpr float CARD_HOVER_Y_OFFSET = 60.0f;
-    static constexpr float CARD_HOVER_W = 110.0f;
-    static constexpr float CARD_HOVER_H = 140.0f;
 
     int m_prevHoveredCardIndex;
 
@@ -147,7 +145,6 @@ private:
     std::pair<int, int> m_backtrackCell = { -999, -999 };
     std::pair<int, int> m_suppressCell = { -999, -999 };
     int m_backtrackFrames = 0;
-    bool m_moveDragging = false;
 
     int m_selectedEnemyRange = -1;
     std::vector<std::pair<int, int>> m_playerWalkPath;   // Žc‚è‚ÌŒo˜H
