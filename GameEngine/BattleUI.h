@@ -12,6 +12,7 @@
 #include "CardVisual.h"
 #include "BattleHighlighter.h"
 #include "TextureManager.h"
+#include "FloatingText.h"
 #include <vector>
 #include <utility>
 #include <string>
@@ -146,7 +147,7 @@ private:
     static constexpr float CARD_HOVER_Y_OFFSET = 60.0f;
     static constexpr float CARD_HOVER_W = 110.0f;
     static constexpr float CARD_HOVER_H = 140.0f;
-    static constexpr float DRAW_EFFECT_DURATION = 0.4f;
+    static constexpr float DRAW_EFFECT_DURATION = 0.25f;
 
     void DrawHPBar(float x, float y, float w, float h, const HPBarInfo& info, float time);
     void DrawEnemyHPBar(Enemy* enemy, Renderer3D* renderer3D);
@@ -176,5 +177,10 @@ private:
     void GetPlayEffectTransform(const PlayCardEffect& e, float& x, float& y, float& scale);
     void DrawPlayCardEffectTexts(const BattleUIContext& ctx);
 
-    static constexpr float PLAY_EFFECT_DUR = 1.0f;
+    static constexpr float PLAY_EFFECT_DUR = 0.45f;
+    static constexpr float DISCARD_EFFECT_DUR = 0.15f;
+
+    bool WorldToScreen(float wx, float wy, float wz, Renderer3D* renderer3D,
+        float& outX, float& outY) const;
+    void DrawFloatingTexts(const BattleUIContext& ctx);
 };

@@ -1,10 +1,13 @@
 #include "Enemy.h"
 #include "Renderer3D.h"
 #include "TextureManager.h"
+#include "EffectManager.h"
 #include "Player.h"
 #include "BuffInfo.h"
 #include "GameUtils.h"
 #include "RangeShape.h"
+#include "FloatingText.h"
+#include "ScreenShake.h"
 
 Enemy::Enemy()
     : m_HP(30), m_maxHP(30)
@@ -38,21 +41,24 @@ void Enemy::Update(float delteTime)
 
 void Enemy::Draw3D(Renderer3D* renderer)
 {
-	if (!isActive)
-	{
-		return;
-	}
+    if (!isActive) return;
 
-    // ボスは赤みがかった色
     XMFLOAT4 drawColor = m_isBoss
         ? XMFLOAT4(1.0f, 0.6f, 0.6f, 1.0f)
-        : color;
+        : GetDrawColor();
 
-	renderer->DrawBillboard(
-		TextureManager::Get(m_textureName),
-        worldX, worldY, worldZ,
-		width, height, 0.0f, drawColor
-	);
+    float y = worldY;
+    if (m_dying)
+    {
+        float t = m_deathTimer / DEATH_DUR;      // 0→1
+        drawColor.w *= (1.0f - t);               // 消えていく
+        y += t * 0.3f;                           // ふわっと上へ
+    }
+
+    renderer->DrawBillboard(
+        TextureManager::Get(m_textureName),
+        worldX, y, worldZ,
+        width, height, 0.0f, drawColor);
 }
 
 bool Enemy::IsAdjacentTo(int playerCol, int playerRow)
@@ -157,7 +163,7 @@ void Enemy::MoveAway(int playerCol, int playerRow, GridMap* gridMap, int steps)
 
     float newX = (gridCol - gridMap->GetCols() / 2.0f) * 1.1f;
     float newZ = (gridRow - gridMap->GetRows() / 2.0f) * 1.1f;
-    if (!pts.empty()) StartWalk(pts, 0.7f);
+    if (!pts.empty()) StartWalk(pts, 0.1f);
 }
 
 bool Enemy::MoveDash(int playerCol, int playerRow, GridMap* gridMap, int steps)
@@ -191,14 +197,22 @@ void Enemy::TakeDamage(int damage)
     if (m_buffManager.HasBuff(BuffType::Vulnerable))
         damage = damage * 150 / 100;
 
+    int blocked = 0;
     if (m_block > 0)
     {
-        int blocked = min(m_block, damage);
+        blocked = min(m_block, damage);
         m_block -= blocked;
         damage -= blocked;
     }
     m_HP -= damage;
     if (m_HP < 0) m_HP = 0;
+
+    FloatingTextManager::SpawnDamage(worldX, worldY + height * 1.5f, worldZ, damage, blocked);
+    if (damage > 0)
+    {
+        StartHitFlash();
+        ScreenShake::Add(ScreenShake::PowerForDamage(damage) * 0.5f);
+    }
 }
 
 void Enemy::AddBlock(int amount)
@@ -365,4 +379,25 @@ std::vector<std::pair<int, int>> Enemy::GetThreatCells(const EnemyAction& a, Gri
         for (int c = 0; c < gridMap->GetCols(); c++)
             if (IsThreateningCell(c, r, a)) out.push_back({ c, r });
     return out;
+}
+
+void Enemy::StartDeath()
+{
+    if (m_dying) return;
+    m_dying = true;
+    m_deathTimer = 0.0f;
+
+    // チリになる：灰色の粒を球状にまく
+    EffectManager::SpawnBurst(
+        worldX, worldY + height * 0.5f, worldZ,
+        40, 2.5f,
+        XMFLOAT4(0.8f, 0.8f, 0.85f, 1.0f),    // 開始：明るい灰
+        XMFLOAT4(0.4f, 0.4f, 0.45f, 0.0f),    // 終了：暗い灰＋透明
+        0.7f, 0.12f);
+}
+
+void Enemy::UpdateDeath(float deltaTime)
+{
+    if (!m_dying) return;
+    m_deathTimer += deltaTime;
 }

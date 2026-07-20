@@ -107,8 +107,8 @@ private:
     EnemyTurnPhase m_enemyPhase = EnemyTurnPhase::WaitStart;
     int m_currentEnemyIdx = 0;
     float m_enemyActionDelay = 0;
-    static constexpr float ENEMY_ACTION_PAUSE = 0.5f;
-    static constexpr float ENEMY_BETWEEN_PAUSE = 1.5f;
+    static constexpr float ENEMY_ACTION_PAUSE = 0.05f;
+    static constexpr float ENEMY_BETWEEN_PAUSE = 0.4f;
 
     std::pair<int, int> m_hoveredCell;
 

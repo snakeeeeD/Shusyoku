@@ -37,7 +37,7 @@ public:
     bool m_isMoving = false;
     bool m_moveLinear = false;
 
-    void StartMove(float toX, float toZ, float duration = 1.6f, bool linear = false)
+    void StartMove(float toX, float toZ, float duration = 0.3f, bool linear = false)
     {
         m_startWorldX = worldX;
         m_startWorldZ = worldZ;
@@ -76,7 +76,7 @@ public:
     float m_walkStepDur = 0.12f;
 
     // 経路に沿って1マスずつ等速で歩く
-    void StartWalk(const std::vector<std::pair<float, float>>& pts, float stepDur = 0.12f)
+    void StartWalk(const std::vector<std::pair<float, float>>& pts, float stepDur = 0.1f)
     {
         if (pts.empty()) return;
         m_walkPoints = pts;
@@ -94,7 +94,7 @@ public:
     float m_lungeDuration = 0.25f;
     bool m_isLunging = false;
 
-    void StartLunge(float toX, float toZ, float duration = 1.5f)
+    void StartLunge(float toX, float toZ, float duration = 0.3f)
     {
         m_lungeOriginX = worldX;
         m_lungeOriginZ = worldZ;
@@ -134,4 +134,25 @@ public:
     }
 
     bool IsLunging() const { return m_isLunging; }
+
+    // 被弾フラッシュ
+    float m_hitFlash = 0.0f;
+    static constexpr float HIT_FLASH_DUR = 0.25f;
+
+    void StartHitFlash() { m_hitFlash = 1.0f; }
+
+    void UpdateHitFlash(float deltaTime)
+    {
+        if (m_hitFlash <= 0.0f) return;
+        m_hitFlash -= deltaTime / HIT_FLASH_DUR;
+        if (m_hitFlash < 0.0f) m_hitFlash = 0.0f;
+    }
+
+    // 描画に使う色（乗算なので、赤以外を落として染める）
+    XMFLOAT4 GetDrawColor() const
+    {
+        if (m_hitFlash <= 0.0f) return color;
+        float k = 1.0f - 0.85f * m_hitFlash;
+        return XMFLOAT4(color.x, color.y * k, color.z * k, color.w);
+    }
 };

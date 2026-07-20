@@ -1,6 +1,8 @@
 #include "Player.h"
 #include "Renderer3D.h"
 #include "TextureManager.h"
+#include "FloatingText.h"
+#include "ScreenShake.h"
 
 Player::Player()
     : m_hp(50), m_maxHp(50)
@@ -25,7 +27,7 @@ void Player::Draw3D(Renderer3D* renderer)
     renderer->DrawBillboard(
         TextureManager::Get("player"),
         worldX, worldY, worldZ,
-        width, height, m_BillboardRotation, color
+        width, height, m_BillboardRotation, GetDrawColor()
     );
 }
 
@@ -36,14 +38,22 @@ void Player::TakeDamage(int damage)
         damage = damage * 150 / 100;
 
     // ƒuƒƒbƒN‚Åæ‚ÉŽó‚¯‚é
+    int blocked = 0;
     if (m_block > 0)
     {
-        int blocked = min(m_block, damage);
+        blocked = min(m_block, damage);
         m_block -= blocked;
         damage -= blocked;
     }
     m_hp -= damage;
     if (m_hp < 0) m_hp = 0;
+
+    FloatingTextManager::SpawnDamage(worldX, worldY + height * 1.5f, worldZ, damage, blocked);
+    if (damage > 0)
+    {
+        StartHitFlash();
+        ScreenShake::Add(ScreenShake::PowerForDamage(damage));
+    }
 }
 
 void Player::RestoreEnergy()

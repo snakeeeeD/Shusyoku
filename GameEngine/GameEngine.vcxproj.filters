@@ -202,6 +202,15 @@
     <Filter Include="ソース ファイル\03-Object関連\20-Enemy\03-EnemyIntentVisual">
       <UniqueIdentifier>{724baa5e-0e10-4733-a462-84a71c43a7f7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\40-FloatingText">
+      <UniqueIdentifier>{135a41b4-3bf9-47bb-b902-7da2b15f5dba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\50-ScreenShake">
+      <UniqueIdentifier>{7db8b1e0-9f4e-406a-8822-4613c142907e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\06-EffectManager">
+      <UniqueIdentifier>{8d8fe59b-92c0-4bc1-9f05-d5cf5aa697b5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -371,6 +380,18 @@
     </ClInclude>
     <ClInclude Include="EnemyIntentVisual.h">
       <Filter>ソース ファイル\03-Object関連\20-Enemy\03-EnemyIntentVisual</Filter>
+    </ClInclude>
+    <ClInclude Include="HighlightPalette.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="FloatingText.h">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\40-FloatingText</Filter>
+    </ClInclude>
+    <ClInclude Include="ScreenShake.h">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\50-ScreenShake</Filter>
+    </ClInclude>
+    <ClInclude Include="EffectManager.h">
+      <Filter>ソース ファイル\01-描画関連\06-EffectManager</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

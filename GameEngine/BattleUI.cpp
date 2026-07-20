@@ -133,44 +133,15 @@ void BattleUI::DrawEnemyHPBar(Enemy* enemy, Renderer3D* renderer3D)
 bool BattleUI::GetEnemyScreenPos(Enemy* enemy, Renderer3D* renderer3D, float& outX, float& outY) const
 {
     float pitch = XMConvertToRadians(-Renderer3D::BILLBOARD_PITCH);
-    XMVECTOR worldPos = XMVectorSet(
-        enemy->worldX,
+    return WorldToScreen(enemy->worldX,
         enemy->worldY + enemy->height * cos(pitch),
         enemy->worldZ + 0.5f - enemy->height * sin(pitch),
-        1.0f
-    );
-    XMMATRIX view = renderer3D->GetViewMatrix();
-    XMMATRIX proj = renderer3D->GetProjectionMatrix();
-    XMVECTOR clipPos = XMVector4Transform(worldPos, view * proj);
-    XMFLOAT4 clip;
-    XMStoreFloat4(&clip, clipPos);
-
-    if (clip.w <= 0.0f) return false;
-
-    outX = (clip.x / clip.w + 1.0f) * 0.5f * m_screenWidth;
-    outY = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;
-    return true;
+        renderer3D, outX, outY);
 }
 
 bool BattleUI::GetEnemyFootPos(Enemy* enemy, Renderer3D* renderer3D, float& outX, float& outY) const
 {
-    XMVECTOR worldPos = XMVectorSet(
-        enemy->worldX,
-        0.0f,
-        enemy->worldZ + 0.5f,
-        1.0f
-    );
-    XMMATRIX view = renderer3D->GetViewMatrix();
-    XMMATRIX proj = renderer3D->GetProjectionMatrix();
-    XMVECTOR clipPos = XMVector4Transform(worldPos, view * proj);
-    XMFLOAT4 clip;
-    XMStoreFloat4(&clip, clipPos);
-
-    if (clip.w <= 0.0f) return false;
-
-    outX = (clip.x / clip.w + 1.0f) * 0.5f * m_screenWidth;
-    outY = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;
-    return true;
+    return WorldToScreen(enemy->worldX, 0.0f, enemy->worldZ + 0.5f, renderer3D, outX, outY);
 }
 
 void BattleUI::Draw(const BattleUIContext& ctx)
@@ -726,6 +697,8 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         DrawPileViewer(ctx);
         m_textRenderer->Begin();
     }
+
+    DrawFloatingTexts(ctx);
 
     m_textRenderer->End();
 
@@ -1317,7 +1290,7 @@ void BattleUI::UpdateDiscardEffects(float deltaTime)
     {
         if (e.done) continue;
         e.timer += deltaTime;
-        float t = min(1.0f, e.timer / 1.0f);
+        float t = min(1.0f, e.timer / DISCARD_EFFECT_DUR);
         e.alpha = 1.0f - t;
         if (t >= 1.0f) e.done = true;
     }
@@ -1334,7 +1307,7 @@ void BattleUI::DrawDiscardEffects()
 
     for (auto& e : m_discardCardEffects)
     {
-        float t = min(1.0f, e.timer / 1.0f);
+        float t = min(1.0f, e.timer / DISCARD_EFFECT_DUR);
         float ease = t * t;
         float x = e.startX + (targetX - e.startX) * ease;
         float y = e.startY + (targetY - e.startY) * ease;
@@ -1381,7 +1354,7 @@ void BattleUI::UpdateCardAnimations(float deltaTime, int handSize, int hoveredIn
 
     float cardHideY = m_screenHeight - CARD_HIDE_Y_OFFSET;
     float cardHoverY = m_screenHeight - CARD_HEIGHT - CARD_HOVER_Y_OFFSET;
-    float speed = 4.0f;
+    float speed = 12.0f;
     float dt = min(deltaTime, 0.03f);
 
     for (int i = 0; i < handSize; i++)
@@ -1854,5 +1827,41 @@ void BattleUI::DrawPlayCardEffectTexts(const BattleUIContext& ctx)
 
         CardVisual::DrawTexts(m_textRenderer, e.data, ctx.player,
             baseX, baseY, s, 0.0f, e.alpha);
+    }
+}
+
+bool BattleUI::WorldToScreen(float wx, float wy, float wz, Renderer3D* renderer3D,
+    float& outX, float& outY) const
+{
+    XMMATRIX view = renderer3D->GetViewMatrix();
+    XMMATRIX proj = renderer3D->GetProjectionMatrix();
+    XMFLOAT4 clip;
+    XMStoreFloat4(&clip, XMVector4Transform(XMVectorSet(wx, wy, wz, 1.0f), view * proj));
+    if (clip.w <= 0.0f) return false;
+    outX = (clip.x / clip.w + 1.0f) * 0.5f * m_screenWidth;
+    outY = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;
+    return true;
+}
+
+void BattleUI::DrawFloatingTexts(const BattleUIContext& ctx)
+{
+    for (auto& t : FloatingTextManager::GetAll())
+    {
+        float rise, alpha, size;
+        FloatingTextManager::GetVisual(t, rise, alpha, size);
+
+        float sx, sy;
+        if (!WorldToScreen(t.worldX, t.worldY + rise, t.worldZ, ctx.renderer3D, sx, sy))
+            continue;
+
+        sx += t.offsetX - t.text.size() * size * 0.25f;    // ’†‰›Šñ‚¹
+
+        float o = size * 0.06f;                        // •¶ŽšƒTƒCƒY‚É”ä—á‚³‚¹‚é
+        const float dir[4][2] = { {-1,0},{1,0},{0,-1},{0,1} };
+        for (auto& d : dir)
+            m_textRenderer->DrawText(t.text.c_str(), sx + d[0] * o, sy + d[1] * o, size,
+                D2D1::ColorF(0, 0, 0, alpha));
+        m_textRenderer->DrawText(t.text.c_str(), sx, sy, size,
+            D2D1::ColorF(t.color.x, t.color.y, t.color.z, alpha));
     }
 }

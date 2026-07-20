@@ -1,7 +1,10 @@
 ﻿#include "BattleScene.h"
 #include "TextureLoader.h"
+#include "EffectManager.h"
 #include "CardExecutor.h"
 #include "TerrainDataBase.h"
+#include "FloatingText.h"
+#include "ScreenShake.h"
 #include "RangeShape.h"
 #include <algorithm>
 #include <cstdio>
@@ -213,6 +216,9 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
      m_input.SetWindowHandle(hWnd);
 
+     FloatingTextManager::Clear();
+     EffectManager::Clear();
+
     return true;
 }
 
@@ -252,16 +258,35 @@ void BattleScene::Update(float deltaTime)
     if (io.WantCaptureMouse) return;
 #endif
 
+    FloatingTextManager::Update(deltaTime);
+    ScreenShake::Update(deltaTime);
+    EffectManager::Update(deltaTime);
+
+    // HP0の敵を「塵化」させ、アニメが終わったら消す
+    for (auto enemy : m_enemies)
+    {
+        if (enemy->GetHp() <= 0 && !enemy->IsDying())
+        {
+            for (auto& [dc, dr] : enemy->GetGridShape())      // マスを即解放
+                m_gridMap->SetCellType(enemy->gridCol + dc, enemy->gridRow + dr, CellType::Empty);
+            enemy->StartDeath();
+        }
+        enemy->UpdateDeath(deltaTime);
+    }
+    ProcessDeadEnemies();
+
     m_player->UpdateDisplayHp(deltaTime);
     for (auto enemy : m_enemies)
         enemy->UpdateDisplayHp(deltaTime);
 
     m_player->UpdateMove(deltaTime);
-    
+    m_player->UpdateHitFlash(deltaTime);
+
     for (auto enemy : m_enemies)
     {
         enemy->UpdateMove(deltaTime);
         enemy->UpdateLunge(deltaTime);
+        enemy->UpdateHitFlash(deltaTime);
     }
 
 
@@ -350,15 +375,18 @@ void BattleScene::Update(float deltaTime)
 
     // カメラ更新（ズーム or パンが変わったら毎フレーム適用）
     {
+        float shakeX, shakeZ;
+        ScreenShake::GetOffset(shakeX, shakeZ);
+
         XMFLOAT3 target(
-            m_cameraOffsetX,
+            m_cameraOffsetX + shakeX,
             -2.0f,
-            m_cameraOffsetZ
+            m_cameraOffsetZ + shakeZ
         );
         XMFLOAT3 zoomedPos(
-            m_cameraOffsetX,
+            m_cameraOffsetX + shakeX,
             target.y + 17.0f * m_cameraZoom,
-            m_cameraOffsetZ + 6.0f * m_cameraZoom
+            m_cameraOffsetZ + shakeZ + 6.0f * m_cameraZoom
         );
         m_renderer3D->SetCamera(zoomedPos, target, XMFLOAT3(0.0f, 1.0f, 0.0f));
 
@@ -397,7 +425,7 @@ void BattleScene::Update(float deltaTime)
         }
 
         // ハイライト明滅タイマーを更新
-        m_highlightTimer += deltaTime * 0.1f; // 点滅速度調整
+        m_highlightTimer += deltaTime * 0.5f; // 点滅速度調整
         if (m_highlightTimer > 3.14159f * 2.0f)
             m_highlightTimer = 0.0f;
 
@@ -485,6 +513,7 @@ void BattleScene::Update(float deltaTime)
                         enemy->TakeDamage(dmg.total());
                         if (enemy->GetHp() <= 0)
                         {
+                            ProcessDeadEnemies();          // 今死んだ敵を即座に消す
                             m_enemyPhase = EnemyTurnPhase::WaitAction;
                             m_enemyActionDelay = ENEMY_ACTION_PAUSE;
                             break;
@@ -728,6 +757,8 @@ void BattleScene::Draw()
     m_player->Draw3D(m_renderer3D);
     for (auto enemy : m_enemies)
         enemy->Draw3D(m_renderer3D);
+
+    EffectManager::Draw(m_renderer3D, m_whiteTexture);
 
     // 移動経路の終点に半透明プレイヤー
     if (m_pathBuilding && !m_movePath.empty())
@@ -1746,7 +1777,7 @@ void BattleScene::ProcessDeadEnemies()
 {
     std::vector<Enemy*> toDelete;
     for (auto enemy : m_enemies)
-        if (enemy->GetHp() <= 0)
+        if (enemy->IsDeathFinished()) 
             toDelete.push_back(enemy);
 
     if (toDelete.empty()) return;   // 何も死んでなければ何もしない

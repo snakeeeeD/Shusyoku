@@ -62,6 +62,11 @@ public:
 	bool IsImmovable() const { return m_immovable; }
 	bool IsInRange(int targetCol, int targetRow, int range, RangeType rangeType, int minRange = 0) const;
 
+	void StartDeath();
+	void UpdateDeath(float deltaTime);
+	bool IsDying() const { return m_dying; }
+	bool IsDeathFinished() const { return m_dying && m_deathTimer >= DEATH_DUR; }
+
 	int ExecuteAction(int actionIdx, int playerCol, int playerRow,
 		class GridMap* gridMap, class Player* player,
 		std::vector<Enemy*>& enemies);
@@ -81,6 +86,10 @@ private:
 	float m_displayHp;
 
 	int m_aimDx = 0, m_aimDy = 0;
+
+	bool  m_dying = false;
+	float m_deathTimer = 0.0f;
+	static constexpr float DEATH_DUR = 0.6f;
 
 	std::string m_textureName;
 	std::string m_id;

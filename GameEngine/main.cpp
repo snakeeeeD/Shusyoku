@@ -47,8 +47,12 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
         return 0;
     }
 
-    // ���C�����[�v
+    // メインループ
     MSG msg = { 0 };
+    LARGE_INTEGER freq, prev, now;
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&prev);
+
     while (WM_QUIT != msg.message)
     {
         if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
@@ -58,10 +62,15 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
         }
         else
         {
+            QueryPerformanceCounter(&now);
+            float deltaTime = (float)(now.QuadPart - prev.QuadPart) / freq.QuadPart;
+            prev = now;
+            if (deltaTime > 0.1f) deltaTime = 0.1f;   // ブレークポイントで飛ばないよう上限
+
             if (g_game)
             {
                 g_game->HandleInput();
-                g_game->Update(0.016f);  // ��ł����Ƃ������Ԍv��
+                g_game->Update(deltaTime);
             }
             Render();
         }
