@@ -1446,6 +1446,25 @@ void BattleUI::OnCardRemoved(int index)
         m_cardAnims.erase(m_cardAnims.begin() + index);
 }
 
+int BattleUI::GetCardAtScreenPos(POINT p) const
+{
+    int n = (int)m_cardAnims.size();
+    if (n == 0) return -1;
+
+    // 手札の上端は「持ち上がった位置」まで含める（固定・動かない）
+    float topY = m_screenHeight - CARD_HIDE_Y_OFFSET - 40.0f;
+    for (int i = 0; i < n; i++)
+    {
+        float cardX = m_screenWidth / 2.0f
+            - (n * (CARD_WIDTH + 10.0f)) / 2.0f
+            + i * (CARD_WIDTH + 10.0f);
+
+        if (p.x >= cardX && p.x <= cardX + CARD_WIDTH && p.y >= topY)
+            return i;
+    }
+    return -1;
+}
+
 
 void BattleUI::DrawPlayerOffScreenIndicator(const BattleUIContext& ctx)
 {

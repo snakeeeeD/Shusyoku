@@ -1122,7 +1122,7 @@ void BattleScene::HandleInput()
     if (m_input.GetMouseButtonRelease(0) && m_selectedCardIndex >= 0 && m_selectedCardIndex < (int)cards.size())
     {
         POINT releasePos = m_input.GetMousePos();
-        if (releasePos.y < m_screenHeight - 150)
+        if (releasePos.y < m_screenHeight - 190)
         {
             const Card* card = cards[m_selectedCardIndex];
             CardData dataCopy = *card->GetData();
@@ -1310,54 +1310,7 @@ void BattleScene::HandleInput()
         POINT mousePos = m_input.GetMousePos();
 
         // カードエリアにマウスがあるかチェック
-        isOnCard = false;
-        for (int i = 0; i < (int)cards.size(); i++)
-        {
-            if (i == m_selectedCardIndex) continue;
-            float cardX = m_screenWidth / 2.0f
-                - (cards.size() * (CARD_WIDTH + 10.0f)) / 2.0f
-                + i * (CARD_WIDTH + 10.0f);
-
-            float hitX, hitY, hitW, hitH;
-            if (i == m_selectedCardIndex)
-            {
-                hitX = cardX - (CARD_WIDTH - CARD_WIDTH) / 2.0f;
-                hitY = cardHoverY + 40.0f;
-                hitW = CARD_WIDTH;
-                hitH = CARD_HEIGHT;
-            }
-            else if (i == m_prevHoveredCardIndex)
-            {
-                if (m_selectedCardIndex >= 0)
-                {
-                    hitX = cardX;
-                    hitY = cardHideY - 40.0f;
-                    hitW = CARD_WIDTH;
-                    hitH = CARD_HEIGHT;
-                }
-                else
-                {
-                    hitX = cardX - (CARD_WIDTH - CARD_WIDTH) / 2.0f;
-                    hitY = cardHoverY;
-                    hitW = CARD_WIDTH;
-                    hitH = (float)m_screenHeight - cardHoverY;
-                }
-            }
-            else
-            {
-                hitX = cardX;
-                hitY = cardHideY;
-                hitW = CARD_WIDTH;
-                hitH = CARD_HEIGHT;
-            }
-
-            if (mousePos.x >= hitX && mousePos.x <= hitX + hitW
-                && mousePos.y >= hitY && mousePos.y <= hitY + hitH)
-            {
-                isOnCard = true;
-                break;
-            }
-        }
+        isOnCard = (m_battleUI->GetCardAtScreenPos(mousePos) >= 0);
 
         POINT gridMousePos2 = mousePos;
         if (gridMousePos2.y > m_screenHeight - 200)
@@ -1624,91 +1577,15 @@ void BattleScene::HandleInput()
     
     if (!cardJustUsed)
     {
-        for (int i = 0; i < (int)cards.size(); i++)
+        int cardUnder = m_battleUI->GetCardAtScreenPos(mousePos);
+        if (cardUnder >= 0 && m_input.GetMouseButtonTrigger(0))
         {
-            float cardX = m_screenWidth / 2.0f
-                - (cards.size() * (CARD_WIDTH + 10.0f)) / 2.0f
-                + i * (CARD_WIDTH + 10.0f);
-
-            float hitX, hitY, hitW, hitH;
-
-            if (i == m_selectedCardIndex)
-            {
-                hitX = cardX - (CARD_WIDTH - CARD_WIDTH) / 2.0f;
-                hitY = cardHoverY + 40.0f;
-                hitW = CARD_WIDTH;
-                hitH = CARD_HEIGHT;
-            }
-            else if (i == m_prevHoveredCardIndex)
-            {
-                if (m_selectedCardIndex >= 0)
-                {
-                    hitX = cardX;
-                    hitY = cardHideY - 40.0f;
-                    hitW = CARD_WIDTH;
-                    hitH = CARD_HEIGHT;
-                }
-                else
-                {
-                    hitX = cardX - (CARD_WIDTH - CARD_WIDTH) / 2.0f;
-                    hitY = cardHoverY;
-                    hitW = CARD_WIDTH;
-                    hitH = (float)m_screenHeight - cardHoverY;
-                }
-            }
-            else
-            {
-                hitX = cardX;
-                hitY = cardHideY;
-                hitW = CARD_WIDTH;
-                hitH = CARD_HEIGHT;
-            }
-
-            bool hover = mousePos.x >= hitX && mousePos.x <= hitX + hitW
-                && mousePos.y >= hitY && mousePos.y <= hitY + hitH;
-
-            if (hover && m_input.GetMouseButtonTrigger(0))
-            {
-                if (m_selectedCardIndex == i)
-                    m_selectedCardIndex = -1;
-                else
-                    m_selectedCardIndex = i;
-                break;
-            }
+            m_selectedCardIndex = (m_selectedCardIndex == cardUnder) ? -1 : cardUnder;
         }
     }
     
 
-    m_prevHoveredCardIndex = m_hoveredCardIndex;
-    m_hoveredCardIndex = -1;
-
-        for (int i = 0; i < (int)cards.size(); i++)
-        {
-            float cardX = m_screenWidth / 2.0f
-                - (cards.size() * (CARD_WIDTH + 10.0f)) / 2.0f
-                + i * (CARD_WIDTH + 10.0f);
-
-            // 通常位置の判定
-            bool hoverNormal = mousePos.x >= cardX && mousePos.x <= cardX + CARD_WIDTH
-                && mousePos.y >= cardHideY && mousePos.y <= cardHideY + CARD_HEIGHT;
-
-            // 大きいカードの位置の判定
-            float hoverDrawX = cardX - (CARD_WIDTH - CARD_WIDTH) / 2.0f;
-            bool hoverBig = mousePos.x >= hoverDrawX && mousePos.x <= hoverDrawX + CARD_WIDTH
-                && mousePos.y >= cardHoverY && mousePos.y <= cardHoverY + CARD_HEIGHT;
-
-            // 選択中の判定
-            float selectedDrawX = cardX - (CARD_WIDTH - CARD_WIDTH) / 2.0f;
-            bool hoverSelected = (i == m_selectedCardIndex)
-                && mousePos.x >= selectedDrawX && mousePos.x <= selectedDrawX + CARD_WIDTH
-                && mousePos.y >= cardHoverY + 40.0f && mousePos.y <= cardHoverY + 40.0f + CARD_HEIGHT;
-
-            if (hoverNormal || hoverBig || hoverSelected)
-            {
-                m_hoveredCardIndex = i;
-                break;
-            }
-        }
+    m_hoveredCardIndex = m_battleUI->GetCardAtScreenPos(mousePos);
     
     
         // ターンエンドボタン（右下）

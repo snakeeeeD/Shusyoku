@@ -127,6 +127,8 @@ public:
     TextRenderer* GetTextRenderer() { return m_textRenderer; }
     int GetPanelHoveredEnemy() const { return m_panelHoveredEnemy; }
 
+    int GetCardAtScreenPos(POINT p) const;
+
 
 private:
     SpriteRenderer* m_spriteRenderer = nullptr;
