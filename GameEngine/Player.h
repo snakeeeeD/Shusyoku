@@ -1,6 +1,7 @@
 #pragma once
 #include "GameObject.h"
 #include "BuffManager.h"
+#include "DamageFeedback.h"
 
 class Player : public GameObject
 {
@@ -25,7 +26,7 @@ public:
     void SetBlock(int block) { m_block = block; }
 
     void AddBlock(int amount);
-    void TakeDamage(int damage);
+    void TakeDamage(int damage, DamageFeel feel = DamageFeel::Hit);
 
     void Heal(int amount) { m_hp = min(m_hp + amount, m_maxHp); }
     void AddEnergy(int amount) { m_energy += amount; }

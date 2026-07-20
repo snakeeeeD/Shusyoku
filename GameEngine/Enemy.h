@@ -5,6 +5,7 @@
 #include "EnemyDataBase.h"
 #include "EnemyAction.h"
 #include "BuffManager.h"
+#include "DamageFeedback.h"
 
 // < --- Enemyクラス --- >(仮で作成、ステータスは適当)
 class Enemy : public GameObject
@@ -42,7 +43,7 @@ public:
 			m_displayHp = (float)GetHp();
 	}
 
-	void TakeDamage(int damage);
+	void TakeDamage(int damage, DamageFeel feel = DamageFeel::Hit);
 
 	void DecideNextAction(int playerCol, int playerRow, int turn);               // 次の行動を決定
 	const EnemyAction* GetNextAction() const

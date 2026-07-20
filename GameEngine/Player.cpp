@@ -1,6 +1,7 @@
 #include "Player.h"
 #include "Renderer3D.h"
 #include "TextureManager.h"
+#include "EffectManager.h"
 #include "FloatingText.h"
 #include "ScreenShake.h"
 
@@ -31,7 +32,7 @@ void Player::Draw3D(Renderer3D* renderer)
     );
 }
 
-void Player::TakeDamage(int damage)
+void Player::TakeDamage(int damage, DamageFeel feel)
 {
     // Vulnerable: 50%ëù
     if (m_buffManager.HasBuff(BuffType::Vulnerable))
@@ -48,12 +49,12 @@ void Player::TakeDamage(int damage)
     m_hp -= damage;
     if (m_hp < 0) m_hp = 0;
 
-    FloatingTextManager::SpawnDamage(worldX, worldY + height * 1.5f, worldZ, damage, blocked);
-    if (damage > 0)
+    if (damage > 0 && feel == DamageFeel::Hit)
     {
         StartHitFlash();
         ScreenShake::Add(ScreenShake::PowerForDamage(damage));
     }
+    DamageFeedback::Play(feel, worldX, worldY + height * 0.5f, worldZ, damage, blocked);
 }
 
 void Player::RestoreEnergy()

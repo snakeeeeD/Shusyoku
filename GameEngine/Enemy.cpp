@@ -191,7 +191,7 @@ bool Enemy::MoveDash(int playerCol, int playerRow, GridMap* gridMap, int steps)
     return hit;
 }
 
-void Enemy::TakeDamage(int damage)
+void Enemy::TakeDamage(int damage, DamageFeel feel)
 {
     // Vulnerable: 50%増
     if (m_buffManager.HasBuff(BuffType::Vulnerable))
@@ -207,12 +207,12 @@ void Enemy::TakeDamage(int damage)
     m_HP -= damage;
     if (m_HP < 0) m_HP = 0;
 
-    FloatingTextManager::SpawnDamage(worldX, worldY + height * 1.5f, worldZ, damage, blocked);
-    if (damage > 0)
+    if (damage > 0 && feel == DamageFeel::Hit)
     {
         StartHitFlash();
         ScreenShake::Add(ScreenShake::PowerForDamage(damage) * 0.5f);
     }
+    DamageFeedback::Play(feel, worldX, worldY + height * 0.5f, worldZ, damage, blocked);
 }
 
 void Enemy::AddBlock(int amount)
@@ -388,12 +388,7 @@ void Enemy::StartDeath()
     m_deathTimer = 0.0f;
 
     // チリになる：灰色の粒を球状にまく
-    EffectManager::SpawnBurst(
-        worldX, worldY + height * 0.5f, worldZ,
-        40, 2.5f,
-        XMFLOAT4(0.8f, 0.8f, 0.85f, 1.0f),    // 開始：明るい灰
-        XMFLOAT4(0.4f, 0.4f, 0.45f, 0.0f),    // 終了：暗い灰＋透明
-        0.7f, 0.12f);
+    EffectManager::Play("death", worldX, worldY + height * 0.5f, worldZ);
 }
 
 void Enemy::UpdateDeath(float deltaTime)

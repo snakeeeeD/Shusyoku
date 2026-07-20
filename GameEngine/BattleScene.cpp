@@ -5,6 +5,7 @@
 #include "TerrainDataBase.h"
 #include "FloatingText.h"
 #include "ScreenShake.h"
+#include "DamageFeedback.h"
 #include "RangeShape.h"
 #include <algorithm>
 #include <cstdio>
@@ -149,7 +150,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             // デバフダメージ
             auto dmg = m_player->GetBuffManager().GetTurnEndDamage();
             if (dmg.total() > 0)
-                m_player->TakeDamage(dmg.total());
+                m_player->TakeDamage(dmg.total(), DamageFeel::Poison);
 
             m_turnCount++;
 
@@ -510,7 +511,7 @@ void BattleScene::Update(float deltaTime)
                     auto dmg = enemy->GetBuffManager().GetTurnEndDamage();
                     if (dmg.total() > 0)
                     {
-                        enemy->TakeDamage(dmg.total());
+                        enemy->TakeDamage(dmg.total(), DamageFeel::Poison);
                         if (enemy->GetHp() <= 0)
                         {
                             ProcessDeadEnemies();          // 今死んだ敵を即座に消す
@@ -1204,7 +1205,7 @@ void BattleScene::HandleInput()
                             for (auto& p : *usePath)
                                 pts.push_back({ (p.first - m_gridMap->GetCols() / 2.0f) * 1.1f,
                                                 (p.second - m_gridMap->GetRows() / 2.0f) * 1.1f });
-                            m_player->StartWalk(pts, 0.12f);
+                            m_player->StartWalk(pts, 0.08f);
                         }
                         else
                         {

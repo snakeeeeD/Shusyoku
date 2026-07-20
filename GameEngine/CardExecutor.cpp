@@ -215,7 +215,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                         int moveDist = abs(moveCol - playerCol) + abs(moveRow - playerRow);
 
                         if (player->GetBuffManager().HasBuff(BuffType::Burn))
-                            player->TakeDamage(player->GetBuffManager().GetBuffValue(BuffType::Burn) * moveDist);
+                            player->TakeDamage(player->GetBuffManager().GetBuffValue(BuffType::Burn) * moveDist, DamageFeel::Burn);
 
                         if (player->GetBuffManager().HasBuff(BuffType::Momentum))
                             player->AddBlock(player->GetBuffManager().GetBuffValue(BuffType::Momentum) * moveDist);
@@ -425,7 +425,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
            int moveDist = (int)path.size();
 
            if (player->GetBuffManager().HasBuff(BuffType::Burn))
-               player->TakeDamage(player->GetBuffManager().GetBuffValue(BuffType::Burn) * moveDist);
+               player->TakeDamage(player->GetBuffManager().GetBuffValue(BuffType::Burn) * moveDist, DamageFeel::Burn);
 
            if (player->GetBuffManager().HasBuff(BuffType::Momentum))
                player->AddBlock(player->GetBuffManager().GetBuffValue(BuffType::Momentum) * moveDist);

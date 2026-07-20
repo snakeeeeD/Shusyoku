@@ -26,18 +26,19 @@ public:
     {
         FloatingText t;
         t.text = text;
-        t.worldX = wx; t.worldY = wy; t.worldZ = wz;
+        t.worldX = wx; t.worldZ = wz;
         t.offsetX = (float)(rand() % 41 - 20);
         t.color = color;
         t.size = size;
-        m_texts.push_back(t);
 
-        // 同じ場所に既にある数字の分だけ上へ逃がす
+        // 同じ場所に既にある数字ぶん上へ逃がす（push_backより前に）
         float stack = 0.0f;
         for (auto& o : m_texts)
             if (fabsf(o.worldX - wx) < 0.3f && fabsf(o.worldZ - wz) < 0.3f)
                 stack += 0.45f;
         t.worldY = wy + stack;
+
+        m_texts.push_back(t);
     }
 
     // ダメージ用（HPが減った分は赤、全部ブロックされたら青）

@@ -148,7 +148,9 @@
     <ClInclude Include="CardSelectScene.h" />
     <ClInclude Include="CardType.h" />
     <ClInclude Include="CardVisual.h" />
+    <ClInclude Include="DamageFeedBack.h" />
     <ClInclude Include="Deck.h" />
+    <ClInclude Include="EffectDataBase.h" />
     <ClInclude Include="EffectManager.h" />
     <ClInclude Include="EncounterData.h" />
     <ClInclude Include="EncounterDataBase.h" />
@@ -205,6 +207,7 @@
     <ClCompile Include="CardExecutor.cpp" />
     <ClCompile Include="CardSelectScene.cpp" />
     <ClCompile Include="Deck.cpp" />
+    <ClCompile Include="EffectDataBase.cpp" />
     <ClCompile Include="EncounterDataBase.cpp" />
     <ClCompile Include="External\imgui\imgui.cpp" />
     <ClCompile Include="External\imgui\imgui_draw.cpp" />

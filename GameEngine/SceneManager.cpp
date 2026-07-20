@@ -1,4 +1,5 @@
 #include "SceneManager.h"
+#include "EffectDataBase.h"
 #include "EnemyDataBase.h"
 #include "CardDataBase.h"
 #include "PlayerDataManager.h"
@@ -31,6 +32,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	EncounterDataBase::Init();
 	CardDataBase::Init();
 	TerrainDataBase::Load("Assets/Data/terrains.json");
+	EffectDataBase::Load("Assets/Data/effects.json");
 	PlayerDataManager::Init();
 
 	TextureManager::Load("white", L"Assets/Test/White.png");

@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdlib>
 #include "Renderer3D.h"
+#include "EffectDataBase.h"
 
 using namespace DirectX;
 
@@ -60,7 +61,8 @@ public:
 
     // 球状にばらまく（講義のCreateRingの分布を流用）
     static void SpawnBurst(float x, float y, float z, int count,
-        float speed, XMFLOAT4 colorStart, XMFLOAT4 colorEnd, float life, float scale)
+        float speed, XMFLOAT4 colorStart, XMFLOAT4 colorEnd, float life, float scale,
+        float gravity = 4.0f, float drag = 0.02f)
     {
         const float golden = XM_PI * (3.0f - sqrtf(5.0f));
         for (int i = 0; i < count; i++)
@@ -81,10 +83,20 @@ public:
             p.lifeMax = life * (0.7f + Rand01() * 0.6f);
             p.life = p.lifeMax;
             p.scale = scale;
-            p.gravity = 4.0f;
-            p.drag = 0.02f;
+            p.gravity = gravity;
+            p.drag = drag;
             m_particles.push_back(p);
         }
+    }
+
+    // 名前でエフェクトを再生（effects.jsonのプリセット）
+    static void Play(const std::string& id, float x, float y, float z)
+    {
+        const EffectDef* def = EffectDataBase::Get(id);
+        if (!def) return;
+        for (auto& b : def->bursts)
+            SpawnBurst(x, y, z, b.count, b.speed,
+                b.colorStart, b.colorEnd, b.life, b.scale, b.gravity, b.drag);
     }
 
 private:
