@@ -459,6 +459,7 @@ void BattleScene::Update(float deltaTime)
             int nodeIdx = pd.fieldPlayerCol * 7 + pd.fieldPlayerRow;
             if (nodeIdx >= 0 && nodeIdx < (int)pd.fieldNodeVisited.size())
                 pd.fieldNodeVisited[nodeIdx] = true;
+            pd.gold += 10 + rand() % 16;    // 10〜25ゴールド
             PlayerDataManager::Save();
             return;
         }
@@ -873,6 +874,20 @@ void BattleScene::Draw()
 
 void BattleScene::HandleInput()
 {
+    // 勝敗後はターンに関係なくクリックで進める
+    if (m_battleResult == BattleResult::Win)
+    {
+        if (m_input.GetMouseButtonTrigger(0) && onChangeScene)
+            onChangeScene(SceneType::CardSelect);
+        return;
+    }
+    if (m_battleResult == BattleResult::Lose)
+    {
+        if (m_input.GetMouseButtonTrigger(0) && onChangeScene)
+            onChangeScene(SceneType::Title);
+        return;
+    }
+
     if (!m_turnManager.IsPlayerTurn()) return; // プレイヤーターン以外は無視
 
     const float cardHideY = m_screenHeight - CARD_HIDE_Y_OFFSET;
@@ -1628,26 +1643,6 @@ void BattleScene::HandleInput()
                     break;
                 }
             }
-        }
-
-        // 勝敗後のクリック
-        if (m_battleResult == BattleResult::Win)
-        {
-            if (m_input.GetMouseButtonTrigger(0))
-            {
-                if (onChangeScene)
-                    onChangeScene(SceneType::CardSelect);
-            }
-            return;
-        }
-        if (m_battleResult == BattleResult::Lose)
-        {
-            if (m_input.GetMouseButtonTrigger(0))
-            {
-                if (onChangeScene)
-                    onChangeScene(SceneType::Title);
-            }
-            return;
         }
 }
 

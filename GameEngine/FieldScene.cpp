@@ -82,6 +82,7 @@ void FieldScene::GenerateMap()
     config.typeLimits = {
         { FieldNodeType::Battle, -1, 7 },
         { FieldNodeType::Rest,    4,  3 },
+        { FieldNodeType::Shop, 2, 3 },
     };
 
     // 全マスをEmptyで初期化
@@ -188,7 +189,7 @@ bool FieldScene::CanMove(int col, int row) const
     if (col < 0 || col >= GRID_COLS) return false;
     if (row < 0 || row >= GRID_ROWS) return false;
 
-    // 自分のマスには移動不可 ← 追加
+    // 自分のマスには移動不可
     if (col == m_playerCol && row == m_playerRow) return false;
 
     int dc = abs(col - m_playerCol);
@@ -219,7 +220,7 @@ XMFLOAT2 FieldScene::GetNodeScreenPos(int col, int row) const
 void FieldScene::Update(float deltaTime)
 {
     m_input.Update();
-    m_highlightTimer += deltaTime * 0.5f;
+    m_highlightTimer += deltaTime * 2.0f;
     if (m_highlightTimer > 3.14159f * 2.0f)
         m_highlightTimer = 0.0f;
 }
@@ -325,6 +326,8 @@ void FieldScene::Draw()
                     color = XMFLOAT4(0.2f, blink, 0.2f, 1.0f); break;
                 case FieldNodeType::Boss:
                     color = XMFLOAT4(blink, 0.2f, blink, 1.0f); break;
+                case FieldNodeType::Shop:
+                    color = XMFLOAT4(0.2f, blink, blink, 1.0f); break;
                 default:
                     color = XMFLOAT4(blink, blink, blink, 1.0f); break;
                 }
@@ -347,6 +350,8 @@ void FieldScene::Draw()
                     color = XMFLOAT4(0.7f, 0.2f, 0.7f, 1.0f); break;
                 case FieldNodeType::Start:
                     color = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f); break;
+                case FieldNodeType::Shop:
+                    color = XMFLOAT4(0.2f, 0.7f, 0.7f, 1.0f); break;
                 default:
                     color = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f); break;
                 }
@@ -381,6 +386,7 @@ void FieldScene::Draw()
             case FieldNodeType::Battle: label = L"BATTLE"; break;
             case FieldNodeType::Rest:   label = L"REST";   break;
             case FieldNodeType::Boss:   label = L"BOSS";   break;
+            case FieldNodeType::Shop:   label = L"SHOP";   break;
             default: break;
             }
 
@@ -394,12 +400,12 @@ void FieldScene::Draw()
     auto& playerData = PlayerDataManager::GetData();
     wchar_t hpText[64];
     swprintf_s(hpText, L"HP: %d / %d", playerData.hp, playerData.maxHp);
-    m_textRenderer->DrawText(hpText, 20.0f, 20.0f, 24.0f,
+    m_textRenderer->DrawText(hpText, 20.0f, 50.0f, 24.0f,
         D2D1::ColorF(D2D1::ColorF::Black));
 
     wchar_t stepsText[64];
     swprintf_s(stepsText, L"歩数: %d / %d", m_steps, m_maxSteps);
-    m_textRenderer->DrawText(stepsText, 20.0f, 50.0f, 24.0f,
+    m_textRenderer->DrawText(stepsText, 20.0f, 80.0f, 24.0f,
         m_steps <= 5
         ? D2D1::ColorF(D2D1::ColorF::Red)
         : D2D1::ColorF(D2D1::ColorF::Black));
@@ -452,6 +458,11 @@ void FieldScene::HandleInput()
                         SaveProgress();
                         break;
                     }
+                    case FieldNodeType::Shop:
+                        node.visited = true;
+                        SaveProgress();
+                        if (onChangeScene) onChangeScene(SceneType::Shop);
+                        return;
                     default:
                         node.visited = true;
                         break;

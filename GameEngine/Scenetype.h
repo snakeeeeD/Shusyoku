@@ -6,5 +6,6 @@ enum class SceneType
     Field,
     Battle,
     CardSelect,
+    Shop,
     Result,
 };

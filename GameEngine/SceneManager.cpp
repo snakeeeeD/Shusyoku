@@ -7,6 +7,8 @@
 #include "EncounterDataBase.h"
 #include "TerrainDataBase.h"
 
+#include "External/imgui/imgui.h"
+
 SceneManager::SceneManager() : m_currentScene(nullptr)
 {
 
@@ -109,6 +111,13 @@ void SceneManager::ChangeScene(SceneType type)
 			m_currentScene = scene;
 			break;
 		}
+		case SceneType::Shop:
+		{
+			auto scene = new ShopScene();
+			scene->onChangeScene = [this](SceneType type) { ChangeScene(type); };
+			m_currentScene = scene;
+			break;
+		}
 		
 	}
 
@@ -159,6 +168,10 @@ void SceneManager::DrawOverlay()
 	if (m_deckOpen)
 		m_textRenderer->DrawText(L"Remove", 30.0f, 50.0f, 16.0f, D2D1::ColorF(1, 1, 1));
 	if (m_deckOpen) DrawDeckCards(true);
+	wchar_t gbuf[32];
+	swprintf_s(gbuf, L"G:%d", PlayerDataManager::GetData().gold);
+	m_textRenderer->DrawText(gbuf, m_screenWidth - 330.0f, 10.0f, 16.0f,
+		D2D1::ColorF(1.0f, 0.9f, 0.3f));         // 金色、デッキボタンの左
 	m_textRenderer->End();
 }
 
@@ -196,6 +209,16 @@ void SceneManager::DrawDeckCards(bool textPass)
 
 void SceneManager::DrawImGui()
 {
+#ifdef _DEBUG
+	ImGui::Begin("Global Debug");
+	int gold = PlayerDataManager::GetData().gold;
+	if (ImGui::InputInt("Gold", &gold))
+	{
+		PlayerDataManager::GetData().gold = gold;
+		PlayerDataManager::Save();
+	}
+	ImGui::End();
+#endif
 	if (m_currentScene)
 		m_currentScene->DrawImGui();
 }

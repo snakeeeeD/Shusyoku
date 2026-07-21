@@ -11,6 +11,7 @@
 #include "BattleScene.h"
 #include "CardSelectScene.h"
 #include "FieldScene.h"
+#include "ShopScene.h"
 
 
 class SceneManager

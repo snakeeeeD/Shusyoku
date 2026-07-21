@@ -25,6 +25,10 @@ void PlayerDataManager::Init()
 		"MOV_move", "MOV_move", "dash",
 		"POW_power_attack", "POW_buff_defense"
 	};
+
+	m_data.gold = 100;          // 開始所持金
+	m_data.materials.clear();
+
 	m_data.currentNodeIndex = 0;
 	m_data.clearedNodes.clear();
 	m_data.fieldPlayerCol = 0;
@@ -53,6 +57,9 @@ void PlayerDataManager::Save()
 	j["fieldNodeTypes"] = m_data.fieldNodeTypes;
 	j["fieldNodeEnemyIds"] = m_data.fieldNodeEnemyIds;
 	j["fieldNodeVisited"] = m_data.fieldNodeVisited;
+
+	j["gold"] = m_data.gold;
+	j["materials"] = m_data.materials;
 
 	// ← 全部追加してからファイルに書き込む
 	std::ofstream file(SAVE_PATH);
@@ -104,6 +111,12 @@ void PlayerDataManager::Load()
 			m_data.fieldNodeEnemyIds = j["fieldNodeEnemyIds"].get<std::vector<std::string>>();
 		if (j.contains("fieldNodeVisited"))
 			m_data.fieldNodeVisited = j["fieldNodeVisited"].get<std::vector<bool>>();
+
+		m_data.gold = j.value("gold", 0);
+		if (j.contains("materials"))
+			m_data.materials = j["materials"].get<std::map<std::string, int>>();
+		else
+			m_data.materials.clear();
 	}
 	catch (const json::exception& e)
 	{
@@ -147,6 +160,10 @@ void PlayerDataManager::StartNewGame()
 	   "SKL_defend", "SKL_defend", "SKL_defend", "SKL_defend",
 	   "MOV_move",   "MOV_move",   "MOV_dash",
 	};
+
+	m_data.gold = 100;          // 開始所持金
+	m_data.materials.clear();
+
 	m_data.currentNodeIndex = 0;
 	m_data.clearedNodes.clear();
 	Save();
@@ -164,4 +181,35 @@ void PlayerDataManager::RemoveCard(int index)
 		m_data.deck.erase(m_data.deck.begin() + index);
 		Save();
 	}
+}
+
+void PlayerDataManager::AddGold(int amount)
+{
+	m_data.gold += amount;
+	Save();
+}
+bool PlayerDataManager::SpendGold(int amount)
+{
+	if (m_data.gold < amount) return false;
+	m_data.gold -= amount;
+	Save();
+	return true;
+}
+void PlayerDataManager::AddMaterial(const std::string& id, int count)
+{
+	m_data.materials[id] += count;
+	Save();
+}
+bool PlayerDataManager::SpendMaterial(const std::string& id, int count)
+{
+	if (m_data.materials[id] < count) return false;
+	m_data.materials[id] -= count;
+	if (m_data.materials[id] <= 0) m_data.materials.erase(id);
+	Save();
+	return true;
+}
+int PlayerDataManager::GetMaterialCount(const std::string& id)
+{
+	auto it = m_data.materials.find(id);
+	return it != m_data.materials.end() ? it->second : 0;
 }

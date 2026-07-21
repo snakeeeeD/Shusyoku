@@ -6,5 +6,6 @@ enum class FieldNodeType
     Start,    // スタート
     Battle,   // バトル
     Rest,     // 休憩
+    Shop,     // ショップ
     Boss,     // ボス
 };

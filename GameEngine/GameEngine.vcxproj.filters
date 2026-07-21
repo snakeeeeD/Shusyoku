@@ -211,6 +211,12 @@
     <Filter Include="ソース ファイル\01-描画関連\06-EffectManager">
       <UniqueIdentifier>{8d8fe59b-92c0-4bc1-9f05-d5cf5aa697b5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\02-Scene\50-ShopScene">
+      <UniqueIdentifier>{93302fb8-2984-41e2-ae65-6abf888fd064}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\50-ShopScene\00-ShopScene">
+      <UniqueIdentifier>{6c6a4df5-1d13-42d9-a0ea-5aecb690f9b6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -393,6 +399,15 @@
     <ClInclude Include="EffectManager.h">
       <Filter>ソース ファイル\01-描画関連\06-EffectManager</Filter>
     </ClInclude>
+    <ClInclude Include="DamageFeedBack.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="EffectDataBase.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="ShopScene.h">
+      <Filter>ソース ファイル\02-Scene\50-ShopScene\00-ShopScene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SpriteRenderer.cpp">
@@ -505,6 +520,12 @@
     </ClCompile>
     <ClCompile Include="TerrainDataBase.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\30-terrains</Filter>
+    </ClCompile>
+    <ClCompile Include="EffectDataBase.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="ShopScene.cpp">
+      <Filter>ソース ファイル\02-Scene\50-ShopScene\00-ShopScene</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
