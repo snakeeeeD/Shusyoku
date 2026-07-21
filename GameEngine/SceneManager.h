@@ -54,4 +54,10 @@ private:
 
     void DrawOverlay();
     void DrawDeckCards(bool textPass);
+
+    bool m_deckRemoveMode = false;
+    static constexpr float DECK_SCALE = 1.1f;
+
+    bool GetDeckCardBase(int i, float& baseX, float& baseY) const;   // カードの基準位置
+    int  GetDeckCardAt(POINT p) const;                              // 座標→デッキindex
 };

@@ -156,3 +156,12 @@ void PlayerDataManager::DeleteSave()
 {
 	std::remove(SAVE_PATH);
 }
+
+void PlayerDataManager::RemoveCard(int index)
+{
+	if (index >= 0 && index < (int)m_data.deck.size())
+	{
+		m_data.deck.erase(m_data.deck.begin() + index);
+		Save();
+	}
+}

@@ -129,6 +129,16 @@ void CardSelectScene::Draw()
             CARD_W, CARD_H, 0.0f, color);
     }
 
+    // スキップボタン
+    float skipW = 140.0f, skipH = 44.0f;
+    float skipX = (m_screenWidth - skipW) / 2.0f;
+    float skipY = m_screenHeight - 120.0f;
+    POINT mp = m_input.GetMousePos();
+    bool skipHover = mp.x >= skipX && mp.x <= skipX + skipW
+        && mp.y >= skipY && mp.y <= skipY + skipH;
+    m_spriteRenderer->DrawSprite(m_whiteTexture, skipX, skipY, skipW, skipH, 0.0f,
+        skipHover ? XMFLOAT4(0.5f, 0.3f, 0.3f, 1.0f) : XMFLOAT4(0.3f, 0.2f, 0.2f, 0.9f));
+
     m_spriteRenderer->End();
 
     m_textRenderer->Begin();
@@ -136,6 +146,9 @@ void CardSelectScene::Draw()
     // タイトル
     m_textRenderer->DrawText(L"カードを1枚選んでください",
         m_screenWidth / 2.0f - 150.0f, 80.0f, 28.0f,
+        D2D1::ColorF(D2D1::ColorF::White));
+
+    m_textRenderer->DrawText(L"スキップ", skipX + 30.0f, skipY + 12.0f, 20.0f,
         D2D1::ColorF(D2D1::ColorF::White));
 
     // カード情報
@@ -208,6 +221,17 @@ void CardSelectScene::HandleInput()
         // バトルシーンに戻る（後でフィールドに変更）
         if (onChangeScene)
             onChangeScene(SceneType::Field);
+    }
+
+    float skipW = 140.0f, skipH = 44.0f;
+    float skipX = (m_screenWidth - skipW) / 2.0f;
+    float skipY = m_screenHeight - 120.0f;
+    bool skipHover = mousePos.x >= skipX && mousePos.x <= skipX + skipW
+        && mousePos.y >= skipY && mousePos.y <= skipY + skipH;
+    if (skipHover && m_input.GetMouseButtonTrigger(0))
+    {
+        if (onChangeScene) onChangeScene(SceneType::Field);
+        return;
     }
 }
 

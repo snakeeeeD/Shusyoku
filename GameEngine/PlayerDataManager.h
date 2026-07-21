@@ -17,6 +17,8 @@ public:
 
     static PlayerData& GetData() { return m_data; }
 
+    static void RemoveCard(int index);
+
 private:
     static PlayerData m_data;
     static const char* SAVE_PATH;
