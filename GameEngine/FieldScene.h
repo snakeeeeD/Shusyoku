@@ -26,6 +26,9 @@ public:
     std::function<void(SceneType)> onChangeScene;
     const std::string& GetCurrentBattleEnemyId() const { return m_currentEnemyId; }
 
+    int m_currentBattleSeed = 0;
+    int GetCurrentBattleSeed() const { return m_currentBattleSeed; }
+
 private:
     void GenerateMap();
     void SaveProgress();
@@ -53,9 +56,11 @@ private:
     std::string m_currentEnemyId;
     float m_highlightTimer;
 
-    static constexpr int   GRID_COLS = 9;
+    static constexpr int   GRID_COLS = 12;
     static constexpr int   GRID_ROWS = 7;
     static constexpr int   INITIAL_STEPS = 20;
     static constexpr float CELL_SIZE = 60.0f;
     static constexpr float CELL_GAP = 20.0f;
+
+    bool m_resumeBattle = false;
 };

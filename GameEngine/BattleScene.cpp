@@ -205,7 +205,11 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             m_enemyActionDelay = 0.8f;
         };
 
-    const EncounterData* encounter = EncounterDataBase::GetRandom(1);
+    int encCount = EncounterDataBase::GetCount();
+    const EncounterData* encounter = (encCount > 0)
+        ? EncounterDataBase::GetByIndex((m_battleSeed * 7 + 3) % encCount)
+        : nullptr;
+
     if (encounter)
     {
         for (auto& ee : encounter->enemies)

@@ -66,10 +66,14 @@ void SceneManager::ChangeScene(SceneType type)
 {
 	// 削除前に必要な情報を取得
 	std::string battleEnemyId;
+	int battleSeed = 0;
 	if (type == SceneType::Battle)
 	{
 		if (auto field = dynamic_cast<FieldScene*>(m_currentScene))
+		{
 			battleEnemyId = field->GetCurrentBattleEnemyId();
+			battleSeed = field->GetCurrentBattleSeed();
+		}
 	}
 
 	// 古いシーンを削除
@@ -90,8 +94,8 @@ void SceneManager::ChangeScene(SceneType type)
 		case SceneType::Battle:
 		{
 			auto scene = new BattleScene();
-			if (!battleEnemyId.empty())
-				scene->SetEnemyId(battleEnemyId);
+			if (!battleEnemyId.empty()) scene->SetEnemyId(battleEnemyId);
+			scene->SetBattleSeed(battleSeed);
 
 			scene->onChangeScene = [this](SceneType type) { ChangeScene(type); };
 			m_currentScene = scene;

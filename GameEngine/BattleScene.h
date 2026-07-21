@@ -54,6 +54,9 @@ public:
 
     std::function<void(SceneType)> onChangeScene;
 
+    int m_battleSeed = 0;
+    void SetBattleSeed(int s) { m_battleSeed = s; }
+
 private:
     BattleUI* m_battleUI;
     GridMap* m_gridMap;
