@@ -54,14 +54,14 @@
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
-      "description": "敵に{value}ダメージ、毒2付与",
+      "description": "敵に{value}ダメージ、毒3付与",
       "mainEffect": {
         "type": "Damage",
-        "value": 4
+        "value": 9
       },
       "onHitEffect": {
         "type": "ApplyDebuff",
-        "value": 2,
+        "value": 3,
         "duration": 3,
         "buffType": "Poison"
       }

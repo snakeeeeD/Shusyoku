@@ -3,6 +3,9 @@
 #include <memory>
 #include "Scenetype.h"
 #include "TextRenderer.h"
+#include "SpriteRenderer.h"
+#include "input.h"
+#include "TextureManager.h"
 
 #include "TitleScene.h"
 #include "BattleScene.h"
@@ -40,4 +43,15 @@ private:
     int m_screenWidth;
     int m_screenHeight;
     HWND m_hWnd;
+
+    SpriteRenderer* m_uiSprite = nullptr;
+    Input m_uiInput;
+    bool  m_deckOpen = false;
+
+    static constexpr float BAR_H = 40.0f;
+
+    float m_deckScroll = 0.0f;
+
+    void DrawOverlay();
+    void DrawDeckCards(bool textPass);
 };

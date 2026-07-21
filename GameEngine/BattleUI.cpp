@@ -160,7 +160,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     playerBar.block = ctx.player->GetBlock();
     playerBar.poisonDmg = ctx.player->GetBuffManager().GetTurnEndDamage().total();
     playerBar.hasBurn = ctx.player->GetBuffManager().HasBuff(BuffType::Burn);
-    DrawHPBar(20.0f, 60.0f, 200.0f, 30.0f, playerBar, ctx.highlightTimer);
+    DrawHPBar(20.0f, 90.0f, 200.0f, 30.0f, playerBar, ctx.highlightTimer);
 
 
     if (ctx.player->GetBlock() > 0)
@@ -320,12 +320,12 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
     wchar_t hpText[64];
     swprintf_s(hpText, L"%d / %d", ctx.player->GetHp(), ctx.player->GetMaxHp());
-    m_textRenderer->DrawText(hpText, 20.0f, 2.0f, 45.0f,
+    m_textRenderer->DrawText(hpText, 20.0f, 40.0f, 45.0f,
         D2D1::ColorF(D2D1::ColorF::White));
 
     wchar_t energyText[64];
     swprintf_s(energyText, L"Energy: %d / %d", ctx.player->GetEnergy(), ctx.player->GetMaxEnergy());
-    m_textRenderer->DrawText(energyText, 20.0f, 100.0f, 20.0f,
+    m_textRenderer->DrawText(energyText, 20.0f, 130.0f, 20.0f,
         D2D1::ColorF(D2D1::ColorF::Yellow));
 
     if (ctx.player->GetBlock() > 0)
@@ -546,15 +546,15 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         }
     
 
-    if (ctx.turnManager->IsPlayerTurn())
-        m_textRenderer->DrawText(L"プレイヤーターン", 500.0f, 20.0f, 24.0f,
-            D2D1::ColorF(D2D1::ColorF::White));
-    else
-        m_textRenderer->DrawText(L"敵ターン", 500.0f, 20.0f, 24.0f,
-            D2D1::ColorF(D2D1::ColorF::Red));
+        if (ctx.turnManager->IsPlayerTurn())
+            m_textRenderer->DrawText(L"プレイヤーターン", 500.0f, 50.0f, 24.0f,
+                D2D1::ColorF(D2D1::ColorF::White));
+        else
+            m_textRenderer->DrawText(L"敵ターン", 500.0f, 50.0f, 24.0f,
+                D2D1::ColorF(D2D1::ColorF::Red));
 
     const auto& buffs = ctx.player->GetBuffManager().GetBuffs();
-    float buffY = 155.0f;
+    float buffY = 185.0f;
     for (auto& buff : buffs)
     {
         const auto& info = BuffInfo::Get(buff.type);
@@ -1525,7 +1525,7 @@ void BattleUI::DrawPlayerOffScreenIndicator(const BattleUIContext& ctx)
 void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
 {
     float panelX = ctx.screenWidth - 250.0f;
-    float panelY = 10.0f;
+    float panelY = 50.0f;
     float panelW = 240.0f;
     float entryH = 90.0f;
     float iconSize = 55.0f;
