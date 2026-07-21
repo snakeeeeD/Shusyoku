@@ -34,6 +34,7 @@ void CardDataBase::Init()
             data.range = c["range"];
             data.rangeType = StringToRangeType(c["rangeType"]);
             data.description = ToWString(c["description"]);
+            data.vfx = c.value("vfx", std::string(""));
 
             std::string rarityStr = c.value("rarity", "Common");
             if (rarityStr == "Uncommon") data.rarity = CardRarity::Uncommon;

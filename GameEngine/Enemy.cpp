@@ -356,6 +356,11 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
         }
         }
     }
+
+    // 命中したらプリセットのエフェクトを命中点で再生
+    if (hitPlayer && !act.vfx.empty() && player)
+        EffectManager::Play(act.vfx, player->worldX, player->worldY + 0.5f, player->worldZ);
+
     return damage;
 }
 

@@ -52,6 +52,7 @@ struct CardData
     int          range;                             // 射程距離
     RangeType    rangeType;                         // 効果範囲の種類
     std::wstring description;                       // カードの説明文
+    std::string  vfx;                               // 使用時に再生するエフェクト名（effects.json）
     CardRarity rarity = CardRarity::Common;         // レアリティ
     std::vector<std::string> tags;                  // カードの軸用のタグ
 

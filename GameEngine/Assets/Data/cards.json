@@ -88,6 +88,7 @@
       "range": 4,
       "rangeType": "Cross",
       "description": "4マス以内に突進し{value}ダメージ",
+      "vfx": "explosion",
       "dash": true,
       "mainEffect": {
         "type": "Damage",

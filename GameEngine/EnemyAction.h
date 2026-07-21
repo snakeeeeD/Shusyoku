@@ -43,6 +43,7 @@ struct SelectRule
 struct EnemyAction
 {
     std::wstring description;
+    std::string  vfx;
     TargetSpec   target;
     std::vector<Effect> effects;
     SelectRule   select;

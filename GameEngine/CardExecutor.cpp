@@ -1,5 +1,6 @@
 #include "CardExecutor.h"
 #include "CardEffect.h"
+#include "EffectManager.h"
 #include "BattleHighlighter.h"
 #include "TerrainDataBase.h"
 #include "RangeShape.h"
@@ -583,6 +584,14 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     if (data.selfDamage > 0)
         player->TakeDamage(data.selfDamage);
     result.cardUsed = true;
+
+    if (!data.vfx.empty())
+    {
+        float vx = (targetCol - gridMap->GetCols() / 2.0f) * 1.1f;
+        float vz = (targetRow - gridMap->GetRows() / 2.0f) * 1.1f;
+        EffectManager::Play(data.vfx, vx, 0.5f, vz);
+    }
+
     return result;
 }
 

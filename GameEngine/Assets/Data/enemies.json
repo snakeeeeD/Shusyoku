@@ -224,7 +224,8 @@
           }
         },
         {
-          "description": "一撃必殺",
+          "description": "一撃{0}",
+          "vfx": "explosion",
           "target": {
             "rangeType": "Area",
             "range": 5,

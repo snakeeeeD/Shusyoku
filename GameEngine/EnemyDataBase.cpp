@@ -51,6 +51,7 @@ static EnemyAction ParseAction(const json& a)
 {
     EnemyAction act;
     act.description = ToWString(a.value("description", std::string("")));
+    act.vfx = a.value("vfx", std::string(""));
     if (a.contains("target")) act.target = ParseTarget(a["target"]);
     if (a.contains("select")) act.select = ParseSelect(a["select"]);
     if (a.contains("effects") && a["effects"].is_array())
