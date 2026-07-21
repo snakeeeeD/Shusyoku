@@ -76,3 +76,21 @@ void EncounterDataBase::Reload()
     m_data.clear();
     Init();
 }
+
+const EncounterData* EncounterDataBase::GetByRankSeed(int rank, int seed)
+{
+    std::vector<EncounterData*> candidates;
+    for (auto& enc : m_data)
+        if (enc.rank == rank) candidates.push_back(&enc);
+    if (candidates.empty()) return nullptr;
+
+    // ビット混合ハッシュ（線形の偏りを壊す）
+    unsigned int h = (unsigned int)seed;
+    h ^= h >> 16;
+    h *= 0x7feb352du;
+    h ^= h >> 15;
+    h *= 0x846ca68bu;
+    h ^= h >> 16;
+
+    return candidates[h % candidates.size()];
+}

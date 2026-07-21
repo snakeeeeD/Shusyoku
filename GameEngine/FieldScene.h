@@ -27,7 +27,9 @@ public:
     const std::string& GetCurrentBattleEnemyId() const { return m_currentEnemyId; }
 
     int m_currentBattleSeed = 0;
+    int m_currentBattleOverflow = 0;
     int GetCurrentBattleSeed() const { return m_currentBattleSeed; }
+    int GetCurrentBattleOverflow() const { return m_currentBattleOverflow; }
 
 private:
     void GenerateMap();
@@ -35,6 +37,8 @@ private:
     bool CanMove(int col, int row) const;
     int  GetNodeIndex(int col, int row) const;
     XMFLOAT2 GetNodeScreenPos(int col, int row) const;
+
+    void DrawImGui() override;
 
     SpriteRenderer* m_spriteRenderer;
     TextRenderer* m_textRenderer;

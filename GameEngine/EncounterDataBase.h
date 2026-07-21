@@ -14,6 +14,8 @@ public:
 
     static void Reload();
 
+    static const EncounterData* GetByRankSeed(int rank, int seed);
+
 private:
     static std::vector<EncounterData> m_data;
 };

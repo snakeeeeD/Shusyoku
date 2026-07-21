@@ -269,6 +269,12 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
 
     m_plannedActions.clear();
     m_plannedActions.push_back(*picked);
+
+    if (m_dmgScale != 1.0f)
+        for (auto& e : m_plannedActions.back().effects)
+            if (e.kind == EffectKind::Damage)
+                e.value = (int)(e.value * m_dmgScale);
+
     m_actionIndex = 0;
 
     {
@@ -400,4 +406,12 @@ void Enemy::UpdateDeath(float deltaTime)
 {
     if (!m_dying) return;
     m_deathTimer += deltaTime;
+}
+
+void Enemy::ApplyDifficulty(float hpMul, float dmgMul)
+{
+    m_maxHP = (int)(m_maxHP * hpMul);
+    m_HP = m_maxHP;
+    m_displayHp = (float)m_HP;
+    m_dmgScale = dmgMul;
 }

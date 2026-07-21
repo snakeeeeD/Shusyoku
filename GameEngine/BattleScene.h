@@ -55,7 +55,9 @@ public:
     std::function<void(SceneType)> onChangeScene;
 
     int m_battleSeed = 0;
+    int m_overflow = 0;
     void SetBattleSeed(int s) { m_battleSeed = s; }
+    void SetOverflow(int o) { m_overflow = o; }
 
 private:
     BattleUI* m_battleUI;

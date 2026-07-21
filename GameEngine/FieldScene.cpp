@@ -7,6 +7,10 @@
 #include <map>
 #include <ctime>
 
+#ifdef _DEBUG
+#include "External/imgui/imgui.h"
+#endif
+
 FieldScene::FieldScene()
     : m_spriteRenderer(nullptr)
     , m_textRenderer(nullptr)
@@ -73,6 +77,7 @@ bool FieldScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         m_currentEnemyId = (curNode.type == FieldNodeType::Boss) ? "dragon" : curNode.enemyId;
         m_resumeBattle = true;
         m_currentBattleSeed = cur;
+        m_currentBattleOverflow = (m_steps < 0) ? -m_steps : 0;
     }
 
     return true;
@@ -264,8 +269,6 @@ bool FieldScene::CanMove(int col, int row) const
     int idx = GetNodeIndex(col, row);
     if (m_nodes[idx].type == FieldNodeType::Empty) return false;
     if (m_nodes[idx].type == FieldNodeType::Start) return false;
-
-    if (m_steps <= 0) return false;
 
     return true;
 }
@@ -483,6 +486,24 @@ void FieldScene::Draw()
         : D2D1::ColorF(D2D1::ColorF::Black));
 
     m_textRenderer->End();
+
+    // 歩数にホバーで難易度上昇の説明
+    POINT mp = m_input.GetMousePos();
+    if (mp.x >= 20 && mp.x <= 220 && mp.y >= 80 && mp.y <= 108)
+    {
+        float tx = 20.0f, ty = 115.0f, tw = 380.0f, th = 70.0f;
+        m_spriteRenderer->Begin();
+        m_spriteRenderer->DrawSprite(m_whiteTexture, tx, ty, tw, th, 0.0f,
+            XMFLOAT4(0.08f, 0.08f, 0.12f, 0.95f));
+        m_spriteRenderer->End();
+
+        m_textRenderer->Begin();
+        m_textRenderer->DrawText(L"歩数が0を超えて進むと", tx + 10.0f, ty + 8.0f, 16.0f,
+            D2D1::ColorF(D2D1::ColorF::White));
+        m_textRenderer->DrawText(L"戦闘の敵が強くなります", tx + 10.0f, ty + 34.0f, 16.0f,
+            D2D1::ColorF(1.0f, 0.6f, 0.4f));
+        m_textRenderer->End();
+    }
 }
 
 void FieldScene::HandleInput()
@@ -518,6 +539,7 @@ void FieldScene::HandleInput()
                     case FieldNodeType::Boss:
                         m_currentEnemyId = (node.type == FieldNodeType::Boss) ? "dragon" : node.enemyId;
                         m_currentBattleSeed = idx;   // ノード固有のシード
+                        m_currentBattleOverflow = (m_steps < 0) ? -m_steps : 0;
                         SaveProgress();
                         if (onChangeScene)
                             onChangeScene(SceneType::Battle);
@@ -570,4 +592,14 @@ void FieldScene::SaveProgress()
     }
 
     PlayerDataManager::Save();
+}
+
+void FieldScene::DrawImGui()
+{
+#ifdef _DEBUG
+    ImGui::Begin("Field Debug");
+    ImGui::InputInt("Steps", &m_steps);
+    ImGui::Text("Overflow: %d", (m_steps < 0) ? -m_steps : 0);
+    ImGui::End();
+#endif
 }

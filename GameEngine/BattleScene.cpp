@@ -206,15 +206,21 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         };
 
     int encCount = EncounterDataBase::GetCount();
-    const EncounterData* encounter = (encCount > 0)
-        ? EncounterDataBase::GetByIndex((m_battleSeed * 7 + 3) % encCount)
-        : nullptr;
+    const EncounterData* encounter = EncounterDataBase::GetByRankSeed(1, m_battleSeed);
 
     if (encounter)
     {
         for (auto& ee : encounter->enemies)
             AddEnemy(ee.col, ee.row, ee.id);
     }
+
+    // 難易度スケール（歩数オーバーの梯子：1歩=HP, 2歩=攻撃, 3歩以降=暫定で両方）
+    float hpMul = 1.0f, dmgMul = 1.0f;
+    if (m_overflow >= 1) hpMul += 0.30f;
+    if (m_overflow >= 2) dmgMul += 0.25f;
+    if (m_overflow >= 3) { hpMul += 0.15f * (m_overflow - 2); dmgMul += 0.15f * (m_overflow - 2); }
+    for (auto enemy : m_enemies)
+        enemy->ApplyDifficulty(hpMul, dmgMul);
 
     for (auto enemy : m_enemies)
         enemy->DecideNextAction(m_playerCol, m_playerRow, m_turnCount);
