@@ -28,8 +28,10 @@ public:
 
     int m_currentBattleSeed = 0;
     int m_currentBattleOverflow = 0;
+    bool m_currentBattleIsElite = false;
     int GetCurrentBattleSeed() const { return m_currentBattleSeed; }
     int GetCurrentBattleOverflow() const { return m_currentBattleOverflow; }
+    bool GetCurrentBattleIsElite() const { return m_currentBattleIsElite; }
 
 private:
     void GenerateMap();

@@ -259,22 +259,23 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
     auto& pool = !cond.empty() ? cond : uncond;
     int   total = !cond.empty() ? totalC : totalU;
 
-    const EnemyAction* picked = pool.empty() ? &data->actions[0] : pool.back();
-    if (!pool.empty())
-    {
-        int roll = rand() % max(1, total);
-        int cum = 0;
-        for (auto* a : pool) { cum += a->select.chance; if (roll < cum) { picked = a; break; } }
-    }
-
     m_plannedActions.clear();
-    m_plannedActions.push_back(*picked);
-
-    if (m_dmgScale != 1.0f)
-        for (auto& e : m_plannedActions.back().effects)
-            if (e.kind == EffectKind::Damage)
-                e.value = (int)(e.value * m_dmgScale);
-
+    int count = 1 + m_bonusActions;
+    for (int n = 0; n < count; n++)
+    {
+        const EnemyAction* picked = pool.empty() ? &data->actions[0] : pool.back();
+        if (!pool.empty())
+        {
+            int roll = rand() % max(1, total);
+            int cum = 0;
+            for (auto* a : pool) { cum += a->select.chance; if (roll < cum) { picked = a; break; } }
+        }
+        m_plannedActions.push_back(*picked);
+        if (m_dmgScale != 1.0f)
+            for (auto& e : m_plannedActions.back().effects)
+                if (e.kind == EffectKind::Damage)
+                    e.value = (int)(e.value * m_dmgScale);
+    }
     m_actionIndex = 0;
 
     {
@@ -408,10 +409,11 @@ void Enemy::UpdateDeath(float deltaTime)
     m_deathTimer += deltaTime;
 }
 
-void Enemy::ApplyDifficulty(float hpMul, float dmgMul)
+void Enemy::ApplyDifficulty(float hpMul, float dmgMul, int bonusActions)
 {
     m_maxHP = (int)(m_maxHP * hpMul);
     m_HP = m_maxHP;
     m_displayHp = (float)m_HP;
     m_dmgScale = dmgMul;
+    m_bonusActions = bonusActions;
 }

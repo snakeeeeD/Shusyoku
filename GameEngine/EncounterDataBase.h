@@ -15,6 +15,7 @@ public:
     static void Reload();
 
     static const EncounterData* GetByRankSeed(int rank, int seed);
+    static const std::vector<EscalationTier>& DefaultEscalation();
 
 private:
     static std::vector<EncounterData> m_data;

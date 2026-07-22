@@ -436,7 +436,6 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 float iconX = barX;
                 float iconY = barY - iconSize - 2.0f;
 
-                for (auto& act : enemy->GetPlannedActions())
                     for (auto& act : enemy->GetPlannedActions())
                         for (auto& e : act.effects)
                         {

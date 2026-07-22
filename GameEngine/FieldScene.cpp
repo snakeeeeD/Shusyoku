@@ -72,12 +72,14 @@ bool FieldScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     int cur = GetNodeIndex(m_playerCol, m_playerRow);
     auto& curNode = m_nodes[cur];
     if (!curNode.visited &&
-        (curNode.type == FieldNodeType::Battle || curNode.type == FieldNodeType::Boss))
+        (curNode.type == FieldNodeType::Battle || curNode.type == FieldNodeType::Boss
+            || curNode.type == FieldNodeType::Elite))
     {
         m_currentEnemyId = (curNode.type == FieldNodeType::Boss) ? "dragon" : curNode.enemyId;
-        m_resumeBattle = true;
         m_currentBattleSeed = cur;
         m_currentBattleOverflow = (m_steps < 0) ? -m_steps : 0;
+        m_currentBattleIsElite = (curNode.type == FieldNodeType::Elite);
+        m_resumeBattle = true;
     }
 
     return true;
@@ -99,6 +101,7 @@ void FieldScene::GenerateMap()
         { FieldNodeType::Battle, -1, 7 },
         { FieldNodeType::Rest,    4,  3 },
         { FieldNodeType::Shop, 2, 3 },
+         { FieldNodeType::Elite, 2, 2 },
     };
 
     // 全マスをEmptyで初期化
@@ -167,7 +170,9 @@ void FieldScene::GenerateMap()
         {
             if (limit.maxCount >= 0 && typeCounts[limit.type] >= limit.maxCount) continue;
             // スタート付近(左3列)はRest/Shopを置かない
-            if (col < 3 && (limit.type == FieldNodeType::Rest || limit.type == FieldNodeType::Shop))
+            if (col < 3 && (limit.type == FieldNodeType::Rest
+                || limit.type == FieldNodeType::Shop
+                || limit.type == FieldNodeType::Elite))
                 continue;
             available.push_back({ limit.type, limit.weight });
         }
@@ -201,7 +206,7 @@ void FieldScene::GenerateMap()
             m_nodes[idx].enemyId = enemyIds[rand() % enemyIds.size()];
     }
 
-    // --- スタートから到達できないマスを空白化（孤立防止）---
+    // スタートから到達できないマスを空白化
     std::vector<bool> reachable(GRID_COLS * GRID_ROWS, false);
     std::vector<std::pair<int, int>> stack;
     stack.push_back({ 0, GRID_ROWS / 2 });
@@ -225,7 +230,7 @@ void FieldScene::GenerateMap()
         if (!reachable[i] && m_nodes[i].type != FieldNodeType::Empty)
             m_nodes[i].type = FieldNodeType::Empty;
 
-    // --- 行き止まり（隣接1つ以下）を除去。Start/Bossは除く ---
+    // 行き止まり（隣接1つ以下）を除去。Start/Bossは除く
     bool changed = true;
     while (changed)
     {
@@ -403,6 +408,8 @@ void FieldScene::Draw()
                     color = XMFLOAT4(blink, 0.2f, blink, 1.0f); break;
                 case FieldNodeType::Shop:
                     color = XMFLOAT4(0.2f, blink, blink, 1.0f); break;
+                case FieldNodeType::Elite:
+                    color = XMFLOAT4(0.9f, blink * 0.6f, 0.1f, 1.0f); break;
                 default:
                     color = XMFLOAT4(blink, blink, blink, 1.0f); break;
                 }
@@ -427,6 +434,8 @@ void FieldScene::Draw()
                     color = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f); break;
                 case FieldNodeType::Shop:
                     color = XMFLOAT4(0.2f, 0.7f, 0.7f, 1.0f); break;
+                case FieldNodeType::Elite:
+                    color = XMFLOAT4(0.9f, 0.5f, 0.1f, 1.0f); break;
                 default:
                     color = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f); break;
                 }
@@ -462,6 +471,7 @@ void FieldScene::Draw()
             case FieldNodeType::Rest:   label = L"REST";   break;
             case FieldNodeType::Boss:   label = L"BOSS";   break;
             case FieldNodeType::Shop:   label = L"SHOP";   break;
+            case FieldNodeType::Elite:  label = L"ELITE";  break;
             default: break;
             }
 
@@ -538,11 +548,20 @@ void FieldScene::HandleInput()
                     case FieldNodeType::Battle:
                     case FieldNodeType::Boss:
                         m_currentEnemyId = (node.type == FieldNodeType::Boss) ? "dragon" : node.enemyId;
-                        m_currentBattleSeed = idx;   // ノード固有のシード
+                        m_currentBattleSeed = idx;
                         m_currentBattleOverflow = (m_steps < 0) ? -m_steps : 0;
+                        m_currentBattleIsElite = false;
                         SaveProgress();
-                        if (onChangeScene)
-                            onChangeScene(SceneType::Battle);
+                        if (onChangeScene) onChangeScene(SceneType::Battle);
+                        return;
+
+                    case FieldNodeType::Elite:
+                        m_currentEnemyId = node.enemyId;
+                        m_currentBattleSeed = idx;
+                        m_currentBattleOverflow = (m_steps < 0) ? -m_steps : 0;
+                        m_currentBattleIsElite = true;
+                        SaveProgress();
+                        if (onChangeScene) onChangeScene(SceneType::Battle);
                         return;
 
                     case FieldNodeType::Rest:

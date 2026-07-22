@@ -7,5 +7,6 @@ enum class FieldNodeType
     Battle,   // バトル
     Rest,     // 休憩
     Shop,     // ショップ
+    Elite,    // エリート
     Boss,     // ボス
 };

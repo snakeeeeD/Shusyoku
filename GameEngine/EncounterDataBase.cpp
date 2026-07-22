@@ -8,6 +8,14 @@ using json = nlohmann::json;
 
 std::vector<EncounterData> EncounterDataBase::m_data;
 
+static EscalationKind ParseEscKind(const std::string& s)
+{
+    if (s == "atkUp")     return EscalationKind::AtkUp;
+    if (s == "addAction") return EscalationKind::AddAction;
+    if (s == "addEnemy")  return EscalationKind::AddEnemy;
+    return EscalationKind::HpUp;
+}
+
 void EncounterDataBase::Init()
 {
     std::ifstream file("Assets/Data/encounters.json");
@@ -28,6 +36,17 @@ void EncounterDataBase::Init()
         }
         data.rank = e["rank"];
         data.weight = e["weight"];
+        if (e.contains("escalation"))
+            for (auto& t : e["escalation"])
+            {
+                EscalationTier tier;
+                tier.kind = ParseEscKind(t.value("kind", std::string("hpUp")));
+                tier.value = t.value("value", 0);
+                tier.id = t.value("id", std::string(""));
+                tier.col = t.value("col", 0);
+                tier.row = t.value("row", 0);
+                data.escalation.push_back(tier);
+            }
         m_data.push_back(data);
     }
 }
@@ -93,4 +112,15 @@ const EncounterData* EncounterDataBase::GetByRankSeed(int rank, int seed)
     h ^= h >> 16;
 
     return candidates[h % candidates.size()];
+}
+
+const std::vector<EscalationTier>& EncounterDataBase::DefaultEscalation()
+{
+    static const std::vector<EscalationTier> def = {
+        { EscalationKind::HpUp,      30, "", 0, 0 },   // 1歩：HP+30%
+        { EscalationKind::AtkUp,     25, "", 0, 0 },   // 2歩：攻撃+25%
+        { EscalationKind::AddAction,  0, "", 0, 0 },   // 3歩：行動+1
+        { EscalationKind::AddEnemy,   0, "reaper", 4, 6 }, // 4歩：敵追加
+    };
+    return def;
 }

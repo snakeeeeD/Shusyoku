@@ -56,8 +56,11 @@ public:
 
     int m_battleSeed = 0;
     int m_overflow = 0;
+    bool m_isElite = false;
     void SetBattleSeed(int s) { m_battleSeed = s; }
     void SetOverflow(int o) { m_overflow = o; }
+    void SetElite(bool e) { m_isElite = e; }
+    static constexpr int ELITE_LEVEL = 3;
 
 private:
     BattleUI* m_battleUI;

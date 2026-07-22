@@ -77,7 +77,8 @@ public:
 
 	const std::vector<std::pair<int, int>>& GetGridShape() const { return m_gridShape; }
 
-	void ApplyDifficulty(float hpMul, float dmgMul);
+	void ApplyDifficulty(float hpMul, float dmgMul, int bonusActions);
+
 
 private:
 	bool IsAdjacentTo(int playerCol, int playerRow);
@@ -95,6 +96,7 @@ private:
 	static constexpr float DEATH_DUR = 0.6f;
 
 	float m_dmgScale = 1.0f;
+	int   m_bonusActions = 0;
 
 	std::string m_textureName;
 	std::string m_id;

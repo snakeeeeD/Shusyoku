@@ -48,6 +48,9 @@ void CardSelectScene::GenerateChoices()
     m_readyForInput = false;
     m_choices.clear();
 
+    bool rare = PlayerDataManager::GetData().rewardRare;
+    PlayerDataManager::GetData().rewardRare = false;
+
     // 全カードを重み付きで集める
     struct WeightedCard {
         std::string id;
@@ -65,10 +68,13 @@ void CardSelectScene::GenerateChoices()
         const CardData* data = CardDataBase::Get(id);
         if (!data) continue;
 
-        int w = 10; // Common
-        if (data->rarity == CardRarity::Uncommon) w = 5;
-        else if (data->rarity == CardRarity::Rare) w = 2;
-
+        int w;
+        if (rare)
+            w = (data->rarity == CardRarity::Rare) ? 12
+            : (data->rarity == CardRarity::Uncommon) ? 6 : 1;
+        else
+            w = (data->rarity == CardRarity::Rare) ? 2
+            : (data->rarity == CardRarity::Uncommon) ? 5 : 10;
         pool.push_back({ id, w });
     }
 

@@ -443,6 +443,45 @@
           }
         }
       ]
+    },
+    {
+      "id": "reaper",
+      "texture": "enemy_reaper",
+      "hp": 100,
+      "width": 1.3,
+      "height": 1.3,
+      "immovable": true,
+      "actions": [
+        {
+          "description": "鎌を研ぐ（攻撃力+{0}）",
+          "target": { "rangeType": "None" },
+          "effects": [
+            {
+              "kind": "Buff",
+              "buff": "AttackUp",
+              "value": 5,
+              "duration": -1,
+              "applyTo": "Self"
+            }
+          ],
+          "select": { "chance": 100 }
+        },
+        {
+          "description": "死の一撃{0}",
+          "target": { "unavoidable": true },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 15
+            }
+          ],
+          "select": {
+            "condition": "turnAbove",
+            "conditionValue": 5,
+            "chance": 100
+          }
+        }
+      ]
     }
   ]
 }

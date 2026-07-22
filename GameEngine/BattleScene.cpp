@@ -206,21 +206,42 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         };
 
     int encCount = EncounterDataBase::GetCount();
-    const EncounterData* encounter = EncounterDataBase::GetByRankSeed(1, m_battleSeed);
-
+    int rank = m_isElite ? 2 : 1;
+    const EncounterData* encounter = EncounterDataBase::GetByRankSeed(rank, m_battleSeed);
     if (encounter)
     {
         for (auto& ee : encounter->enemies)
             AddEnemy(ee.col, ee.row, ee.id);
-    }
 
-    // 難易度スケール（歩数オーバーの梯子：1歩=HP, 2歩=攻撃, 3歩以降=暫定で両方）
-    float hpMul = 1.0f, dmgMul = 1.0f;
-    if (m_overflow >= 1) hpMul += 0.30f;
-    if (m_overflow >= 2) dmgMul += 0.25f;
-    if (m_overflow >= 3) { hpMul += 0.15f * (m_overflow - 2); dmgMul += 0.15f * (m_overflow - 2); }
-    for (auto enemy : m_enemies)
-        enemy->ApplyDifficulty(hpMul, dmgMul);
+        const auto& ladder = encounter->escalation.empty()
+            ? EncounterDataBase::DefaultEscalation()
+            : encounter->escalation;
+
+        float hpMul = 1.0f, dmgMul = 1.0f;
+        int bonusActions = 0;
+        int level = m_overflow + (m_isElite ? ELITE_LEVEL : 0);
+        for (int i = 0; i < level; i++)
+        {
+            if (i < (int)ladder.size())
+            {
+                const EscalationTier& t = ladder[i];
+                switch (t.kind)
+                {
+                case EscalationKind::HpUp:      hpMul += t.value / 100.0f;   break;
+                case EscalationKind::AtkUp:     dmgMul += t.value / 100.0f;   break;
+                case EscalationKind::AddAction: bonusActions += 1;            break;
+                case EscalationKind::AddEnemy:  AddEnemy(t.col, t.row, t.id); break;
+                }
+            }
+            else   // 梯子超過分は緩やかに
+            {
+                hpMul += 0.10f;
+                dmgMul += 0.10f;
+            }
+        }
+        for (auto enemy : m_enemies)
+            enemy->ApplyDifficulty(hpMul, dmgMul, bonusActions);
+    }
 
     for (auto enemy : m_enemies)
         enemy->DecideNextAction(m_playerCol, m_playerRow, m_turnCount);
@@ -440,8 +461,6 @@ void BattleScene::Update(float deltaTime)
         if (m_highlightTimer > 3.14159f * 2.0f)
             m_highlightTimer = 0.0f;
 
-
-
         if (m_battleResult != BattleResult::None) return;   // 勝敗決定後は何もしない
         m_highlighter.UpdateEnemyHighlight(
             m_enemies, m_gridMap, m_player,
@@ -466,10 +485,19 @@ void BattleScene::Update(float deltaTime)
             // HPを保存、現在のマスをクリア済みに
             auto& pd = PlayerDataManager::GetData();
             pd.hp = m_player->GetHp();
+
             int nodeIdx = pd.fieldPlayerCol * 7 + pd.fieldPlayerRow;
             if (nodeIdx >= 0 && nodeIdx < (int)pd.fieldNodeVisited.size())
                 pd.fieldNodeVisited[nodeIdx] = true;
-            pd.gold += 10 + rand() % 16;    // 10〜25ゴールド
+            pd.gold += 10 + rand() % 16;
+            if (m_isElite)
+            {
+                pd.gold += 40;            // ボーナスゴールド
+                pd.fieldSteps += 8;       // 歩数回復
+                pd.rewardRare = true;     // 次のカード選択をレア寄りに
+            }
+            PlayerDataManager::Save();
+
             PlayerDataManager::Save();
             return;
         }
