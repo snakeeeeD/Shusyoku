@@ -48,17 +48,18 @@ void Enemy::Draw3D(Renderer3D* renderer)
         : GetDrawColor();
 
     float y = worldY;
+    float s = GetJumpScale();
     if (m_dying)
     {
-        float t = m_deathTimer / DEATH_DUR;      // 0→1
-        drawColor.w *= (1.0f - t);               // 消えていく
-        y += t * 0.3f;                           // ふわっと上へ
+        float t = m_deathTimer / DEATH_DUR;
+        drawColor.w *= (1.0f - t);
+        y += t * 0.3f;
     }
 
     renderer->DrawBillboard(
         TextureManager::Get(m_textureName),
         worldX, y, worldZ,
-        width, height, 0.0f, drawColor);
+        width * s, height * s, 0.0f, drawColor);
 }
 
 bool Enemy::IsAdjacentTo(int playerCol, int playerRow)
@@ -225,6 +226,80 @@ void Enemy::ResetBlock()
     m_block = 0;
 }
 
+void Enemy::PullPlayer(int playerCol, int playerRow, GridMap* gridMap, Player* player, int steps)
+{
+    if (!player) return;
+    int pc = playerCol, pr = playerRow;
+    std::vector<std::pair<float, float>> pts;
+
+    for (int step = 0; step < steps; step++)
+    {
+        int dc = gridCol - pc;      // 敵の方向へ
+        int dr = gridRow - pr;
+        if (abs(dc) + abs(dr) <= 1) break;   // 敵に隣接したら止める
+
+        std::vector<std::pair<int, int>> candidates;
+        if (abs(dc) >= abs(dr))
+        {
+            candidates.push_back({ pc + (dc > 0 ? 1 : -1), pr });
+            if (dr != 0) candidates.push_back({ pc, pr + (dr > 0 ? 1 : -1) });
+        }
+        else
+        {
+            candidates.push_back({ pc, pr + (dr > 0 ? 1 : -1) });
+            if (dc != 0) candidates.push_back({ pc + (dc > 0 ? 1 : -1), pr });
+        }
+
+        bool moved = false;
+        for (auto& [nc, nr] : candidates)
+        {
+            if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) continue;
+            if (gridMap->GetCell(nc, nr).type != CellType::Empty) continue;   // 壁・敵で止まる
+            gridMap->SetCellType(pc, pr, CellType::Empty);
+            pc = nc; pr = nr;
+            gridMap->SetCellType(pc, pr, CellType::Player);
+            pts.push_back({ (pc - gridMap->GetCols() / 2.0f) * 1.1f,
+                            (pr - gridMap->GetRows() / 2.0f) * 1.1f });
+            moved = true;
+            break;
+        }
+        if (!moved) break;
+    }
+
+    player->gridCol = pc;
+    player->gridRow = pr;
+    if (!pts.empty()) player->StartWalk(pts, 0.1f);
+}
+
+void Enemy::KnockbackPlayer(int playerCol, int playerRow, GridMap* gridMap, Player* player, int steps)
+{
+    if (!player) return;
+    int pc = playerCol, pr = playerRow;
+
+    // 敵から離れる主方向を1軸に固定（まっすぐ吹き飛ばす）
+    int dc = pc - gridCol, dr = pr - gridRow;
+    if (dc == 0 && dr == 0) return;
+    int stepCol = 0, stepRow = 0;
+    if (abs(dc) >= abs(dr)) stepCol = (dc >= 0) ? 1 : -1;
+    else                    stepRow = (dr >= 0) ? 1 : -1;
+
+    std::vector<std::pair<float, float>> pts;
+    for (int step = 0; step < steps; step++)
+    {
+        int nc = pc + stepCol, nr = pr + stepRow;
+        if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) break;
+        if (gridMap->GetCell(nc, nr).type != CellType::Empty) break;   // 壁・敵で止まる
+        gridMap->SetCellType(pc, pr, CellType::Empty);
+        pc = nc; pr = nr;
+        gridMap->SetCellType(pc, pr, CellType::Player);
+        pts.push_back({ (pc - gridMap->GetCols() / 2.0f) * 1.1f,
+                        (pr - gridMap->GetRows() / 2.0f) * 1.1f });
+    }
+
+    player->gridCol = pc;
+    player->gridRow = pr;
+    if (!pts.empty()) player->StartWalk(pts, 0.08f);   // 速めで吹き飛ばす感
+}
 
 bool Enemy::ConditionMet(const EnemyAction& a, int playerCol, int playerRow, int turn) const
 {
@@ -245,6 +320,41 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
     if (!data || data->actions.empty())
     {
        return;
+    }
+
+    // 順番モード：行動を定義順に1つずつ回す
+    if (data->sequential)
+    {
+        // 条件付き行動が満たされていれば最優先
+        const EnemyAction* picked = nullptr;
+        for (auto& a : data->actions)
+            if (!a.select.condition.empty() && ConditionMet(a, playerCol, playerRow, turn))
+            {
+                picked = &a; break;
+            }
+
+        if (!picked)
+        {
+            // 無条件行動だけを定義順に回す
+            std::vector<const EnemyAction*> seq;
+            for (auto& a : data->actions)
+                if (a.select.condition.empty()) seq.push_back(&a);
+            if (!seq.empty()) { picked = seq[m_seqIndex % (int)seq.size()]; m_seqIndex++; }
+            else picked = &data->actions[0];
+        }
+
+        m_plannedActions.clear();
+        m_plannedActions.push_back(*picked);
+        if (m_dmgScale != 1.0f)
+            for (auto& e : m_plannedActions.back().effects)
+                if (e.kind == EffectKind::Damage)
+                    e.value = (int)(e.value * m_dmgScale);
+        m_actionIndex = 0;
+
+        int dcA = playerCol - gridCol, drA = playerRow - gridRow;
+        if (abs(dcA) >= abs(drA)) { m_aimDx = (dcA > 0) ? 1 : (dcA < 0) ? -1 : 0; m_aimDy = 0; }
+        else { m_aimDx = 0; m_aimDy = (drA > 0) ? 1 : (drA < 0) ? -1 : 0; }
+        return;
     }
 
     std::vector<const EnemyAction*> cond, uncond;
@@ -322,12 +432,15 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
         case EffectKind::MoveAway:   MoveAway(playerCol, playerRow, gridMap, e.value);   break;
 
         case EffectKind::Damage:
-            if (hitPlayer)
+            if (tg.approach != ApproachType::Dash && !tg.unavoidable)
             {
-                if (tg.approach != ApproachType::Dash && !tg.unavoidable && player)
-                    StartLunge(player->worldX, player->worldZ);
-                damage += m_buffManager.GetFinalAttack(e.value);
+                if (tg.rangeType == RangeType::Area)
+                    StartJump(1.5f, 0.4f);     // 範囲：大きく跳ねる
+                else
+                    StartJump(0.5f, 0.25f);    // 単体：小さくくいっと
             }
+            if (hitPlayer)
+                damage += m_buffManager.GetFinalAttack(e.value);
             break;
 
         case EffectKind::Block:
@@ -361,7 +474,14 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
             }
             break;
         }
+        case EffectKind::PullPlayer: 
+            PullPlayer(playerCol, playerRow, gridMap, player, e.value); 
+            break;
+
+        case EffectKind::KnockbackPlayer: 
+            KnockbackPlayer(playerCol, playerRow, gridMap, player, e.value); break;
         }
+
     }
 
     // 命中したらプリセットのエフェクトを命中点で再生

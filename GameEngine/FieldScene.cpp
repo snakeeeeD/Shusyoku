@@ -78,7 +78,9 @@ bool FieldScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         m_currentEnemyId = (curNode.type == FieldNodeType::Boss) ? "dragon" : curNode.enemyId;
         m_currentBattleSeed = cur;
         m_currentBattleOverflow = (m_steps < 0) ? -m_steps : 0;
-        m_currentBattleIsElite = (curNode.type == FieldNodeType::Elite);
+        m_currentBattleCategory =
+            (curNode.type == FieldNodeType::Elite) ? EncCategory::Elite :
+            (curNode.type == FieldNodeType::Boss) ? EncCategory::Boss : EncCategory::Normal;
         m_resumeBattle = true;
     }
 
@@ -532,7 +534,12 @@ void FieldScene::HandleInput()
             if (mousePos.x >= pos.x && mousePos.x <= pos.x + CELL_SIZE
                 && mousePos.y >= pos.y && mousePos.y <= pos.y + CELL_SIZE)
             {
-                if (!CanMove(col, row)) return;
+                if (m_freeMove)
+                {
+                    if (m_nodes[GetNodeIndex(col, row)].type == FieldNodeType::Empty) return;  // 空白は不可
+                    if (col == m_playerCol && row == m_playerRow) return;                       // 現在地は不可
+                }
+                else if (!CanMove(col, row)) return;
 
                 int idx = GetNodeIndex(col, row);
                 auto& node = m_nodes[idx];
@@ -540,7 +547,7 @@ void FieldScene::HandleInput()
                 m_playerCol = col;
                 m_playerRow = row;
                 m_steps--;
-
+                
                 if (!node.visited)
                 {
                     switch (node.type)
@@ -550,7 +557,8 @@ void FieldScene::HandleInput()
                         m_currentEnemyId = (node.type == FieldNodeType::Boss) ? "dragon" : node.enemyId;
                         m_currentBattleSeed = idx;
                         m_currentBattleOverflow = (m_steps < 0) ? -m_steps : 0;
-                        m_currentBattleIsElite = false;
+                        m_currentBattleCategory = (node.type == FieldNodeType::Boss)
+                            ? EncCategory::Boss : EncCategory::Normal;
                         SaveProgress();
                         if (onChangeScene) onChangeScene(SceneType::Battle);
                         return;
@@ -559,7 +567,7 @@ void FieldScene::HandleInput()
                         m_currentEnemyId = node.enemyId;
                         m_currentBattleSeed = idx;
                         m_currentBattleOverflow = (m_steps < 0) ? -m_steps : 0;
-                        m_currentBattleIsElite = true;
+                        m_currentBattleCategory = EncCategory::Elite;
                         SaveProgress();
                         if (onChangeScene) onChangeScene(SceneType::Battle);
                         return;
@@ -618,6 +626,7 @@ void FieldScene::DrawImGui()
 #ifdef _DEBUG
     ImGui::Begin("Field Debug");
     ImGui::InputInt("Steps", &m_steps);
+    ImGui::Checkbox("Free Move (teleport)", &m_freeMove);
     ImGui::Text("Overflow: %d", (m_steps < 0) ? -m_steps : 0);
     ImGui::End();
 #endif

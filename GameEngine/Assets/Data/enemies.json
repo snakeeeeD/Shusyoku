@@ -445,6 +445,130 @@
       ]
     },
     {
+      "id": "elite_tentacle",
+      "texture": "enemy_tentacle",
+      "hp": 120,
+      "width": 1.4,
+      "height": 1.4,
+      "sequential": true,
+      "actions": [
+        {
+          "description": "引き寄せ",
+          "target": { "unavoidable": true },
+          "effects": [
+            {
+              "kind": "PullPlayer",
+              "value": 3
+            }
+          ],
+          "select": {
+            "condition": "far",
+            "conditionValue": 3
+          }
+        },
+        {
+          "description": "薙ぎ払い{0}",
+          "target": {
+            "rangeType": "Area",
+            "range": 2
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 20
+            }
+          ]
+        },
+        {
+          "description": "咆哮（攻撃力+{0}）",
+          "target": { "rangeType": "None" },
+          "effects": [
+            {
+              "kind": "Buff",
+              "buff": "AttackUp",
+              "value": 3,
+              "duration": -1,
+              "applyTo": "Self"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "elite_bear",
+      "texture": "enemy_bear",
+      "hp": 90,
+      "width": 1.3,
+      "height": 1.3,
+      "actions": [
+        {
+          "description": "追撃{0}",
+          "target": {
+            "rangeType": "Adjacent",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 2
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 12
+            }
+          ],
+          "select": { "chance": 30 }
+        },
+        {
+          "description": "突進{0}",
+          "target": {
+            "rangeType": "Cross",
+            "range": 1,
+            "approach": "Dash",
+            "moveRange": 4
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 14
+            }
+          ],
+          "select": { "chance": 30 }
+        },
+        {
+          "description": "たたきつけ{0}",
+          "target": {
+            "rangeType": "Area",
+            "range": 2
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 10
+            }
+          ],
+          "select": { "chance": 40 }
+        },
+        {
+          "description": "爪とぎ（攻撃力+{0}）",
+          "target": { "rangeType": "None" },
+          "effects": [
+            {
+              "kind": "Buff",
+              "buff": "AttackUp",
+              "value": 5,
+              "duration": -1,
+              "applyTo": "Self"
+            }
+          ],
+          "select": {
+            "condition": "turnMultiple",
+            "conditionValue": 3,
+            "chance": 100
+          }
+        }
+      ]
+    },
+
+    {
       "id": "reaper",
       "texture": "enemy_reaper",
       "hp": 100,

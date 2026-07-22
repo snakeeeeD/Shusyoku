@@ -16,6 +16,13 @@ static EscalationKind ParseEscKind(const std::string& s)
     return EscalationKind::HpUp;
 }
 
+static EncCategory ParseCategory(const std::string& s)
+{
+    if (s == "elite") return EncCategory::Elite;
+    if (s == "boss")  return EncCategory::Boss;
+    return EncCategory::Normal;
+}
+
 void EncounterDataBase::Init()
 {
     std::ifstream file("Assets/Data/encounters.json");
@@ -34,7 +41,8 @@ void EncounterDataBase::Init()
             ee.row = enemy["row"];
             data.enemies.push_back(ee);
         }
-        data.rank = e["rank"];
+        data.layer = e.value("layer", 1);
+        data.category = ParseCategory(e.value("category", std::string("normal")));
         data.weight = e["weight"];
         if (e.contains("escalation"))
             for (auto& t : e["escalation"])
@@ -49,34 +57,6 @@ void EncounterDataBase::Init()
             }
         m_data.push_back(data);
     }
-}
-
-const EncounterData* EncounterDataBase::GetRandom(int rank)
-{
-    std::vector<EncounterData*> candidates;
-    int totalWeight = 0;
-
-    for (auto& enc : m_data)
-    {
-        if (enc.rank == rank)
-        {
-            candidates.push_back(&enc);
-            totalWeight += enc.weight;
-        }
-    }
-
-    if (candidates.empty()) return nullptr;
-
-    static std::mt19937 rng(std::random_device{}());
-    int roll = std::uniform_int_distribution<>(0, totalWeight - 1)(rng);
-
-    for (auto* enc : candidates)
-    {
-        roll -= enc->weight;
-        if (roll < 0) return enc;
-    }
-
-    return candidates.back();
 }
 
 const EncounterData* EncounterDataBase::GetByIndex(int index)
@@ -96,21 +76,15 @@ void EncounterDataBase::Reload()
     Init();
 }
 
-const EncounterData* EncounterDataBase::GetByRankSeed(int rank, int seed)
+const EncounterData* EncounterDataBase::GetEncounter(int layer, EncCategory cat, int seed)
 {
     std::vector<EncounterData*> candidates;
     for (auto& enc : m_data)
-        if (enc.rank == rank) candidates.push_back(&enc);
+        if (enc.layer == layer && enc.category == cat) candidates.push_back(&enc);
     if (candidates.empty()) return nullptr;
 
-    // ビット混合ハッシュ（線形の偏りを壊す）
     unsigned int h = (unsigned int)seed;
-    h ^= h >> 16;
-    h *= 0x7feb352du;
-    h ^= h >> 15;
-    h *= 0x846ca68bu;
-    h ^= h >> 16;
-
+    h ^= h >> 16; h *= 0x7feb352du; h ^= h >> 15; h *= 0x846ca68bu; h ^= h >> 16;
     return candidates[h % candidates.size()];
 }
 

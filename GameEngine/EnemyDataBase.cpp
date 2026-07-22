@@ -112,6 +112,7 @@ void EnemyDataBase::Init()
                 data.height = e["height"];
                 data.isBoss = e.value("isBoss", false);
                 data.immovable = e.value("immovable", false);
+                data.sequential = j.value("sequential", false);
 
                 // 行動データの読み込み
                 if (e.contains("actions") && e["actions"].is_array())

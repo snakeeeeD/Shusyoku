@@ -206,8 +206,8 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         };
 
     int encCount = EncounterDataBase::GetCount();
-    int rank = m_isElite ? 2 : 1;
-    const EncounterData* encounter = EncounterDataBase::GetByRankSeed(rank, m_battleSeed);
+    int layer = 1;
+    const EncounterData* encounter = EncounterDataBase::GetEncounter(layer, m_category, m_battleSeed);
     if (encounter)
     {
         for (auto& ee : encounter->enemies)
@@ -219,7 +219,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
         float hpMul = 1.0f, dmgMul = 1.0f;
         int bonusActions = 0;
-        int level = m_overflow + (m_isElite ? ELITE_LEVEL : 0);
+        int level = m_overflow;
         for (int i = 0; i < level; i++)
         {
             if (i < (int)ladder.size())
@@ -318,6 +318,7 @@ void BattleScene::Update(float deltaTime)
     {
         enemy->UpdateMove(deltaTime);
         enemy->UpdateLunge(deltaTime);
+        enemy->UpdateJump(deltaTime);
         enemy->UpdateHitFlash(deltaTime);
     }
 
@@ -490,7 +491,7 @@ void BattleScene::Update(float deltaTime)
             if (nodeIdx >= 0 && nodeIdx < (int)pd.fieldNodeVisited.size())
                 pd.fieldNodeVisited[nodeIdx] = true;
             pd.gold += 10 + rand() % 16;
-            if (m_isElite)
+            if (m_category == EncCategory::Elite)
             {
                 pd.gold += 40;            // ボーナスゴールド
                 pd.fieldSteps += 8;       // 歩数回復
@@ -564,6 +565,8 @@ void BattleScene::Update(float deltaTime)
                 // 現在の行動を実行
                 int ai = enemy->GetActionIndex();
                 int damage = enemy->ExecuteAction(ai, m_playerCol, m_playerRow, m_gridMap, m_player, m_enemies);
+                m_playerCol = m_player->gridCol;   // 引き寄せで動いた分を反映
+                m_playerRow = m_player->gridRow;
                 if (damage > 0)
                     m_player->TakeDamage(damage);
                 enemy->SetActionIndex(ai + 1);
@@ -583,7 +586,7 @@ void BattleScene::Update(float deltaTime)
 
                 bool anyMoving = false;
                 for (auto enemy : m_enemies)
-                    if (enemy->IsMoving() || enemy->IsLunging()) anyMoving = true;
+                    if (enemy->IsMoving() || enemy->IsLunging() || enemy->IsJumping()) anyMoving = true;
 
                 if (m_enemyActionDelay <= 0 && !anyMoving)
                 {

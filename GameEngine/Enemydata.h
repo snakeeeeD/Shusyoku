@@ -12,6 +12,7 @@ struct EnemyData
     float height;
     bool isBoss;
     bool immovable;
-    std::vector<std::pair<int, int>> gridShape; // gridSize
+    bool sequential = false;   // true‚È‚çs“®‚ğ’è‹`‡‚É1‚Â‚¸‚Â‰ñ‚·
+    std::vector<std::pair<int, int>> gridShape;
     std::vector<EnemyAction> actions;
 };

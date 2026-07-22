@@ -100,6 +100,8 @@ inline EffectKind StringToEffectKind(const std::string& s)
     if (s == "Debuff")     return EffectKind::Debuff;
     if (s == "MoveToward") return EffectKind::MoveToward;
     if (s == "MoveAway")   return EffectKind::MoveAway;
+    if (s == "PullPlayer") return EffectKind::PullPlayer;
+    if (s == "KnockbackPlayer") return EffectKind::KnockbackPlayer;
     return EffectKind::Damage;
 }
 

@@ -5,6 +5,9 @@
 struct EncounterEnemy { std::string id; int col; int row; };
 
 enum class EscalationKind { HpUp, AtkUp, AddAction, AddEnemy };
+
+enum class EncCategory { Normal, Elite, Boss };
+
 struct EscalationTier
 {
     EscalationKind kind = EscalationKind::HpUp;
@@ -16,7 +19,8 @@ struct EscalationTier
 struct EncounterData
 {
     std::vector<EncounterEnemy> enemies;
-    int rank;
+    int layer = 1;
+    EncCategory category = EncCategory::Normal;
     int weight;
-    std::vector<EscalationTier> escalation;   // 省略時はデフォルト梯子
+    std::vector<EscalationTier> escalation;
 };

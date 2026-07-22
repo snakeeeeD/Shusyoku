@@ -56,11 +56,10 @@ public:
 
     int m_battleSeed = 0;
     int m_overflow = 0;
-    bool m_isElite = false;
+    EncCategory m_category = EncCategory::Normal;
     void SetBattleSeed(int s) { m_battleSeed = s; }
     void SetOverflow(int o) { m_overflow = o; }
-    void SetElite(bool e) { m_isElite = e; }
-    static constexpr int ELITE_LEVEL = 3;
+    void SetCategory(EncCategory c) { m_category = c; }
 
 private:
     BattleUI* m_battleUI;

@@ -135,6 +135,40 @@ public:
 
     bool IsLunging() const { return m_isLunging; }
 
+    // ジャンプ（範囲攻撃などの見せ）
+    float m_jumpTimer = 0;
+    float m_jumpDuration = 0.4f;
+    float m_jumpHeight = 0.6f;
+    float m_jumpBaseY = 0;
+    bool  m_isJumping = false;
+
+    void StartJump(float height = 0.6f, float duration = 0.4f)
+    {
+        m_jumpBaseY = worldY;
+        m_jumpHeight = height;
+        m_jumpDuration = duration;
+        m_jumpTimer = 0;
+        m_isJumping = true;
+    }
+
+    void UpdateJump(float deltaTime)
+    {
+        if (!m_isJumping) return;
+        m_jumpTimer += deltaTime;
+        float t = m_jumpTimer / m_jumpDuration;
+        if (t >= 1.0f) { m_isJumping = false; worldY = m_jumpBaseY; return; }
+        worldY = m_jumpBaseY + sinf(t * 3.14159f) * m_jumpHeight;   // 0→上→0
+    }
+
+    bool IsJumping() const { return m_isJumping; }
+
+    float GetJumpScale() const
+    {
+        if (!m_isJumping) return 1.0f;
+        float t = m_jumpTimer / m_jumpDuration;
+        return 1.0f + sinf(t * 3.14159f) * 0.18f;   // 跳ねる瞬間に一瞬大きく
+    }
+
     // 被弾フラッシュ
     float m_hitFlash = 0.0f;
     static constexpr float HIT_FLASH_DUR = 0.25f;

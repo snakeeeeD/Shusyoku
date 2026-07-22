@@ -6,15 +6,13 @@ class EncounterDataBase
 {
 public:
     static void Init();
-    static const EncounterData* GetRandom(int rank);
 
     static const EncounterData* GetByIndex(int index);
     static int GetCount();
-    static int GetCountByRank(int rank);
 
     static void Reload();
 
-    static const EncounterData* GetByRankSeed(int rank, int seed);
+    static const EncounterData* GetEncounter(int layer, EncCategory cat, int seed);
     static const std::vector<EscalationTier>& DefaultEscalation();
 
 private:

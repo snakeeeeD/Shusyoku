@@ -8,6 +8,10 @@ void BattleScene::DrawImGui()
 {
     ImGui::Begin("Battle Debug");
 
+    if (ImGui::Button("Instant Win"))
+        for (auto enemy : m_enemies)
+            enemy->SetHp(0);
+
     // --- エンカウンター選択 ---
     ImGui::Text("Encounter");
     ImGui::SliderInt("Template", &m_debugEncounterIndex, -1, EncounterDataBase::GetCount() - 1);
@@ -26,7 +30,7 @@ void BattleScene::DrawImGui()
         m_enemies.clear();
 
         const EncounterData* encounter = (m_debugEncounterIndex < 0)
-            ? EncounterDataBase::GetRandom(m_debugRank)
+            ? EncounterDataBase::GetEncounter(m_debugRank, EncCategory::Normal, rand())
             : EncounterDataBase::GetByIndex(m_debugEncounterIndex);
 
         if (encounter)

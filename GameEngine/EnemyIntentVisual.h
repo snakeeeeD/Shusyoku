@@ -16,7 +16,10 @@ public:
     static bool ShouldShow(const Effect& e)
     {
         return e.value > 0 || !e.buff.empty()
-            || e.kind == EffectKind::MoveToward || e.kind == EffectKind::MoveAway;
+            || e.kind == EffectKind::MoveToward
+            || e.kind == EffectKind::MoveAway
+            || e.kind == EffectKind::PullPlayer
+            || e.kind == EffectKind::KnockbackPlayer;
     }
 
     // êîílÇèoÇ∑å¯â Ç©
@@ -30,13 +33,15 @@ public:
     {
         switch (e.kind)
         {
-        case EffectKind::Damage:     return XMFLOAT4(0.9f, 0.2f, 0.2f, 1.0f);
-        case EffectKind::Block:      return XMFLOAT4(0.2f, 0.4f, 0.9f, 1.0f);
-        case EffectKind::Buff:       return XMFLOAT4(1.0f, 0.8f, 0.0f, 1.0f);
-        case EffectKind::Debuff:     return XMFLOAT4(0.6f, 0.0f, 0.8f, 1.0f);
+        case EffectKind::Damage:          return XMFLOAT4(0.9f, 0.2f, 0.2f, 1.0f);
+        case EffectKind::Block:           return XMFLOAT4(0.2f, 0.4f, 0.9f, 1.0f);
+        case EffectKind::Buff:            return XMFLOAT4(1.0f, 0.8f, 0.0f, 1.0f);
+        case EffectKind::Debuff:          return XMFLOAT4(0.6f, 0.0f, 0.8f, 1.0f);
         case EffectKind::MoveToward:
-        case EffectKind::MoveAway:   return XMFLOAT4(0.2f, 0.8f, 0.3f, 1.0f);   // à⁄ìÆÅÅóŒ
-        default:                     return XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+        case EffectKind::MoveAway:        return XMFLOAT4(0.2f, 0.8f, 0.3f, 1.0f);
+        case EffectKind::PullPlayer:      return XMFLOAT4(0.2f, 0.8f, 0.3f, 1.0f);
+        case EffectKind::KnockbackPlayer: return XMFLOAT4(0.2f, 0.8f, 0.3f, 1.0f);
+        default:                          return XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
         }
     }
 
@@ -92,13 +97,15 @@ public:
     {
         switch (e.kind)
         {
-        case EffectKind::Damage:     return "icon_attack";
-        case EffectKind::Block:      return "icon_block";
-        case EffectKind::Buff:       return "icon_buff";
-        case EffectKind::Debuff:     return "icon_debuff";
+        case EffectKind::Damage:            return "icon_attack";
+        case EffectKind::Block:             return "icon_block";
+        case EffectKind::Buff:              return "icon_buff";
+        case EffectKind::Debuff:            return "icon_debuff";
         case EffectKind::MoveToward:
-        case EffectKind::MoveAway:   return "icon_move";
-        default:                     return "";
+        case EffectKind::MoveAway:          return "icon_move";
+        case EffectKind::PullPlayer:        return "icon_attack";
+        case EffectKind::KnockbackPlayer :  return "icon_attack";
+        default:                            return "";
         }
     }
 

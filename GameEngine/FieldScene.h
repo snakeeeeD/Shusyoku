@@ -7,6 +7,7 @@
 #include "input.h"
 #include "FieldNode.h"
 #include "PlayerDataManager.h"
+#include "EncounterData.h"
 #include <vector>
 #include <functional>
 
@@ -28,10 +29,10 @@ public:
 
     int m_currentBattleSeed = 0;
     int m_currentBattleOverflow = 0;
-    bool m_currentBattleIsElite = false;
+    EncCategory m_currentBattleCategory = EncCategory::Normal;
     int GetCurrentBattleSeed() const { return m_currentBattleSeed; }
     int GetCurrentBattleOverflow() const { return m_currentBattleOverflow; }
-    bool GetCurrentBattleIsElite() const { return m_currentBattleIsElite; }
+    EncCategory GetCurrentBattleCategory() const { return m_currentBattleCategory; }
 
 private:
     void GenerateMap();
@@ -69,4 +70,5 @@ private:
     static constexpr float CELL_GAP = 20.0f;
 
     bool m_resumeBattle = false;
+    bool m_freeMove = false;
 };

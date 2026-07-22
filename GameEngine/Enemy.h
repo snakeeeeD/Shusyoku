@@ -59,6 +59,9 @@ public:
 	void AddBlock(int amount);
 	void ResetBlock();
 
+	void PullPlayer(int playerCol, int playerRow, class GridMap* gridMap, class Player* player, int steps);
+	void KnockbackPlayer(int playerCol, int playerRow, class GridMap* gridMap, class Player* player, int steps);
+
 	bool IsBoss() const { return m_isBoss; }
 	bool IsImmovable() const { return m_immovable; }
 	bool IsInRange(int targetCol, int targetRow, int range, RangeType rangeType, int minRange = 0) const;
@@ -97,6 +100,7 @@ private:
 
 	float m_dmgScale = 1.0f;
 	int   m_bonusActions = 0;
+	int	  m_seqIndex = 0;
 
 	std::string m_textureName;
 	std::string m_id;

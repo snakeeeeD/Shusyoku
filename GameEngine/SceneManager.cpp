@@ -50,6 +50,8 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	TextureManager::Load("enemy_dragon_red", L"Assets/Enemy/dragon_red.png");
 	TextureManager::Load("enemy_archer", L"Assets/Enemy/archer.png");
 	TextureManager::Load("enemy_reaper", L"Assets/Enemy/reaper.png");
+	TextureManager::Load("enemy_tentacle", L"Assets/Enemy/cyaegha.png");
+	TextureManager::Load("enemy_bear", L"Assets/Enemy/bear.png");
 
 	m_textRenderer = new TextRenderer();
 	if (!m_textRenderer->Init(device, context, swapChain))
@@ -69,7 +71,7 @@ void SceneManager::ChangeScene(SceneType type)
 	std::string battleEnemyId;
 	int battleSeed = 0;
 	int battleOverflow = 0;
-	bool battleIsElite = false;
+	EncCategory battleCategory = EncCategory::Normal;
 	if (type == SceneType::Battle)
 	{
 		if (auto field = dynamic_cast<FieldScene*>(m_currentScene))
@@ -77,7 +79,7 @@ void SceneManager::ChangeScene(SceneType type)
 			battleEnemyId = field->GetCurrentBattleEnemyId();
 			battleSeed = field->GetCurrentBattleSeed();
 			battleOverflow = field->GetCurrentBattleOverflow();
-			battleIsElite = field->GetCurrentBattleIsElite();
+			battleCategory = field->GetCurrentBattleCategory();
 		}
 	}
 
@@ -102,7 +104,7 @@ void SceneManager::ChangeScene(SceneType type)
 			if (!battleEnemyId.empty()) scene->SetEnemyId(battleEnemyId);
 			scene->SetBattleSeed(battleSeed);
 			scene->SetOverflow(battleOverflow);
-			scene->SetElite(battleIsElite);
+			scene->SetCategory(battleCategory);
 
 			scene->onChangeScene = [this](SceneType type) { ChangeScene(type); };
 			m_currentScene = scene;

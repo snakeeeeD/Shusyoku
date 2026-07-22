@@ -1,7 +1,8 @@
 {
   "encounters": [
     {
-      "rank": 1,
+      "layer": 1,
+      "category": "normal",
       "weight": 20,
       "enemies": [
         {
@@ -22,7 +23,8 @@
       ]
     },
     {
-      "rank": 1,
+      "layer": 1,
+      "category": "normal",
       "weight": 30,
       "enemies": [
         {
@@ -38,29 +40,31 @@
       ]
     },
     {
-      "rank": 1,
+      "layer": 1,
+      "category": "normal",
       "weight": 30,
       "enemies": [
         {
           "id": "slime",
-          "col": 2,
+          "col": 3,
           "row": 1
         },
         {
           "id": "slime",
-          "col": 3,
+          "col": 4,
           "row": 0
         },
         {
           "id": "slime",
-          "col": 3,
-          "row": 2
+          "col": 5,
+          "row": 1
         }
       ]
     },
     {
-      "rank": 2,
-      "weight": 30,
+      "layer": 1,
+      "category": "normal",
+      "weight": 15,
       "enemies": [
         {
           "id": "brute",
@@ -70,8 +74,9 @@
       ]
     },
     {
-      "rank": 2,
-      "weight": 20,
+      "layer": 1,
+      "category": "normal",
+      "weight": 10,
       "enemies": [
         {
           "id": "caster",
@@ -81,8 +86,9 @@
       ]
     },
     {
-      "rank": 2,
-      "weight": 50,
+      "layer": 1,
+      "category": "normal",
+      "weight": 15,
       "enemies": [
         {
           "id": "archer",
@@ -97,13 +103,50 @@
       ]
     },
     {
-      "rank": 2,
-      "weight": 50,
+      "layer": 1,
+      "category": "normal",
+      "weight": 15,
       "enemies": [
         {
           "id": "orc",
           "col": 2,
           "row": 1
+        }
+      ]
+    },
+    {
+      "layer": 1,
+      "category": "elite",
+      "weight":150,
+      "enemies": [
+        {
+          "id": "elite_bear",
+          "col": 4,
+          "row": 1
+        }
+      ]
+    },
+    {
+      "layer": 1,
+      "category": "elite",
+      "weight": 50,
+      "enemies": [
+        {
+          "id": "elite_tentacle",
+          "col": 4,
+          "row": 0
+        }
+      ]
+    },
+    {
+      "layer": 1,
+      "category": "boss",
+      "weight": 100,
+      "enemies": [
+        {
+          "id": "dragon",
+          "col": 4,
+          "row": 2
         }
       ]
     }
