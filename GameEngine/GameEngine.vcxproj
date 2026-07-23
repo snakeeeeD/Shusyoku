@@ -196,6 +196,7 @@
     <ClInclude Include="TextureManager.h" />
     <ClInclude Include="TitleScene.h" />
     <ClInclude Include="TurnManager.h" />
+    <ClInclude Include="UiNotice.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Battlehighlighter.cpp" />

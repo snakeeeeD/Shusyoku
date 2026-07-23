@@ -7,6 +7,7 @@
 #include "ScreenShake.h"
 #include "DamageFeedback.h"
 #include "RangeShape.h"
+#include "UiNotice.h"
 #include <algorithm>
 #include <cstdio>
 #include <queue>
@@ -75,6 +76,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     auto& playerData = PlayerDataManager::GetData();
     for (auto& cardId : playerData.deck)
         m_deck.AddCard(cardId);
+    m_hand.SetDeck(&m_deck);
 
     m_deck.ShuffleDrawPile();
 
@@ -249,6 +251,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
      m_input.SetWindowHandle(hWnd);
 
      FloatingTextManager::Clear();
+     UiNotice::Clear();
      EffectManager::Clear();
 
     return true;
@@ -291,6 +294,9 @@ void BattleScene::Update(float deltaTime)
 #endif
 
     FloatingTextManager::Update(deltaTime);
+    UiNotice::Update(deltaTime);
+    if (UiNotice::ConsumeTriggered())
+        m_battleUI->StartOverflowDiscardEffect();
     ScreenShake::Update(deltaTime);
     EffectManager::Update(deltaTime);
 
@@ -476,7 +482,8 @@ void BattleScene::Update(float deltaTime)
             selectedNeedsTarget = (ct == CardType::Attack || ct == CardType::Move);
         }
         m_battleUI->UpdateCardAnimations(deltaTime, (int)m_hand.GetCards().size(), m_hoveredCardIndex, 
-            m_selectedCardIndex, m_input.GetMousePos(), selectedNeedsTarget);
+            m_selectedCardIndex, m_input.GetMousePos(), selectedNeedsTarget,
+            &m_discardSelected);
         m_battleUI->UpdateDiscardEffects(deltaTime);
 
         // 勝利判定
@@ -909,6 +916,9 @@ void BattleScene::Draw()
     ctx.outOfRangeCells = &m_highlighter.GetOutOfRangeCells();
     ctx.travelPath = &m_movePath;
     ctx.selectedEnemy = m_selectedEnemyRange;
+    ctx.discardSelectCount = m_discardSelectCount;
+    ctx.discardSelected = &m_discardSelected;
+    ctx.discardViewMode = m_discardViewMode;
 
     m_battleUI->Draw(ctx);
 }
@@ -930,6 +940,91 @@ void BattleScene::HandleInput()
     }
 
     if (!m_turnManager.IsPlayerTurn()) return; // プレイヤーターン以外は無視
+
+    // 捨てるカードの選択中は他の操作を受け付けない
+    if (m_discardSelectCount > 0)
+    {
+        m_highlighter.ClearPlayerHighlight(m_gridMap);      // グリッドの範囲表示を出さない
+
+        POINT mp = m_input.GetMousePos();
+        bool click = m_input.GetMouseButtonTrigger(0);
+
+        if (click && m_battleUI->IsOnDiscardView(mp))       // 閲覧モード切替
+        {
+            m_discardViewMode = !m_discardViewMode;
+            return;
+        }
+
+        if (m_discardViewMode)
+        {
+            if (click)
+            {
+                bool onPileBtn = (mp.y >= m_screenHeight - 60 && mp.y <= m_screenHeight - 20)
+                    && ((mp.x >= 20 && mp.x <= 70) || (mp.x >= 80 && mp.x <= 130)
+                        || (mp.x >= 140 && mp.x <= 190));
+
+                if (onPileBtn)
+                {
+                    if (mp.x >= 20 && mp.x <= 70)   m_showDrawPile = !m_showDrawPile;
+                    if (mp.x >= 80 && mp.x <= 130)  m_showDiscardPile = !m_showDiscardPile;
+                    if (mp.x >= 140 && mp.x <= 190) m_showExhaustPile = !m_showExhaustPile;
+                }
+                else if (m_showDrawPile || m_showDiscardPile || m_showExhaustPile)
+                {
+                    // ビューアの外をクリックで閉じる
+                    float bgX = m_screenWidth / 2.0f - 300.0f, bgY = 50.0f;
+                    if (mp.x < bgX || mp.x > bgX + 600.0f || mp.y < bgY || mp.y > bgY + 580.0f)
+                    {
+                        m_showDrawPile = false;
+                        m_showDiscardPile = false;
+                        m_showExhaustPile = false;
+                    }
+                }
+            }
+            m_hoveredCardIndex = -1;
+            return;
+        }
+
+        m_hoveredCardIndex = m_battleUI->GetCardAtScreenPos(mp);
+
+        if (click)
+        {
+            // 確定
+            if (m_battleUI->IsOnDiscardConfirm(mp)
+                && (int)m_discardSelected.size() == m_discardSelectCount)
+            {
+                std::sort(m_discardSelected.rbegin(), m_discardSelected.rend());   // 後ろから消す
+                for (int idx : m_discardSelected)
+                {
+                    m_battleUI->StartDiscardEffectAt(idx);   // ← 消す前に位置を取る
+                    m_hand.DiscardAt(idx);
+                    m_battleUI->OnCardRemoved(idx);
+                }
+                m_discardSelected.clear();
+                m_discardSelectCount = 0;
+                m_hoveredCardIndex = -1;
+                return;
+            }
+
+            // 手札クリックで選択トグル
+            int idx = m_hoveredCardIndex;
+            if (idx >= 0 && idx < (int)m_hand.GetCards().size())
+            {
+                auto it = std::find(m_discardSelected.begin(), m_discardSelected.end(), idx);
+                if (it != m_discardSelected.end())
+                {
+                    m_discardSelected.erase(it);                  // 選択済み → 解除
+                }
+                else
+                {
+                    if ((int)m_discardSelected.size() >= m_discardSelectCount)
+                        m_discardSelected.erase(m_discardSelected.begin());   // 上限なら一番古いのを外す
+                    m_discardSelected.push_back(idx);
+                }
+            }
+        }
+        return;
+    }
 
     const float cardHideY = m_screenHeight - CARD_HIDE_Y_OFFSET;
     const float cardHoverY = m_screenHeight - CARD_HEIGHT - CARD_HOVER_Y_OFFSET;
@@ -1226,9 +1321,8 @@ void BattleScene::HandleInput()
                 int newPlayerCol = m_playerCol;
                 int newPlayerRow = m_playerRow;
 
-                float playCardX = m_screenWidth / 2.0f
-                    - (cards.size() * (CARD_WIDTH + 10.0f)) / 2.0f
-                    + m_selectedCardIndex * (CARD_WIDTH + 10.0f);
+                float playCardX = CardVisual::HandSlotX(
+                    m_selectedCardIndex, (int)cards.size(), (float)m_screenWidth);
                 float playCardY = m_screenHeight - 30.0f;
 
                 const CardData* dataPtr = card->GetData();
@@ -1341,6 +1435,7 @@ void BattleScene::HandleInput()
                         m_battleUI->StartDrawCardEffect(drawnId);
                     m_battleUI->StartPlayCardEffect(dataPtr, m_selectedCardIndex);
                     ProcessDeadEnemies();
+                    m_battleUI->OnCardRemoved(m_selectedCardIndex);
                     m_selectedCardIndex = -1;
                     cardJustUsed = true;
 
@@ -1349,6 +1444,13 @@ void BattleScene::HandleInput()
                     // ドロー効果のアニメーション
                     for (auto& drawnId : execResult.drawnCards)
                         m_battleUI->StartDrawCardEffect(drawnId);
+
+                    if (execResult.pendingDiscard > 0)
+                    {
+                        m_discardSelectCount = execResult.pendingDiscard;
+                        m_discardSelected.clear();
+                        m_discardViewMode = false;
+                    }
                 }
             }
         }
@@ -1500,9 +1602,8 @@ void BattleScene::HandleInput()
                 int newPlayerCol = m_playerCol;
                 int newPlayerRow = m_playerRow;
 
-                float playCardX = m_screenWidth / 2.0f
-                    - (m_hand.GetCards().size() * (CARD_WIDTH + 10.0f)) / 2.0f
-                    + m_selectedCardIndex * (CARD_WIDTH + 10.0f);
+                float playCardX = CardVisual::HandSlotX(
+                    m_selectedCardIndex, (int)cards.size(), (float)m_screenWidth);
                 float playCardY = m_screenHeight - 30.0f;
 
                 const CardData* dataPtr = card->GetData();
@@ -1617,6 +1718,14 @@ void BattleScene::HandleInput()
                             m_showDiscardPile = true;
                     }
 
+                    if (execResult.pendingDiscard > 0)
+                    {
+                        m_discardSelectCount = execResult.pendingDiscard;
+                        m_discardSelected.clear();
+                        m_discardViewMode = false;
+                    }
+
+                    m_battleUI->OnCardRemoved(m_selectedCardIndex);
                     m_selectedCardIndex = -1;
                     cardJustUsed = true;
                 }

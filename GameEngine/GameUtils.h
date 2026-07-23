@@ -57,6 +57,8 @@ inline CardEffectType StringToCardEffectType(const std::string& str)
     if (str == "Search")    return CardEffectType::Search;
     if (str == "Salvage")   return CardEffectType::Salvage;
     if (str == "PlaceTrap") return CardEffectType::PlaceTrap;
+    if (str == "UpgradeHand") return CardEffectType::UpgradeHand;
+    if (str == "Discard") return CardEffectType::Discard;
     return CardEffectType::None;
 }
 

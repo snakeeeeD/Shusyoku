@@ -91,6 +91,29 @@ void CardDataBase::Init()
 
             m_data[data.id] = data;
 
+            // アップグレード版を自動生成（id + "+"）
+            if (c.contains("upgrade"))
+            {
+                const auto& u = c["upgrade"];
+                CardData up = data;
+                up.id = data.id + "+";
+                up.name = data.name + L"+";
+
+                up.cost += u.value("cost", 0);
+                up.range += u.value("range", 0);
+                up.mainEffect.value += u.value("mainValue", 0);
+                up.mainEffect.duration += u.value("duration", 0);
+                if (up.onHitEffect.hasEffect) up.onHitEffect.value += u.value("onHitValue", 0);
+                if (up.subEffect.hasEffect)   up.subEffect.value += u.value("subValue", 0);
+                if (up.cost < 0) up.cost = 0;
+                if (u.contains("rangeType"))
+                    up.rangeType = StringToRangeType(u["rangeType"]);
+                if (u.contains("description"))
+                    up.description = ToWString(u["description"]);
+
+                m_data[up.id] = up;
+            }
+
             wchar_t buf[256];
             swprintf_s(buf, L"★ カード読み込み: %s\n", data.name.c_str());
             OutputDebugStringW(buf);

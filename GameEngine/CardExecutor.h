@@ -18,6 +18,7 @@ public:
         bool cardUsed;
         std::vector<std::string> drawnCards;
         CardEffectType pendingSelection = CardEffectType::None;
+        int pendingDiscard = 0;
     };
 
     struct MovePreview 

@@ -25,6 +25,8 @@ public:
     static bool SpendMaterial(const std::string& id, int count);
     static int  GetMaterialCount(const std::string& id);
 
+    static void UpgradeCard(int index);
+
 private:
     static PlayerData m_data;
     static const char* SAVE_PATH;

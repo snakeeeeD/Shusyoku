@@ -53,6 +53,8 @@ private:
 
     float m_deckScroll = 0.0f;
 
+    float m_uiTime = 0.0f;
+
     void DrawOverlay();
     void DrawDeckCards(bool textPass);
 
@@ -61,4 +63,6 @@ private:
 
     bool GetDeckCardBase(int i, float& baseX, float& baseY) const;   // カードの基準位置
     int  GetDeckCardAt(POINT p) const;                              // 座標→デッキindex
+
+    bool m_deckUpgradeMode = false;
 };

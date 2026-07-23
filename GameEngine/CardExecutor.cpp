@@ -59,6 +59,14 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     if (player->GetEnergy() < data.cost)
         return result;
 
+    int pendingDiscard = 0;
+
+    struct SlotGuard {
+        Hand& h;
+        SlotGuard(Hand& hand) : h(hand) { h.ReserveSlot(true); }
+        ~SlotGuard() { h.ReserveSlot(false); }
+    } slotGuard(hand);
+
     switch (data.type)
     {
     case CardType::Attack:
@@ -493,12 +501,18 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
         case CardEffectType::ApplyBuff:
             CardEffect::ApplyEffectToPlayer(data.mainEffect, player);
             break;
+        case CardEffectType::UpgradeHand:
+            hand.UpgradeAll();
+            break;
         case CardEffectType::CreateCard:
             for (int i = 0; i < data.mainEffect.value; i++)
             {
                 hand.AddCard(data.mainEffect.cardId);
                 result.drawnCards.push_back(data.mainEffect.cardId);
             }
+            break;
+        case CardEffectType::Discard:
+            pendingDiscard += data.mainEffect.value;
             break;
         case CardEffectType::PlaceTrap:
         {
@@ -569,6 +583,9 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 result.drawnCards.push_back(data.subEffect.cardId);
             }
             break;
+        case CardEffectType::Discard:
+            pendingDiscard += data.subEffect.value;
+            break;
         default:
             break;
         }
@@ -580,6 +597,8 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
         deck.DiscardCard(cardId);
 
     hand.RemoveCard(cardIndex);
+    if (pendingDiscard > 0) hand.DiscardRandom(pendingDiscard);   // 使ったカードを除いてから捨てる
+    result.pendingDiscard = pendingDiscard;      // 選択はシーン側に任せる
     result.success = true;
     if (data.selfDamage > 0)
         player->TakeDamage(data.selfDamage);

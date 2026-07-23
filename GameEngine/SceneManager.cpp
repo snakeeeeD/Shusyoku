@@ -167,6 +167,9 @@ void SceneManager::DrawOverlay()
 		m_uiSprite->DrawSprite(white, 20.0f, 45.0f, 100.0f, 28.0f, 0.0f,
 			m_deckRemoveMode ? XMFLOAT4(0.7f, 0.2f, 0.2f, 1.0f)
 			: XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f));   // 削除トグル
+		m_uiSprite->DrawSprite(white, 130.0f, 45.0f, 100.0f, 28.0f, 0.0f,
+			m_deckUpgradeMode ? XMFLOAT4(0.8f, 0.7f, 0.2f, 1.0f)
+			: XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f));
 		DrawDeckCards(false);
 	}
 
@@ -185,6 +188,8 @@ void SceneManager::DrawOverlay()
 	swprintf_s(gbuf, L"G:%d", PlayerDataManager::GetData().gold);
 	m_textRenderer->DrawText(gbuf, m_screenWidth - 330.0f, 10.0f, 16.0f,
 		D2D1::ColorF(1.0f, 0.9f, 0.3f));         // 金色、デッキボタンの左
+	if (m_deckOpen)
+		m_textRenderer->DrawText(L"Upgrade", 140.0f, 50.0f, 16.0f, D2D1::ColorF(1, 1, 1));
 	m_textRenderer->End();
 }
 
@@ -213,7 +218,7 @@ void SceneManager::DrawDeckCards(bool textPass)
 			XMFLOAT4 col = m_deckRemoveMode
 				? XMFLOAT4(0.6f, 0.15f, 0.15f, 0.9f)          // 削除モードは赤
 				: CardVisual::GetCardColor(d->type);
-			CardVisual::DrawBase(m_uiSprite, white, bx, by, DECK_SCALE, 0.0f, col);
+			CardVisual::DrawBase(m_uiSprite, white, bx, by, DECK_SCALE, 0.0f, col, d, m_uiTime);
 		}
 		else
 			CardVisual::DrawTexts(m_textRenderer, d, nullptr, bx, by, DECK_SCALE, 0.0f, 1.0f);
@@ -265,6 +270,19 @@ void SceneManager::HandleInput()
 					if (idx >= 0) { PlayerDataManager::RemoveCard(idx); return; }  // 削除、開いたまま
 					m_deckRemoveMode = false; return;                              // 空白で削除モード解除
 				}
+				// 強化トグル
+				if (m.x >= 130.0f && m.x <= 230.0f && m.y >= 45.0f && m.y <= 73.0f)
+				{
+					m_deckUpgradeMode = !m_deckUpgradeMode;
+					m_deckRemoveMode = false;
+					return;
+				}
+				if (m_deckUpgradeMode)
+				{
+					int idx = GetDeckCardAt(m);
+					if (idx >= 0) { PlayerDataManager::UpgradeCard(idx); return; }
+					m_deckUpgradeMode = false; return;
+				}
 				m_deckOpen = false;                                               // 通常は空白で閉じる
 			}
 			return;
@@ -278,6 +296,7 @@ void SceneManager::HandleInput()
 
 void SceneManager::Update(float deltaTime)
 {
+	m_uiTime += deltaTime;
 	if (m_deckOpen) return;                                    // オーバーレイ中はシーンを止める
 	if (m_currentScene) m_currentScene->Update(deltaTime);
 }

@@ -8,6 +8,12 @@ void BattleScene::DrawImGui()
 {
     ImGui::Begin("Battle Debug");
 
+    ImGui::Text("Hand:%d  Anims:%d  Hover:%d  Sel:%d",
+        (int)m_hand.GetCards().size(),
+        m_battleUI->GetCardAnimCount(),
+        m_hoveredCardIndex,
+        m_selectedCardIndex);
+
     if (ImGui::Button("Instant Win"))
         for (auto enemy : m_enemies)
             enemy->SetHp(0);

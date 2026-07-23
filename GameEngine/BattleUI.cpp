@@ -6,6 +6,7 @@
 #include "TerrainDataBase.h"
 #include "GameUtils.h"
 #include "RangeShape.h"
+#include "UiNotice.h"
 #include <algorithm>
 
 using namespace DirectX;
@@ -176,44 +177,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             0.0f, XMFLOAT4(0.3f, 0.6f, 1.0f, 1.0f));
     }
 
-    for (int i = 0; i < (int)cards.size(); i++)
-    {
-        if (i >= (int)m_cardAnims.size()) continue;
-        if (i == ctx.hoveredCardIndex) continue;
-        if (i == ctx.selectedCardIndex) continue;
-
-        XMFLOAT4 color = CardVisual::GetCardColor(cards[i]->GetData()->type, false);
-
-        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture,
-            m_cardAnims[i].currentX, m_cardAnims[i].currentY,
-            m_cardAnims[i].currentScale, m_cardAnims[i].currentRot, color);
-    }
-
-    if (ctx.hoveredCardIndex >= 0 && ctx.hoveredCardIndex < (int)cards.size())
-    {
-        int i = ctx.hoveredCardIndex;
-        if (i >= (int)m_cardAnims.size()) return;
-
-        XMFLOAT4 color = (i == ctx.selectedCardIndex)
-            ? XMFLOAT4(0.8f, 0.8f, 0.0f, 0.7f)
-            : CardVisual::GetCardColor(cards[i]->GetData()->type, false);
-
-        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture,
-            m_cardAnims[i].currentX, m_cardAnims[i].currentY,
-            m_cardAnims[i].currentScale, m_cardAnims[i].currentRot, color);
-    }
-
-    if (ctx.selectedCardIndex >= 0 && ctx.selectedCardIndex != ctx.hoveredCardIndex
-        && ctx.selectedCardIndex < (int)cards.size())
-    {
-        int i = ctx.selectedCardIndex;
-        if (i >= (int)m_cardAnims.size()) return;
-
-        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture,
-            m_cardAnims[i].currentX, m_cardAnims[i].currentY,
-            m_cardAnims[i].currentScale, m_cardAnims[i].currentRot,
-            XMFLOAT4(0.8f, 0.8f, 0.0f, 0.7f));
-    }
+    int topIdx = (ctx.selectedCardIndex >= 0) ? ctx.selectedCardIndex : ctx.hoveredCardIndex;
 
     float drawPileX = 20.0f;
     float drawPileY = m_screenHeight - 60.0f;
@@ -254,7 +218,6 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             exhaustW, exhaustH, 0.0f, exhaustColor);
     }
 
-    DrawCardEffects();
     DrawPlayCardEffects();
     DrawDiscardEffects();
 
@@ -263,42 +226,71 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     m_spriteRenderer->Begin();
     DrawTargetIndicators(ctx);
     DrawPlayerOffScreenIndicator(ctx);
+    if (ctx.discardSelectCount > 0)
+    {
+        if (!ctx.discardViewMode)
+            m_spriteRenderer->DrawSprite(m_whiteTexture, 0.0f, 0.0f,
+                (float)m_screenWidth, (float)m_screenHeight, 0.0f, XMFLOAT4(0, 0, 0, 0.55f));
+
+        int sel = ctx.discardSelected ? (int)ctx.discardSelected->size() : 0;
+        bool ready = (sel == ctx.discardSelectCount);
+
+        float x, y, w, h;
+        GetDiscardConfirmRect(x, y, w, h);
+        m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, w, h, 0.0f,
+            ready ? XMFLOAT4(0.7f, 0.3f, 0.2f, 1.0f) : XMFLOAT4(0.25f, 0.25f, 0.25f, 1.0f));
+
+        GetDiscardViewRect(x, y, w, h);
+        m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, w, h, 0.0f,
+            ctx.discardViewMode ? XMFLOAT4(0.3f, 0.5f, 0.7f, 1.0f) : XMFLOAT4(0.3f, 0.3f, 0.35f, 1.0f));
+    }
     m_spriteRenderer->End();
 
     m_textRenderer->Begin();
     DrawPlayCardEffectTexts(ctx);
 
+    // 手札：本体→文字 を1枚ずつ交互に描く（右のカードが左の文字を覆う）
     for (int i = 0; i < (int)cards.size(); i++)
     {
         if (i >= (int)m_cardAnims.size()) continue;
-        if (i == ctx.hoveredCardIndex) continue;
-        if (i == ctx.selectedCardIndex) continue;
+        if (i == topIdx) continue;
+
+        XMFLOAT4 col = CardVisual::GetCardColor(cards[i]->GetData()->type, false);
+
+        m_textRenderer->End();
+        m_spriteRenderer->Begin();
+        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture,
+            m_cardAnims[i].currentX, m_cardAnims[i].currentY,
+            m_cardAnims[i].currentScale, m_cardAnims[i].currentRot,
+            col,
+            cards[i]->GetData(), ctx.highlightTimer);
+        m_spriteRenderer->End();
+        m_textRenderer->Begin();
 
         CardVisual::DrawTexts(m_textRenderer, cards[i]->GetData(), ctx.player,
             m_cardAnims[i].currentX, m_cardAnims[i].currentY,
             m_cardAnims[i].currentScale, m_cardAnims[i].currentRot);
     }
 
-    if (ctx.selectedCardIndex >= 0 && ctx.selectedCardIndex != ctx.hoveredCardIndex
-        && ctx.selectedCardIndex < (int)cards.size())
+
+    // 上に来るカードは、本体 → 文字 の順で最後に描く（下の文字を覆う）
+    if (topIdx >= 0 && topIdx < (int)cards.size() && topIdx < (int)m_cardAnims.size())
     {
-        int i = ctx.selectedCardIndex;
-        if (i >= (int)m_cardAnims.size()) return;
+        m_textRenderer->End();
+        m_spriteRenderer->Begin();
+        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture,
+            m_cardAnims[topIdx].currentX, m_cardAnims[topIdx].currentY,
+            m_cardAnims[topIdx].currentScale, m_cardAnims[topIdx].currentRot,
+            CardVisual::GetCardColor(cards[topIdx]->GetData()->type, false),
+            cards[topIdx]->GetData(), ctx.highlightTimer);
+        m_spriteRenderer->End();
+        m_textRenderer->Begin();
 
-        CardVisual::DrawTexts(m_textRenderer, cards[i]->GetData(), ctx.player,
-            m_cardAnims[i].currentX, m_cardAnims[i].currentY,
-            m_cardAnims[i].currentScale, m_cardAnims[i].currentRot);
+        CardVisual::DrawTexts(m_textRenderer, cards[topIdx]->GetData(), ctx.player,
+            m_cardAnims[topIdx].currentX, m_cardAnims[topIdx].currentY,
+            m_cardAnims[topIdx].currentScale, m_cardAnims[topIdx].currentRot);
     }
 
-    if (ctx.hoveredCardIndex >= 0 && ctx.hoveredCardIndex < (int)cards.size())
-    {
-        int i = ctx.hoveredCardIndex;
-        if (i >= (int)m_cardAnims.size()) return;
-
-        CardVisual::DrawTexts(m_textRenderer, cards[i]->GetData(), ctx.player,
-            m_cardAnims[i].currentX, m_cardAnims[i].currentY,
-            m_cardAnims[i].currentScale, m_cardAnims[i].currentRot);
-    }
 
     wchar_t drawText[32];
     swprintf_s(drawText, L"山:%d", ctx.deck->GetDrawPileCount());
@@ -327,6 +319,32 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     swprintf_s(energyText, L"Energy: %d / %d", ctx.player->GetEnergy(), ctx.player->GetMaxEnergy());
     m_textRenderer->DrawText(energyText, 20.0f, 130.0f, 20.0f,
         D2D1::ColorF(D2D1::ColorF::Yellow));
+
+    if (UiNotice::IsActive() && UiNotice::GetType() == NoticeType::HandFull)
+    {
+        float a = UiNotice::GetAlpha();
+        float y = m_screenHeight - 240.0f - UiNotice::GetRise();
+        m_textRenderer->DrawText(L"手札がいっぱい！", m_screenWidth / 2.0f - 90.0f, y + 2.0f, 26.0f,
+            D2D1::ColorF(0, 0, 0, a));                       // 影
+        m_textRenderer->DrawText(L"手札がいっぱい！", m_screenWidth / 2.0f - 90.0f, y, 26.0f,
+            D2D1::ColorF(1.0f, 0.5f, 0.2f, a));              // 本体
+    }
+
+    if (ctx.discardSelectCount > 0)
+    {
+        int sel = ctx.discardSelected ? (int)ctx.discardSelected->size() : 0;
+        wchar_t msg[64];
+        swprintf_s(msg, L"捨てるカードを選択 (%d/%d)", sel, ctx.discardSelectCount);
+        m_textRenderer->DrawText(msg, m_screenWidth / 2.0f - 120.0f, m_screenHeight - 380.0f, 24.0f,
+            D2D1::ColorF(1.0f, 0.8f, 0.3f));
+
+        float x, y, w, h;
+        GetDiscardConfirmRect(x, y, w, h);
+        m_textRenderer->DrawText(L"確定", x + 45.0f, y + 8.0f, 20.0f, D2D1::ColorF(1, 1, 1));
+        GetDiscardViewRect(x, y, w, h);
+        m_textRenderer->DrawText(ctx.discardViewMode ? L"戻る" : L"盤面を見る",
+            x + 20.0f, y + 8.0f, 20.0f, D2D1::ColorF(1, 1, 1));
+    }
 
     if (ctx.player->GetBlock() > 0)
     {
@@ -570,7 +588,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         m_textRenderer->Begin();
         // 名前と値
         wchar_t buffText[64];
-        if (buff.isPermanent())
+        if (buff.type == BuffType::Poison)
             swprintf_s(buffText, L"%s %d", info.name.c_str(), buff.value);
         else
             swprintf_s(buffText, L"%s %d (%dT)", info.name.c_str(), buff.value, buff.duration);
@@ -1162,59 +1180,48 @@ void BattleUI::DrawPileViewer(const BattleUIContext& ctx)
     if (ctx.showDrawPile)
         std::sort(displayPile.begin(), displayPile.end());
 
-    const float cardW = 160.0f;
-    const float cardH = 50.0f;
-    const float padding = 10.0f;
-    const int   cols = 3;
+    const float scale = 0.7f;
+    const float cw = CardVisual::CARD_W * scale;
+    const float ch = CardVisual::CARD_H * scale;
+    const float gap = 12.0f;
+    const int   cols = 6;
 
+    // 本体（スプライト）
+    m_textRenderer->End();
+    m_spriteRenderer->Begin();
     for (int i = 0; i < (int)displayPile.size(); i++)
     {
         const CardData* data = CardDataBase::Get(displayPile[i]);
         if (!data) continue;
 
-        int col = i % cols;
-        int row = i / cols;
+        float bx = bgX + 25.0f + (i % cols) * (cw + gap);
+        float by = bgY + 50.0f + (i / cols) * (ch + gap);
 
-        float cx = bgX + 20.0f + col * (cardW + padding);
-        float cy = bgY + 50.0f + row * (cardH + padding);
-
-        XMFLOAT4 cardColor;
-        switch (data->type)
-        {
-        case CardType::Attack: cardColor = XMFLOAT4(0.5f, 0.1f, 0.1f, 1.0f); break;
-        case CardType::Skill:  cardColor = XMFLOAT4(0.1f, 0.3f, 0.5f, 1.0f); break;
-        case CardType::Move:   cardColor = XMFLOAT4(0.1f, 0.4f, 0.2f, 1.0f); break;
-        case CardType::Power:  cardColor = XMFLOAT4(0.4f, 0.1f, 0.4f, 1.0f); break;
-        default:               cardColor = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f); break;
-        }
-
+        XMFLOAT4 col = CardVisual::GetCardColor(data->type, false);
         if (ctx.cardSelecting)
         {
-            if (ctx.mousePos.x >= cx && ctx.mousePos.x <= cx + cardW
-                && ctx.mousePos.y >= cy && ctx.mousePos.y <= cy + cardH)
-            {
-                cardColor = XMFLOAT4(
-                    min(1.0f, cardColor.x + 0.3f),
-                    min(1.0f, cardColor.y + 0.3f),
-                    min(1.0f, cardColor.z + 0.3f),
-                    1.0f);
-            }
+            float rx, ry, rw, rh; CardVisual::GetRect(bx, by, scale, rx, ry, rw, rh);
+            if (ctx.mousePos.x >= rx && ctx.mousePos.x <= rx + rw
+                && ctx.mousePos.y >= ry && ctx.mousePos.y <= ry + rh)
+                col = XMFLOAT4(min(1.0f, col.x + 0.3f), min(1.0f, col.y + 0.3f),
+                    min(1.0f, col.z + 0.3f), 1.0f);
         }
 
-        m_spriteRenderer->Begin();
-        m_spriteRenderer->DrawSprite(m_whiteTexture, cx, cy, cardW, cardH,
-            0.0f, cardColor);
-        m_spriteRenderer->End();
+        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, bx, by, scale, 0.0f,
+            col, data, 0.0f);
+    }
+    m_spriteRenderer->End();
 
-        wchar_t cardText[64];
-        swprintf_s(cardText, L"%s  Cost:%d", data->name.c_str(), data->cost);
-        m_textRenderer->DrawText(cardText, cx + 5.0f, cy + 5.0f, 14.0f,
-            D2D1::ColorF(D2D1::ColorF::White));
+    // 文字（テキスト）
+    m_textRenderer->Begin();
+    for (int i = 0; i < (int)displayPile.size(); i++)
+    {
+        const CardData* data = CardDataBase::Get(displayPile[i]);
+        if (!data) continue;
 
-        m_textRenderer->DrawText(
-            CardVisual::GetEffectText(data, ctx.player).c_str(),
-            cx + 5.0f, cy + 26.0f, 11.0f,
-            D2D1::ColorF(D2D1::ColorF::LightGray));
+        float bx = bgX + 25.0f + (i % cols) * (cw + gap);
+        float by = bgY + 50.0f + (i / cols) * (ch + gap);
+        CardVisual::DrawTexts(m_textRenderer, data, ctx.player, bx, by, scale, 0.0f, 1.0f);
     }
 
     m_textRenderer->End();
@@ -1224,7 +1231,7 @@ void BattleUI::StartDrawCardEffect(const std::string& cardId)
 {
     DrawCardEffect effect;
     effect.cardId = cardId;
-    effect.x = m_screenWidth - 120.0f;
+    effect.x = 20.0f;
     effect.y = m_screenHeight - 60.0f;
     effect.targetX = m_screenWidth / 2.0f;
     effect.targetY = m_screenHeight - CARD_HIDE_Y_OFFSET;
@@ -1245,9 +1252,9 @@ void BattleUI::UpdateDrawCardEffects(float deltaTime)
 
         float ease = 1.0f - (1.0f - t) * (1.0f - t);
 
-        effect.x = m_screenWidth - 120.0f + (effect.targetX - (m_screenWidth - 120.0f)) * ease;
+        effect.x = 20.0f + (effect.targetX - 20.0f) * ease;
         effect.y = m_screenHeight - 60.0f + (effect.targetY - (m_screenHeight - 60.0f)) * ease;
-        effect.alpha = 1.0f - t * 0.5f;
+        effect.alpha = 1.0f - t;
 
         if (t >= 1.0f) effect.done = true;
     }
@@ -1263,9 +1270,13 @@ void BattleUI::DrawCardEffects()
 {
     for (auto& effect : m_drawCardEffects)
     {
-        m_spriteRenderer->DrawSprite(m_whiteTexture,
-            effect.x, effect.y, CARD_WIDTH, CARD_HEIGHT, 0.0f,
-            XMFLOAT4(0.2f, 0.4f, 0.8f, effect.alpha));
+        const CardData* d = CardDataBase::Get(effect.cardId);
+        XMFLOAT4 color = d ? CardVisual::GetCardColor(d->type, false)
+            : XMFLOAT4(0.2f, 0.4f, 0.8f, 1.0f);
+        color.w = effect.alpha;
+
+        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture,
+            effect.x, effect.y, 1.0f, 0.0f, color, d, 0.0f);
     }
 }
 
@@ -1281,6 +1292,17 @@ void BattleUI::StartDiscardEffects()
         effect.done = false;
         m_discardCardEffects.push_back(effect);
     }
+}
+
+void BattleUI::StartOverflowDiscardEffect()
+{
+    DiscardCardEffect effect;
+    effect.startX = m_screenWidth / 2.0f - CARD_WIDTH / 2.0f;   // 手札の位置から
+    effect.startY = m_screenHeight - 320.0f;   // 手札より上から（隠れないように）
+    effect.alpha = 1.0f;
+    effect.timer = 0.0f;
+    effect.done = false;
+    m_discardCardEffects.push_back(effect);
 }
 
 void BattleUI::UpdateDiscardEffects(float deltaTime)
@@ -1311,6 +1333,8 @@ void BattleUI::DrawDiscardEffects()
         float x = e.startX + (targetX - e.startX) * ease;
         float y = e.startY + (targetY - e.startY) * ease;
 
+        y -= sinf(t * 3.14159f) * 70.0f;      // 途中でふわっと上へ（山なり）
+
         XMFLOAT4 color(0.4f, 0.4f, 0.4f, e.alpha);
         m_spriteRenderer->DrawSprite(m_whiteTexture, x, y,
             CARD_WIDTH, CARD_HEIGHT, 0.0f, color);
@@ -1334,7 +1358,8 @@ void BattleUI::UpdatePlayCardEffects(float deltaTime)
 }
 
 void BattleUI::UpdateCardAnimations(float deltaTime, int handSize, int hoveredIndex, 
-    int selectedIndex, POINT mousePos, bool selectedNeedsTarget)
+    int selectedIndex, POINT mousePos, bool selectedNeedsTarget,
+    const std::vector<int>* discardSelected)
 {
     int prevSize = (int)m_cardAnims.size();
 
@@ -1358,9 +1383,7 @@ void BattleUI::UpdateCardAnimations(float deltaTime, int handSize, int hoveredIn
 
     for (int i = 0; i < handSize; i++)
     {
-        float targetX = m_screenWidth / 2.0f
-            - (handSize * (CARD_WIDTH + 10.0f)) / 2.0f
-            + i * (CARD_WIDTH + 10.0f);
+        float targetX = CardVisual::HandSlotX(i, handSize, (float)m_screenWidth);
 
         // ホバー中のカードの隣を外へ避ける
         if (hoveredIndex >= 0 && i != hoveredIndex)
@@ -1376,7 +1399,7 @@ void BattleUI::UpdateCardAnimations(float deltaTime, int handSize, int hoveredIn
         // 扇形に並べる（外側ほど傾く・下がる）
         float center = (handSize - 1) / 2.0f;
         float off = i - center;
-        float targetRot = off * 0.05f;                  // ラジアン
+        float targetRot = off * 0.03f;                  // ラジアン
 
         if (i == hoveredIndex || i == selectedIndex)
         {
@@ -1425,9 +1448,15 @@ void BattleUI::UpdateCardAnimations(float deltaTime, int handSize, int hoveredIn
         else
             targetY = cardHideY;
 
+        // 捨てる選択中のカードは上に持ち上げる
+        if (discardSelected &&
+            std::find(discardSelected->begin(), discardSelected->end(), i)
+            != discardSelected->end())
+            targetY -= 60.0f;
+
         // 扇の弧（中央ほど上がる）。ホバー中は平ら  ← 補間より前
         if (i != hoveredIndex)
-            targetY += fabsf(off) * fabsf(off) * 5.0f;
+            targetY += fabsf(off) * fabsf(off) * 2.5f;
 
         if (i < prevSize)
         {
@@ -1454,9 +1483,7 @@ int BattleUI::GetCardAtScreenPos(POINT p) const
     float topY = m_screenHeight - CARD_HIDE_Y_OFFSET - 40.0f;
     for (int i = 0; i < n; i++)
     {
-        float cardX = m_screenWidth / 2.0f
-            - (n * (CARD_WIDTH + 10.0f)) / 2.0f
-            + i * (CARD_WIDTH + 10.0f);
+        float cardX = CardVisual::HandSlotX(i, n, (float)m_screenWidth);
 
         if (p.x >= cardX && p.x <= cardX + CARD_WIDTH && p.y >= topY)
             return i;
@@ -1731,7 +1758,7 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
             {
                 const auto& info = BuffInfo::Get(buff.type);
                 std::wstring buffText = info.name + L": " + std::to_wstring(buff.value);
-                if (!buff.isPermanent())
+                if (buff.type != BuffType::Poison)
                     buffText += L" (" + std::to_wstring(buff.duration) + L"T)";
                 bool buffHover = (mp.x >= detailX && mp.x <= detailX + 190.0f
                     && mp.y >= lineY && mp.y <= lineY + 20.0f);
@@ -1826,9 +1853,15 @@ void BattleUI::DrawPlayCardEffects()
     {
         float x, y, s;
         GetPlayEffectTransform(e, x, y, s);
+        // GetPlayEffectTransform は左上座標なので、DrawBase の基準座標に戻す
+        float baseX = x + (CardVisual::CARD_W * s - CardVisual::CARD_W) / 2.0f;
+        float baseY = y + (CardVisual::CARD_H * s - CardVisual::CARD_H) / 2.0f;
+
         XMFLOAT4 color = CardVisual::GetCardColor(e.cardType, false);
         color.w = e.alpha;
-        m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, CARD_WIDTH * s, CARD_HEIGHT * s, 0.0f, color);
+
+        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture,
+            baseX, baseY, s, 0.0f, color, e.data, 0.0f);
     }
 }
 
@@ -1882,4 +1915,43 @@ void BattleUI::DrawFloatingTexts(const BattleUIContext& ctx)
         m_textRenderer->DrawText(t.text.c_str(), sx, sy, size,
             D2D1::ColorF(t.color.x, t.color.y, t.color.z, alpha));
     }
+}
+
+void BattleUI::GetDiscardConfirmRect(float& x, float& y, float& w, float& h) const
+{
+    w = 140.0f; h = 40.0f;
+    x = m_screenWidth / 2.0f - 160.0f;
+    y = m_screenHeight - 330.0f;
+}
+
+void BattleUI::GetDiscardViewRect(float& x, float& y, float& w, float& h) const
+{
+    w = 140.0f; h = 40.0f;
+    x = m_screenWidth / 2.0f + 20.0f;
+    y = m_screenHeight - 330.0f;
+}
+
+bool BattleUI::IsOnDiscardConfirm(POINT p) const
+{
+    float x, y, w, h; GetDiscardConfirmRect(x, y, w, h);
+    return p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h;
+}
+
+bool BattleUI::IsOnDiscardView(POINT p) const
+{
+    float x, y, w, h; GetDiscardViewRect(x, y, w, h);
+    return p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h;
+}
+
+void BattleUI::StartDiscardEffectAt(int cardIndex)
+{
+    if (cardIndex < 0 || cardIndex >= (int)m_cardAnims.size()) return;
+
+    DiscardCardEffect effect;
+    effect.startX = m_cardAnims[cardIndex].currentX;   // そのカードの今の位置から
+    effect.startY = m_cardAnims[cardIndex].currentY;
+    effect.alpha = 1.0f;
+    effect.timer = 0.0f;
+    effect.done = false;
+    m_discardCardEffects.push_back(effect);
 }

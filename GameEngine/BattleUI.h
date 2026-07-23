@@ -98,6 +98,10 @@ struct BattleUIContext
     const std::vector<std::pair<int, int>>* travelPath = nullptr;
 
     int selectedEnemy = -1;
+
+    int discardSelectCount = 0;
+    const std::vector<int>* discardSelected = nullptr;
+    bool discardViewMode = false;
 };
 
 class BattleUI
@@ -112,9 +116,11 @@ public:
     void UpdateDrawCardEffects(float deltaTime);
     void StartDrawCardEffect(const std::string& cardId);
     void StartDiscardEffects();
+    void StartOverflowDiscardEffect();
     void UpdateDiscardEffects(float deltaTime);
-    void UpdateCardAnimations(float deltaTime, int handSize, int hoveredIndex, 
-        int selectedIndex, POINT mousePos, bool selectedNeedsTarget);
+    void UpdateCardAnimations(float deltaTime, int handSize, int hoveredIndex,
+        int selectedIndex, POINT mousePos, bool selectedNeedsTarget,
+        const std::vector<int>* discardSelected = nullptr);
     void OnCardRemoved(int index);
     void UpdatePlayCardEffects(float deltaTime);
 
@@ -129,6 +135,13 @@ public:
 
     int GetCardAtScreenPos(POINT p) const;
 
+    int GetCardAnimCount() const { return (int)m_cardAnims.size(); }
+
+    void GetDiscardConfirmRect(float& x, float& y, float& w, float& h) const;
+    void GetDiscardViewRect(float& x, float& y, float& w, float& h) const;
+    bool IsOnDiscardConfirm(POINT p) const;
+    bool IsOnDiscardView(POINT p) const;
+    void StartDiscardEffectAt(int cardIndex);
 
 private:
     SpriteRenderer* m_spriteRenderer = nullptr;
@@ -180,7 +193,7 @@ private:
     void DrawPlayCardEffectTexts(const BattleUIContext& ctx);
 
     static constexpr float PLAY_EFFECT_DUR = 0.45f;
-    static constexpr float DISCARD_EFFECT_DUR = 0.15f;
+    static constexpr float DISCARD_EFFECT_DUR = 0.55f;
 
     bool WorldToScreen(float wx, float wy, float wz, Renderer3D* renderer3D,
         float& outX, float& outY) const;

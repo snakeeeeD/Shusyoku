@@ -21,6 +21,8 @@ enum class CardEffectType
     Search,      // 山札検索
     Salvage,     // 捨て札回収
     PlaceTrap,   // 罠セット
+    UpgradeHand, // 手札を強化（この戦闘中のみ）
+    Discard,     // 手札からランダムに捨てる
 };
 
 // カードレアリティ

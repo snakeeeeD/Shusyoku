@@ -111,6 +111,10 @@ private:
     bool m_showExhaustPile;
     bool m_rightClickDragged;
 
+    int m_discardSelectCount = 0;
+    std::vector<int> m_discardSelected;   // 選択中のカードindex
+    bool m_discardViewMode = false;
+
     EnemyTurnPhase m_enemyPhase = EnemyTurnPhase::WaitStart;
     int m_currentEnemyIdx = 0;
     float m_enemyActionDelay = 0;

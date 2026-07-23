@@ -1,4 +1,5 @@
 #include "PlayerDataManager.h"
+#include "CardDataBase.h"
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <windows.h>
@@ -188,6 +189,7 @@ void PlayerDataManager::AddGold(int amount)
 	m_data.gold += amount;
 	Save();
 }
+
 bool PlayerDataManager::SpendGold(int amount)
 {
 	if (m_data.gold < amount) return false;
@@ -195,11 +197,13 @@ bool PlayerDataManager::SpendGold(int amount)
 	Save();
 	return true;
 }
+
 void PlayerDataManager::AddMaterial(const std::string& id, int count)
 {
 	m_data.materials[id] += count;
 	Save();
 }
+
 bool PlayerDataManager::SpendMaterial(const std::string& id, int count)
 {
 	if (m_data.materials[id] < count) return false;
@@ -208,8 +212,19 @@ bool PlayerDataManager::SpendMaterial(const std::string& id, int count)
 	Save();
 	return true;
 }
+
 int PlayerDataManager::GetMaterialCount(const std::string& id)
 {
 	auto it = m_data.materials.find(id);
 	return it != m_data.materials.end() ? it->second : 0;
+}
+
+void PlayerDataManager::UpgradeCard(int index)
+{
+	if (index < 0 || index >= (int)m_data.deck.size()) return;
+	std::string& id = m_data.deck[index];
+	if (!id.empty() && id.back() == '+') return;      // Šù‚É‹­‰»Ï‚İ
+	if (!CardDataBase::Get(id + "+")) return;         // ‹­‰»”Å‚ª–³‚¢ƒJ[ƒh
+	id += "+";
+	Save();
 }

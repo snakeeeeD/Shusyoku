@@ -10,6 +10,7 @@
       "range": 1,
       "rangeType": "Adjacent",
       "description": "敵単体に{value}ダメージ",
+      "upgrade": { "mainValue": 3 },
       "mainEffect": {
         "type": "Damage",
         "value": 6
@@ -22,7 +23,7 @@
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
-      "description": "敵単体に{value}ダメージ、1枚ドロー",
+      "description": "敵単体に{value}ダメージ、\n{sub}枚ドロー",
       "mainEffect": {
         "type": "Damage",
         "value": 9
@@ -30,6 +31,10 @@
       "subEffect": {
         "type": "Draw",
         "value": 1
+      },
+      "upgrade": {
+        "mainValue": 3,
+        "subValue": 1
       }
     },
     {
@@ -41,6 +46,7 @@
       "range": 1,
       "rangeType": "Area",
       "description": "周囲の敵に{value}ダメージ",
+      "upgrade": { "mainValue": 5 },
       "mainEffect": {
         "type": "Damage",
         "value": 10
@@ -54,7 +60,7 @@
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
-      "description": "敵に{value}ダメージ、毒3付与",
+      "description": "敵に{value}ダメージ、\n毒{onhit}付与",
       "mainEffect": {
         "type": "Damage",
         "value": 9
@@ -64,6 +70,10 @@
         "value": 3,
         "duration": 3,
         "buffType": "Poison"
+      },
+      "upgrade": {
+        "mainValue": 3,
+        "onHitValue": 2
       }
     },
     {
@@ -74,6 +84,7 @@
       "range": 1,
       "rangeType": "Adjacent",
       "description": "{value}ダメージ",
+      "upgrade": { "mainValue": 2 },
       "exhaust": true,
       "mainEffect": {
         "type": "Damage",
@@ -88,6 +99,7 @@
       "range": 4,
       "rangeType": "Cross",
       "description": "4マス以内に突進し{value}ダメージ",
+      "upgrade": { "mainValue": 5 },
       "vfx": "explosion",
       "dash": true,
       "mainEffect": {
@@ -103,7 +115,7 @@
       "cost": 2,
       "range": 1,
       "rangeType": "Adjacent",
-      "description": "{value}ダメージ、2マスノックバック",
+      "description": "{value}ダメージ、\n{onhit}マスノックバック",
       "mainEffect": {
         "type": "Damage",
         "value": 5
@@ -111,7 +123,8 @@
       "onHitEffect": {
         "type": "Knockback",
         "value": 2
-      }
+      },
+      "upgrade": { "onHitValue": 1 }
     },
     {
       "id": "ATK_hook",
@@ -119,9 +132,9 @@
       "type": "Attack",
       "rarity": "Uncommon",
       "cost": 1,
-      "range": 3,
+      "range": 2,
       "rangeType": "Cross",
-      "description": "{value}ダメージ、2マス引き寄せ",
+      "description": "{value}ダメージ、\n{onhit}マス引き寄せ",
       "mainEffect": {
         "type": "Damage",
         "value": 3
@@ -129,6 +142,10 @@
       "onHitEffect": {
         "type": "Pull",
         "value": 2
+      },
+      "upgrade": {
+        "onHitValue": 1,
+        "range": 1
       }
     },
     {
@@ -139,6 +156,7 @@
       "range": 1,
       "rangeType": "Adjacent",
       "description": "自傷5。敵に{value}ダメージ",
+      "upgrade": { "mainValue": 5 },
       "selfDamage": 5,
       "mainEffect": {
         "type": "Damage",
@@ -154,6 +172,7 @@
       "range": 5,
       "rangeType": "Cross",
       "description": "直線上の敵全員に{value}ダメージ",
+      "upgrade": { "mainValue": 6 },
       "pierce": true,
       "mainEffect": {
         "type": "Damage",
@@ -170,6 +189,7 @@
       "range": 0,
       "rangeType": "None",
       "description": "{value}ブロックを得る",
+      "upgrade": { "mainValue": 3 },
       "mainEffect": {
         "type": "Block",
         "value": 5
@@ -184,6 +204,7 @@
       "range": 0,
       "rangeType": "None",
       "description": "{value}ブロックを得る",
+      "upgrade": { "mainValue": 5 },
       "mainEffect": {
         "type": "Block",
         "value": 12
@@ -197,7 +218,9 @@
       "cost": 1,
       "range": 0,
       "rangeType": "None",
+      "exhaust": true,
       "description": "HPを{value}回復",
+      "upgrade": { "mainValue": 3 },
       "mainEffect": {
         "type": "Heal",
         "value": 5
@@ -211,7 +234,8 @@
       "cost": 0,
       "range": 0,
       "rangeType": "None",
-      "description": "2枚ドロー、エネルギー+1",
+      "exhaust": true,
+      "description": "{value}枚ドロー、\nエネルギー+{sub}",
       "mainEffect": {
         "type": "Draw",
         "value": 2
@@ -219,7 +243,8 @@
       "subEffect": {
         "type": "AddEnergy",
         "value": 1
-      }
+      },
+      "upgrade": { "mainValue": 1 }
     },
     {
       "id": "SKL_blade_dance",
@@ -229,12 +254,13 @@
       "cost": 1,
       "range": 0,
       "rangeType": "None",
-      "description": "ナイフを3枚手札に加える",
+      "description": "ナイフを{value}枚手札に加える",
       "mainEffect": {
         "type": "CreateCard",
         "value": 3,
-        "cardId": "knife"
-      }
+        "cardId": "ATK_knife"
+      },
+      "upgrade": { "mainValue": 1 }
     },
 
     {
@@ -250,7 +276,8 @@
       "mainEffect": {
         "type": "Search",
         "value": 1
-      }
+      },
+      "upgrade": { "cost": -1 }
     },
     {
       "id": "SKL_salvage",
@@ -265,7 +292,42 @@
       "mainEffect": {
         "type": "Salvage",
         "value": 1
-      }
+      },
+      "upgrade": { "cost": -1 }
+    },
+    {
+      "id": "SKL_armaments",
+      "name": "武装",
+      "type": "Skill",
+      "cost": 2,
+      "range": 0,
+      "rangeType": "None",
+      "description": "この戦闘中、\n手札のカードを強化する",
+      "rarity": "Uncommon",
+      "mainEffect": {
+        "type": "UpgradeHand",
+        "value": 0
+      },
+      "upgrade": { "cost": -1 }
+    },
+    {
+      "id": "SKL_acrobat",
+      "name": "アクロバット",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "{value}枚ドローし、\n手札から{sub}枚選んで捨てる",
+      "mainEffect": {
+        "type": "Draw",
+        "value": 3
+      },
+      "subEffect": {
+        "type": "Discard",
+        "value": 1
+      },
+      "upgrade": { "mainValue": 1 }
     },
 
     {
@@ -280,6 +342,10 @@
       "mainEffect": {
         "type": "None",
         "value": 0
+      },
+      "upgrade": {
+        "range": 1,
+        "description": "2マス先まで移動"
       }
     },
     {
@@ -294,7 +360,8 @@
       "mainEffect": {
         "type": "None",
         "value": 3
-      }
+      },
+      "upgrade": { "cost": -1 }
     },
 
     {
@@ -311,7 +378,8 @@
         "value": 3,
         "duration": -1,
         "buffType": "AttackUp"
-      }
+      },
+      "upgrade": { "mainValue": 1 }
     },
     {
       "id": "POW_buff_defense",
@@ -327,7 +395,8 @@
         "value": 2,
         "duration": 2,
         "buffType": "DefenseUp"
-      }
+      },
+      "upgrade": { "mainValue": 2 }
     },
 
     {
@@ -337,12 +406,13 @@
       "cost": 1,
       "range": 0,
       "rangeType": "Single",
-      "description": "足元に{value}ダメージの罠を設置",
+      "description": "足元に{value}ダメージの\n罠を設置",
       "mainEffect": {
         "type": "PlaceTrap",
         "trapType": "explosion",
         "value": 15
-      }
+      },
+      "upgrade": { "mainValue": 5 }
     },
     {
       "id": "SKL_Trap_root_trap",
@@ -357,7 +427,8 @@
         "trapType": "root",
         "value": 1,
         "duration": 2
-      }
+      },
+      "upgrade": { "mainValue": 1 }
     },
     {
       "id": "SKL_Trap_poison_trap",
@@ -372,7 +443,8 @@
         "trapType": "poison",
         "value": 5,
         "duration": 3
-      }
+      },
+      "upgrade": { "mainValue": 3 }
     }
   ]
 }
