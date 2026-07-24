@@ -361,3 +361,10 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# 生成物（ツールで再生成できる）
+GameContent.xlsx
+cards_edit.xlsx
+tools/__pycache__/
+imgui.ini
+GameEngine/Assets/Data/playerdata.json
