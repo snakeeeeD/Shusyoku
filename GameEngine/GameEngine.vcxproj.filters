@@ -217,6 +217,15 @@
     <Filter Include="ソース ファイル\02-Scene\50-ShopScene\00-ShopScene">
       <UniqueIdentifier>{6c6a4df5-1d13-42d9-a0ea-5aecb690f9b6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\40-Material">
+      <UniqueIdentifier>{11cbb606-8543-4cd9-b464-f6988568ae68}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\40-Material\01-MaterialData">
+      <UniqueIdentifier>{72e86d64-5d11-4144-9898-37d90fac491d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\40-Material\02-MaterialDataBace">
+      <UniqueIdentifier>{99f5336b-e5b5-4c62-acea-ca2352be9c4a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -408,6 +417,15 @@
     <ClInclude Include="ShopScene.h">
       <Filter>ソース ファイル\02-Scene\50-ShopScene\00-ShopScene</Filter>
     </ClInclude>
+    <ClInclude Include="UiNotice.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialData.h">
+      <Filter>ソース ファイル\03-Object関連\30-Card\40-Material\01-MaterialData</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialDataBase.h">
+      <Filter>ソース ファイル\03-Object関連\30-Card\40-Material\02-MaterialDataBace</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SpriteRenderer.cpp">
@@ -526,6 +544,9 @@
     </ClCompile>
     <ClCompile Include="ShopScene.cpp">
       <Filter>ソース ファイル\02-Scene\50-ShopScene\00-ShopScene</Filter>
+    </ClCompile>
+    <ClCompile Include="MaterialDataBase.cpp">
+      <Filter>ソース ファイル\03-Object関連\30-Card\40-Material\02-MaterialDataBace</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

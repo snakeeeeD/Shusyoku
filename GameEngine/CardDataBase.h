@@ -9,6 +9,7 @@ public:
     static const CardData* Get(const std::string& id);
 
     static const std::unordered_map<std::string, CardData>& GetAll() { return m_data; }
+    static CardData BuildCrafted(const std::string& id);
 
 private:
     static void LoadHardcodedData();

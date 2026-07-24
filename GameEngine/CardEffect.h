@@ -48,12 +48,16 @@ namespace CardEffect
     inline void ApplyOnHitEffect(const CardEffectData& effect, BuffManager& target)
     {
         if (!effect.hasEffect) return;
-        if (effect.buffType == "Poison")
-            ApplyPoison(target, effect.value, effect.duration);
-        else if (effect.buffType == "AttackDown")
-            ApplyAttackDown(target, effect.value, effect.duration);
-        else if (effect.buffType == "DefenseDown")
-            ApplyDefenseDown(target, effect.value, effect.duration);
+        if (effect.buffType.empty()) return;
+
+        BuffType bt = StringToBuffType(effect.buffType);
+        Buff buff;
+        buff.type = bt;
+        buff.value = effect.value;
+        buff.duration = effect.duration;
+        buff.name = BuffInfo::Get(bt).name;
+        buff.description = L"";
+        target.AddBuff(buff);
     }
 
     // プレイヤーへの効果適用

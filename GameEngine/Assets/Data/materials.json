@@ -1,0 +1,74 @@
+﻿{
+  "bases": [
+    {
+      "id": "core_slash",
+      "name": "斬核",
+      "type": "Attack",
+      "rangeType": "Adjacent",
+      "range": 1,
+      "cost": 1,
+      "mainType": "Damage",
+      "mainValue": 4
+    },
+    {
+      "id": "core_shield",
+      "name": "盾核",
+      "type": "Skill",
+      "rangeType": "None",
+      "range": 0,
+      "cost": 1,
+      "mainType": "Block",
+      "mainValue": 4
+    },
+    {
+      "id": "core_power",
+      "name": "力核",
+      "type": "Power",
+      "rangeType": "None",
+      "range": 0,
+      "cost": 1,
+      "mainType": "None",
+      "mainValue": 0
+    }
+  ],
+  "materials": [
+    {
+      "id": "sword_fragment",
+      "name": "剣の破片",
+      "cost": 0,
+      "Attack": {
+        "slot": "amplifyMain",
+        "value": 5
+      },
+      "Skill": {
+        "slot": "sub",
+        "type": "ApplyBuff",
+        "buffType": "AttackUp",
+        "value": 3,
+        "duration": 3
+      },
+      "Power": {
+        "slot": "main",
+        "type": "ApplyBuff",
+        "buffType": "AttackUp",
+        "value": 3,
+        "duration": -1
+      }
+    },
+    {
+      "id": "light_stone",
+      "name": "軽量化石",
+      "cost": -1,
+      "all": { "slot": "none" }
+    },
+    {
+      "id": "combo_shard",
+      "name": "連撃の欠片",
+      "cost": 1,
+      "Attack": {
+        "slot": "hits",
+        "value": 1
+      }
+    }
+  ]
+}

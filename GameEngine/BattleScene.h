@@ -103,6 +103,12 @@ private:
 
     int m_prevHoveredCardIndex;
 
+    Enemy* m_multiHitTarget = nullptr;
+    int    m_multiHitRemain = 0;
+    int    m_multiHitDamage = 0;
+    float  m_multiHitTimer = 0.0f;
+    static constexpr float MULTI_HIT_INTERVAL = 0.12f;
+
     Deck m_deck;
     static constexpr int HAND_SIZE = 7;
 

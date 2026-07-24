@@ -66,4 +66,5 @@ struct CardData
     bool pierce = false;    // 貫通フラグ
     bool dash = false;      // moveカード以外に移動効果があるかフラグ
     int selfDamage = 0;     // 自傷ダメージ
+    int hits = 1;         // 攻撃回数（マルチヒット）
 };

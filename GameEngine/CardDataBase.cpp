@@ -1,4 +1,5 @@
 #include "CardDataBase.h"
+#include "MaterialDataBase.h" 
 #include "GameUtils.h"
 #include <nlohmann/json.hpp>
 #include <fstream>
@@ -50,6 +51,7 @@ void CardDataBase::Init()
             data.pierce = c.value("pierce", false);
             data.dash = c.value("dash", false);
             data.selfDamage = c.value("selfDamage", 0);
+            data.hits = c.value("hits", 1);
 
             // mainEffect
             data.mainEffect.hasEffect = true;
@@ -100,6 +102,7 @@ void CardDataBase::Init()
                 up.name = data.name + L"+";
 
                 up.cost += u.value("cost", 0);
+                up.hits += u.value("hits", 0);
                 up.range += u.value("range", 0);
                 up.mainEffect.value += u.value("mainValue", 0);
                 up.mainEffect.duration += u.value("duration", 0);
@@ -132,6 +135,88 @@ void CardDataBase::Init()
 const CardData* CardDataBase::Get(const std::string& id)
 {
     auto it = m_data.find(id);
-    if (it == m_data.end()) return nullptr;
-    return &it->second;
+    if (it != m_data.end()) return &it->second;
+
+    if (id.rfind("CRAFT:", 0) == 0)
+    {
+        m_data[id] = BuildCrafted(id);
+        return &m_data[id];
+    }
+    return nullptr;
+}
+
+static void applyEntry(CardData& c, const MaterialDef& m, const std::string& baseType)
+{
+    const MatEntry* e = m.entryFor(baseType);
+    if (!e) return;
+    if (e->slot == "amplifyMain")
+        c.mainEffect.value += e->value;
+    else if (e->slot == "sub") {
+        c.subEffect.hasEffect = true;
+        c.subEffect.type = StringToCardEffectType(e->type);
+        c.subEffect.value = e->value; c.subEffect.duration = e->duration;
+        c.subEffect.buffType = e->buffType;
+    }
+    else if (e->slot == "onHit") {
+        c.onHitEffect.hasEffect = true;
+        c.onHitEffect.type = StringToCardEffectType(e->type);
+        c.onHitEffect.value = e->value; c.onHitEffect.duration = e->duration;
+        c.onHitEffect.buffType = e->buffType;
+    }
+    else if (e->slot == "main") {
+        c.mainEffect.type = StringToCardEffectType(e->type);
+        c.mainEffect.value = e->value; c.mainEffect.duration = e->duration;
+        c.mainEffect.buffType = e->buffType;
+    }
+    else if (e->slot == "hits")
+        c.hits += e->value;
+    // none / onArrival は v1 では無視（onArrivalは移動核実装時）
+}
+
+CardData CardDataBase::BuildCrafted(const std::string& id)
+{
+    CardData c;
+    c.id = id;
+    // "CRAFT:core|m1|m2" を分解
+    std::string body = id.substr(6);
+    std::vector<std::string> parts;
+    size_t pos = 0, bar;
+    while ((bar = body.find('|', pos)) != std::string::npos) {
+        parts.push_back(body.substr(pos, bar - pos)); pos = bar + 1;
+    }
+    parts.push_back(body.substr(pos));
+    if (parts.empty()) return c;
+
+    const BaseDef* base = MaterialDataBase::GetBase(parts[0]);
+    if (!base) return c;
+
+    c.type = StringToCardType(base->type);
+    c.rangeType = StringToRangeType(base->rangeType);
+    c.range = base->range;
+    c.cost = base->cost;
+    c.mainEffect.hasEffect = true;
+    c.mainEffect.type = StringToCardEffectType(base->mainType);
+    c.mainEffect.value = base->mainValue;
+
+    std::wstring nm = ToWString(base->name);
+    for (size_t i = 1; i < parts.size(); i++) {
+        const MaterialDef* m = MaterialDataBase::GetMaterial(parts[i]);
+        if (!m) continue;
+        c.cost += m->cost;
+        applyEntry(c, *m, base->type);
+        nm += L"・" + ToWString(m->name);
+    }
+    if (c.cost < 0) c.cost = 0;
+    c.name = nm;
+
+    // 仮の説明文
+    switch (c.mainEffect.type) {
+    case CardEffectType::Damage: c.description = L"{value}ダメージ"; break;
+    case CardEffectType::Block:  c.description = L"{value}ブロック"; break;
+    case CardEffectType::ApplyBuff: c.description = L"攻撃力+{value}"; break;
+    default: c.description = L"合成カード"; break;
+    }
+    if (c.subEffect.hasEffect)   c.description += L" / 自身強化";
+    if (c.onHitEffect.hasEffect) c.description += L" / 命中時効果";
+    return c;
 }

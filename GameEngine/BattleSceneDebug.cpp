@@ -18,6 +18,15 @@ void BattleScene::DrawImGui()
         for (auto enemy : m_enemies)
             enemy->SetHp(0);
 
+    if (ImGui::Button("Craft: aŠj+Œ•‚Ì”j•Ğx2"))
+        m_hand.AddCard("CRAFT:core_slash|sword_fragment|sword_fragment");
+    if (ImGui::Button("Craft: ‚Šj+Œ•‚Ì”j•Ğ+Œy—Ê"))
+        m_hand.AddCard("CRAFT:core_shield|sword_fragment|light_stone");
+    if (ImGui::Button("Craft: —ÍŠj+Œ•‚Ì”j•Ğ"))
+        m_hand.AddCard("CRAFT:core_power|sword_fragment");
+    if (ImGui::Button("Craft: aŠj+˜AŒ‚x2"))
+        m_hand.AddCard("CRAFT:core_slash|combo_shard|combo_shard");
+
     // --- ƒGƒ“ƒJƒEƒ“ƒ^[‘I‘ğ ---
     ImGui::Text("Encounter");
     ImGui::SliderInt("Template", &m_debugEncounterIndex, -1, EncounterDataBase::GetCount() - 1);

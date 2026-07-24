@@ -294,6 +294,30 @@ void BattleScene::Update(float deltaTime)
 #endif
 
     FloatingTextManager::Update(deltaTime);
+    // マルチヒットの追撃を間隔をあけて処理
+    if (m_multiHitRemain > 0 && m_multiHitTarget)
+    {
+        m_multiHitTimer -= deltaTime;
+        if (m_multiHitTimer <= 0.0f)
+        {
+            // 対象がまだ生きているか確認（死んでいたら中断）
+            bool alive = false;
+            for (auto e : m_enemies) if (e == m_multiHitTarget && e->GetHp() > 0) alive = true;
+            if (alive)
+            {
+                m_multiHitTarget->TakeDamage(m_multiHitDamage);
+                m_multiHitTarget->StartJump(0.5f, 0.2f);   // 小さく跳ねる
+            }
+            m_multiHitRemain--;
+            m_multiHitTimer = MULTI_HIT_INTERVAL;
+            if (!alive || m_multiHitRemain <= 0)
+            {
+                m_multiHitRemain = 0;
+                m_multiHitTarget = nullptr;
+                ProcessDeadEnemies();
+            }
+        }
+    }
     UiNotice::Update(deltaTime);
     if (UiNotice::ConsumeTriggered())
         m_battleUI->StartOverflowDiscardEffect();
@@ -1435,6 +1459,13 @@ void BattleScene::HandleInput()
                         m_battleUI->StartDrawCardEffect(drawnId);
                     m_battleUI->StartPlayCardEffect(dataPtr, m_selectedCardIndex);
                     ProcessDeadEnemies();
+                    if (execResult.multiHitRemain > 0)
+                    {
+                        m_multiHitTarget = execResult.multiHitTarget;
+                        m_multiHitRemain = execResult.multiHitRemain;
+                        m_multiHitDamage = execResult.multiHitDamage;
+                        m_multiHitTimer = MULTI_HIT_INTERVAL;
+                    }
                     m_battleUI->OnCardRemoved(m_selectedCardIndex);
                     m_selectedCardIndex = -1;
                     cardJustUsed = true;
@@ -1707,6 +1738,14 @@ void BattleScene::HandleInput()
                     m_battleUI->StartPlayCardEffect(dataPtr, m_selectedCardIndex);
 
                     ProcessDeadEnemies();
+
+                    if (execResult.multiHitRemain > 0)
+                    {
+                        m_multiHitTarget = execResult.multiHitTarget;
+                        m_multiHitRemain = execResult.multiHitRemain;
+                        m_multiHitDamage = execResult.multiHitDamage;
+                        m_multiHitTimer = MULTI_HIT_INTERVAL;
+                    }
 
                     if (execResult.pendingSelection != CardEffectType::None)
                     {

@@ -177,6 +177,8 @@
     <ClInclude Include="Hand.h" />
     <ClInclude Include="HighlightPalette.h" />
     <ClInclude Include="input.h" />
+    <ClInclude Include="MaterialData.h" />
+    <ClInclude Include="MaterialDataBase.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="PlayerData.h" />
     <ClInclude Include="PlayerDataManager.h" />
@@ -226,6 +228,7 @@
     <ClCompile Include="Hand.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MaterialDataBase.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="PlayerDataManager.cpp" />
     <ClCompile Include="Renderer3D.cpp" />

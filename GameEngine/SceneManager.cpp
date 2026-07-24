@@ -6,6 +6,7 @@
 #include "PlayerDataManager.h"
 #include "EncounterDataBase.h"
 #include "TerrainDataBase.h"
+#include "MaterialDataBase.h"
 
 #include "External/imgui/imgui.h"
 
@@ -36,6 +37,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	CardDataBase::Init();
 	TerrainDataBase::Load("Assets/Data/terrains.json");
 	EffectDataBase::Load("Assets/Data/effects.json");
+	MaterialDataBase::Load("Assets/Data/materials.json");
 	PlayerDataManager::Init();
 
 	TextureManager::Load("white", L"Assets/Test/White.png");
