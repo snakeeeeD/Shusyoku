@@ -1,11 +1,15 @@
 #pragma once
 #include "Scene.h"
 #include <memory>
+#include <string> 
+#include <vector>
 #include "Scenetype.h"
 #include "TextRenderer.h"
 #include "SpriteRenderer.h"
 #include "input.h"
 #include "TextureManager.h"
+#include "MaterialDataBase.h"
+#include "CardDataBase.h"
 
 #include "TitleScene.h"
 #include "BattleScene.h"
@@ -30,6 +34,17 @@ public:
     void Draw();
     void DrawImGui();
     void HandleInput();
+
+    void DrawCraft();
+    void GetCraftSlotRect(int i, float& x, float& y, float& w, float& h) const;
+    void GetCraftInvRect(int i, float& x, float& y, float& w, float& h) const;
+    void GetCraftBtnRect(float& x, float& y, float& w, float& h) const;
+    std::vector<std::pair<std::string, int>> CraftInventory() const;
+    void GetCraftBaseRect(int i, float& x, float& y, float& w, float& h) const;
+    void GetCraftModRect(int i, float& x, float& y, float& w, float& h) const;
+    std::vector<std::pair<std::string, int>> CraftBases() const;
+    std::vector<std::pair<std::string, int>> CraftMods() const;
+    std::string CraftRecipeId() const;
 
 private:
     Scene* m_currentScene;
@@ -65,4 +80,15 @@ private:
     int  GetDeckCardAt(POINT p) const;                              // 座標→デッキindex
 
     bool m_deckUpgradeMode = false;
+
+    bool m_craftOpen = false;
+    std::string m_craftBase;
+    std::vector<std::string> m_craftMods;   // 最大2
+    void HandleCraftClick(POINT m);
+    void DoCraft();
+
+    bool m_invOpen = false;
+    void DrawInventory();
+    void DrawItemTooltip(const std::string& id, POINT mp);
+    std::string HoveredItem(POINT mp) const;
 };

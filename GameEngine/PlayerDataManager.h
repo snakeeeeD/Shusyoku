@@ -21,11 +21,14 @@ public:
 
     static void AddGold(int amount);
     static bool SpendGold(int amount);              // ‘«‚è‚È‚¯‚ê‚Îfalse
-    static void AddMaterial(const std::string& id, int count = 1);
+    static void AddMaterial(const std::string& id, int n = 1);
     static bool SpendMaterial(const std::string& id, int count);
     static int  GetMaterialCount(const std::string& id);
 
     static void UpgradeCard(int index);
+
+
+    static int  MaterialCount(const std::string& id);
 
 private:
     static PlayerData m_data;

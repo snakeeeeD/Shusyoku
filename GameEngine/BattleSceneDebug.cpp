@@ -27,6 +27,13 @@ void BattleScene::DrawImGui()
     if (ImGui::Button("Craft: 斬核+連撃x2"))
         m_hand.AddCard("CRAFT:core_slash|combo_shard|combo_shard");
 
+    if (ImGui::Button("Mat: core_slash"))    PlayerDataManager::AddMaterial("core_slash");
+    if (ImGui::Button("Mat: core_shield"))   PlayerDataManager::AddMaterial("core_shield");
+    if (ImGui::Button("Mat: core_power"))    PlayerDataManager::AddMaterial("core_power");
+    if (ImGui::Button("Mat: sword_fragment"))PlayerDataManager::AddMaterial("sword_fragment");
+    if (ImGui::Button("Mat: combo_shard"))   PlayerDataManager::AddMaterial("combo_shard");
+    if (ImGui::Button("Mat: light_stone"))   PlayerDataManager::AddMaterial("light_stone");
+
     // --- エンカウンター選択 ---
     ImGui::Text("Encounter");
     ImGui::SliderInt("Template", &m_debugEncounterIndex, -1, EncounterDataBase::GetCount() - 1);

@@ -198,9 +198,10 @@ bool PlayerDataManager::SpendGold(int amount)
 	return true;
 }
 
-void PlayerDataManager::AddMaterial(const std::string& id, int count)
+void PlayerDataManager::AddMaterial(const std::string& id, int n)
 {
-	m_data.materials[id] += count;
+	m_data.materials[id] += n;
+	if (m_data.materials[id] <= 0) m_data.materials.erase(id);
 	Save();
 }
 
@@ -227,4 +228,10 @@ void PlayerDataManager::UpgradeCard(int index)
 	if (!CardDataBase::Get(id + "+")) return;         // ‹­‰»”Å‚ª–³‚¢ƒJ[ƒh
 	id += "+";
 	Save();
+}
+
+int PlayerDataManager::MaterialCount(const std::string& id)
+{
+	auto it = m_data.materials.find(id);
+	return it != m_data.materials.end() ? it->second : 0;
 }

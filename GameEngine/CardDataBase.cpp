@@ -210,11 +210,13 @@ CardData CardDataBase::BuildCrafted(const std::string& id)
     c.name = nm;
 
     // 仮の説明文
-    switch (c.mainEffect.type) {
-    case CardEffectType::Damage: c.description = L"{value}ダメージ"; break;
-    case CardEffectType::Block:  c.description = L"{value}ブロック"; break;
+    std::wstring hitSuffix = (c.hits > 1) ? (L"×" + std::to_wstring(c.hits)) : L"";
+    switch (c.mainEffect.type)
+    {
+    case CardEffectType::Damage:    c.description = L"{value}ダメージ" + hitSuffix; break;
+    case CardEffectType::Block:     c.description = L"{value}ブロック"; break;
     case CardEffectType::ApplyBuff: c.description = L"攻撃力+{value}"; break;
-    default: c.description = L"合成カード"; break;
+    default:                        c.description = L"合成カード"; break;
     }
     if (c.subEffect.hasEffect)   c.description += L" / 自身強化";
     if (c.onHitEffect.hasEffect) c.description += L" / 命中時効果";

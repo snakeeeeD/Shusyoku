@@ -4,7 +4,7 @@
 #include <vector>
 
 struct BaseDef {
-    std::string id, name, type, rangeType, mainType;
+    std::string id, name, desc, type, rangeType, mainType;
     int range = 0, cost = 0, mainValue = 0;
 };
 
@@ -16,7 +16,7 @@ struct MatEntry {
 };
 
 struct MaterialDef {
-    std::string id, name;
+    std::string id, name, desc;
     int cost = 0;
     std::map<std::string, MatEntry> entries;   // "Attack"/"Skill"/"Move"/"Power"/"all"
 
