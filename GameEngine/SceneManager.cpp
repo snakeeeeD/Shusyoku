@@ -20,8 +20,38 @@ static ItemInfo GetItemInfo(const std::string& id)
 		return { ToWString(b->name), ToWString(b->desc), "Core", true };
 	if (auto m = MaterialDataBase::GetMaterial(id))
 		return { ToWString(m->name), ToWString(m->desc), "Material", true };
-	// 将来：レリック・ポーション等はここに分岐を足すだけ
+	// レリック・ポーション等はここに分岐を足すだけ
 	return {};
+}
+
+static XMFLOAT4 MapNodeColor(FieldNodeType t, bool visited, bool isPlayer)
+{
+	if (isPlayer) return XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f);
+	if (visited)  return XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
+	switch (t)
+	{
+	case FieldNodeType::Battle: return XMFLOAT4(0.7f, 0.2f, 0.2f, 1.0f);
+	case FieldNodeType::Rest:   return XMFLOAT4(0.2f, 0.7f, 0.2f, 1.0f);
+	case FieldNodeType::Boss:   return XMFLOAT4(0.7f, 0.2f, 0.7f, 1.0f);
+	case FieldNodeType::Start:  return XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+	case FieldNodeType::Shop:   return XMFLOAT4(0.2f, 0.7f, 0.7f, 1.0f);
+	case FieldNodeType::Elite:  return XMFLOAT4(0.9f, 0.5f, 0.1f, 1.0f);
+	default:                    return XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
+	}
+}
+static const wchar_t* MapNodeLabel(FieldNodeType t, bool isPlayer)
+{
+	if (isPlayer) return L"YOU";
+	switch (t)
+	{
+	case FieldNodeType::Start:  return L"S";
+	case FieldNodeType::Battle: return L"B";
+	case FieldNodeType::Rest:   return L"R";
+	case FieldNodeType::Boss:   return L"BOSS";
+	case FieldNodeType::Shop:   return L"Sh";
+	case FieldNodeType::Elite:  return L"E";
+	default:                    return L"";
+	}
 }
 
 SceneManager::SceneManager() : m_currentScene(nullptr)
@@ -164,6 +194,7 @@ void SceneManager::Draw()
 	if (m_currentType != SceneType::Title) DrawOverlay();
 	if (m_craftOpen) DrawCraft();
 	if (m_invOpen) DrawInventory();
+	if (m_mapOpen) DrawMap();
 	if (m_restOpen) DrawRest();  
 	if (m_craftFxTimer > 0.0f) DrawCraftFx();  
 }
@@ -186,6 +217,10 @@ void SceneManager::DrawOverlay()
 
 	m_uiSprite->DrawSprite(white, btnX, 5.0f, 100.0f, 30.0f, 0.0f,
 		XMFLOAT4(0.2f, 0.3f, 0.5f, 1.0f));                    // デッキボタン
+
+	m_uiSprite->DrawSprite(white, m_screenWidth - 680.0f, 5.0f, 90.0f, 30.0f, 0.0f,
+		XMFLOAT4(0.3f, 0.35f, 0.5f, 1.0f));         // Mapボタン
+
 	if (m_deckOpen)
 	{
 		m_uiSprite->DrawSprite(white, 0.0f, 0.0f, (float)m_screenWidth, (float)m_screenHeight,
@@ -210,6 +245,7 @@ void SceneManager::DrawOverlay()
 	if (m_deckOpen)
 		m_textRenderer->DrawText(L"Remove", 30.0f, 50.0f, 16.0f, D2D1::ColorF(1, 1, 1));
 	if (m_deckOpen) DrawDeckCards(true);
+	m_textRenderer->DrawText(L"Map", m_screenWidth - 670.0f, 10.0f, 16.0f, D2D1::ColorF(1, 1, 1));
 	wchar_t gbuf[32];
 	// ゴールド
 	swprintf_s(gbuf, L"G:%d", PlayerDataManager::GetData().gold);
@@ -288,6 +324,17 @@ void SceneManager::HandleInput()
 		float btnX = m_screenWidth - 220.0f, btnY = 5.0f, btnW = 100.0f, btnH = 30.0f;
 		bool onDeckBtn = click && m.x >= btnX && m.x <= btnX + btnW
 			&& m.y >= btnY && m.y <= btnY + btnH;
+
+		// Map（全シーンで開ける・クリックで閉じる）
+		if (m_mapOpen) { if (click) m_mapOpen = false; return; }
+		{
+			float mapX = m_screenWidth - 680.0f;
+			if (click && !m_deckOpen && !m_craftOpen && !m_invOpen
+				&& m.x >= mapX && m.x <= mapX + 90.0f && m.y >= 5.0f && m.y <= 35.0f)
+			{
+				m_mapOpen = true; return;
+			}
+		}
 
 		if (onDeckBtn && !m_deckOpen) { m_deckOpen = true; m_deckScroll = 0.0f; return; }
 		if (m_deckOpen)
@@ -383,7 +430,7 @@ void SceneManager::Update(float deltaTime)
 		}
 	}
 
-	if (m_deckOpen || m_craftOpen || m_invOpen || m_restOpen || m_craftFxTimer > 0.0f) return;
+	if (m_deckOpen || m_craftOpen || m_invOpen || m_restOpen || m_mapOpen || m_craftFxTimer > 0.0f) return;
 	if (m_currentScene) m_currentScene->Update(deltaTime);
 }
 
@@ -883,4 +930,74 @@ void SceneManager::DrawCraftFx()
 		CardVisual::DrawTexts(m_textRenderer, card, nullptr, bx, by, s, 0.0f, 1.0f);
 		m_textRenderer->End();
 	}
+}
+
+void SceneManager::DrawMap()
+{
+	auto& pd = PlayerDataManager::GetData();
+	ID3D11ShaderResourceView* white = TextureManager::Get("white");
+
+	const int ROWS = 7, COLS = 12;                  // FieldSceneのグリッドと一致
+	bool haveMap = (int)pd.fieldNodeTypes.size() >= ROWS * COLS;
+
+	const float CELL = 48.0f, GAP = 12.0f;
+	float totalW = COLS * (CELL + GAP) - GAP;
+	float totalH = ROWS * (CELL + GAP) - GAP;
+	float offX = (m_screenWidth - totalW) / 2.0f;
+	float offY = (m_screenHeight - totalH) / 2.0f + 20.0f;
+
+	auto idxOf = [&](int c, int r) { return c * ROWS + r; };
+	auto typeOf = [&](int c, int r) { return (FieldNodeType)pd.fieldNodeTypes[idxOf(c, r)]; };
+	auto posOf = [&](int c, int r, float& x, float& y) { x = offX + c * (CELL + GAP); y = offY + r * (CELL + GAP); };
+
+	m_uiSprite->Begin();
+	m_uiSprite->DrawSprite(white, 0, 0, (float)m_screenWidth, (float)m_screenHeight, 0.0f,
+		XMFLOAT4(0.0f, 0.0f, 0.05f, 0.92f));
+
+	if (haveMap)
+	{
+		// 接続線
+		for (int r = 0; r < ROWS; r++)
+			for (int c = 0; c < COLS; c++)
+			{
+				if (typeOf(c, r) == FieldNodeType::Empty) continue;
+				float x, y; posOf(c, r, x, y);
+				float cx1 = x + CELL / 2, cy1 = y + CELL / 2;
+				if (c + 1 < COLS && typeOf(c + 1, r) != FieldNodeType::Empty)
+					m_uiSprite->DrawSprite(white, cx1, cy1 - 2, CELL + GAP, 4, 0.0f, XMFLOAT4(0.5f, 0.5f, 0.5f, 1));
+				if (r + 1 < ROWS && typeOf(c, r + 1) != FieldNodeType::Empty)
+					m_uiSprite->DrawSprite(white, cx1 - 2, cy1, 4, CELL + GAP, 0.0f, XMFLOAT4(0.5f, 0.5f, 0.5f, 1));
+			}
+		// ノード
+		for (int r = 0; r < ROWS; r++)
+			for (int c = 0; c < COLS; c++)
+			{
+				FieldNodeType t = typeOf(c, r);
+				if (t == FieldNodeType::Empty) continue;
+				float x, y; posOf(c, r, x, y);
+				bool isPlayer = (c == pd.fieldPlayerCol && r == pd.fieldPlayerRow);
+				m_uiSprite->DrawSprite(white, x, y, CELL, CELL, 0.0f,
+					MapNodeColor(t, pd.fieldNodeVisited[idxOf(c, r)], isPlayer));
+			}
+	}
+	m_uiSprite->End();
+
+	m_textRenderer->Begin();
+	m_textRenderer->DrawText(L"MAP", m_screenWidth / 2.0f - 30.0f, offY - 44.0f, 26.0f, D2D1::ColorF(1, 1, 1));
+	if (!haveMap)
+		m_textRenderer->DrawText(L"No map yet", m_screenWidth / 2.0f - 60.0f, m_screenHeight / 2.0f, 22.0f, D2D1::ColorF(0.7f, 0.7f, 0.7f));
+	else
+	{
+		for (int r = 0; r < ROWS; r++)
+			for (int c = 0; c < COLS; c++)
+			{
+				FieldNodeType t = typeOf(c, r);
+				if (t == FieldNodeType::Empty) continue;
+				float x, y; posOf(c, r, x, y);
+				bool isPlayer = (c == pd.fieldPlayerCol && r == pd.fieldPlayerRow);
+				m_textRenderer->DrawText(MapNodeLabel(t, isPlayer), x + 4.0f, y + CELL / 2 - 8.0f, 12.0f, D2D1::ColorF(1, 1, 1));
+			}
+	}
+	m_textRenderer->DrawText(L"click to close", m_screenWidth / 2.0f - 55.0f, offY + totalH + 16.0f, 16.0f, D2D1::ColorF(0.7f, 0.7f, 0.7f));
+	m_textRenderer->End();
 }

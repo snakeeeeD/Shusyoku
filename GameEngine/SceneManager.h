@@ -98,6 +98,9 @@ private:
     void DrawItemTooltip(const std::string& id, POINT mp);
     std::string HoveredItem(POINT mp) const;
 
+    bool m_mapOpen = false;
+    void DrawMap();
+
     bool m_restOpen = false;     // 3択画面 表示中
     bool m_restActive = false;   // 休憩の行動が未消費（サブ画面を開いている間もtrue）
     static constexpr int REST_HEAL = 20;
