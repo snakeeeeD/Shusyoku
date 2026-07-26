@@ -26,10 +26,11 @@ public:
     std::function<void(SceneType)> onChangeScene;
 
 private:
-    struct ShopItem { std::string id; int price; bool bought; };
+    enum class ShopKind { Card, Core, Material };
+    struct ShopItem { std::string id; int price; bool bought; ShopKind kind; };
     void GenerateStock();
+    void GetSlotBase(int i, float& cardX, float& baseY) const;
     int  PriceFor(const CardData* data) const;
-    std::wstring GetCardEffectText(const CardData* data) const;
 
     SpriteRenderer* m_spriteRenderer = nullptr;
     TextRenderer* m_textRenderer = nullptr;
@@ -41,9 +42,17 @@ private:
 
     std::vector<ShopItem> m_items;
     int  m_hoveredIndex = -1;
+    float m_time = 0.0f;
     bool m_readyForInput = false;
 
-    static constexpr int   STOCK_COUNT = 4;
+    static constexpr int   CARD_COUNT = 3;
+    static constexpr int   CORE_COUNT = 1;
+    static constexpr int   MAT_COUNT = 2;
+    static constexpr int   STOCK_COUNT = CARD_COUNT + CORE_COUNT + MAT_COUNT;
+    static constexpr int   CORE_PRICE = 120;
+    static constexpr int   MAT_PRICE = 40;
     static constexpr float CARD_W = 150.0f;
     static constexpr float CARD_H = 200.0f;
+
+    static constexpr float SHOP_SCALE = 1.4f;
 };

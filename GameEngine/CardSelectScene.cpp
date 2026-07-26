@@ -101,14 +101,17 @@ void CardSelectScene::GenerateChoices()
 
 void CardSelectScene::Update(float deltaTime)
 {
+    m_time += deltaTime;
     m_input.Update();
 }
 
 void CardSelectScene::Draw()
 {
-    const float totalW = CHOICE_COUNT * CARD_W + (CHOICE_COUNT - 1) * 30.0f;
+    const float cw = CardVisual::CARD_W * SEL_SCALE;
+    const float ch = CardVisual::CARD_H * SEL_SCALE;
+    const float totalW = CHOICE_COUNT * cw + (CHOICE_COUNT - 1) * 30.0f;
     const float startX = (m_screenWidth - totalW) / 2.0f;
-    const float cardY = (m_screenHeight - CARD_H) / 2.0f;
+    const float cardY = (m_screenHeight - ch) / 2.0f;
 
     m_spriteRenderer->Begin();
 
@@ -123,16 +126,11 @@ void CardSelectScene::Draw()
         const CardData* data = CardDataBase::Get(m_choices[i]);
         if (!data) continue;
 
-        float cardX = startX + i * (CARD_W + 30.0f);
+        float cardX = startX + i * (cw + 30.0f);
         float drawY = (i == m_hoveredIndex) ? cardY - 20.0f : cardY;
 
-        XMFLOAT4 color = CardVisual::GetCardColor(
-            data->type,
-            false
-        );
-
-        m_spriteRenderer->DrawSprite(m_whiteTexture, cardX, drawY,
-            CARD_W, CARD_H, 0.0f, color);
+        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, cardX, drawY, SEL_SCALE, 0.0f,
+            CardVisual::GetCardColor(data->type), data, m_time);
     }
 
     // スキップボタン
@@ -163,23 +161,10 @@ void CardSelectScene::Draw()
         const CardData* data = CardDataBase::Get(m_choices[i]);
         if (!data) continue;
 
-        float cardX = startX + i * (CARD_W + 30.0f);
+        float cardX = startX + i * (cw + 30.0f);
         float drawY = (i == m_hoveredIndex) ? cardY - 20.0f : cardY;
 
-        m_textRenderer->DrawText(data->name.c_str(),
-            cardX + 5.0f, drawY + 10.0f, 18.0f,
-            D2D1::ColorF(D2D1::ColorF::White));
-
-        wchar_t costText[32];
-        swprintf_s(costText, L"Cost: %d", data->cost);
-        m_textRenderer->DrawText(costText,
-            cardX + 5.0f, drawY + 36.0f, 14.0f,
-            D2D1::ColorF(D2D1::ColorF::Yellow));
-
-        m_textRenderer->DrawText(
-            GetCardEffectText(data).c_str(),
-            cardX + 5.0f, drawY + 60.0f, 13.0f,
-            D2D1::ColorF(D2D1::ColorF::LightGray));
+        CardVisual::DrawTexts(m_textRenderer, data, nullptr, cardX, drawY, SEL_SCALE, 0.0f, 1.0f);
     }
 
     m_textRenderer->End();
@@ -197,24 +182,21 @@ void CardSelectScene::HandleInput()
 
     POINT mousePos = m_input.GetMousePos();
 
-    const float totalW = CHOICE_COUNT * CARD_W + (CHOICE_COUNT - 1) * 30.0f;
+    const float cw = CardVisual::CARD_W * SEL_SCALE;
+    const float ch = CardVisual::CARD_H * SEL_SCALE;
+    const float totalW = CHOICE_COUNT * cw + (CHOICE_COUNT - 1) * 30.0f;
     const float startX = (m_screenWidth - totalW) / 2.0f;
-    const float cardY = (m_screenHeight - CARD_H) / 2.0f;
+    const float cardY = (m_screenHeight - ch) / 2.0f;
 
-    // ホバー判定
     m_hoveredIndex = -1;
     for (int i = 0; i < (int)m_choices.size(); i++)
     {
-        float cardX = startX + i * (CARD_W + 30.0f);
-        float drawY = (i == m_hoveredIndex) ? cardY - 20.0f : cardY;
-
-        bool hover = mousePos.x >= cardX && mousePos.x <= cardX + CARD_W
-            && mousePos.y >= drawY && mousePos.y <= drawY + CARD_H;
-
-        if (hover)
+        float cardX = startX + i * (cw + 30.0f);
+        float x, y, w, h; CardVisual::GetRect(cardX, cardY, SEL_SCALE, x, y, w, h);
+        if (mousePos.x >= x && mousePos.x <= x + w
+            && mousePos.y >= y && mousePos.y <= y + h)
         {
-            m_hoveredIndex = i;
-            break;
+            m_hoveredIndex = i; break;
         }
     }
 
@@ -239,20 +221,4 @@ void CardSelectScene::HandleInput()
         if (onChangeScene) onChangeScene(SceneType::Field);
         return;
     }
-}
-
-std::wstring CardSelectScene::GetCardEffectText(const CardData* data) const
-{
-    if (!data) return L"";
-    std::wstring result = data->description;
-
-    size_t pos;
-    if ((pos = result.find(L"{value}")) != std::wstring::npos)
-        result.replace(pos, 7, std::to_wstring(data->mainEffect.value));
-    if ((pos = result.find(L"{sub}")) != std::wstring::npos)
-        result.replace(pos, 5, std::to_wstring(data->subEffect.value));
-    if ((pos = result.find(L"{onhit}")) != std::wstring::npos)
-        result.replace(pos, 7, std::to_wstring(data->onHitEffect.value));
-
-    return result;
 }

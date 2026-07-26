@@ -42,12 +42,12 @@ private:
 
     std::vector<std::string> m_choices; // 選択肢のカードID
     int m_hoveredIndex;
-
-    std::wstring GetCardEffectText(const CardData* data) const;
+    float m_time = 0.0f;
 
     bool m_readyForInput = false;
 
     static constexpr int   CHOICE_COUNT = 3;
     static constexpr float CARD_W = 150.0f;
     static constexpr float CARD_H = 200.0f;
+    static constexpr float SEL_SCALE = 1.4f;
 };

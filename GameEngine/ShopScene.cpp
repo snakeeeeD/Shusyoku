@@ -1,4 +1,6 @@
 #include "ShopScene.h"
+#include "MaterialDataBase.h"
+#include "GameUtils.h"
 #include <cstdlib>
 #include <algorithm>
 
@@ -31,70 +33,155 @@ void ShopScene::GenerateStock()
 {
     m_readyForInput = false;
     m_items.clear();
-    std::vector<std::string> allIds = {
+
+    auto pickShuffled = [](std::vector<std::string> ids, int n, auto pushFn) {
+        for (int i = (int)ids.size() - 1; i > 0; i--) std::swap(ids[i], ids[rand() % (i + 1)]);
+        for (int i = 0; i < n && i < (int)ids.size(); i++) pushFn(ids[i]);
+        };
+
+    // カード
+    std::vector<std::string> cardIds = {
         "ATK_strike", "SKL_defend", "MOV_move", "ATK_Spin Slash", "MOV_dash",
         "ATK_poison_blade", "POW_power_attack", "POW_buff_defense"
     };
-    for (int i = (int)allIds.size() - 1; i > 0; i--) std::swap(allIds[i], allIds[rand() % (i + 1)]);
-    for (int i = 0; i < STOCK_COUNT && i < (int)allIds.size(); i++)
-    {
-        const CardData* d = CardDataBase::Get(allIds[i]);
-        if (!d) continue;
-        m_items.push_back({ allIds[i], PriceFor(d), false });
-    }
+    pickShuffled(cardIds, CARD_COUNT, [&](const std::string& id) {
+        const CardData* d = CardDataBase::Get(id);
+        if (d) m_items.push_back({ id, PriceFor(d), false, ShopKind::Card });
+        });
+
+    // コア
+    std::vector<std::string> coreIds;
+    for (auto& kv : MaterialDataBase::AllBases()) coreIds.push_back(kv.first);
+    pickShuffled(coreIds, CORE_COUNT, [&](const std::string& id) {
+        m_items.push_back({ id, CORE_PRICE, false, ShopKind::Core });
+        });
+
+    // 素材
+    std::vector<std::string> matIds;
+    for (auto& kv : MaterialDataBase::AllMaterials()) matIds.push_back(kv.first);
+    pickShuffled(matIds, MAT_COUNT, [&](const std::string& id) {
+        m_items.push_back({ id, MAT_PRICE, false, ShopKind::Material });
+        });
 }
 
-void ShopScene::Update(float) { m_input.Update(); }
+void ShopScene::Update(float deltaTime) 
+{
+    m_time += deltaTime; 
+    m_input.Update(); 
+}
+
+void ShopScene::GetSlotBase(int i, float& cardX, float& baseY) const
+{
+    const float cw = CardVisual::CARD_W * SHOP_SCALE;
+    const float ch = CardVisual::CARD_H * SHOP_SCALE;
+
+    int cardN = 0;
+    for (auto& it : m_items) if (it.kind == ShopKind::Card) cardN++;
+    int itemN = (int)m_items.size() - cardN;
+
+    int row, col, rowCount;
+    if (i < cardN) { row = 0; col = i;          rowCount = cardN; }   // 1行目：カード
+    else { row = 1; col = i - cardN;  rowCount = itemN; }   // 2行目：アイテム
+
+    float row0Y = 140.0f;
+    baseY = (row == 0) ? row0Y : row0Y + ch + 46.0f;
+
+    float totalW = rowCount * cw + (rowCount - 1) * 30.0f;
+    float startX = (m_screenWidth - totalW) / 2.0f;
+    cardX = startX + col * (cw + 30.0f);
+}
 
 void ShopScene::Draw()
 {
-    const float totalW = STOCK_COUNT * CARD_W + (STOCK_COUNT - 1) * 30.0f;
-    const float startX = (m_screenWidth - totalW) / 2.0f;
-    const float cardY = (m_screenHeight - CARD_H) / 2.0f;
-
     m_spriteRenderer->Begin();
     m_spriteRenderer->DrawSprite(TextureManager::Get("cardSelect_bg"), 0, 0,
         (float)m_screenWidth, (float)m_screenHeight, 0.0f, XMFLOAT4(1, 1, 1, 1));
 
     for (int i = 0; i < (int)m_items.size(); i++)
     {
-        const CardData* d = CardDataBase::Get(m_items[i].id);
-        if (!d) continue;
-        float cardX = startX + i * (CARD_W + 30.0f);
-        float drawY = (i == m_hoveredIndex) ? cardY - 20.0f : cardY;
-        XMFLOAT4 color = m_items[i].bought
-            ? XMFLOAT4(0.15f, 0.15f, 0.15f, 1.0f)
-            : CardVisual::GetCardColor(d->type, false);
-        m_spriteRenderer->DrawSprite(m_whiteTexture, cardX, drawY, CARD_W, CARD_H, 0.0f, color);
+        float cardX, by; GetSlotBase(i, cardX, by);
+        float drawY = (i == m_hoveredIndex) ? by - 20.0f : by;
+
+        if (m_items[i].kind == ShopKind::Card)
+        {
+            const CardData* d = CardDataBase::Get(m_items[i].id);
+            if (!d) continue;
+            XMFLOAT4 col = m_items[i].bought
+                ? XMFLOAT4(0.15f, 0.15f, 0.15f, 1.0f)
+                : CardVisual::GetCardColor(d->type, false);
+            CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, cardX, drawY, SHOP_SCALE, 0.0f, col, d, m_time);
+        }
+        else
+        {
+            float x, y, w, h; CardVisual::GetRect(cardX, drawY, SHOP_SCALE, x, y, w, h);
+            XMFLOAT4 col = m_items[i].bought ? XMFLOAT4(0.15f, 0.15f, 0.15f, 1.0f)
+                : (m_items[i].kind == ShopKind::Core) ? XMFLOAT4(0.42f, 0.32f, 0.22f, 1.0f)
+                : XMFLOAT4(0.20f, 0.35f, 0.35f, 1.0f);
+            m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, w, h, 0.0f, col);
+        }
     }
 
     float leaveW = 160.0f, leaveH = 44.0f;
-    float leaveX = (m_screenWidth - leaveW) / 2.0f, leaveY = m_screenHeight - 90.0f;
+    float leaveX = (m_screenWidth - leaveW) / 2.0f, leaveY = m_screenHeight - 70.0f;
     m_spriteRenderer->DrawSprite(m_whiteTexture, leaveX, leaveY, leaveW, leaveH, 0.0f,
         XMFLOAT4(0.3f, 0.3f, 0.35f, 0.95f));
     m_spriteRenderer->End();
 
     m_textRenderer->Begin();
-    m_textRenderer->DrawText(L"SHOP", m_screenWidth / 2.0f - 40.0f, 60.0f, 28.0f,
-        D2D1::ColorF(D2D1::ColorF::White));
+    m_textRenderer->DrawText(L"SHOP", m_screenWidth / 2.0f - 40.0f, 55.0f, 26.0f, D2D1::ColorF(D2D1::ColorF::White));
+
+    // 見出し（拡大で上にはみ出す分 fw を引いて、カード上端の少し上に置く）
+    const float fw = (CardVisual::CARD_H * SHOP_SCALE - CardVisual::CARD_H) / 2.0f;
+    int cardN = 0; for (auto& it : m_items) if (it.kind == ShopKind::Card) cardN++;
+    if (cardN > 0)
+    {
+        float cx, by; GetSlotBase(0, cx, by);
+        m_textRenderer->DrawText(L"CARDS", m_screenWidth / 2.0f - 40.0f, by - fw - 24.0f, 16.0f, D2D1::ColorF(0.8f, 0.85f, 1.0f));
+    }
+    if (cardN < (int)m_items.size())
+    {
+        float cx, by; GetSlotBase(cardN, cx, by);
+        m_textRenderer->DrawText(L"ITEMS", m_screenWidth / 2.0f - 40.0f, by - fw - 24.0f, 16.0f, D2D1::ColorF(1.0f, 0.85f, 0.6f));
+    }
 
     for (int i = 0; i < (int)m_items.size(); i++)
     {
-        const CardData* d = CardDataBase::Get(m_items[i].id);
-        if (!d) continue;
-        float cardX = startX + i * (CARD_W + 30.0f);
-        float drawY = (i == m_hoveredIndex) ? cardY - 20.0f : cardY;
+        float cardX, by; GetSlotBase(i, cardX, by);
+        float drawY = (i == m_hoveredIndex) ? by - 20.0f : by;
+        float x, y, w, h; CardVisual::GetRect(cardX, drawY, SHOP_SCALE, x, y, w, h);
 
-        m_textRenderer->DrawText(d->name.c_str(), cardX + 5, drawY + 10, 18.0f, D2D1::ColorF(D2D1::ColorF::White));
-        wchar_t costText[32]; swprintf_s(costText, L"Cost: %d", d->cost);
-        m_textRenderer->DrawText(costText, cardX + 5, drawY + 36, 14.0f, D2D1::ColorF(D2D1::ColorF::Yellow));
-        m_textRenderer->DrawText(GetCardEffectText(d).c_str(), cardX + 5, drawY + 60, 13.0f, D2D1::ColorF(D2D1::ColorF::LightGray));
+        if (m_items[i].kind == ShopKind::Card)
+        {
+            const CardData* d = CardDataBase::Get(m_items[i].id);
+            if (!d) continue;
+            CardVisual::DrawTexts(m_textRenderer, d, nullptr, cardX, drawY, SHOP_SCALE, 0.0f, 1.0f);
+        }
+        else
+        {
+            std::wstring nm, desc; const wchar_t* tag; D2D1_COLOR_F tagCol;
+            if (m_items[i].kind == ShopKind::Core)
+            {
+                const BaseDef* b = MaterialDataBase::GetBase(m_items[i].id);
+                if (b) { nm = ToWString(b->name); desc = ToWString(b->desc); }
+                tag = L"CORE"; tagCol = D2D1::ColorF(1.0f, 0.85f, 0.5f);
+            }
+            else
+            {
+                const MaterialDef* mm = MaterialDataBase::GetMaterial(m_items[i].id);
+                if (mm) { nm = ToWString(mm->name); desc = ToWString(mm->desc); }
+                tag = L"MATERIAL"; tagCol = D2D1::ColorF(0.6f, 0.9f, 0.9f);
+            }
+            m_textRenderer->DrawText(nm.c_str(), x + 6, y + 10, 17.0f, D2D1::ColorF(D2D1::ColorF::White));
+            m_textRenderer->DrawText(tag, x + 6, y + 34, 12.0f, tagCol);
+            m_textRenderer->DrawText(CardVisual::WrapText(desc, 9).c_str(), x + 6, y + 56, 12.0f, D2D1::ColorF(D2D1::ColorF::LightGray));
+        }
 
         if (m_items[i].bought)
-            m_textRenderer->DrawText(L"SOLD", cardX + 45, drawY + CARD_H - 34, 22.0f, D2D1::ColorF(D2D1::ColorF::Red));
-        else {
+            m_textRenderer->DrawText(L"SOLD", x + 40, y + h - 32, 22.0f, D2D1::ColorF(D2D1::ColorF::Red));
+        else
+        {
             wchar_t priceText[32]; swprintf_s(priceText, L"%d G", m_items[i].price);
-            m_textRenderer->DrawText(priceText, cardX + 5, drawY + CARD_H - 34, 22.0f, D2D1::ColorF(1.0f, 0.9f, 0.3f));
+            m_textRenderer->DrawText(priceText, x + 6, y + h - 32, 20.0f, D2D1::ColorF(1.0f, 0.9f, 0.3f));
         }
     }
     m_textRenderer->DrawText(L"Leave", leaveX + 50, leaveY + 12, 20.0f, D2D1::ColorF(D2D1::ColorF::White));
@@ -106,16 +193,13 @@ void ShopScene::HandleInput()
     if (!m_readyForInput) { if (!m_input.GetMouseButtonPress(0)) m_readyForInput = true; return; }
 
     POINT mousePos = m_input.GetMousePos();
-    const float totalW = STOCK_COUNT * CARD_W + (STOCK_COUNT - 1) * 30.0f;
-    const float startX = (m_screenWidth - totalW) / 2.0f;
-    const float cardY = (m_screenHeight - CARD_H) / 2.0f;
-
     m_hoveredIndex = -1;
     for (int i = 0; i < (int)m_items.size(); i++)
     {
-        float cardX = startX + i * (CARD_W + 30.0f);
-        if (mousePos.x >= cardX && mousePos.x <= cardX + CARD_W
-            && mousePos.y >= cardY && mousePos.y <= cardY + CARD_H) {
+        float cardX, by; GetSlotBase(i, cardX, by);
+        float x, y, w, h; CardVisual::GetRect(cardX, by, SHOP_SCALE, x, y, w, h);
+        if (mousePos.x >= x && mousePos.x <= x + w && mousePos.y >= y && mousePos.y <= y + h)
+        {
             m_hoveredIndex = i; break;
         }
     }
@@ -125,8 +209,10 @@ void ShopScene::HandleInput()
         ShopItem& it = m_items[m_hoveredIndex];
         if (!it.bought && PlayerDataManager::SpendGold(it.price))
         {
-            PlayerDataManager::AddCard(it.id);
+            if (it.kind == ShopKind::Card) PlayerDataManager::AddCard(it.id);
+            else                           PlayerDataManager::AddMaterial(it.id, 1);
             it.bought = true;
+            PlayerDataManager::Save();
         }
     }
 
@@ -138,15 +224,4 @@ void ShopScene::HandleInput()
     {
         if (onChangeScene) onChangeScene(SceneType::Field);
     }
-}
-
-std::wstring ShopScene::GetCardEffectText(const CardData* data) const
-{
-    if (!data) return L"";
-    std::wstring result = data->description;
-    std::wstring ph = L"{value}";
-    size_t pos = result.find(ph);
-    if (pos != std::wstring::npos)
-        result.replace(pos, ph.size(), std::to_wstring(data->mainEffect.value));
-    return result;
 }

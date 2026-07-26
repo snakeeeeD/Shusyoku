@@ -47,7 +47,23 @@ public:
         return false;
     }
 
-    static std::wstring GetEffectText(const CardData* data, const Player* player)
+    // N文字ごとに改行を差し込む（既存の\nはそのまま尊重）
+    static std::wstring WrapText(const std::wstring& s, int n)
+    {
+        if (n <= 0) return s;
+        std::wstring out;
+        int lineLen = 0;
+        for (wchar_t c : s)
+        {
+            if (c == L'\n') { out += c; lineLen = 0; continue; }
+            if (lineLen >= n) { out += L'\n'; lineLen = 0; }
+            out += c;
+            lineLen++;
+        }
+        return out;
+    }
+
+    static std::wstring GetEffectText(const CardData* data, const Player* player = nullptr, int wrapChars = 8)
     {
         if (!data) return L"";
         int actualValue = data->mainEffect.value;
@@ -76,7 +92,7 @@ public:
         if (data->exhaust)
             result += L" \n[廃棄]";
 
-        return result;
+        return WrapText(result, wrapChars);
     }
 
     // 中心基準スケールの矩形
