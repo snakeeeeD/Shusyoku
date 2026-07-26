@@ -244,20 +244,15 @@ void CardSelectScene::HandleInput()
 std::wstring CardSelectScene::GetCardEffectText(const CardData* data) const
 {
     if (!data) return L"";
-
     std::wstring result = data->description;
 
-    std::wstring placeholder = L"{value}";
-    size_t pos = result.find(placeholder);
-
-    if (pos != std::wstring::npos)
-    {
-        result.replace(
-            pos,
-            placeholder.size(),
-            std::to_wstring(data->mainEffect.value)
-        );
-    }
+    size_t pos;
+    if ((pos = result.find(L"{value}")) != std::wstring::npos)
+        result.replace(pos, 7, std::to_wstring(data->mainEffect.value));
+    if ((pos = result.find(L"{sub}")) != std::wstring::npos)
+        result.replace(pos, 5, std::to_wstring(data->subEffect.value));
+    if ((pos = result.find(L"{onhit}")) != std::wstring::npos)
+        result.replace(pos, 7, std::to_wstring(data->onHitEffect.value));
 
     return result;
 }

@@ -3,33 +3,48 @@
     {
       "id": "core_slash",
       "name": "斬核",
-      "desc": "近接ダメージの土台",
+      "desc": "近接ダメージ / 素材2枠",
       "type": "Attack",
       "rangeType": "Adjacent",
       "range": 1,
-      "cost": 1,
+      "cost": 0,
+      "modSlots": 2,
       "mainType": "Damage",
       "mainValue": 4
     },
     {
+      "id": "core_slash_h",
+      "name": "重斬核",
+      "desc": "近接ダメージ / 素材3枠",
+      "type": "Attack",
+      "rangeType": "Adjacent",
+      "range": 1,
+      "cost": 1,
+      "modSlots": 3,
+      "mainType": "Damage",
+      "mainValue": 6
+    },
+    {
       "id": "core_shield",
       "name": "盾核",
-      "desc": "スキルの土台",
+      "desc": "ブロック / 素材2枠",
       "type": "Skill",
       "rangeType": "None",
       "range": 0,
       "cost": 1,
+      "modSlots": 2,
       "mainType": "Block",
       "mainValue": 4
     },
     {
       "id": "core_power",
       "name": "力核",
-      "desc": "パワーの土台",
+      "desc": "パワー / 素材1枠",
       "type": "Power",
       "rangeType": "None",
       "range": 0,
       "cost": 1,
+      "modSlots": 1,
       "mainType": "None",
       "mainValue": 0
     }

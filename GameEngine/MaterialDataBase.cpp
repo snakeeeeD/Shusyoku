@@ -31,6 +31,7 @@ void MaterialDataBase::Load(const std::string& path) {
         d.type = b["type"]; d.rangeType = b["rangeType"];
         d.range = b.value("range", 0); d.cost = b.value("cost", 0);
         d.mainType = b.value("mainType", "None"); d.mainValue = b.value("mainValue", 0);
+        d.modSlots = b.value("modSlots", 2);
         s_bases[d.id] = d;
     }
     for (auto& m : j["materials"]) {

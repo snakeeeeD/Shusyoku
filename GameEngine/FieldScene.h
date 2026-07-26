@@ -25,6 +25,7 @@ public:
     void HandleInput() override;
 
     std::function<void(SceneType)> onChangeScene;
+    std::function<void()> onRest;
     const std::string& GetCurrentBattleEnemyId() const { return m_currentEnemyId; }
 
     int m_currentBattleSeed = 0;

@@ -514,9 +514,26 @@ void BattleScene::Update(float deltaTime)
         if (m_enemies.empty())
         {
             m_battleResult = BattleResult::Win;
+
             // HPを保存、現在のマスをクリア済みに
             auto& pd = PlayerDataManager::GetData();
             pd.hp = m_player->GetHp();
+
+            // 素材ドロップ判定
+            for (auto& eid : m_defeatedEnemyIds)
+            {
+                const EnemyData* ed = EnemyDataBase::Get(eid);
+                if (!ed) continue;
+                for (auto& d : ed->drops)
+                {
+                    if (rand() % 100 < d.chance)
+                    {
+                        int n = d.min + (d.max > d.min ? rand() % (d.max - d.min + 1) : 0);
+                        pd.materials[d.id] += n;
+                        m_dropResult.push_back({ d.id, n, d.rare });   // 表示用
+                    }
+                }
+            }
 
             int nodeIdx = pd.fieldPlayerCol * 7 + pd.fieldPlayerRow;
             if (nodeIdx >= 0 && nodeIdx < (int)pd.fieldNodeVisited.size())
@@ -928,6 +945,7 @@ void BattleScene::Draw()
     ctx.hoveredCell = m_hoveredCell;
     ctx.highlightTimer = m_highlightTimer;
     ctx.battleResult = m_battleResult;
+    ctx.drops = &m_dropResult;
     ctx.showDrawPile = m_showDrawPile;
     ctx.cardSelecting = m_cardSelecting;
     ctx.showDiscardPile = m_showDiscardPile;
@@ -1866,6 +1884,9 @@ void BattleScene::ProcessDeadEnemies()
             std::remove(m_enemies.begin(), m_enemies.end(), enemy),
             m_enemies.end()
         );
+
+        m_defeatedEnemyIds.push_back(enemy->GetId());
+
         delete enemy;
     }
 

@@ -45,6 +45,12 @@ public:
     std::vector<std::pair<std::string, int>> CraftBases() const;
     std::vector<std::pair<std::string, int>> CraftMods() const;
     std::string CraftRecipeId() const;
+    int CraftModSlots() const;
+
+    float m_craftFxTimer = 0.0f;         // >0の間 演出再生
+    std::string m_craftFxCard;           // 完成カードID
+    static constexpr float CRAFT_FX_DURATION = 0.9f;
+    void DrawCraftFx();
 
 private:
     Scene* m_currentScene;
@@ -91,4 +97,12 @@ private:
     void DrawInventory();
     void DrawItemTooltip(const std::string& id, POINT mp);
     std::string HoveredItem(POINT mp) const;
+
+    bool m_restOpen = false;     // 3択画面 表示中
+    bool m_restActive = false;   // 休憩の行動が未消費（サブ画面を開いている間もtrue）
+    static constexpr int REST_HEAL = 20;
+    void DrawRest();
+    void HandleRestClick(POINT m);
+    void FinishRest();
+    void GetRestBtnRect(int i, float& x, float& y, float& w, float& h) const;
 };

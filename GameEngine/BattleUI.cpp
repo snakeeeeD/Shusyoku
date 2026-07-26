@@ -7,6 +7,8 @@
 #include "GameUtils.h"
 #include "RangeShape.h"
 #include "UiNotice.h"
+#include "MaterialDataBase.h"
+#include "GameUtils.h"
 #include <algorithm>
 
 using namespace DirectX;
@@ -629,6 +631,23 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         m_textRenderer->DrawText(L"Victory!",
             m_screenWidth / 2.0f - 80.0f, m_screenHeight / 2.0f - 30.0f,
             60.0f, D2D1::ColorF(D2D1::ColorF::Gold));
+        if (ctx.battleResult == BattleResult::Win && ctx.drops)
+        {
+            float y = m_screenHeight / 2.0f + 90.0f;
+            for (auto& d : *ctx.drops)
+            {
+                std::wstring nm;
+                if (auto mm = MaterialDataBase::GetMaterial(d.id)) nm = ToWString(mm->name);
+                else if (auto bb = MaterialDataBase::GetBase(d.id)) nm = ToWString(bb->name);
+                else nm = ToWString(d.id);
+
+                wchar_t buf[80];
+                swprintf_s(buf, L"%s x%d%s", nm.c_str(), d.count, d.rare ? L" (RARE!)" : L"");
+                m_textRenderer->DrawText(buf, m_screenWidth / 2.0f - 100.0f, y, 20.0f,
+                    d.rare ? D2D1::ColorF(1.0f, 0.85f, 0.2f) : D2D1::ColorF(D2D1::ColorF::White));
+                y += 26.0f;
+            }
+        }
         m_textRenderer->DrawText(L"ƒNƒŠƒbƒN‚ÅŽŸ‚Ö",
             m_screenWidth / 2.0f - 80.0f, m_screenHeight / 2.0f + 40.0f,
             24.0f, D2D1::ColorF(D2D1::ColorF::White));

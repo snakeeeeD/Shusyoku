@@ -61,6 +61,8 @@ public:
     void SetOverflow(int o) { m_overflow = o; }
     void SetCategory(EncCategory c) { m_category = c; }
 
+    std::vector<DropShown> m_dropResult;
+
 private:
     BattleUI* m_battleUI;
     GridMap* m_gridMap;
@@ -88,6 +90,8 @@ private:
 
     Player* m_player;
     std::vector<Enemy*> m_enemies;
+
+    std::vector<std::string> m_defeatedEnemyIds;
 
     void AddEnemy(int col, int row, const std::string& id);
 

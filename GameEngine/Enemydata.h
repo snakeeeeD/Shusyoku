@@ -3,6 +3,13 @@
 #include <vector>
 #include <string>
 
+struct DropDef {
+    std::string id;
+    int chance = 0;
+    int min = 1, max = 1;
+    bool rare = false;
+};
+
 struct EnemyData
 {
     std::string id;          // Enemy‚Ì–¼‘O
@@ -15,4 +22,5 @@ struct EnemyData
     bool sequential = false;   // true‚È‚çs“®‚ğ’è‹`‡‚É1‚Â‚¸‚Â‰ñ‚·
     std::vector<std::pair<int, int>> gridShape;
     std::vector<EnemyAction> actions;
+    std::vector<DropDef> drops;
 };

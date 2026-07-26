@@ -67,6 +67,13 @@ struct HPBarInfo
     bool hasBurn;
 };
 
+struct DropShown 
+{
+    std::string id;
+    int count;
+    bool rare; 
+};
+
 struct BattleUIContext
 {
     Player* player;
@@ -102,6 +109,8 @@ struct BattleUIContext
     int discardSelectCount = 0;
     const std::vector<int>* discardSelected = nullptr;
     bool discardViewMode = false;
+
+    const std::vector<DropShown>* drops = nullptr;
 };
 
 class BattleUI

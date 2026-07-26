@@ -6,6 +6,7 @@
 struct BaseDef {
     std::string id, name, desc, type, rangeType, mainType;
     int range = 0, cost = 0, mainValue = 0;
+    int modSlots = 2;
 };
 
 struct MatEntry {

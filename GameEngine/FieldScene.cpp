@@ -575,9 +575,8 @@ void FieldScene::HandleInput()
                     case FieldNodeType::Rest:
                     {
                         node.visited = true;
-                        auto& playerData = PlayerDataManager::GetData();
-                        playerData.hp = min(playerData.hp + 20, playerData.maxHp);
                         SaveProgress();
+                        if (onRest) onRest();           // 回復/強化/合成の3択はSceneManager側で
                         break;
                     }
                     case FieldNodeType::Shop:

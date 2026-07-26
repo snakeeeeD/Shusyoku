@@ -131,6 +131,17 @@ void EnemyDataBase::Init()
                     data.gridShape.push_back({ 0, 0 });
                 }
 
+                if (e.contains("drops"))
+                    for (auto& d : e["drops"]) {
+                        DropDef dd;
+                        dd.id = d["id"];
+                        dd.chance = d.value("chance", 0);
+                        dd.min = d.value("min", 1);
+                        dd.max = d.value("max", 1);
+                        dd.rare = d.value("rare", false);
+                        data.drops.push_back(dd);
+                    }
+
                 m_data[data.id] = data;
 
                 // ì«Ç›çûÇ›ämîF

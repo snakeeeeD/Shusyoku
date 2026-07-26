@@ -8,6 +8,8 @@
 #include "TerrainDataBase.h"
 #include "MaterialDataBase.h"
 
+#include <cmath>
+
 #include "External/imgui/imgui.h"
 
 struct ItemInfo { std::wstring name, desc; std::string category; bool valid = false; };
@@ -135,6 +137,7 @@ void SceneManager::ChangeScene(SceneType type)
 		{
 			auto scene = new FieldScene();
 			scene->onChangeScene = [this](SceneType type) { ChangeScene(type); };
+			scene->onRest = [this]() { m_restOpen = true; m_restActive = true; }; 
 			m_currentScene = scene;
 			break;
 		}
@@ -161,6 +164,8 @@ void SceneManager::Draw()
 	if (m_currentType != SceneType::Title) DrawOverlay();
 	if (m_craftOpen) DrawCraft();
 	if (m_invOpen) DrawInventory();
+	if (m_restOpen) DrawRest();  
+	if (m_craftFxTimer > 0.0f) DrawCraftFx();  
 }
 
 void SceneManager::DrawOverlay()
@@ -268,6 +273,14 @@ void SceneManager::HandleInput()
 {
 	m_uiInput.Update();
 
+	if (m_craftFxTimer > 0.0f) return;           // 演出中は入力停止
+	if (m_restOpen)                              // 休憩の3択
+	{
+		if (m_uiInput.GetMouseButtonTrigger(0))
+			HandleRestClick(m_uiInput.GetMousePos());
+		return;
+	}
+
 	if (m_currentType != SceneType::Title)
 	{
 		POINT m = m_uiInput.GetMousePos();
@@ -303,7 +316,21 @@ void SceneManager::HandleInput()
 				if (m_deckUpgradeMode)
 				{
 					int idx = GetDeckCardAt(m);
-					if (idx >= 0) { PlayerDataManager::UpgradeCard(idx); return; }
+					if (idx >= 0)
+					{
+						std::string before = PlayerDataManager::GetData().deck[idx];
+						PlayerDataManager::UpgradeCard(idx);
+						const std::string& after = PlayerDataManager::GetData().deck[idx];
+						if (after != before)                 // 実際に強化された時だけ演出
+						{
+							m_craftFxCard = after;
+							m_craftFxTimer = CRAFT_FX_DURATION;
+							// 休憩中ならUpdate()が演出終了時にFinishRestを呼ぶ（合成と同じ経路）
+						}
+						return;
+					}
+					// 空白クリック
+					if (m_restActive) { m_deckOpen = false; m_deckUpgradeMode = false; m_restOpen = true; return; }
 					m_deckUpgradeMode = false; return;
 				}
 				m_deckOpen = false;                                               // 通常は空白で閉じる
@@ -345,7 +372,18 @@ void SceneManager::HandleInput()
 void SceneManager::Update(float deltaTime)
 {
 	m_uiTime += deltaTime;
-	if (m_deckOpen || m_craftOpen || m_invOpen) return; // オーバーレイ/合成中はシーンを止める
+
+	if (m_craftFxTimer > 0.0f)
+	{
+		m_craftFxTimer -= deltaTime;
+		if (m_craftFxTimer <= 0.0f)
+		{
+			m_craftFxTimer = 0.0f;
+			if (m_restActive) FinishRest();      // 休憩でのクラフトは演出後に終了
+		}
+	}
+
+	if (m_deckOpen || m_craftOpen || m_invOpen || m_restOpen || m_craftFxTimer > 0.0f) return;
 	if (m_currentScene) m_currentScene->Update(deltaTime);
 }
 
@@ -396,6 +434,13 @@ std::string SceneManager::CraftRecipeId() const
 	return id;
 }
 
+int SceneManager::CraftModSlots() const
+{
+	if (m_craftBase.empty()) return 2;
+	const BaseDef* b = MaterialDataBase::GetBase(m_craftBase);
+	return b ? b->modSlots : 2;
+}
+
 void SceneManager::GetCraftSlotRect(int i, float& x, float& y, float& w, float& h) const
 {
 	w = 150.0f; h = 60.0f; y = 130.0f;
@@ -431,10 +476,11 @@ void SceneManager::DrawCraft()
 		XMFLOAT4(0.0f, 0.0f, 0.05f, 0.9f));
 
 	// 枠
-	for (int i = 0; i < 3; i++)
+	int nSlots = 1 + CraftModSlots();
+	for (int i = 0; i < nSlots; i++)
 	{
 		float x, y, w, h; GetCraftSlotRect(i, x, y, w, h);
-		bool filled = (i == 0) ? !m_craftBase.empty() : (int)m_craftMods.size() > i - 1;
+		bool filled = (i == 0) ? !m_craftBase.empty() : (int)m_craftMods.size() >= i;
 		m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f,
 			filled ? XMFLOAT4(0.25f, 0.35f, 0.5f, 1.0f) : XMFLOAT4(0.15f, 0.15f, 0.2f, 1.0f));
 	}
@@ -454,7 +500,7 @@ void SceneManager::DrawCraft()
 	// 作成ボタン
 	{
 		float x, y, w, h; GetCraftBtnRect(x, y, w, h);
-		bool ready = !m_craftBase.empty();
+		bool ready = !m_craftBase.empty() && (int)m_craftMods.size() >= CraftModSlots();
 		m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f,
 			ready ? XMFLOAT4(0.3f, 0.55f, 0.3f, 1.0f) : XMFLOAT4(0.25f, 0.25f, 0.25f, 1.0f));
 	}
@@ -474,11 +520,10 @@ void SceneManager::DrawCraft()
 	m_textRenderer->Begin();
 	m_textRenderer->DrawText(L"Craft", m_screenWidth / 2.0f - 30.0f, 70.0f, 28.0f, D2D1::ColorF(1, 1, 1));
 
-	const wchar_t* labels[3] = { L"Base", L"Mod1", L"Mod2" };
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < nSlots; i++)
 	{
 		float x, y, w, h; GetCraftSlotRect(i, x, y, w, h);
-		std::wstring t = labels[i];
+		std::wstring t = (i == 0) ? L"Base" : (L"Mod" + std::to_wstring(i));
 		if (i == 0 && !m_craftBase.empty()) t = matName(m_craftBase);
 		if (i > 0 && (int)m_craftMods.size() >= i) t = matName(m_craftMods[i - 1]);
 		m_textRenderer->DrawText(t.c_str(), x + 8.0f, y + 18.0f, 18.0f, D2D1::ColorF(1, 1, 1));
@@ -546,12 +591,14 @@ void SceneManager::HandleCraftClick(POINT m)
 	auto bases = CraftBases();
 	for (int i = 0; i < (int)bases.size(); i++) {
 		float x, y, w, h; GetCraftBaseRect(i, x, y, w, h);
-		if (m.x >= x && m.x <= x + w && m.y >= y && m.y <= y + h) {
+		if (m.x >= x && m.x <= x + w && m.y >= y && m.y <= y + h)
+		{
 			const std::string& id = bases[i].first;
-			// 今の土台を外した状態で、所持数に空きがあるか
 			int used = usedCount(id) - (m_craftBase == id ? 1 : 0);
-			if (used < PlayerDataManager::MaterialCount(id))
+			if (used < PlayerDataManager::MaterialCount(id)) {
 				m_craftBase = id;
+				while ((int)m_craftMods.size() > CraftModSlots()) m_craftMods.pop_back();  // 枠が減ったら余りを外す
+			}
 			return;
 		}
 	}
@@ -561,18 +608,20 @@ void SceneManager::HandleCraftClick(POINT m)
 		float x, y, w, h; GetCraftModRect(i, x, y, w, h);
 		if (m.x >= x && m.x <= x + w && m.y >= y && m.y <= y + h) {
 			const std::string& id = mods[i].first;
-			if ((int)m_craftMods.size() < 2 && usedCount(id) < PlayerDataManager::MaterialCount(id))
+			if ((int)m_craftMods.size() < CraftModSlots() && usedCount(id) < PlayerDataManager::MaterialCount(id))
 				m_craftMods.push_back(id);
 			return;
 		}
 	}
 	// どれでもない所（枠外）→ 閉じる
 	m_craftOpen = false;
+	if (m_restActive) m_restOpen = true;
 }
 
 void SceneManager::DoCraft()
 {
 	if (m_craftBase.empty()) return;
+	if ((int)m_craftMods.size() < CraftModSlots()) return;   // 枠が全部埋まっていないと作れない
 
 	// 必要数を集計して所持チェック
 	std::map<std::string, int> need;
@@ -580,6 +629,8 @@ void SceneManager::DoCraft()
 	for (auto& mod : m_craftMods) need[mod]++;
 	for (auto& kv : need)
 		if (PlayerDataManager::MaterialCount(kv.first) < kv.second) return;   // 足りない
+
+	std::string rid = CraftRecipeId();           // 消費前に確定
 
 	// 消費
 	for (auto& kv : need)
@@ -590,6 +641,9 @@ void SceneManager::DoCraft()
 	PlayerDataManager::Save();
 
 	m_craftBase.clear(); m_craftMods.clear();
+
+	m_craftFxCard = rid;                          // 演出開始
+	m_craftFxTimer = CRAFT_FX_DURATION;
 }
 
 void SceneManager::GetCraftBaseRect(int i, float& x, float& y, float& w, float& h) const
@@ -695,4 +749,138 @@ void SceneManager::DrawInventory()
 
 	std::string hid = HoveredItem(m_uiInput.GetMousePos());
 	if (!hid.empty()) DrawItemTooltip(hid, m_uiInput.GetMousePos());
+}
+
+void SceneManager::GetRestBtnRect(int i, float& x, float& y, float& w, float& h) const
+{
+	w = 260.0f; h = 60.0f;
+	x = m_screenWidth / 2.0f - w / 2.0f;
+	y = m_screenHeight / 2.0f - 110.0f + i * 80.0f;
+}
+
+void SceneManager::DrawRest()
+{
+	ID3D11ShaderResourceView* white = TextureManager::Get("white");
+	POINT mp = m_uiInput.GetMousePos();
+
+	m_uiSprite->Begin();
+	m_uiSprite->DrawSprite(white, 0, 0, (float)m_screenWidth, (float)m_screenHeight, 0.0f,
+		XMFLOAT4(0.0f, 0.0f, 0.05f, 0.9f));
+	XMFLOAT4 base[3] = {
+		XMFLOAT4(0.25f, 0.45f, 0.30f, 1.0f),   // Heal
+		XMFLOAT4(0.50f, 0.45f, 0.20f, 1.0f),   // Upgrade
+		XMFLOAT4(0.40f, 0.30f, 0.50f, 1.0f) }; // Craft
+	for (int i = 0; i < 3; i++)
+	{
+		float x, y, w, h; GetRestBtnRect(i, x, y, w, h);
+		bool hov = mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h;
+		XMFLOAT4 c = base[i];
+		if (hov) { c.x += 0.1f; c.y += 0.1f; c.z += 0.1f; }
+		m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, c);
+	}
+	m_uiSprite->End();
+
+	m_textRenderer->Begin();
+	m_textRenderer->DrawText(L"REST", m_screenWidth / 2.0f - 45.0f,
+		m_screenHeight / 2.0f - 190.0f, 32.0f, D2D1::ColorF(1, 1, 1));
+	const wchar_t* labels[3] = { L"Heal +20", L"Upgrade a card", L"Craft" };
+	for (int i = 0; i < 3; i++)
+	{
+		float x, y, w, h; GetRestBtnRect(i, x, y, w, h);
+		m_textRenderer->DrawText(labels[i], x + 20.0f, y + 18.0f, 22.0f, D2D1::ColorF(1, 1, 1));
+	}
+	m_textRenderer->End();
+}
+
+void SceneManager::HandleRestClick(POINT m)
+{
+	for (int i = 0; i < 3; i++)
+	{
+		float x, y, w, h; GetRestBtnRect(i, x, y, w, h);
+		if (m.x >= x && m.x <= x + w && m.y >= y && m.y <= y + h)
+		{
+			if (i == 0)          // Heal
+			{
+				auto& pd = PlayerDataManager::GetData();
+				pd.hp += REST_HEAL;
+				if (pd.hp > pd.maxHp) pd.hp = pd.maxHp;
+				FinishRest();
+			}
+			else if (i == 1)     // Upgrade（デッキ強化モードを流用）
+			{
+				m_restOpen = false;
+				m_deckOpen = true; m_deckUpgradeMode = true; m_deckScroll = 0.0f;
+			}
+			else                 // Craft
+			{
+				m_restOpen = false;
+				m_craftOpen = true; m_craftBase.clear(); m_craftMods.clear();
+			}
+			return;
+		}
+	}
+}
+
+void SceneManager::FinishRest()
+{
+	m_restActive = false;
+	m_restOpen = false;
+	m_deckOpen = false; m_deckUpgradeMode = false; m_deckRemoveMode = false;
+	m_craftOpen = false;
+	PlayerDataManager::Save();
+}
+
+void SceneManager::DrawCraftFx()
+{
+	ID3D11ShaderResourceView* white = TextureManager::Get("white");
+	const CardData* card = CardDataBase::Get(m_craftFxCard);
+	float t = 1.0f - m_craftFxTimer / CRAFT_FX_DURATION;   // 0→1
+	if (t < 0) t = 0; if (t > 1) t = 1;
+
+	float cx = m_screenWidth / 2.0f;
+	float cy = 280.0f;                                     // プレビューと同じ中心
+
+	m_uiSprite->Begin();
+
+	// フラッシュ（前半で白く光ってフェード）
+	float flash = 1.0f - t * 2.0f;
+	if (flash > 0.0f)
+		m_uiSprite->DrawSprite(white, 0, 0, (float)m_screenWidth, (float)m_screenHeight, 0.0f,
+			XMFLOAT4(1, 1, 1, flash * 0.7f));
+
+	// パーティクル（中心から放射）
+	XMFLOAT4 pcol = card ? CardVisual::GetCardColor(card->type) : XMFLOAT4(1, 1, 1, 1);
+	int N = 14;
+	float r = t * 300.0f;
+	float psize = 14.0f * (1.0f - t);
+	float palpha = 1.0f - t;
+	for (int k = 0; k < N; k++)
+	{
+		float ang = (float)k / N * 6.2831853f;
+		float px = cx + cosf(ang) * r;
+		float py = cy + sinf(ang) * r;
+		m_uiSprite->DrawSprite(white, px - psize / 2, py - psize / 2, psize, psize, 0.0f,
+			XMFLOAT4(pcol.x, pcol.y, pcol.z, palpha));
+	}
+
+	// カード出現（小→大→少し戻す＝オーバーシュート）
+	float s = (t < 0.6f) ? 0.4f + (t / 0.6f) * 1.0f
+		: 1.4f - ((t - 0.6f) / 0.4f) * 0.2f;
+	if (card)
+	{
+		float bx = cx - CardVisual::CARD_W / 2.0f;
+		float by = cy - CardVisual::CARD_H / 2.0f;
+		CardVisual::DrawBase(m_uiSprite, white, bx, by, s, 0.0f,
+			CardVisual::GetCardColor(card->type), card, m_uiTime);
+	}
+	m_uiSprite->End();
+
+	if (card)
+	{
+		float bx = cx - CardVisual::CARD_W / 2.0f;
+		float by = cy - CardVisual::CARD_H / 2.0f;
+		m_textRenderer->Begin();
+		CardVisual::DrawTexts(m_textRenderer, card, nullptr, bx, by, s, 0.0f, 1.0f);
+		m_textRenderer->End();
+	}
 }
