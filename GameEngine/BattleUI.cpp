@@ -77,9 +77,9 @@ void BattleUI::DrawHPBar(float x, float y, float w, float h, const HPBarInfo& in
     // ブロック時：青白い外枠
     if (info.block > 0)
     {
-        XMFLOAT4 glowColor = XMFLOAT4(0.3f, 0.5f , 1.0f, 1.0f);
+         barColor = XMFLOAT4(0.3f, 0.5f , 1.0f, 1.0f);
         m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, w * hpRatio, h,
-            0.0f, glowColor);
+            0.0f, barColor);
     }
     else if (info.hasBurn)
     {
@@ -623,7 +623,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             ? XMFLOAT4(0.3f, 0.7f, 1.0f, 1.0f)
             : XMFLOAT4(0.2f, 0.5f, 0.8f, 1.0f);
         m_spriteRenderer->DrawSprite(m_whiteTexture, btnX, btnY, btnW, btnH, 0.0f, btnColor);
-        m_textRenderer->DrawText(L"ターンエンド", btnX + 10.0f, btnY + 10.0f, 0.4f);
+        m_textRenderer->DrawText(L"ターンエンド", btnX + 10.0f, btnY + 10.0f, 18.0f);
     }
 
     if (ctx.battleResult == BattleResult::Win)

@@ -81,7 +81,6 @@ void Enemy::MoveToward(int playerCol, int playerRow, GridMap* gridMap, int steps
     if (m_buffManager.HasBuff(BuffType::Root))
         return;
     if (m_immovable) return;                       // “®‚¯‚È‚¢“G‚Í’Ç‚í‚È‚¢
-    if (m_buffManager.HasBuff(BuffType::Root)) return;
 
     for (int step = 0; step < steps; step++)
     {

@@ -122,7 +122,7 @@ void ShopScene::Draw()
     }
 
     float leaveW = 160.0f, leaveH = 44.0f;
-    float leaveX = (m_screenWidth - leaveW) / 2.0f, leaveY = m_screenHeight - 70.0f;
+    float leaveX = (m_screenWidth - leaveW) / 2.0f, leaveY = m_screenHeight - 90.0f;
     m_spriteRenderer->DrawSprite(m_whiteTexture, leaveX, leaveY, leaveW, leaveH, 0.0f,
         XMFLOAT4(0.3f, 0.3f, 0.35f, 0.95f));
     m_spriteRenderer->End();

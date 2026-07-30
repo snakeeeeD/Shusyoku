@@ -63,6 +63,7 @@ SceneManager::~SceneManager()
 {
 	delete m_currentScene;
 	delete m_textRenderer;
+	delete m_uiSprite;
 	TextureManager::Shutdown();
 }
 
@@ -261,32 +262,52 @@ void SceneManager::DrawDeckCards(bool textPass)
 {
 	auto& deck = PlayerDataManager::GetData().deck;
 	ID3D11ShaderResourceView* white = TextureManager::Get("white");
+	auto vis = VisibleDeckIndices();
 
 	// スクロールのクランプ
 	int perRow = 6;
 	float ch = CardVisual::CARD_H * DECK_SCALE;
-	int rows = ((int)deck.size() + perRow - 1) / perRow;
+	int rows = ((int)vis.size() + perRow - 1) / perRow;
 	float maxScroll = 70.0f + rows * (ch + 20.0f) - (m_screenHeight - 20.0f);
 	if (maxScroll < 0) maxScroll = 0;
 	if (m_deckScroll < 0) m_deckScroll = 0;
 	if (m_deckScroll > maxScroll) m_deckScroll = maxScroll;
 
-	for (int i = 0; i < (int)deck.size(); i++)
+	for (int slot = 0; slot < (int)vis.size(); slot++)
 	{
-		const CardData* d = CardDataBase::Get(deck[i]);
+		const CardData* d = CardDataBase::Get(deck[vis[slot]]);
 		if (!d) continue;
-		float bx, by; GetDeckCardBase(i, bx, by);
+		float bx, by; GetDeckCardBase(slot, bx, by);
 
 		if (!textPass)
 		{
 			XMFLOAT4 col = m_deckRemoveMode
-				? XMFLOAT4(0.6f, 0.15f, 0.15f, 0.9f)          // 削除モードは赤
+				? XMFLOAT4(0.6f, 0.15f, 0.15f, 0.9f)
 				: CardVisual::GetCardColor(d->type);
 			CardVisual::DrawBase(m_uiSprite, white, bx, by, DECK_SCALE, 0.0f, col, d, m_uiTime);
 		}
 		else
 			CardVisual::DrawTexts(m_textRenderer, d, nullptr, bx, by, DECK_SCALE, 0.0f, 1.0f);
 	}
+}
+
+static bool CanUpgrade(const std::string& id)
+{
+	if (id.rfind("CRAFT:", 0) == 0) return false;        // 合成カードは強化不可
+	if (!id.empty() && id.back() == '+') return false;   // 強化済み
+	return CardDataBase::Get(id + "+") != nullptr;        // +版があるか
+}
+
+std::vector<int> SceneManager::VisibleDeckIndices() const
+{
+	std::vector<int> v;
+	auto& deck = PlayerDataManager::GetData().deck;
+	for (int i = 0; i < (int)deck.size(); i++)
+	{
+		if (m_deckUpgradeMode && !CanUpgrade(deck[i])) continue;  // 強化画面では強化不可を隠す
+		v.push_back(i);
+	}
+	return v;
 }
 
 void SceneManager::DrawImGui()
@@ -454,13 +475,13 @@ bool SceneManager::GetDeckCardBase(int i, float& baseX, float& baseY) const
 
 int SceneManager::GetDeckCardAt(POINT p) const
 {
-	int n = (int)PlayerDataManager::GetData().deck.size();
-	for (int i = 0; i < n; i++)
+	auto vis = VisibleDeckIndices();
+	for (int slot = 0; slot < (int)vis.size(); slot++)
 	{
-		float bx, by; GetDeckCardBase(i, bx, by);
+		float bx, by; GetDeckCardBase(slot, bx, by);
 		float x, y, w, h; CardVisual::GetRect(bx, by, DECK_SCALE, x, y, w, h);
 		if (p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h)
-			return i;
+			return vis[slot];
 	}
 	return -1;
 }
@@ -612,7 +633,8 @@ void SceneManager::DrawCraft()
 void SceneManager::HandleCraftClick(POINT m)
 {
 	// 枠クリックで解除（最初に判定）
-	for (int i = 0; i < 3; i++)
+	int nSlots = 1 + CraftModSlots();
+	for (int i = 0; i < nSlots; i++)
 	{
 		float x, y, w, h; GetCraftSlotRect(i, x, y, w, h);
 		if (m.x >= x && m.x <= x + w && m.y >= y && m.y <= y + h)
@@ -684,7 +706,7 @@ void SceneManager::DoCraft()
 		PlayerDataManager::AddMaterial(kv.first, -kv.second);
 
 	// デッキに合成カードを追加
-	PlayerDataManager::GetData().deck.push_back(CraftRecipeId());
+	PlayerDataManager::GetData().deck.push_back(rid);
 	PlayerDataManager::Save();
 
 	m_craftBase.clear(); m_craftMods.clear();

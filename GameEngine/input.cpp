@@ -1,8 +1,5 @@
 #include "input.h"
 
-
-Input input;
-
 int Input::s_wheelDelta = 0;
 
 //コンストラクタ

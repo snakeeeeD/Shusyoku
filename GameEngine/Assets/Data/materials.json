@@ -49,10 +49,13 @@
       "mainValue": 0
     }
   ],
+
+
   "materials": [
     {
       "id": "sword_fragment",
       "name": "剣の破片",
+      "tag": "鋭",
       "desc": "攻撃:ダメ+5 / スキル:攻撃UP / パワー:永続攻撃UP",
       "cost": 0,
       "Attack": {
@@ -77,6 +80,7 @@
     {
       "id": "light_stone",
       "name": "軽量化石",
+      "tag": "軽",
       "desc": "コスト-1",
       "cost": -1,
       "all": { "slot": "none" }
@@ -84,6 +88,7 @@
     {
       "id": "combo_shard",
       "name": "連撃の欠片",
+      "tag": "連",
       "desc": "攻撃回数+1（攻撃土台のみ）",
       "cost": 1,
       "Attack": {

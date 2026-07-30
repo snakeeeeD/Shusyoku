@@ -26,6 +26,7 @@ BattleScene::BattleScene()
     , m_playerRow(0)
     , m_player(nullptr)
     , m_renderer3D(nullptr)
+    , m_spriteRenderer(nullptr)
     , m_highlightTimer(0.0f)
 {
 }
@@ -545,8 +546,6 @@ void BattleScene::Update(float deltaTime)
                 pd.fieldSteps += 8;       // 歩数回復
                 pd.rewardRare = true;     // 次のカード選択をレア寄りに
             }
-            PlayerDataManager::Save();
-
             PlayerDataManager::Save();
             return;
         }
@@ -1487,12 +1486,6 @@ void BattleScene::HandleInput()
                     m_battleUI->OnCardRemoved(m_selectedCardIndex);
                     m_selectedCardIndex = -1;
                     cardJustUsed = true;
-
-
-
-                    // ドロー効果のアニメーション
-                    for (auto& drawnId : execResult.drawnCards)
-                        m_battleUI->StartDrawCardEffect(drawnId);
 
                     if (execResult.pendingDiscard > 0)
                     {

@@ -199,13 +199,16 @@ CardData CardDataBase::BuildCrafted(const std::string& id)
     c.mainEffect.value = base->mainValue;
 
     std::wstring nm = ToWString(base->name);
+    std::wstring tags;
     for (size_t i = 1; i < parts.size(); i++) {
         const MaterialDef* m = MaterialDataBase::GetMaterial(parts[i]);
         if (!m) continue;
         c.cost += m->cost;
         applyEntry(c, *m, base->type);
-        nm += L"ÅE" + ToWString(m->name);
+        if (!tags.empty()) tags += L"ÅE";
+        tags += ToWString(m->tag);
     }
+    if (!tags.empty()) nm += L"Åy" + tags + L"Åz";
     if (c.cost < 0) c.cost = 0;
     c.name = nm;
 

@@ -233,17 +233,6 @@ void BattleHighlighter::UpdatePlayerHighlight(
 
         m_playerHighlightCells.push_back({ col, row });
 
-        if (data->type == CardType::Move)
-        {
-            int dist = abs(col - centerCol) + abs(row - centerRow);
-            if (dist > actualRange)
-            {
-                m_outOfRangeCells.push_back({ col, row });
-                cell.gameObject.color = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
-                continue;
-            }
-        }
-
         // マウスが乗っているマスかどうか
         bool isHovered = (col == hoveredCell.first && row == hoveredCell.second);
         bool isOnHoveredLine = false;

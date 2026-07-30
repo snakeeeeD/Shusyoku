@@ -224,6 +224,7 @@ void PlayerDataManager::UpgradeCard(int index)
 {
 	if (index < 0 || index >= (int)m_data.deck.size()) return;
 	std::string& id = m_data.deck[index];
+	if (id.rfind("CRAFT:", 0) == 0) return;			  // クラフトカードはアップグレード不可
 	if (!id.empty() && id.back() == '+') return;      // 既に強化済み
 	if (!CardDataBase::Get(id + "+")) return;         // 強化版が無いカード
 	id += "+";

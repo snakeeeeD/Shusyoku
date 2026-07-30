@@ -1,7 +1,5 @@
 #pragma once
 
-#pragma once
-
 enum class BuffType
 {
     // < --- ƒoƒt --- >

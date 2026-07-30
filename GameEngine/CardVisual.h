@@ -66,6 +66,8 @@ public:
     static std::wstring GetEffectText(const CardData* data, const Player* player = nullptr, int wrapChars = 8)
     {
         if (!data) return L"";
+        if (data->description.empty()) return L"(no desc)";
+
         int actualValue = data->mainEffect.value;
         if (player)
         {

@@ -97,10 +97,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
-    case WM_KEYDOWN:
-        if (wParam == VK_ESCAPE)
-           // PostQuitMessage(0);
-        break;
     case WM_MOUSEWHEEL:
         Input::SetWheelDelta(GET_WHEEL_DELTA_WPARAM(wParam));
         break;

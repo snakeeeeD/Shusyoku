@@ -47,11 +47,6 @@ public:
     std::string CraftRecipeId() const;
     int CraftModSlots() const;
 
-    float m_craftFxTimer = 0.0f;         // >0の間 演出再生
-    std::string m_craftFxCard;           // 完成カードID
-    static constexpr float CRAFT_FX_DURATION = 0.9f;
-    void DrawCraftFx();
-
 private:
     Scene* m_currentScene;
     SceneType m_currentType;
@@ -59,7 +54,7 @@ private:
     ID3D11Device* m_device;
     ID3D11DeviceContext* m_context;
 
-    TextRenderer* m_textRenderer;
+    TextRenderer* m_textRenderer = nullptr;
     IDXGISwapChain* m_swapChain;
 
     int m_screenWidth;
@@ -84,6 +79,7 @@ private:
 
     bool GetDeckCardBase(int i, float& baseX, float& baseY) const;   // カードの基準位置
     int  GetDeckCardAt(POINT p) const;                              // 座標→デッキindex
+    std::vector<int> VisibleDeckIndices() const;
 
     bool m_deckUpgradeMode = false;
 
@@ -108,4 +104,9 @@ private:
     void HandleRestClick(POINT m);
     void FinishRest();
     void GetRestBtnRect(int i, float& x, float& y, float& w, float& h) const;
+
+    float m_craftFxTimer = 0.0f;         // >0の間 演出再生
+    std::string m_craftFxCard;           // 完成カードID
+    static constexpr float CRAFT_FX_DURATION = 0.9f;
+    void DrawCraftFx();
 };

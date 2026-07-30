@@ -199,7 +199,7 @@ void BattleScene::DrawImGui()
         for (int i = 0; i < (int)cards.size(); i++)
         {
             ImGui::PushID(i + 1000);
-            char label[64];
+            char label[256];
             sprintf_s(label, "Discard: %s", cards[i]->GetId().c_str());
             if (ImGui::Button(label))
             {

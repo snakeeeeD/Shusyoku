@@ -17,7 +17,7 @@ struct MatEntry {
 };
 
 struct MaterialDef {
-    std::string id, name, desc;
+    std::string id, name, desc, tag;
     int cost = 0;
     std::map<std::string, MatEntry> entries;   // "Attack"/"Skill"/"Move"/"Power"/"all"
 

@@ -19,5 +19,5 @@ public:
     void HandleInput();
 
 private:
-    SceneManager* m_sceneManager;
+    SceneManager* m_sceneManager = nullptr;
 };
