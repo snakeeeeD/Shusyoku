@@ -44,6 +44,9 @@ public:
     void DrawImGui() override;
     void HandleInput() override;
 
+    int GetPlayerHp() const { return m_player ? m_player->GetHp() : 0; }
+    int GetPlayerMaxHp() const { return m_player ? m_player->GetMaxHp() : 0; }
+
     void GridToWorld(int col, int row, float& outX, float& outZ)
     {
         outX = (col - m_gridMap->GetCols() / 2.0f + 0.5f) * 1.1f;
@@ -61,7 +64,11 @@ public:
     void SetOverflow(int o) { m_overflow = o; }
     void SetCategory(EncCategory c) { m_category = c; }
 
+    void OnPlayerMoved();
+
     std::vector<DropShown> m_dropResult;
+
+    BattleResult GetBattleResult() const { return m_battleResult; }
 
 private:
     BattleUI* m_battleUI;
@@ -120,6 +127,8 @@ private:
     bool m_showDiscardPile;
     bool m_showExhaustPile;
     bool m_rightClickDragged;
+
+    bool m_firstAttackDone = false;
 
     int m_discardSelectCount = 0;
     std::vector<int> m_discardSelected;   // 選択中のカードindex

@@ -1,8 +1,11 @@
 #include "PlayerDataManager.h"
 #include "CardDataBase.h"
+#include "RelicManager.h"
+
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <windows.h>
+#include <algorithm>
 
 using json = nlohmann::json;
 
@@ -61,6 +64,7 @@ void PlayerDataManager::Save()
 
 	j["gold"] = m_data.gold;
 	j["materials"] = m_data.materials;
+	j["relics"] = m_data.relics;
 
 	// ← 全部追加してからファイルに書き込む
 	std::ofstream file(SAVE_PATH);
@@ -118,6 +122,8 @@ void PlayerDataManager::Load()
 			m_data.materials = j["materials"].get<std::map<std::string, int>>();
 		else
 			m_data.materials.clear();
+
+		if (j.contains("relics")) m_data.relics = j["relics"].get<std::vector<std::string>>();
 	}
 	catch (const json::exception& e)
 	{
@@ -164,9 +170,13 @@ void PlayerDataManager::StartNewGame()
 
 	m_data.gold = 100;          // 開始所持金
 	m_data.materials.clear();
+	m_data.relics.clear();
 
 	m_data.currentNodeIndex = 0;
 	m_data.clearedNodes.clear();
+	m_data.fieldNodeTypes.clear();
+	m_data.fieldNodeEnemyIds.clear();
+	m_data.fieldNodeVisited.clear();
 	Save();
 }
 
@@ -235,4 +245,20 @@ int PlayerDataManager::MaterialCount(const std::string& id)
 {
 	auto it = m_data.materials.find(id);
 	return it != m_data.materials.end() ? it->second : 0;
+}
+
+void PlayerDataManager::AddRelic(const std::string& id)
+{
+	if (std::find(m_data.relics.begin(), m_data.relics.end(), id) == m_data.relics.end())
+	{
+		m_data.relics.push_back(id);
+
+		// 取得時に効く永続ステータス系（今後もここに追記）
+		if (auto d = RelicManager::Get(id))
+		{
+			if (d->kind == "maxHp") { m_data.maxHp += d->value; m_data.hp += d->value; }
+			else if (d->kind == "steps") { m_data.fieldSteps += d->value; }
+		}
+		Save();
+	}
 }

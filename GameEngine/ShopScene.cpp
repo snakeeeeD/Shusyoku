@@ -1,6 +1,8 @@
 #include "ShopScene.h"
 #include "MaterialDataBase.h"
+#include "RelicManager.h"
 #include "GameUtils.h"
+
 #include <cstdlib>
 #include <algorithm>
 
@@ -62,6 +64,11 @@ void ShopScene::GenerateStock()
     pickShuffled(matIds, MAT_COUNT, [&](const std::string& id) {
         m_items.push_back({ id, MAT_PRICE, false, ShopKind::Material });
         });
+
+    int disc = RelicManager::SumValue("shopDiscount");
+    if (disc > 0)
+        for (auto& it : m_items)
+            it.price = it.price * (100 - disc) / 100;
 }
 
 void ShopScene::Update(float deltaTime) 

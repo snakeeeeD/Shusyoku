@@ -1,6 +1,8 @@
 #include "CardDataBase.h"
 #include "MaterialDataBase.h" 
 #include "GameUtils.h"
+#include "RelicManager.h"
+
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <windows.h>
@@ -209,6 +211,7 @@ CardData CardDataBase::BuildCrafted(const std::string& id)
         tags += ToWString(m->tag);
     }
     if (!tags.empty()) nm += L"Åy" + tags + L"Åz";
+    c.cost -= RelicManager::SumValue("craftCostDown");
     if (c.cost < 0) c.cost = 0;
     c.name = nm;
 

@@ -1,0 +1,144 @@
+﻿{
+  "relics": [
+    {
+      "id": "iron_heart",
+      "name": "鉄の心臓",
+      "kind": "startBlock",
+      "value": 6,
+      "desc": "戦闘開始時、ブロック+6"
+    },
+    {
+      "id": "warrior_crest",
+      "name": "戦士の紋章",
+      "kind": "startBuffAtk",
+      "value": 1,
+      "desc": "戦闘開始時、攻撃UP+2"
+    },
+    {
+      "id": "quick_read",
+      "name": "速読の書",
+      "kind": "startDraw",
+      "value": 1,
+      "desc": "最初のターン、+1ドロー"
+    },
+    {
+      "id": "mana_furnace",
+      "name": "魔力の炉",
+      "kind": "turnEnergy",
+      "value": 1,
+      "desc": "毎ターン、エナジー+1"
+    },
+    {
+      "id": "first_strike",
+      "name": "初撃の一撃",
+      "kind": "firstAttack",
+      "value": 4,
+      "desc": "各戦闘の最初の攻撃+4ダメージ"
+    },
+    {
+      "id": "trekker_boots",
+      "name": "踏破のブーツ",
+      "kind": "moveBlock",
+      "value": 1,
+      "desc": "移動するとブロック+1"
+    },
+    {
+      "id": "loot_bag",
+      "name": "戦利品袋",
+      "kind": "killGold",
+      "value": 10,
+      "desc": "敵を倒すとゴールド+10"
+    },
+    {
+      "id": "vampire_charm",
+      "name": "吸血の護符",
+      "kind": "killHeal",
+      "value": 1,
+      "desc": "敵を倒すとHP+1"
+    },
+    {
+      "id": "alchemy_shard",
+      "name": "錬金の欠片",
+      "kind": "eliteMaterial",
+      "value": 1,
+      "desc": "エリート撃破でランダム素材"
+    },
+    {
+      "id": "healing_spring",
+      "name": "治癒の泉",
+      "kind": "winHeal",
+      "value": 4,
+      "desc": "勝利後にHP+4"
+    },
+    {
+      "id": "sturdy_amulet",
+      "name": "不屈の護符",
+      "kind": "maxHp",
+      "value": 10,
+      "desc": "最大HP+10"
+    },
+    {
+      "id": "combo_blade",
+      "name": "連撃の刃",
+      "kind": "multiHit",
+      "value": 1,
+      "desc": "複数回攻撃のヒット+1"
+    },
+    {
+      "id": "transmute_catalyst",
+      "name": "錬成の触媒",
+      "kind": "craftCostDown",
+      "value": 1,
+      "desc": "合成カードのコスト-1"
+    },
+    {
+      "id": "expansion_core",
+      "name": "拡張の核",
+      "kind": "modSlots",
+      "value": 1,
+      "desc": "コアの素材枠+1"
+    },
+    {
+      "id": "wind_boots",
+      "name": "風の靴",
+      "kind": "moveRange",
+      "value": 1,
+      "desc": "移動範囲+1"
+    },
+    {
+      "id": "travelers_map",
+      "name": "旅人の地図",
+      "kind": "steps",
+      "value": 5,
+      "desc": "歩数+5"
+    },
+    {
+      "id": "merchant_seal",
+      "name": "商人の証",
+      "kind": "shopDiscount",
+      "value": 20,
+      "desc": "ショップ価格-20%"
+    },
+    {
+      "id": "lucky_coin",
+      "name": "幸運のコイン",
+      "kind": "rewardRare",
+      "value": 1,
+      "desc": "カード報酬のレア率上昇"
+    },
+    {
+      "id": "steel_will",
+      "name": "鋼の意志",
+      "kind": "blockRetain",
+      "value": 50,
+      "desc": "ターン終了時ブロックの半分を保持"
+    },
+    {
+      "id": "field_blanket",
+      "name": "携帯毛布",
+      "kind": "restHeal",
+      "value": 10,
+      "desc": "休憩の回復量+10"
+    }
+  ]
+}

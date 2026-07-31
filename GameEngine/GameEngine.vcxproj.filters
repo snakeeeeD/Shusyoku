@@ -226,6 +226,21 @@
     <Filter Include="ソース ファイル\03-Object関連\30-Card\40-Material\02-MaterialDataBace">
       <UniqueIdentifier>{99f5336b-e5b5-4c62-acea-ca2352be9c4a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\02-Scene\60-ResultScene">
+      <UniqueIdentifier>{c27111f7-b8b3-4fee-b095-333299624e66}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\60-ResultScene\00-ResultScene">
+      <UniqueIdentifier>{cd982b15-01f0-4ddb-b054-2ce43b7a600d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\40-Relic">
+      <UniqueIdentifier>{1b09d460-a3ba-4fbe-8d57-bd0809d2059e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\40-Relic\01-RelicData">
+      <UniqueIdentifier>{99e711c8-1b95-49ff-a123-45327667fdf5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\40-Relic\02-RelicManager">
+      <UniqueIdentifier>{6c116313-c60b-4635-a6c0-527913ed5aef}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -426,6 +441,15 @@
     <ClInclude Include="MaterialDataBase.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\40-Material\02-MaterialDataBace</Filter>
     </ClInclude>
+    <ClInclude Include="ResultScene.h">
+      <Filter>ソース ファイル\02-Scene\60-ResultScene\00-ResultScene</Filter>
+    </ClInclude>
+    <ClInclude Include="RelicData.h">
+      <Filter>ソース ファイル\03-Object関連\40-Relic\01-RelicData</Filter>
+    </ClInclude>
+    <ClInclude Include="RelicManager.h">
+      <Filter>ソース ファイル\03-Object関連\40-Relic\02-RelicManager</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SpriteRenderer.cpp">
@@ -547,6 +571,12 @@
     </ClCompile>
     <ClCompile Include="MaterialDataBase.cpp">
       <Filter>ソース ファイル\03-Object関連\30-Card\40-Material\02-MaterialDataBace</Filter>
+    </ClCompile>
+    <ClCompile Include="ResultScene.cpp">
+      <Filter>ソース ファイル\02-Scene\60-ResultScene\00-ResultScene</Filter>
+    </ClCompile>
+    <ClCompile Include="RelicManager.cpp">
+      <Filter>ソース ファイル\03-Object関連\40-Relic\02-RelicManager</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

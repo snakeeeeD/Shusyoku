@@ -1,13 +1,16 @@
 ﻿#include "BattleScene.h"
 #include "TextureLoader.h"
 #include "EffectManager.h"
+#include "RelicManager.h"
 #include "CardExecutor.h"
 #include "TerrainDataBase.h"
+#include "MaterialDataBase.h"
 #include "FloatingText.h"
 #include "ScreenShake.h"
 #include "DamageFeedback.h"
 #include "RangeShape.h"
 #include "UiNotice.h"
+
 #include <algorithm>
 #include <cstdio>
 #include <queue>
@@ -143,11 +146,32 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     // PlayerDataManagerからHPを引き継ぐ
     m_player->SetHp(playerData.hp);
 
+    m_player->AddEnergy(RelicManager::SumValue("turnEnergy"));   // レリック
+
+    // レリック：戦闘開始時
+    if (int blk = RelicManager::SumValue("startBlock")) m_player->AddBlock(blk);
+    if (int atk = RelicManager::SumValue("startBuffAtk"))
+    {
+        Buff b; b.type = BuffType::AttackUp; b.value = atk; b.duration = 999;
+        b.name = L""; b.description = L"";
+        m_player->GetBuffManager().AddBuff(b);
+    }
+    for (int i = 0; i < RelicManager::SumValue("startDraw"); i++)
+    {
+        std::string id = m_deck.DrawCard();
+        if (!id.empty()) m_hand.AddCard(id);
+    }
+
     // プレイヤーターン開始時にエネルギー回復
     m_turnManager.onPlayerTurnStart = [this]()
         {
             m_player->RestoreEnergy();
-            m_player->ResetBlock();
+            m_player->AddEnergy(RelicManager::SumValue("turnEnergy"));   // レリック
+            {
+                int keep = m_player->GetBlock() * RelicManager::SumValue("blockRetain") / 100;
+                m_player->ResetBlock();
+                if (keep > 0) m_player->AddBlock(keep);
+            }
             m_player->GetBuffManager().OnTurnEnd();
 
             // デバフダメージ
@@ -516,6 +540,8 @@ void BattleScene::Update(float deltaTime)
         {
             m_battleResult = BattleResult::Win;
 
+            m_player->Heal(RelicManager::SumValue("winHeal"));   // レリック（pd.hpに反映される）
+
             // HPを保存、現在のマスをクリア済みに
             auto& pd = PlayerDataManager::GetData();
             pd.hp = m_player->GetHp();
@@ -542,9 +568,21 @@ void BattleScene::Update(float deltaTime)
             pd.gold += 10 + rand() % 16;
             if (m_category == EncCategory::Elite)
             {
-                pd.gold += 40;            // ボーナスゴールド
-                pd.fieldSteps += 8;       // 歩数回復
-                pd.rewardRare = true;     // 次のカード選択をレア寄りに
+                pd.gold += 40;
+                pd.fieldSteps += 8;
+                pd.rewardRare = true;
+                int em = RelicManager::SumValue("eliteMaterial");
+                if (em > 0)
+                {
+                    std::vector<std::string> mids;
+                    for (auto& kv : MaterialDataBase::AllMaterials()) mids.push_back(kv.first);
+                    for (int k = 0; k < em && !mids.empty(); k++)
+                    {
+                        std::string mid = mids[rand() % mids.size()];
+                        pd.materials[mid] += 1;
+                        m_dropResult.push_back({ mid, 1, false });   // 勝利画面に表示
+                    }
+                }
             }
             PlayerDataManager::Save();
             return;
@@ -970,13 +1008,13 @@ void BattleScene::HandleInput()
     if (m_battleResult == BattleResult::Win)
     {
         if (m_input.GetMouseButtonTrigger(0) && onChangeScene)
-            onChangeScene(SceneType::CardSelect);
+            onChangeScene(m_category == EncCategory::Boss ? SceneType::Result : SceneType::CardSelect);
         return;
     }
     if (m_battleResult == BattleResult::Lose)
     {
         if (m_input.GetMouseButtonTrigger(0) && onChangeScene)
-            onChangeScene(SceneType::Title);
+            onChangeScene(SceneType::Result);
         return;
     }
 
@@ -1140,7 +1178,7 @@ void BattleScene::HandleInput()
         if (sd && sd->type == CardType::Move)
         {
             selectedIsMove = true;
-            moveRangeSel = m_player->GetBuffManager().GetFinalMoveRange(sd->range);
+            moveRangeSel = m_player->GetBuffManager().GetFinalMoveRange(sd->range) + RelicManager::SumValue("moveRange");
         }
     }
 
@@ -1368,6 +1406,17 @@ void BattleScene::HandleInput()
 
                 const CardData* dataPtr = card->GetData();
 
+                int faBonus = (!m_firstAttackDone && dataPtr->type == CardType::Attack)
+                    ? RelicManager::SumValue("firstAttack") : 0;
+                if (faBonus > 0) 
+                {
+                    Buff fb; fb.type = BuffType::AttackUp; 
+                    fb.value = faBonus; 
+                    fb.duration = 1; fb.name = L"";
+                    fb.description = L"";
+                    m_player->GetBuffManager().AddBuff(fb); 
+                }
+
                 auto execResult = m_cardExecutor.Execute(
                     dataCopy, cardId,
                     targetCol, targetRow,
@@ -1377,6 +1426,14 @@ void BattleScene::HandleInput()
                     newPlayerCol, newPlayerRow,
                     usePath
                 );
+
+                if (faBonus > 0)
+                {
+                    Buff fb; fb.type = BuffType::AttackUp; fb.value = -faBonus; fb.duration = 1; fb.name = L""; fb.description = L""; m_player->GetBuffManager().AddBuff(fb);
+                    if (m_player->GetBuffManager().GetBuffValue(BuffType::AttackUp) == 0)
+                        m_player->GetBuffManager().RemoveBuff(BuffType::AttackUp);   // 0残り掃除
+                    if (execResult.cardUsed) m_firstAttackDone = true;
+                }
 
                 if (execResult.cardUsed)
                 {
@@ -1650,6 +1707,17 @@ void BattleScene::HandleInput()
 
                 const CardData* dataPtr = card->GetData();
 
+                int faBonus = (!m_firstAttackDone && dataPtr->type == CardType::Attack)
+                    ? RelicManager::SumValue("firstAttack") : 0;
+                if (faBonus > 0)
+                {
+                    Buff fb; fb.type = BuffType::AttackUp;
+                    fb.value = faBonus;
+                    fb.duration = 1; fb.name = L"";
+                    fb.description = L"";
+                    m_player->GetBuffManager().AddBuff(fb);
+                }
+
                 auto execResult = m_cardExecutor.Execute(
                     dataCopy, cardId,
                     result.col, result.row,
@@ -1658,6 +1726,14 @@ void BattleScene::HandleInput()
                     m_hand, m_selectedCardIndex, m_deck,
                     newPlayerCol, newPlayerRow
                 );
+
+                if (faBonus > 0)
+                {
+                    Buff fb; fb.type = BuffType::AttackUp; fb.value = -faBonus; fb.duration = 1; fb.name = L""; fb.description = L""; m_player->GetBuffManager().AddBuff(fb);
+                    if (m_player->GetBuffManager().GetBuffValue(BuffType::AttackUp) == 0)
+                        m_player->GetBuffManager().RemoveBuff(BuffType::AttackUp);   // 0残り掃除
+                    if (execResult.cardUsed) m_firstAttackDone = true;
+                }
 
                 if (execResult.cardUsed)
                 {
@@ -1879,6 +1955,9 @@ void BattleScene::ProcessDeadEnemies()
         );
 
         m_defeatedEnemyIds.push_back(enemy->GetId());
+
+        PlayerDataManager::GetData().gold += RelicManager::SumValue("killGold");   // レリック
+        m_player->Heal(RelicManager::SumValue("killHeal"));                        // レリック
 
         delete enemy;
     }

@@ -3,6 +3,7 @@
 #include "EffectManager.h"
 #include "BattleHighlighter.h"
 #include "TerrainDataBase.h"
+#include "RelicManager.h"
 #include "RangeShape.h"
 #include <algorithm>
 #include <queue>
@@ -39,6 +40,13 @@ std::vector<Enemy*> CardExecutor::GetEnemiesInRange(
         if (inRange) result.push_back(enemy);
     }
     return result;
+}
+
+static int EffectiveHits(const CardData& data)
+{
+    int h = data.hits;
+    if (data.type == CardType::Attack) h += RelicManager::SumValue("multiHit");
+    return h < 1 ? 1 : h;
 }
 
 CardExecutor::ExecuteResult CardExecutor::Execute(
@@ -83,7 +91,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
 
             for (auto enemy : targets)
             {
-                for (int h = 0; h < data.hits; h++)
+                for (int h = 0; h < EffectiveHits(data); h++)
                     enemy->TakeDamage(player->GetBuffManager().GetFinalAttack(data.mainEffect.value));
 
                 // ThornsîΩéÀ
@@ -151,7 +159,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                     Enemy* enemy = GetEnemyAt(col, row, enemies);
                     if (enemy)
                     {
-                        for (int h = 0; h < data.hits; h++)
+                        for (int h = 0; h < EffectiveHits(data); h++)
                             enemy->TakeDamage(player->GetBuffManager().GetFinalAttack(data.mainEffect.value));
 
                         if (enemy->GetBuffManager().HasBuff(BuffType::Thorns))
@@ -261,7 +269,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                     // É_ÉÅÅ[ÉW
                     if (hitEnemy)
                     {
-                        for (int h = 0; h < data.hits; h++)
+                        for (int h = 0; h < EffectiveHits(data); h++)
                             hitEnemy->TakeDamage(player->GetBuffManager().GetFinalAttack(data.mainEffect.value));
                         if (hitEnemy->GetBuffManager().HasBuff(BuffType::Thorns))
                             player->TakeDamage(hitEnemy->GetBuffManager().GetBuffValue(BuffType::Thorns));
@@ -322,10 +330,11 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
 
             int dmg = player->GetBuffManager().GetFinalAttack(data.mainEffect.value);
             target->TakeDamage(dmg);
-            if (data.hits > 1)
+            int totalHits = EffectiveHits(data);
+            if (totalHits > 1)
             {
                 result.multiHitTarget = target;
-                result.multiHitRemain = data.hits - 1;
+                result.multiHitRemain = totalHits - 1;
                 result.multiHitDamage = dmg;
             }
             // ThornsîΩéÀ

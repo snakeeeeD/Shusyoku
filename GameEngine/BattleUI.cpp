@@ -163,20 +163,26 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     playerBar.block = ctx.player->GetBlock();
     playerBar.poisonDmg = ctx.player->GetBuffManager().GetTurnEndDamage().total();
     playerBar.hasBurn = ctx.player->GetBuffManager().HasBuff(BuffType::Burn);
-    DrawHPBar(20.0f, 90.0f, 200.0f, 30.0f, playerBar, ctx.highlightTimer);
+    DrawHPBar(20.0f, 140.0f, 200.0f, 30.0f, playerBar, ctx.highlightTimer);
 
 
     if (ctx.player->GetBlock() > 0)
     {
         float pIconSize = 30.0f * 1.5f;
         float pIconX = 20.0f - pIconSize * 0.35f;
-        float pIconY = 60.0f + (30.0f - pIconSize) / 2.0f;
+        float pIconY = 110.0f + (30.0f - pIconSize) / 2.0f;
         m_spriteRenderer->DrawSprite(m_whiteTexture,
             pIconX - 1.0f, pIconY - 1.0f, pIconSize + 2.0f, pIconSize + 2.0f,
             0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
         m_spriteRenderer->DrawSprite(m_whiteTexture,
             pIconX, pIconY, pIconSize, pIconSize,
             0.0f, XMFLOAT4(0.3f, 0.6f, 1.0f, 1.0f));
+    }
+
+    {
+        float ex = 20.0f, ey = 190.0f, es = 60.0f;
+        m_spriteRenderer->DrawSprite(m_whiteTexture, ex - 3, ey - 3, es + 6, es + 6, 0.0f, XMFLOAT4(0.15f, 0.10f, 0.0f, 1.0f)); // ‰
+        m_spriteRenderer->DrawSprite(m_whiteTexture, ex, ey, es, es, 0.0f, XMFLOAT4(0.95f, 0.72f, 0.12f, 1.0f));               // –{‘Ìi‹àj
     }
 
     int topIdx = (ctx.selectedCardIndex >= 0) ? ctx.selectedCardIndex : ctx.hoveredCardIndex;
@@ -314,13 +320,16 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
     wchar_t hpText[64];
     swprintf_s(hpText, L"%d / %d", ctx.player->GetHp(), ctx.player->GetMaxHp());
-    m_textRenderer->DrawText(hpText, 20.0f, 40.0f, 45.0f,
-        D2D1::ColorF(D2D1::ColorF::White));
+    m_textRenderer->DrawOutlinedText(hpText, 55.0f, 90.0f, 45.0f, D2D1::ColorF(D2D1::ColorF::White));
 
     wchar_t energyText[64];
-    swprintf_s(energyText, L"Energy: %d / %d", ctx.player->GetEnergy(), ctx.player->GetMaxEnergy());
-    m_textRenderer->DrawText(energyText, 20.0f, 130.0f, 20.0f,
-        D2D1::ColorF(D2D1::ColorF::Yellow));
+    {
+        float ex = 20.0f, ey = 196.0f, es = 46.0f;
+        wchar_t eCur[16]; swprintf_s(eCur, L"%d", ctx.player->GetEnergy());
+        m_textRenderer->DrawText(eCur, ex + es / 2.0f - 11.0f, ey + 5.0f, 32.0f, D2D1::ColorF(0.15f, 0.08f, 0.0f)); // ‘å‚«‚­
+        wchar_t eMax[16]; swprintf_s(eMax, L"/%d", ctx.player->GetMaxEnergy());
+        m_textRenderer->DrawText(eMax, ex + es - 4.0f, ey + es - 20.0f, 15.0f, D2D1::ColorF(0.35f, 0.2f, 0.0f));
+    }
 
     if (UiNotice::IsActive() && UiNotice::GetType() == NoticeType::HandFull)
     {
@@ -352,7 +361,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     {
         float pIconSize = 30.0f * 1.5f;
         float pIconX = 20.0f - pIconSize * 0.35f;
-        float pIconY = 60.0f + (30.0f - pIconSize) / 2.0f;
+        float pIconY = 110.0f + (30.0f - pIconSize) / 2.0f;
         wchar_t blockText[16];
         swprintf_s(blockText, L"%d", ctx.player->GetBlock());
         float bFontSize = 18.0f;
@@ -573,7 +582,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 D2D1::ColorF(D2D1::ColorF::Red));
 
     const auto& buffs = ctx.player->GetBuffManager().GetBuffs();
-    float buffY = 185.0f;
+    float buffY = 282.0f;
     for (auto& buff : buffs)
     {
         const auto& info = BuffInfo::Get(buff.type);

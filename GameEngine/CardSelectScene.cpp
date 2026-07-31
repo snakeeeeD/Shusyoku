@@ -1,4 +1,6 @@
 #include "CardSelectScene.h"
+#include "RelicManager.h"
+
 #include <cstdlib>
 
 CardSelectScene::CardSelectScene()
@@ -48,7 +50,7 @@ void CardSelectScene::GenerateChoices()
     m_readyForInput = false;
     m_choices.clear();
 
-    bool rare = PlayerDataManager::GetData().rewardRare;
+    bool rare = PlayerDataManager::GetData().rewardRare || RelicManager::HasKind("rewardRare");
     PlayerDataManager::GetData().rewardRare = false;
 
     // 全カードを重み付きで集める

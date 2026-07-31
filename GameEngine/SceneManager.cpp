@@ -1,4 +1,4 @@
-#include "SceneManager.h"
+﻿#include "SceneManager.h"
 #include "EffectDataBase.h"
 #include "EnemyDataBase.h"
 #include "CardDataBase.h"
@@ -7,6 +7,7 @@
 #include "EncounterDataBase.h"
 #include "TerrainDataBase.h"
 #include "MaterialDataBase.h"
+#include "RelicManager.h"
 
 #include <cmath>
 
@@ -20,7 +21,8 @@ static ItemInfo GetItemInfo(const std::string& id)
 		return { ToWString(b->name), ToWString(b->desc), "Core", true };
 	if (auto m = MaterialDataBase::GetMaterial(id))
 		return { ToWString(m->name), ToWString(m->desc), "Material", true };
-	// レリック・ポーション等はここに分岐を足すだけ
+	if (auto r = RelicManager::Get(id))
+		return { ToWString(r->name), ToWString(r->desc), "Relic", true };
 	return {};
 }
 
@@ -83,6 +85,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	TerrainDataBase::Load("Assets/Data/terrains.json");
 	EffectDataBase::Load("Assets/Data/effects.json");
 	MaterialDataBase::Load("Assets/Data/materials.json");
+	RelicManager::Load("Assets/Data/relics.json");
 	PlayerDataManager::Init();
 
 	TextureManager::Load("white", L"Assets/Test/White.png");
@@ -119,6 +122,10 @@ void SceneManager::ChangeScene(SceneType type)
 	int battleSeed = 0;
 	int battleOverflow = 0;
 	EncCategory battleCategory = EncCategory::Normal;
+	bool resultCleared = false;
+	if (type == SceneType::Result)
+		if (auto battle = dynamic_cast<BattleScene*>(m_currentScene))
+			resultCleared = (battle->GetBattleResult() == BattleResult::Win);
 	if (type == SceneType::Battle)
 	{
 		if (auto field = dynamic_cast<FieldScene*>(m_currentScene))
@@ -179,6 +186,14 @@ void SceneManager::ChangeScene(SceneType type)
 			m_currentScene = scene;
 			break;
 		}
+		case SceneType::Result:
+		{
+			auto scene = new ResultScene();
+			scene->SetCleared(resultCleared);
+			scene->onChangeScene = [this](SceneType t) { ChangeScene(t); };
+			m_currentScene = scene;
+			break;
+		}
 		
 	}
 
@@ -211,9 +226,6 @@ void SceneManager::DrawOverlay()
 	m_uiSprite->Begin();
 	m_uiSprite->DrawSprite(white, 0.0f, 0.0f, (float)m_screenWidth, BAR_H, 0.0f,
 		XMFLOAT4(0.08f, 0.08f, 0.12f, 0.9f));                 // 帯
-	// 合成ボタン
-	m_uiSprite->DrawSprite(white, m_screenWidth - 360.0f, 5.0f, 90.0f, 30.0f, 0.0f,
-		XMFLOAT4(0.4f, 0.3f, 0.5f, 1.0f));
 	m_uiSprite->DrawSprite(white, m_screenWidth - 470.0f, 5.0f, 90.0f, 30.0f, 0.0f, XMFLOAT4(0.3f, 0.4f, 0.35f, 1.0f));
 
 	m_uiSprite->DrawSprite(white, btnX, 5.0f, 100.0f, 30.0f, 0.0f,
@@ -251,11 +263,28 @@ void SceneManager::DrawOverlay()
 	// ゴールド
 	swprintf_s(gbuf, L"G:%d", PlayerDataManager::GetData().gold);
 	m_textRenderer->DrawText(gbuf, m_screenWidth - 560.0f, 10.0f, 16.0f, D2D1::ColorF(1, 0.9f, 0.3f));
-	m_textRenderer->DrawText(L"Craft", m_screenWidth - 350.0f, 10.0f, 16.0f, D2D1::ColorF(1, 1, 1));
+
+	auto& pd = PlayerDataManager::GetData();
+	int hp = pd.hp, mhp = pd.maxHp;
+	if (auto battle = dynamic_cast<BattleScene*>(m_currentScene))   // バトル中は生HP
+	{
+		hp = battle->GetPlayerHp(); mhp = battle->GetPlayerMaxHp();
+	}
+
+	wchar_t hbuf[48];
+	swprintf_s(hbuf, L"HP %d/%d", hp, mhp);
+	m_textRenderer->DrawText(hbuf, 12.0f, 10.0f, 16.0f, D2D1::ColorF(1.0f, 0.5f, 0.5f));
+
+	wchar_t sbuf[48];
+	swprintf_s(sbuf, L"Steps %d", pd.fieldSteps);
+	m_textRenderer->DrawText(sbuf, 140.0f, 10.0f, 16.0f, D2D1::ColorF(0.6f, 0.9f, 0.6f));
+
 	m_textRenderer->DrawText(L"Items", m_screenWidth - 460.0f, 10.0f, 16.0f, D2D1::ColorF(1, 1, 1));
 	if (m_deckOpen)
 		m_textRenderer->DrawText(L"Upgrade", 140.0f, 50.0f, 16.0f, D2D1::ColorF(1, 1, 1));
 	m_textRenderer->End();
+	DrawRelicBar();
+	DrawBarTips();
 }
 
 void SceneManager::DrawDeckCards(bool textPass)
@@ -357,6 +386,25 @@ void SceneManager::HandleInput()
 			}
 		}
 
+		// Items を開く
+		if (click && !m_invOpen && !m_craftOpen
+			&& m.x >= m_screenWidth - 470.0f && m.x <= m_screenWidth - 380.0f
+			&& m.y >= 5.0f && m.y <= 35.0f)
+		{
+			m_invOpen = true; return;
+		}
+
+		// Items（いつでも）
+		if (m_invOpen) { if (click) m_invOpen = false; return; }
+		{
+			float itemsX = m_screenWidth - 470.0f;
+			if (click && !m_deckOpen && !m_craftOpen && !m_mapOpen
+				&& m.x >= itemsX && m.x <= itemsX + 90.0f && m.y >= 5.0f && m.y <= 35.0f)
+			{
+				m_invOpen = true; return;
+			}
+		}
+
 		if (onDeckBtn && !m_deckOpen) { m_deckOpen = true; m_deckScroll = 0.0f; return; }
 		if (m_deckOpen)
 		{
@@ -411,30 +459,39 @@ void SceneManager::HandleInput()
 	{
 		POINT m = m_uiInput.GetMousePos();
 		bool click = m_uiInput.GetMouseButtonTrigger(0);
-
-		// Items を開く
-		if (click && !m_invOpen && !m_craftOpen
-			&& m.x >= m_screenWidth - 470.0f && m.x <= m_screenWidth - 380.0f
-			&& m.y >= 5.0f && m.y <= 35.0f)
-		{
-			m_invOpen = true; return;
-		}
-
-		// Craft を開く
-		if (click && !m_craftOpen && !m_invOpen
-			&& m.x >= m_screenWidth - 360.0f && m.x <= m_screenWidth - 270.0f
-			&& m.y >= 5.0f && m.y <= 35.0f)
-		{
-			m_craftOpen = true; m_craftBase.clear(); m_craftMods.clear(); return;
-		}
-
-		if (m_invOpen) { if (click) m_invOpen = false; return; }
 		if (m_craftOpen) { if (click) HandleCraftClick(m); return; }
 	}
 
 	// m_uiInputが消費したホイールをシーンへ戻す（ズーム等が効くように）
 	Input::SetWheelDelta(m_uiInput.GetMouseWheelDelta());
 	if (m_currentScene) m_currentScene->HandleInput();
+}
+
+void SceneManager::DrawBarTips()
+{
+	POINT mp = m_uiInput.GetMousePos();
+	if (mp.y < 5 || mp.y > 35) return;
+
+	const wchar_t* title = nullptr; const wchar_t* desc = nullptr; float x = 0.0f;
+	if (mp.x >= 12 && mp.x <= 130)
+	{
+		title = L"体力"; desc = L"0でゲームオーバー"; x = 12.0f;
+	}
+	else if (mp.x >= 140 && mp.x <= 260)
+	{
+		title = L"歩数"; desc = L"0を超えて進むと敵が強くなる"; x = 140.0f;
+	}
+	if (!title) return;
+
+	ID3D11ShaderResourceView* white = TextureManager::Get("white");
+	float ty = BAR_H + 44.0f, w = 360.0f, h = 56.0f;   // レリック帯の下
+	m_uiSprite->Begin();
+	m_uiSprite->DrawSprite(white, x, ty, w, h, 0.0f, XMFLOAT4(0.05f, 0.05f, 0.1f, 0.97f));
+	m_uiSprite->End();
+	m_textRenderer->Begin();
+	m_textRenderer->DrawText(title, x + 10.0f, ty + 6.0f, 16.0f, D2D1::ColorF(1.0f, 0.9f, 0.6f));
+	m_textRenderer->DrawText(desc, x + 10.0f, ty + 30.0f, 14.0f, D2D1::ColorF(0.95f, 0.8f, 0.6f));
+	m_textRenderer->End();
 }
 
 void SceneManager::Update(float deltaTime)
@@ -506,7 +563,7 @@ int SceneManager::CraftModSlots() const
 {
 	if (m_craftBase.empty()) return 2;
 	const BaseDef* b = MaterialDataBase::GetBase(m_craftBase);
-	return b ? b->modSlots : 2;
+	return (b ? b->modSlots : 2) + RelicManager::SumValue("modSlots");
 }
 
 void SceneManager::GetCraftSlotRect(int i, float& x, float& y, float& w, float& h) const
@@ -802,6 +859,7 @@ void SceneManager::DrawInventory()
 	if (bases.empty())
 		m_textRenderer->DrawText(L"(none)", hdrX + 70.0f, 356.0f, 16.0f, D2D1::ColorF(0.6f, 0.6f, 0.6f));
 	m_textRenderer->DrawText(L"MATERIAL", hdrX, 456.0f, 18.0f, D2D1::ColorF(0.6f, 0.9f, 0.9f));
+
 	if (mods.empty())
 		m_textRenderer->DrawText(L"(none)", hdrX + 100.0f, 456.0f, 16.0f, D2D1::ColorF(0.6f, 0.6f, 0.6f));
 	for (int i = 0; i < (int)bases.size(); i++) {
@@ -871,7 +929,7 @@ void SceneManager::HandleRestClick(POINT m)
 			if (i == 0)          // Heal
 			{
 				auto& pd = PlayerDataManager::GetData();
-				pd.hp += REST_HEAL;
+				pd.hp += REST_HEAL + RelicManager::SumValue("restHeal");
 				if (pd.hp > pd.maxHp) pd.hp = pd.maxHp;
 				FinishRest();
 			}
@@ -1022,4 +1080,51 @@ void SceneManager::DrawMap()
 	}
 	m_textRenderer->DrawText(L"click to close", m_screenWidth / 2.0f - 55.0f, offY + totalH + 16.0f, 16.0f, D2D1::ColorF(0.7f, 0.7f, 0.7f));
 	m_textRenderer->End();
+}
+
+void SceneManager::GetRelicRect(int i, float& x, float& y, float& w, float& h) const
+{
+	w = 48.0f; h = 34.0f;
+	x = 10.0f + i * (w + 4.0f);
+	y = BAR_H + 4.0f;                  // 帯（バー）の下
+}
+
+std::string SceneManager::HoveredRelic(POINT mp) const
+{
+	auto& relics = PlayerDataManager::GetData().relics;
+	for (int i = 0; i < (int)relics.size(); i++)
+	{
+		float x, y, w, h; GetRelicRect(i, x, y, w, h);
+		if (mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h) return relics[i];
+	}
+	return "";
+}
+
+void SceneManager::DrawRelicBar()
+{
+	auto& relics = PlayerDataManager::GetData().relics;
+	if (relics.empty()) return;
+	ID3D11ShaderResourceView* white = TextureManager::Get("white");
+
+	m_uiSprite->Begin();
+	for (int i = 0; i < (int)relics.size(); i++)
+	{
+		float x, y, w, h; GetRelicRect(i, x, y, w, h);
+		m_uiSprite->DrawSprite(white, x - 1, y - 1, w + 2, h + 2, 0.0f, XMFLOAT4(0.1f, 0.05f, 0.15f, 1.0f));
+		m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(0.4f, 0.3f, 0.55f, 1.0f));
+	}
+	m_uiSprite->End();
+
+	m_textRenderer->Begin();
+	for (int i = 0; i < (int)relics.size(); i++)
+	{
+		float x, y, w, h; GetRelicRect(i, x, y, w, h);
+		auto d = RelicManager::Get(relics[i]);
+		std::wstring lb = d ? ToWString(d->name).substr(0, 2) : L"?";
+		m_textRenderer->DrawText(lb.c_str(), x + 6.0f, y + 8.0f, 18.0f, D2D1::ColorF(1, 1, 1));
+	}
+	m_textRenderer->End();
+
+	std::string rid = HoveredRelic(m_uiInput.GetMousePos());
+	if (!rid.empty()) DrawItemTooltip(rid, m_uiInput.GetMousePos());
 }

@@ -16,6 +16,7 @@ struct PlayerData
 
     int gold = 0;
     std::map<std::string, int> materials;   // 素材ID → 個数
+    std::vector<std::string> relics;
 
     bool rewardRare = false;   // エリート撃破後のカード選択をレア寄りに（Save/Loadには入れない）
 

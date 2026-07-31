@@ -183,8 +183,11 @@
     <ClInclude Include="PlayerData.h" />
     <ClInclude Include="PlayerDataManager.h" />
     <ClInclude Include="RangeShape.h" />
+    <ClInclude Include="RelicData.h" />
+    <ClInclude Include="RelicManager.h" />
     <ClInclude Include="Renderer3D.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="ResultScene.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SceneManager.h" />
     <ClInclude Include="Scenetype.h" />
@@ -231,7 +234,9 @@
     <ClCompile Include="MaterialDataBase.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="PlayerDataManager.cpp" />
+    <ClCompile Include="RelicManager.cpp" />
     <ClCompile Include="Renderer3D.cpp" />
+    <ClCompile Include="ResultScene.cpp" />
     <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="ShopScene.cpp" />
     <ClCompile Include="SpriteRenderer.cpp" />

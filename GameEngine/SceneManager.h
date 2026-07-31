@@ -16,6 +16,7 @@
 #include "CardSelectScene.h"
 #include "FieldScene.h"
 #include "ShopScene.h"
+#include "ResultScene.h"
 
 
 class SceneManager
@@ -34,6 +35,8 @@ public:
     void Draw();
     void DrawImGui();
     void HandleInput();
+
+    void DrawBarTips();
 
     void DrawCraft();
     void GetCraftSlotRect(int i, float& x, float& y, float& w, float& h) const;
@@ -109,4 +112,8 @@ private:
     std::string m_craftFxCard;           // äÆê¨ÉJÅ[ÉhID
     static constexpr float CRAFT_FX_DURATION = 0.9f;
     void DrawCraftFx();
+
+    void DrawRelicBar();
+    void GetRelicRect(int i, float& x, float& y, float& w, float& h) const;
+    std::string HoveredRelic(POINT mp) const;
 };

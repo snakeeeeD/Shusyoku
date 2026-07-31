@@ -25,6 +25,12 @@ public:
         D2D1_COLOR_F color = D2D1::ColorF(D2D1::ColorF::White),
         float rotation = 0.0f, float pivotX = 0.0f, float pivotY = 0.0f);
 
+    void DrawOutlinedText(const wchar_t* text,
+        float x, float y, float size,
+        D2D1_COLOR_F color,
+        D2D1_COLOR_F outline = D2D1::ColorF(D2D1::ColorF::Black),
+        float thickness = 2.0f);
+
     void Begin();
     void End();
 

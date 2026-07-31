@@ -18,21 +18,9 @@ void BattleScene::DrawImGui()
         for (auto enemy : m_enemies)
             enemy->SetHp(0);
 
-    if (ImGui::Button("Craft: aŠj+Œ•‚Ì”j•Ğx2"))
-        m_hand.AddCard("CRAFT:core_slash|sword_fragment|sword_fragment");
-    if (ImGui::Button("Craft: ‚Šj+Œ•‚Ì”j•Ğ+Œy—Ê"))
-        m_hand.AddCard("CRAFT:core_shield|sword_fragment|light_stone");
-    if (ImGui::Button("Craft: —ÍŠj+Œ•‚Ì”j•Ğ"))
-        m_hand.AddCard("CRAFT:core_power|sword_fragment");
-    if (ImGui::Button("Craft: aŠj+˜AŒ‚x2"))
-        m_hand.AddCard("CRAFT:core_slash|combo_shard|combo_shard");
-
-    if (ImGui::Button("Mat: core_slash"))    PlayerDataManager::AddMaterial("core_slash");
-    if (ImGui::Button("Mat: core_shield"))   PlayerDataManager::AddMaterial("core_shield");
-    if (ImGui::Button("Mat: core_power"))    PlayerDataManager::AddMaterial("core_power");
-    if (ImGui::Button("Mat: sword_fragment"))PlayerDataManager::AddMaterial("sword_fragment");
-    if (ImGui::Button("Mat: combo_shard"))   PlayerDataManager::AddMaterial("combo_shard");
-    if (ImGui::Button("Mat: light_stone"))   PlayerDataManager::AddMaterial("light_stone");
+    if (ImGui::Button("Relic: iron_heart"))    PlayerDataManager::AddRelic("iron_heart");
+    if (ImGui::Button("Relic: combo_blade"))   PlayerDataManager::AddRelic("combo_blade");
+    if (ImGui::Button("Relic: mana_furnace"))  PlayerDataManager::AddRelic("mana_furnace");
 
     // --- ƒGƒ“ƒJƒEƒ“ƒ^[‘I‘ğ ---
     ImGui::Text("Encounter");

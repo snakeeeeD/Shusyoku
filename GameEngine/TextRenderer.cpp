@@ -96,3 +96,14 @@ void TextRenderer::DrawText(const wchar_t* text,
     if (rotation != 0.0f)
         m_d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 }
+
+void TextRenderer::DrawOutlinedText(const wchar_t* text,
+    float x, float y, float size,
+    D2D1_COLOR_F color, D2D1_COLOR_F outline, float thickness)
+{
+    for (int dx = -1; dx <= 1; dx++)
+        for (int dy = -1; dy <= 1; dy++)
+            if (dx || dy)
+                DrawText(text, x + dx * thickness, y + dy * thickness, size, outline);
+    DrawText(text, x, y, size, color);
+}

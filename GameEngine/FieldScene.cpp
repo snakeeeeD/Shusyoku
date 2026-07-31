@@ -483,39 +483,9 @@ void FieldScene::Draw()
         }
     }
 
-    // HP・歩数表示
-    auto& playerData = PlayerDataManager::GetData();
-    wchar_t hpText[64];
-    swprintf_s(hpText, L"HP: %d / %d", playerData.hp, playerData.maxHp);
-    m_textRenderer->DrawText(hpText, 20.0f, 50.0f, 24.0f,
-        D2D1::ColorF(D2D1::ColorF::Black));
-
-    wchar_t stepsText[64];
-    swprintf_s(stepsText, L"歩数: %d / %d", m_steps, m_maxSteps);
-    m_textRenderer->DrawText(stepsText, 20.0f, 80.0f, 24.0f,
-        m_steps <= 5
-        ? D2D1::ColorF(D2D1::ColorF::Red)
-        : D2D1::ColorF(D2D1::ColorF::Black));
 
     m_textRenderer->End();
 
-    // 歩数にホバーで難易度上昇の説明
-    POINT mp = m_input.GetMousePos();
-    if (mp.x >= 20 && mp.x <= 220 && mp.y >= 80 && mp.y <= 108)
-    {
-        float tx = 20.0f, ty = 115.0f, tw = 380.0f, th = 70.0f;
-        m_spriteRenderer->Begin();
-        m_spriteRenderer->DrawSprite(m_whiteTexture, tx, ty, tw, th, 0.0f,
-            XMFLOAT4(0.08f, 0.08f, 0.12f, 0.95f));
-        m_spriteRenderer->End();
-
-        m_textRenderer->Begin();
-        m_textRenderer->DrawText(L"歩数が0を超えて進むと", tx + 10.0f, ty + 8.0f, 16.0f,
-            D2D1::ColorF(D2D1::ColorF::White));
-        m_textRenderer->DrawText(L"戦闘の敵が強くなります", tx + 10.0f, ty + 34.0f, 16.0f,
-            D2D1::ColorF(1.0f, 0.6f, 0.4f));
-        m_textRenderer->End();
-    }
 }
 
 void FieldScene::HandleInput()
