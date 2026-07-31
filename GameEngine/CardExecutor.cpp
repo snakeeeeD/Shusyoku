@@ -355,7 +355,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     }
              case CardType::Move:
              {
-                 int moveRange = player->GetBuffManager().GetFinalMoveRange(data.range);
+                 int moveRange = player->GetMoveRange(data.range);
 
                  std::vector<std::pair<int, int>> path;
 

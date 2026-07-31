@@ -4,6 +4,7 @@
 #include "EffectManager.h"
 #include "FloatingText.h"
 #include "ScreenShake.h"
+#include "RelicManager.h"
 
 Player::Player()
     : m_hp(50), m_maxHp(50)
@@ -72,4 +73,9 @@ bool Player::UseEnergy(int cost)
 void Player::AddBlock(int amount)
 {
     m_block += amount;
+}
+
+int Player::GetMoveRange(int baseRange) const
+{
+    return m_buffManager.GetFinalMoveRange(baseRange) + RelicManager::SumValue("moveRange");
 }

@@ -12,6 +12,14 @@
 #include <string>
 #include <functional>
 
+enum class ShopKind
+{
+    Card,
+    Core,
+    Material,
+    Relic
+};
+
 class ShopScene : public Scene
 {
 public:
@@ -26,7 +34,6 @@ public:
     std::function<void(SceneType)> onChangeScene;
 
 private:
-    enum class ShopKind { Card, Core, Material };
     struct ShopItem { std::string id; int price; bool bought; ShopKind kind; };
     void GenerateStock();
     void GetSlotBase(int i, float& cardX, float& baseY) const;
@@ -55,4 +62,24 @@ private:
     static constexpr float CARD_H = 200.0f;
 
     static constexpr float SHOP_SCALE = 1.4f;
+
+    static constexpr int RELIC_PRICE = 160;
+
+    static constexpr int RELIC_STOCK = 3;
+
+    static constexpr int REMOVE_BASE = 75;
+    static constexpr int REMOVE_STEP = 25;   // 1回ごとの値上げ
+
+    bool m_removeMode = false;
+    bool m_removedThisShop = false;          // このショップで削除済みか
+    void DrawDeckRemoval();
+    void GetDeckSlot(int i, float& x, float& y) const;
+    int  DeckCardAt(POINT p) const;
+    int RemovePrice() const;
+
+    bool m_sellMode = false;
+    void DrawSellMode();
+    std::vector<std::string> OwnedItemIds() const;
+    void GetSellSlot(int i, float& x, float& y) const;
+    int  SellItemAt(POINT p) const;
 };

@@ -7,6 +7,7 @@ struct BaseDef {
     std::string id, name, desc, type, rangeType, mainType;
     int range = 0, cost = 0, mainValue = 0;
     int modSlots = 2;
+    int buyPrice = 0, sellPrice = 0;
 };
 
 struct MatEntry {
@@ -20,6 +21,7 @@ struct MaterialDef {
     std::string id, name, desc, tag;
     int cost = 0;
     std::map<std::string, MatEntry> entries;   // "Attack"/"Skill"/"Move"/"Power"/"all"
+    int buyPrice = 0, sellPrice = 0;
 
     const MatEntry* entryFor(const std::string& baseType) const {
         auto it = entries.find(baseType);

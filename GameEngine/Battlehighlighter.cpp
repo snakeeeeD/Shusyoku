@@ -68,7 +68,7 @@ void BattleHighlighter::UpdatePlayerHighlight(
     // Moveカード: BFS で到達可能マスのみハイライト
     if (data->type == CardType::Move)
     {
-        int actualRange = player->GetBuffManager().GetFinalMoveRange(data->range);
+        int actualRange = player->GetMoveRange(data->range);
         float pulse = sin(timer * 2.0f);
         float hoverBrightness = 0.3f + 0.7f * ((pulse + 1.0f) / 2.0f);
 
@@ -188,7 +188,7 @@ void BattleHighlighter::UpdatePlayerHighlight(
 
     auto candidates = GetCandidates(centerCol, centerRow, data->rangeType, data->range);
 
-    int actualRange = player->GetBuffManager().GetFinalMoveRange(data->range);
+    int actualRange = player->GetMoveRange(data->range);
 
     float pulse = sin(timer * 2.0f);
     float hoverBrightness = 0.3f + 0.7f * ((pulse + 1.0f) / 2.0f);

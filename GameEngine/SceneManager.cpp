@@ -211,8 +211,9 @@ void SceneManager::Draw()
 	if (m_craftOpen) DrawCraft();
 	if (m_invOpen) DrawInventory();
 	if (m_mapOpen) DrawMap();
-	if (m_restOpen) DrawRest();  
+	if (m_restOpen && !m_mapOpen && !m_invOpen && !m_deckOpen && !m_craftOpen) DrawRest();
 	if (m_craftFxTimer > 0.0f) DrawCraftFx();  
+	if (m_currentType != SceneType::Title) { DrawRelicBar(); DrawBarTips(); }
 }
 
 void SceneManager::DrawOverlay()
@@ -283,8 +284,6 @@ void SceneManager::DrawOverlay()
 	if (m_deckOpen)
 		m_textRenderer->DrawText(L"Upgrade", 140.0f, 50.0f, 16.0f, D2D1::ColorF(1, 1, 1));
 	m_textRenderer->End();
-	DrawRelicBar();
-	DrawBarTips();
 }
 
 void SceneManager::DrawDeckCards(bool textPass)
@@ -349,6 +348,12 @@ void SceneManager::DrawImGui()
 		PlayerDataManager::GetData().gold = gold;
 		PlayerDataManager::Save();
 	}
+
+	if (ImGui::CollapsingHeader("Relics"))
+		for (auto& id : RelicManager::AllIds())
+			if (ImGui::Button(id.c_str()))
+				PlayerDataManager::AddRelic(id);
+
 	ImGui::End();
 #endif
 	if (m_currentScene)
@@ -360,12 +365,6 @@ void SceneManager::HandleInput()
 	m_uiInput.Update();
 
 	if (m_craftFxTimer > 0.0f) return;           // 演出中は入力停止
-	if (m_restOpen)                              // 休憩の3択
-	{
-		if (m_uiInput.GetMouseButtonTrigger(0))
-			HandleRestClick(m_uiInput.GetMousePos());
-		return;
-	}
 
 	if (m_currentType != SceneType::Title)
 	{
@@ -460,6 +459,13 @@ void SceneManager::HandleInput()
 		POINT m = m_uiInput.GetMousePos();
 		bool click = m_uiInput.GetMouseButtonTrigger(0);
 		if (m_craftOpen) { if (click) HandleCraftClick(m); return; }
+	}
+
+	if (m_restOpen)                              // 休憩の3択（バー操作より後で判定）
+	{
+		if (m_uiInput.GetMouseButtonTrigger(0))
+			HandleRestClick(m_uiInput.GetMousePos());
+		return;   // 休憩中はフィールドへ渡さない
 	}
 
 	// m_uiInputが消費したホイールをシーンへ戻す（ズーム等が効くように）
@@ -891,7 +897,7 @@ void SceneManager::DrawRest()
 	POINT mp = m_uiInput.GetMousePos();
 
 	m_uiSprite->Begin();
-	m_uiSprite->DrawSprite(white, 0, 0, (float)m_screenWidth, (float)m_screenHeight, 0.0f,
+	m_uiSprite->DrawSprite(white, 0, BAR_H, (float)m_screenWidth, (float)m_screenHeight - BAR_H, 0.0f,
 		XMFLOAT4(0.0f, 0.0f, 0.05f, 0.9f));
 	XMFLOAT4 base[3] = {
 		XMFLOAT4(0.25f, 0.45f, 0.30f, 1.0f),   // Heal
@@ -1106,12 +1112,23 @@ void SceneManager::DrawRelicBar()
 	if (relics.empty()) return;
 	ID3D11ShaderResourceView* white = TextureManager::Get("white");
 
+	auto rarColor = [](const std::string& r) -> XMFLOAT4 {
+		if (r == "uncommon") return XMFLOAT4(0.2f, 0.6f, 0.9f, 1);
+		if (r == "rare")     return XMFLOAT4(0.95f, 0.8f, 0.2f, 1);
+		if (r == "boss")     return XMFLOAT4(0.9f, 0.3f, 0.3f, 1);
+		if (r == "event")    return XMFLOAT4(0.3f, 0.8f, 0.4f, 1);
+		if (r == "shop")     return XMFLOAT4(0.7f, 0.4f, 0.9f, 1);
+		return XMFLOAT4(0.55f, 0.55f, 0.55f, 1);  // common
+		};
+
 	m_uiSprite->Begin();
 	for (int i = 0; i < (int)relics.size(); i++)
 	{
 		float x, y, w, h; GetRelicRect(i, x, y, w, h);
-		m_uiSprite->DrawSprite(white, x - 1, y - 1, w + 2, h + 2, 0.0f, XMFLOAT4(0.1f, 0.05f, 0.15f, 1.0f));
-		m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(0.4f, 0.3f, 0.55f, 1.0f));
+		auto rd = RelicManager::Get(relics[i]);
+		XMFLOAT4 frame = rd ? rarColor(rd->rarity) : XMFLOAT4(0.55f, 0.55f, 0.55f, 1);
+		m_uiSprite->DrawSprite(white, x - 2, y - 2, w + 4, h + 4, 0.0f, frame);
+		m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(0.22f, 0.18f, 0.28f, 1));
 	}
 	m_uiSprite->End();
 

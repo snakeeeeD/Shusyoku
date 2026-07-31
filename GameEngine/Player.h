@@ -19,6 +19,7 @@ public:
     float GetDisplayHp() const { return m_displayHp; }
     BuffManager& GetBuffManager() { return m_buffManager; }
     const BuffManager& GetBuffManager() const { return m_buffManager; }
+    int GetMoveRange(int baseRange) const;   // ƒoƒt{ƒŒƒŠƒbƒNž‚Ý‚ÌˆÚ“®”ÍˆÍ
 
     // ƒZƒbƒ^[
     void SetHp(int hp) { m_hp = hp; }
@@ -37,12 +38,18 @@ public:
     void ResetBlock() { if (!m_buffManager.HasBuff(BuffType::Barricade)) m_block = 0; }
 
     void UpdateDisplayHp(float deltaTime) {
-        float speed = 0.5f;
+        float speed = 0.5f;        // ”ä—á•ªi·‚ª‘å‚«‚¢‚Ù‚Ç‘¬‚¢j
+        float minSpeed = 15.0f;    // Å’á‘¬“x(HP/•b) © ‚±‚±‚Å’²®
         if (m_displayHp > (float)GetHp())
-            m_displayHp -= speed * deltaTime * (m_displayHp - GetHp());
-        if (m_displayHp < (float)GetHp())
-            m_displayHp = (float)GetHp();
+        {
+            float rate = speed * (m_displayHp - GetHp());   // HP/•b
+            if (rate < minSpeed) rate = minSpeed;            // ’x‚·‚¬–hŽ~
+            m_displayHp -= rate * deltaTime;
+            if (m_displayHp < (float)GetHp()) m_displayHp = (float)GetHp();
+        }
     }
+
+    void SnapDisplayHp() { m_displayHp = (float)m_hp; }
 
 private:
 

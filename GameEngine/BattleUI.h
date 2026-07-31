@@ -111,6 +111,8 @@ struct BattleUIContext
     bool discardViewMode = false;
 
     const std::vector<DropShown>* drops = nullptr;
+
+    const std::string* rewardRelic = nullptr;
 };
 
 class BattleUI

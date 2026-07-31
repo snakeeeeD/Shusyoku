@@ -32,6 +32,8 @@ void MaterialDataBase::Load(const std::string& path) {
         d.range = b.value("range", 0); d.cost = b.value("cost", 0);
         d.mainType = b.value("mainType", "None"); d.mainValue = b.value("mainValue", 0);
         d.modSlots = b.value("modSlots", 2);
+        d.buyPrice = b.value("buyPrice", 120);
+        d.sellPrice = b.value("sellPrice", 60);
         s_bases[d.id] = d;
     }
     for (auto& m : j["materials"]) {
@@ -40,6 +42,8 @@ void MaterialDataBase::Load(const std::string& path) {
         d.desc = m.value("desc", ""); 
         d.tag = m.value("tag", d.name);   // 未指定ならフル名にフォールバック
         d.cost = m.value("cost", 0);
+        d.buyPrice = m.value("buyPrice", 40);
+        d.sellPrice = m.value("sellPrice", 20);
         for (const char* k : { "Attack", "Skill", "Move", "Power", "all" })
             if (m.contains(k)) d.entries[k] = parseEntry(m[k]);
         s_materials[d.id] = d;

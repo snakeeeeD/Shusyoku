@@ -145,6 +145,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
     // PlayerDataManagerからHPを引き継ぐ
     m_player->SetHp(playerData.hp);
+    m_player->SnapDisplayHp();   // 表示HPを即実HPに（入場時のアニメ防止）
 
     m_player->AddEnergy(RelicManager::SumValue("turnEnergy"));   // レリック
 
@@ -307,6 +308,12 @@ void BattleScene::AddEnemy(int col, int row, const std::string& id)
         m_gridMap->SetCellType(col + dc, row + dr, cellType);
 
     m_enemies.push_back(enemy);
+}
+
+void BattleScene::OnPlayerMoved()
+{
+    m_player->AddBlock(RelicManager::SumValue("moveBlock"));
+    // 今後の「移動時○○」レリックはここに追記
 }
 
 void BattleScene::Update(float deltaTime)
@@ -572,6 +579,9 @@ void BattleScene::Update(float deltaTime)
                 pd.fieldSteps += 8;
                 pd.rewardRare = true;
                 int em = RelicManager::SumValue("eliteMaterial");
+                // エリート報酬：レリック
+                std::string rr = RelicManager::RandomDrop();
+                if (!rr.empty()) { PlayerDataManager::AddRelic(rr); m_rewardRelic = rr; }
                 if (em > 0)
                 {
                     std::vector<std::string> mids;
@@ -998,6 +1008,7 @@ void BattleScene::Draw()
     ctx.discardSelectCount = m_discardSelectCount;
     ctx.discardSelected = &m_discardSelected;
     ctx.discardViewMode = m_discardViewMode;
+    ctx.rewardRelic = &m_rewardRelic;
 
     m_battleUI->Draw(ctx);
 }
@@ -1178,7 +1189,7 @@ void BattleScene::HandleInput()
         if (sd && sd->type == CardType::Move)
         {
             selectedIsMove = true;
-            moveRangeSel = m_player->GetBuffManager().GetFinalMoveRange(sd->range) + RelicManager::SumValue("moveRange");
+            moveRangeSel = m_player->GetMoveRange(sd->range);
         }
     }
 
@@ -1445,6 +1456,7 @@ void BattleScene::HandleInput()
                         m_playerRow = newPlayerRow;
                         m_player->gridCol = m_playerCol;
                         m_player->gridRow = m_playerRow;
+                        OnPlayerMoved();   // レリック：移動時
                         float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
                         float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
                         if (usePath && !usePath->empty())
@@ -1746,6 +1758,7 @@ void BattleScene::HandleInput()
                             m_playerRow = newPlayerRow;
                             m_player->gridCol = m_playerCol;
                             m_player->gridRow = m_playerRow;
+                            OnPlayerMoved();   // レリック：移動時
                             float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
                             float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
                             m_player->StartMove(px, pz);

@@ -8,6 +8,7 @@
 #include "RangeShape.h"
 #include "UiNotice.h"
 #include "MaterialDataBase.h"
+#include "RelicManager.h"
 #include "GameUtils.h"
 #include <algorithm>
 
@@ -644,43 +645,54 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         {
             float y = m_screenHeight / 2.0f + 90.0f;
             float cx = m_screenWidth / 2.0f;
-            for (auto& d : *ctx.drops)
+            if (ctx.drops)
             {
-                std::wstring nm;
-                if (auto mm = MaterialDataBase::GetMaterial(d.id)) nm = ToWString(mm->name);
-                else if (auto bb = MaterialDataBase::GetBase(d.id)) nm = ToWString(bb->name);
-                else nm = ToWString(d.id);
-
-                if (d.rare)
+                for (auto& d : *ctx.drops)
                 {
-                    float pulse = 0.5f + 0.5f * sinf(ctx.highlightTimer * 4.0f);   // 0..1
-                    // 光る帯
-                    float bw = 340.0f, bh = 28.0f;
-                    m_spriteRenderer->DrawSprite(m_whiteTexture, cx - bw / 2.0f, y - 3.0f, bw, bh, 0.0f,
-                        XMFLOAT4(1.0f, 0.85f, 0.2f, 0.12f + 0.22f * pulse));
-                    // きらめき粒（帯の周りを回る）
-                    for (int k = 0; k < 6; k++)
+                    std::wstring nm;
+                    if (auto mm = MaterialDataBase::GetMaterial(d.id)) nm = ToWString(mm->name);
+                    else if (auto bb = MaterialDataBase::GetBase(d.id)) nm = ToWString(bb->name);
+                    else nm = ToWString(d.id);
+
+                    if (d.rare)
                     {
-                        float a = ctx.highlightTimer * 2.0f + k * 1.0472f;             // 60度刻み
-                        float px = cx + cosf(a) * (170.0f + 8.0f * sinf(ctx.highlightTimer * 3.0f + k));
-                        float py = y + 11.0f + sinf(a) * 9.0f;
-                        float sz = 4.0f + 3.0f * pulse;
-                        m_spriteRenderer->DrawSprite(m_whiteTexture, px - sz / 2, py - sz / 2, sz, sz, 0.0f,
-                            XMFLOAT4(1.0f, 0.95f, 0.5f, 0.35f + 0.55f * pulse));
+                        float pulse = 0.5f + 0.5f * sinf(ctx.highlightTimer * 4.0f);   // 0..1
+                        // 光る帯
+                        float bw = 340.0f, bh = 28.0f;
+                        m_spriteRenderer->DrawSprite(m_whiteTexture, cx - bw / 2.0f, y - 3.0f, bw, bh, 0.0f,
+                            XMFLOAT4(1.0f, 0.85f, 0.2f, 0.12f + 0.22f * pulse));
+                        // きらめき粒（帯の周りを回る）
+                        for (int k = 0; k < 6; k++)
+                        {
+                            float a = ctx.highlightTimer * 2.0f + k * 1.0472f;             // 60度刻み
+                            float px = cx + cosf(a) * (170.0f + 8.0f * sinf(ctx.highlightTimer * 3.0f + k));
+                            float py = y + 11.0f + sinf(a) * 9.0f;
+                            float sz = 4.0f + 3.0f * pulse;
+                            m_spriteRenderer->DrawSprite(m_whiteTexture, px - sz / 2, py - sz / 2, sz, sz, 0.0f,
+                                XMFLOAT4(1.0f, 0.95f, 0.5f, 0.35f + 0.55f * pulse));
+                        }
                     }
+
+                    wchar_t buf[96];
+                    if (d.rare)
+                        swprintf_s(buf, L"\u2605 %s x%d  (RARE!)", nm.c_str(), d.count);
+                    else
+                        swprintf_s(buf, L"%s x%d", nm.c_str(), d.count);
+
+                    D2D1_COLOR_F col = d.rare
+                        ? D2D1::ColorF(1.0f, 0.75f + 0.25f * (0.5f + 0.5f * sinf(ctx.highlightTimer * 4.0f)), 0.25f)
+                        : D2D1::ColorF(D2D1::ColorF::White);
+                    m_textRenderer->DrawText(buf, cx - 100.0f, y, 20.0f, col);
+                    y += d.rare ? 34.0f : 26.0f;
                 }
-
-                wchar_t buf[96];
-                if (d.rare)
-                    swprintf_s(buf, L"\u2605 %s x%d  (RARE!)", nm.c_str(), d.count);
-                else
-                    swprintf_s(buf, L"%s x%d", nm.c_str(), d.count);
-
-                D2D1_COLOR_F col = d.rare
-                    ? D2D1::ColorF(1.0f, 0.75f + 0.25f * (0.5f + 0.5f * sinf(ctx.highlightTimer * 4.0f)), 0.25f)
-                    : D2D1::ColorF(D2D1::ColorF::White);
-                m_textRenderer->DrawText(buf, cx - 100.0f, y, 20.0f, col);
-                y += d.rare ? 34.0f : 26.0f;
+            }
+            if (ctx.rewardRelic && !ctx.rewardRelic->empty())
+            {
+                std::wstring rn;
+                if (auto r = RelicManager::Get(*ctx.rewardRelic)) rn = ToWString(r->name);
+                m_textRenderer->DrawText((L"レリック獲得: " + rn).c_str(),
+                    cx - 120.0f, y, 24.0f, D2D1::ColorF(0.9f, 0.7f, 1.0f));
+                y += 32.0f;
             }
         }
         m_textRenderer->DrawText(L"クリックで次へ",

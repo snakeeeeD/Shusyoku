@@ -65,6 +65,7 @@ void PlayerDataManager::Save()
 	j["gold"] = m_data.gold;
 	j["materials"] = m_data.materials;
 	j["relics"] = m_data.relics;
+	j["removeCount"] = m_data.removeCount;
 
 	// ← 全部追加してからファイルに書き込む
 	std::ofstream file(SAVE_PATH);
@@ -109,6 +110,7 @@ void PlayerDataManager::Load()
 		m_data.fieldPlayerCol = j.value("fieldPlayerCol", 0);
 		m_data.fieldPlayerRow = j.value("fieldPlayerRow", 3);
 		m_data.fieldSteps = j.value("fieldSteps", 20);
+		m_data.removeCount = j.value("removeCount", 0);
 
 		if (j.contains("fieldNodeTypes"))
 			m_data.fieldNodeTypes = j["fieldNodeTypes"].get<std::vector<int>>();
@@ -171,6 +173,7 @@ void PlayerDataManager::StartNewGame()
 	m_data.gold = 100;          // 開始所持金
 	m_data.materials.clear();
 	m_data.relics.clear();
+	m_data.removeCount = 0;
 
 	m_data.currentNodeIndex = 0;
 	m_data.clearedNodes.clear();

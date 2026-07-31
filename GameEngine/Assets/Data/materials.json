@@ -7,7 +7,9 @@
       "type": "Attack",
       "rangeType": "Adjacent",
       "range": 1,
-      "cost": 0,
+      "cost": 1,
+      "buyPrice": 120,
+      "sellPrice": 20,
       "modSlots": 2,
       "mainType": "Damage",
       "mainValue": 4
@@ -19,7 +21,9 @@
       "type": "Attack",
       "rangeType": "Adjacent",
       "range": 1,
-      "cost": 1,
+      "cost": 2,
+      "buyPrice": 150,
+      "sellPrice": 30,
       "modSlots": 3,
       "mainType": "Damage",
       "mainValue": 6
@@ -32,6 +36,8 @@
       "rangeType": "None",
       "range": 0,
       "cost": 1,
+      "buyPrice": 120,
+      "sellPrice": 20,
       "modSlots": 2,
       "mainType": "Block",
       "mainValue": 4
@@ -44,6 +50,8 @@
       "rangeType": "None",
       "range": 0,
       "cost": 1,
+      "buyPrice": 120,
+      "sellPrice": 20,
       "modSlots": 1,
       "mainType": "None",
       "mainValue": 0
@@ -58,6 +66,8 @@
       "tag": "鋭",
       "desc": "攻撃:ダメ+5 / スキル:攻撃UP / パワー:永続攻撃UP",
       "cost": 0,
+      "buyPrice": 120,
+      "sellPrice": 10,
       "Attack": {
         "slot": "amplifyMain",
         "value": 5
@@ -83,6 +93,8 @@
       "tag": "軽",
       "desc": "コスト-1",
       "cost": -1,
+      "buyPrice": 150,
+      "sellPrice": 20,
       "all": { "slot": "none" }
     },
     {
@@ -91,10 +103,21 @@
       "tag": "連",
       "desc": "攻撃回数+1（攻撃土台のみ）",
       "cost": 1,
+      "buyPrice": 150,
+      "sellPrice": 30,
       "Attack": {
         "slot": "hits",
         "value": 1
       }
+    },
+    {
+      "id": "golden_fragment",
+      "name": "黄金のかけら",
+      "tag": "金",
+      "desc": "売ると高値になる",
+      "cost": 0,
+      "buyPrice": 0,
+      "sellPrice": 150
     }
   ]
 }

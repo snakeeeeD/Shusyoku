@@ -23,4 +23,6 @@ struct PlayerData
     std::vector<int>         fieldNodeTypes;   // FieldNodeTypeをintで保存
     std::vector<std::string> fieldNodeEnemyIds;
     std::vector<bool>        fieldNodeVisited;
+
+    int removeCount = 0;   // カード削除した回数（価格に反映・引き継ぎ）
 };
