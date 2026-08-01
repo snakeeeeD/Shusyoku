@@ -25,4 +25,6 @@ struct PlayerData
     std::vector<bool>        fieldNodeVisited;
 
     int removeCount = 0;   // カード削除した回数（価格に反映・引き継ぎ）
+
+    int layer = 1;   // 現在の層
 };

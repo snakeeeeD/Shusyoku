@@ -20,6 +20,7 @@ struct EncounterData
 {
     std::vector<EncounterEnemy> enemies;
     int layer = 1;
+    int tier = 1;
     EncCategory category = EncCategory::Normal;
     int weight;
     std::vector<EscalationTier> escalation;

@@ -23,6 +23,7 @@ public:
 
     // セッター
     void SetHp(int hp) { m_hp = hp; }
+    void SetMaxHp(int hp) { m_maxHp = hp; }
     void SetEnergy(int energy) { m_energy = energy; }
     void SetBlock(int block) { m_block = block; }
 

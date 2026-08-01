@@ -2,6 +2,7 @@
   "encounters": [
     {
       "layer": 1,
+      "tier": 1,
       "category": "normal",
       "weight": 20,
       "enemies": [
@@ -24,6 +25,7 @@
     },
     {
       "layer": 1,
+      "tier": 1,
       "category": "normal",
       "weight": 30,
       "enemies": [
@@ -41,6 +43,7 @@
     },
     {
       "layer": 1,
+      "tier": 1,
       "category": "normal",
       "weight": 30,
       "enemies": [
@@ -63,30 +66,33 @@
     },
     {
       "layer": 1,
+      "tier": 2,
       "category": "normal",
       "weight": 15,
       "enemies": [
         {
           "id": "brute",
-          "col": 2,
+          "col": 4,
           "row": 1
         }
       ]
     },
     {
       "layer": 1,
+      "tier": 2,
       "category": "normal",
       "weight": 10,
       "enemies": [
         {
           "id": "caster",
-          "col": 2,
-          "row": 1
+          "col": 4,
+          "row": 0
         }
       ]
     },
     {
       "layer": 1,
+      "tier": 2,
       "category": "normal",
       "weight": 15,
       "enemies": [
@@ -104,6 +110,7 @@
     },
     {
       "layer": 1,
+      "tier": 2,
       "category": "normal",
       "weight": 15,
       "enemies": [

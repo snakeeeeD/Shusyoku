@@ -15,6 +15,7 @@ void EventDataBase::Load(const std::string& path)
     {
         EventDef d;
         d.id = e["id"]; d.title = e.value("title", ""); d.desc = e.value("desc", "");
+        d.layer = e.value("layer", 0);
         for (auto& c : e["choices"])
         {
             EventChoice ch;
@@ -31,14 +32,17 @@ void EventDataBase::Load(const std::string& path)
         s_events[d.id] = d;
     }
 }
+
 const EventDef* EventDataBase::Get(const std::string& id)
 {
     auto it = s_events.find(id); return it != s_events.end() ? &it->second : nullptr;
 }
-std::string EventDataBase::RandomId()
+
+std::string EventDataBase::RandomId(int layer)
 {
-    if (s_events.empty()) return "";
     std::vector<std::string> ids;
-    for (auto& kv : s_events) ids.push_back(kv.first);
+    for (auto& kv : s_events)
+        if (kv.second.layer == 0 || kv.second.layer == layer) ids.push_back(kv.first);
+    if (ids.empty()) return "";
     return ids[rand() % ids.size()];
 }

@@ -144,6 +144,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     m_cameraOffsetZ = m_player->worldZ;
 
     // PlayerDataManagerからHPを引き継ぐ
+    m_player->SetMaxHp(playerData.maxHp);   // 最大HPをPlayerDataから同期
     m_player->SetHp(playerData.hp);
     m_player->SnapDisplayHp();   // 表示HPを即実HPに（入場時のアニメ防止）
 
@@ -234,8 +235,8 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         };
 
     int encCount = EncounterDataBase::GetCount();
-    int layer = 1;
-    const EncounterData* encounter = EncounterDataBase::GetEncounter(layer, m_category, m_battleSeed);
+    int layer = PlayerDataManager::GetData().layer;
+    const EncounterData* encounter = EncounterDataBase::GetEncounter(layer, m_category, m_battleTier, m_battleSeed);
     if (encounter)
     {
         for (auto& ee : encounter->enemies)
@@ -552,6 +553,13 @@ void BattleScene::Update(float deltaTime)
             // HPを保存、現在のマスをクリア済みに
             auto& pd = PlayerDataManager::GetData();
             pd.hp = m_player->GetHp();
+
+            if (m_category == EncCategory::Boss && pd.layer < 3)
+            {
+                std::string br = RelicManager::RandomUnowned("boss");
+                if (br.empty()) br = RelicManager::RandomDrop();
+                if (!br.empty()) { PlayerDataManager::AddRelic(br); m_rewardRelic = br; }
+            }
 
             // 素材ドロップ判定
             for (auto& eid : m_defeatedEnemyIds)
@@ -1019,7 +1027,23 @@ void BattleScene::HandleInput()
     if (m_battleResult == BattleResult::Win)
     {
         if (m_input.GetMouseButtonTrigger(0) && onChangeScene)
-            onChangeScene(m_category == EncCategory::Boss ? SceneType::Result : SceneType::CardSelect);
+        {
+            if (m_category == EncCategory::Boss)
+            {
+                auto& pd = PlayerDataManager::GetData();
+                if (pd.layer < 3)
+                {
+                    pd.layer++;                       // 次の層へ
+                    pd.fieldNodeTypes.clear();        // マップを作り直させる
+                    pd.fieldNodeEnemyIds.clear();
+                    pd.fieldNodeVisited.clear();
+                    PlayerDataManager::Save();
+                    onChangeScene(SceneType::Field);
+                }
+                else onChangeScene(SceneType::Result);   // 最終層クリア＝RUN CLEAR
+            }
+            else onChangeScene(SceneType::CardSelect);
+        }
         return;
     }
     if (m_battleResult == BattleResult::Lose)

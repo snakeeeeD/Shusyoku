@@ -534,6 +534,7 @@ void FieldScene::HandleInput()
                     case FieldNodeType::Boss:
                         m_currentEnemyId = (node.type == FieldNodeType::Boss) ? "dragon" : node.enemyId;
                         m_currentBattleSeed = idx;
+                        m_currentBattleTier = 1 + node.col * 3 / GRID_COLS; if (m_currentBattleTier > 3) m_currentBattleTier = 3;
                         m_currentBattleOverflow = (m_steps < 0) ? -m_steps : 0;
                         m_currentBattleCategory = (node.type == FieldNodeType::Boss)
                             ? EncCategory::Boss : EncCategory::Normal;
@@ -544,6 +545,7 @@ void FieldScene::HandleInput()
                     case FieldNodeType::Elite:
                         m_currentEnemyId = node.enemyId;
                         m_currentBattleSeed = idx;
+                        m_currentBattleTier = 1 + node.col * 3 / GRID_COLS; if (m_currentBattleTier > 3) m_currentBattleTier = 3;
                         m_currentBattleOverflow = (m_steps < 0) ? -m_steps : 0;
                         m_currentBattleCategory = EncCategory::Elite;
                         SaveProgress();
@@ -561,7 +563,7 @@ void FieldScene::HandleInput()
                     {
                         node.visited = true;
                         SaveProgress();
-                        if (onEvent) onEvent(EventDataBase::RandomId());
+                        if (onEvent) onEvent(EventDataBase::RandomId(PlayerDataManager::GetData().layer));
                         break;
                     }
                     case FieldNodeType::Shop:

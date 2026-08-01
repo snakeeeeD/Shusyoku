@@ -42,6 +42,7 @@ void EncounterDataBase::Init()
             data.enemies.push_back(ee);
         }
         data.layer = e.value("layer", 1);
+        data.tier = e.value("tier", 1);
         data.category = ParseCategory(e.value("category", std::string("normal")));
         data.weight = e["weight"];
         if (e.contains("escalation"))
@@ -76,16 +77,23 @@ void EncounterDataBase::Reload()
     Init();
 }
 
-const EncounterData* EncounterDataBase::GetEncounter(int layer, EncCategory cat, int seed)
+const EncounterData* EncounterDataBase::GetEncounter(int layer, EncCategory cat, int tier, int seed)
 {
-    std::vector<EncounterData*> candidates;
-    for (auto& enc : m_data)
-        if (enc.layer == layer && enc.category == cat) candidates.push_back(&enc);
-    if (candidates.empty()) return nullptr;
+    std::vector<EncounterData*> cand;
+    for (int tt = tier; tt >= 1 && cand.empty(); tt--)      // —v‹tier¨–³‚¯‚ê‚Î‰ºˆÊ‚ÖBŒ©‚Â‚©‚Á‚½Å‚tier‚¾‚¯Ì—p
+        for (auto& enc : m_data)
+            if (enc.layer == layer && enc.category == cat && enc.tier == tt) cand.push_back(&enc);
+    if (cand.empty())   // ‚»‚Ì‘w‚É–³‚¯‚ê‚Î‘w1‚Ö
+        for (auto& enc : m_data)
+            if (enc.layer == 1 && enc.category == cat) cand.push_back(&enc);
+    if (cand.empty()) return nullptr;
 
     unsigned int h = (unsigned int)seed;
     h ^= h >> 16; h *= 0x7feb352du; h ^= h >> 15; h *= 0x846ca68bu; h ^= h >> 16;
-    return candidates[h % candidates.size()];
+    int total = 0; for (auto* e : cand) total += (e->weight > 0 ? e->weight : 1);
+    int roll = (int)(h % (unsigned)total), acc = 0;
+    for (auto* e : cand) { acc += (e->weight > 0 ? e->weight : 1); if (roll < acc) return e; }
+    return cand.back();
 }
 
 const std::vector<EscalationTier>& EncounterDataBase::DefaultEscalation()

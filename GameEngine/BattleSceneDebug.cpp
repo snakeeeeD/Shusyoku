@@ -40,7 +40,7 @@ void BattleScene::DrawImGui()
         m_enemies.clear();
 
         const EncounterData* encounter = (m_debugEncounterIndex < 0)
-            ? EncounterDataBase::GetEncounter(m_debugRank, EncCategory::Normal, rand())
+            ? EncounterDataBase::GetEncounter(m_debugRank, EncCategory::Normal, m_battleTier, rand())
             : EncounterDataBase::GetByIndex(m_debugEncounterIndex);
 
         if (encounter)

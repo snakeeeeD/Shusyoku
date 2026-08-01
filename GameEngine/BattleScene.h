@@ -64,6 +64,9 @@ public:
     void SetOverflow(int o) { m_overflow = o; }
     void SetCategory(EncCategory c) { m_category = c; }
 
+    int m_battleTier = 1;
+    void SetTier(int t) { m_battleTier = t; }
+
     void OnPlayerMoved();
 
     std::vector<DropShown> m_dropResult;

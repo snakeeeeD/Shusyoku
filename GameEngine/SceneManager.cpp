@@ -126,6 +126,7 @@ void SceneManager::ChangeScene(SceneType type)
 	std::string battleEnemyId;
 	int battleSeed = 0;
 	int battleOverflow = 0;
+	int battleTier = 1;
 	EncCategory battleCategory = EncCategory::Normal;
 	bool resultCleared = false;
 	if (type == SceneType::Result)
@@ -133,12 +134,14 @@ void SceneManager::ChangeScene(SceneType type)
 			resultCleared = (battle->GetBattleResult() == BattleResult::Win);
 	if (type == SceneType::Battle)
 	{
+
 		if (auto field = dynamic_cast<FieldScene*>(m_currentScene))
 		{
 			battleEnemyId = field->GetCurrentBattleEnemyId();
 			battleSeed = field->GetCurrentBattleSeed();
 			battleOverflow = field->GetCurrentBattleOverflow();
 			battleCategory = field->GetCurrentBattleCategory();
+			battleTier = field->GetCurrentBattleTier();
 		}
 	}
 
@@ -164,6 +167,7 @@ void SceneManager::ChangeScene(SceneType type)
 			scene->SetBattleSeed(battleSeed);
 			scene->SetOverflow(battleOverflow);
 			scene->SetCategory(battleCategory);
+			scene->SetTier(battleTier);
 
 			scene->onChangeScene = [this](SceneType type) { ChangeScene(type); };
 			m_currentScene = scene;
@@ -277,6 +281,7 @@ void SceneManager::DrawOverlay()
 	swprintf_s(gbuf, L"G:%d", PlayerDataManager::GetData().gold);
 	m_textRenderer->DrawText(gbuf, m_screenWidth - 560.0f, 10.0f, 16.0f, D2D1::ColorF(1, 0.9f, 0.3f));
 
+
 	auto& pd = PlayerDataManager::GetData();
 	int hp = pd.hp, mhp = pd.maxHp;
 	if (auto battle = dynamic_cast<BattleScene*>(m_currentScene))   // バトル中は生HP
@@ -291,6 +296,9 @@ void SceneManager::DrawOverlay()
 	wchar_t sbuf[48];
 	swprintf_s(sbuf, L"Steps %d", pd.fieldSteps);
 	m_textRenderer->DrawText(sbuf, 140.0f, 10.0f, 16.0f, D2D1::ColorF(0.6f, 0.9f, 0.6f));
+
+	wchar_t lbuf[32]; swprintf_s(lbuf, L"Layer %d/3", pd.layer);
+	m_textRenderer->DrawText(lbuf, 280.0f, 10.0f, 16.0f, D2D1::ColorF(0.75f, 0.8f, 1.0f));
 
 	m_textRenderer->DrawText(L"Items", m_screenWidth - 460.0f, 10.0f, 16.0f, D2D1::ColorF(1, 1, 1));
 	if (m_deckOpen)
