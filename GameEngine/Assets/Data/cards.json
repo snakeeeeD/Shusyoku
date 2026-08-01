@@ -4,6 +4,7 @@
       "id": "ATK_strike",
       "name": "ストライク",
       "type": "Attack",
+      "starter": true,
       "rarity": "Common",
       "tags": [
         "Melee"
@@ -45,6 +46,7 @@
       "id": "ATK_Spin Slash",
       "name": "回転切り",
       "type": "Attack",
+      "starter": true,
       "rarity": "Uncommon",
       "cost": 2,
       "range": 1,
@@ -91,6 +93,7 @@
       "rangeType": "Adjacent",
       "description": "{value}ダメージ",
       "exhaust": true,
+      "generated": true,
       "upgrade": {
         "mainValue": 2
       },
@@ -223,6 +226,7 @@
       "id": "SKL_defend",
       "name": "ディフェンド",
       "type": "Skill",
+      "starter": true,
       "rarity": "Common",
       "cost": 1,
       "range": 0,

@@ -1,0 +1,177 @@
+﻿{
+  "events": [
+    {
+      "id": "shrine",
+      "title": "古い祭壇",
+      "desc": "触れると力が湧いてくる気がする…",
+      "choices": [
+        {
+          "label": "祈る（最大HP+8）",
+          "result": "力が満ちた。",
+          "outcomes": [
+            {
+              "type": "maxHp",
+              "value": 8
+            }
+          ]
+        },
+        {
+          "label": "供物を捧げる（-60G, レリック獲得）",
+          "result": "祝福を受けた。",
+          "outcomes": [
+            {
+              "type": "gold",
+              "value": -60
+            },
+            { "type": "relic" }
+          ]
+        },
+        {
+          "label": "立ち去る",
+          "result": "何も起きなかった。",
+          "outcomes": []
+        }
+      ]
+    },
+    {
+      "id": "chest",
+      "title": "古びた宝箱",
+      "desc": "鍵はかかっていない。罠の匂いもする…",
+      "choices": [
+        {
+          "label": "勢いよく開ける（+100G / -12HP）",
+          "result": "金貨と、ちょっとの痛み。",
+          "outcomes": [
+            {
+              "type": "gold",
+              "value": 100
+            },
+            {
+              "type": "hp",
+              "value": -12
+            }
+          ]
+        },
+        {
+          "label": "慎重に開ける（+40G）",
+          "result": "無事に金貨を得た。",
+          "outcomes": [
+            {
+              "type": "gold",
+              "value": 40
+            }
+          ]
+        },
+        {
+          "label": "放置する",
+          "result": "君は先へ進んだ。",
+          "outcomes": []
+        }
+      ]
+    },
+    {
+      "id": "spring",
+      "title": "澄んだ泉",
+      "desc": "飲めば癒されそうだが、何かが沈んでいる。",
+      "choices": [
+        {
+          "label": "水を飲む（+14HP）",
+          "result": "傷が癒えた。",
+          "outcomes": [
+            {
+              "type": "hp",
+              "value": 14
+            }
+          ]
+        },
+        {
+          "label": "底を探る（-50G, 素材獲得）",
+          "result": "黄金のかけらを拾った。",
+          "outcomes": [
+            {
+              "type": "gold",
+              "value": -50
+            },
+            {
+              "type": "material",
+              "param": "golden_fragment",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": "forge",
+      "title": "旅の鍛冶場",
+      "desc": "職人がカードを鍛えてくれるという。",
+      "choices": [
+        {
+          "label": "カードを1枚強化してもらう（-50G）",
+          "result": "カードが鍛えられた。",
+          "outcomes": [
+            { "type": "upgradeCard" },
+            {
+              "type": "gold",
+              "value": -80
+            }
+          ]
+        },
+        {
+          "label": "立ち去る",
+          "result": "君は先へ進んだ。",
+          "outcomes": []
+        }
+      ]
+    },
+
+    {
+      "id": "cursed_altar",
+      "title": "呪いの祭壇",
+      "desc": "この祭壇は全てを持っていく…",
+      "choices": [
+        {
+          "label": "カードを捧げる（-50G）",
+          "result": "カード、金貨を失った。",
+          "outcomes": [
+            {
+              "type": "gold",
+              "value": -80
+            },
+            { "type": "removeCard" }
+          ]
+        },
+        {
+          "label": "カードを賭ける（ランダム変化）",
+          "result": "カードが姿を変えた。",
+          "outcomes": [ { "type": "transformCard" } ]
+        },
+        {
+          "label": "断る",
+          "result": "君は祭壇を後にした。",
+          "outcomes": []
+        }
+      ]
+    },
+
+    {
+      "id": "spirit",
+      "title": "気まぐれな精霊",
+      "desc": "手持ちのレリックを、別のものに変えてやろうか？",
+      "choices": [
+        {
+          "label": "レリックを1つ入れ替える",
+          "result": "レリックが姿を変えた。",
+          "outcomes": [ { "type": "transformRelic" } ]
+        },
+        {
+          "label": "断る",
+          "result": "精霊は消えていった。",
+          "outcomes": []
+        }
+      ]
+    }
+
+  ]
+}

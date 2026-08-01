@@ -24,7 +24,7 @@ void PlayerDataManager::Init()
 	m_data.hp = 50;
 	m_data.maxHp = 50;
 	m_data.deck = {
-		"ATK_strike", "ATK_strike", "ATK_strike", "ATK_Spin Slash", "ATK_poison_blade",
+		"ATK_strike", "ATK_strike", "ATK_strike", "ATK_Spin Slash",
 		"SKL_defend", "SKL_defend",
 		"MOV_move", "MOV_move", "dash",
 		"POW_power_attack", "POW_buff_defense"
@@ -137,7 +137,7 @@ void PlayerDataManager::Load()
 		m_data.hp = 50;
 		m_data.maxHp = 50;
 		m_data.deck = {
-"ATK_strike", "ATK_strike", "ATK_strike", "ATK_Spin Slash", "ATK_poison_blade",
+"ATK_strike", "ATK_strike", "ATK_strike", "ATK_Spin Slash",
 		"SKL_defend", "SKL_defend",
 		"MOV_move", "MOV_move", "dash",
 		"POW_power_attack", "POW_buff_defense"
@@ -165,7 +165,7 @@ void PlayerDataManager::StartNewGame()
 	m_data.hp = 50;
 	m_data.maxHp = 50;
 	m_data.deck = {
-	   "ATK_strike", "ATK_strike", "ATK_strike", "ATK_Spin Slash", "ATK_poison_blade",
+	   "ATK_strike", "ATK_strike", "ATK_strike", "ATK_Spin Slash",
 	   "SKL_defend", "SKL_defend", "SKL_defend", "SKL_defend",
 	   "MOV_move",   "MOV_move",   "MOV_dash",
 	};
@@ -264,4 +264,18 @@ void PlayerDataManager::AddRelic(const std::string& id)
 		}
 		Save();
 	}
+}
+
+void PlayerDataManager::RemoveRelic(const std::string& id)
+{
+	auto& v = m_data.relics;
+	auto it = std::find(v.begin(), v.end(), id);
+	if (it == v.end()) return;
+	if (auto d = RelicManager::Get(id))
+	{
+		if (d->kind == "maxHp") { m_data.maxHp -= d->value; if (m_data.maxHp < 1) m_data.maxHp = 1; if (m_data.hp > m_data.maxHp) m_data.hp = m_data.maxHp; }
+		else if (d->kind == "steps") { m_data.fieldSteps -= d->value; }
+	}
+	v.erase(it);
+	Save();
 }

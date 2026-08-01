@@ -1,6 +1,8 @@
 ﻿#include "FieldScene.h"
 #include "FieldMapConfig.h"
+#include "EventDataBase.h"
 #include "SceneType.h"
+
 #include <cstdlib>
 #include <algorithm>
 #include <ctime>
@@ -101,6 +103,7 @@ void FieldScene::GenerateMap()
     FieldMapConfig config;
     config.typeLimits = {
         { FieldNodeType::Battle, -1, 7 },
+        { FieldNodeType::Event,   12,  4 },
         { FieldNodeType::Rest,    4,  3 },
         { FieldNodeType::Shop, 2, 3 },
          { FieldNodeType::Elite, 2, 2 },
@@ -406,6 +409,8 @@ void FieldScene::Draw()
                     color = XMFLOAT4(blink, 0.2f, 0.2f, 1.0f); break;
                 case FieldNodeType::Rest:
                     color = XMFLOAT4(0.2f, blink, 0.2f, 1.0f); break;
+                case FieldNodeType::Event:  
+                    color = XMFLOAT4(blink, 0.3f, blink, 1.0f); break;   // 通常色スイッチ
                 case FieldNodeType::Boss:
                     color = XMFLOAT4(blink, 0.2f, blink, 1.0f); break;
                 case FieldNodeType::Shop:
@@ -430,6 +435,8 @@ void FieldScene::Draw()
                     color = XMFLOAT4(0.7f, 0.2f, 0.2f, 1.0f); break;
                 case FieldNodeType::Rest:
                     color = XMFLOAT4(0.2f, 0.7f, 0.2f, 1.0f); break;
+                case FieldNodeType::Event: 
+                    color = XMFLOAT4(0.6f, 0.3f, 0.8f, 1.0f); break;
                 case FieldNodeType::Boss:
                     color = XMFLOAT4(0.7f, 0.2f, 0.7f, 1.0f); break;
                 case FieldNodeType::Start:
@@ -471,6 +478,7 @@ void FieldScene::Draw()
             case FieldNodeType::Start:  label = L"START";  break;
             case FieldNodeType::Battle: label = L"BATTLE"; break;
             case FieldNodeType::Rest:   label = L"REST";   break;
+            case FieldNodeType::Event:  label = L"EVENT";  break;   
             case FieldNodeType::Boss:   label = L"BOSS";   break;
             case FieldNodeType::Shop:   label = L"SHOP";   break;
             case FieldNodeType::Elite:  label = L"ELITE";  break;
@@ -547,6 +555,13 @@ void FieldScene::HandleInput()
                         node.visited = true;
                         SaveProgress();
                         if (onRest) onRest();           // 回復/強化/合成の3択はSceneManager側で
+                        break;
+                    }
+                    case FieldNodeType::Event:
+                    {
+                        node.visited = true;
+                        SaveProgress();
+                        if (onEvent) onEvent(EventDataBase::RandomId());
                         break;
                     }
                     case FieldNodeType::Shop:

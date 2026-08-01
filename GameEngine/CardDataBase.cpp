@@ -37,6 +37,8 @@ void CardDataBase::Init()
             data.range = c["range"];
             data.rangeType = StringToRangeType(c["rangeType"]);
             data.description = ToWString(c["description"]);
+            data.generated = c.value("generated", false);
+            data.starter = c.value("starter", false);
             data.vfx = c.value("vfx", std::string(""));
 
             std::string rarityStr = c.value("rarity", "Common");
@@ -227,4 +229,26 @@ CardData CardDataBase::BuildCrafted(const std::string& id)
     if (c.subEffect.hasEffect)   c.description += L" / 自身強化";
     if (c.onHitEffect.hasEffect) c.description += L" / 命中時効果";
     return c;
+}
+
+std::vector<std::string> CardDataBase::RewardPool()
+{
+    std::vector<std::string> v;
+    for (auto& kv : m_data)
+    {
+        const std::string& id = kv.first;
+        if (!id.empty() && id.back() == '+') continue;   // 強化版は除外
+        if (id.rfind("CRAFT:", 0) == 0) continue;         // 合成カード除外
+        if (kv.second.generated) continue;                // 生成専用除外
+        if (kv.second.starter && kv.second.type != CardType::Move) continue;   // 初期カード(移動以外)を除外
+        v.push_back(id);
+    }
+
+    return v;
+}
+std::string CardDataBase::RandomCard()
+{
+    auto pool = RewardPool();
+    if (pool.empty()) return "";
+    return pool[rand() % (int)pool.size()];
 }

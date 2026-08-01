@@ -9,4 +9,5 @@ enum class FieldNodeType
     Shop,     // ショップ
     Elite,    // エリート
     Boss,     // ボス
+    Event,    // イベント
 };

@@ -159,6 +159,8 @@
     <ClInclude Include="Enemydata.h" />
     <ClInclude Include="EnemyDataBase.h" />
     <ClInclude Include="EnemyIntentVisual.h" />
+    <ClInclude Include="EventData.h" />
+    <ClInclude Include="EventDataBase.h" />
     <ClInclude Include="External\imgui\imgui.h" />
     <ClInclude Include="External\imgui\backends\imgui_impl_dx11.h" />
     <ClInclude Include="External\imgui\backends\imgui_impl_win32.h" />
@@ -216,6 +218,7 @@
     <ClCompile Include="Deck.cpp" />
     <ClCompile Include="EffectDataBase.cpp" />
     <ClCompile Include="EncounterDataBase.cpp" />
+    <ClCompile Include="EventDataBase.cpp" />
     <ClCompile Include="External\imgui\imgui.cpp" />
     <ClCompile Include="External\imgui\imgui_draw.cpp" />
     <ClCompile Include="External\imgui\imgui_tables.cpp" />

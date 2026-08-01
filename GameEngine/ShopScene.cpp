@@ -62,10 +62,8 @@ void ShopScene::GenerateStock()
         });
 
     // ÉJÅ[Éh
-    std::vector<std::string> cardIds = {
-        "ATK_strike", "SKL_defend", "MOV_move", "ATK_Spin Slash", "MOV_dash",
-        "ATK_poison_blade", "POW_power_attack", "POW_buff_defense"
-    };
+    std::vector<std::string> cardIds = CardDataBase::RewardPool();
+
     pickShuffled(cardIds, CARD_COUNT, [&](const std::string& id) {
         const CardData* d = CardDataBase::Get(id);
         if (d) m_items.push_back({ id, PriceFor(d), false, ShopKind::Card });

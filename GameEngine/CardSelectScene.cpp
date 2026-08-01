@@ -60,10 +60,7 @@ void CardSelectScene::GenerateChoices()
     };
     std::vector<WeightedCard> pool;
 
-    std::vector<std::string> allIds = {
-        "ATK_strike", "SKL_defend", "MOV_move", "ATK_Spin Slash", "MOV_dash",
-        "ATK_poison_blade", "POW_power_attack", "POW_buff_defense"
-    };
+    std::vector<std::string> allIds = CardDataBase::RewardPool();
 
     for (const auto& id : allIds)
     {

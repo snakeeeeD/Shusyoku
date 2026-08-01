@@ -31,6 +31,7 @@ public:
     static int  MaterialCount(const std::string& id);
 
     static void AddRelic(const std::string& id);
+    static void RemoveRelic(const std::string& id);
 
 private:
     static PlayerData m_data;

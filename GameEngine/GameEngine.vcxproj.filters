@@ -241,6 +241,18 @@
     <Filter Include="ソース ファイル\03-Object関連\40-Relic\02-RelicManager">
       <UniqueIdentifier>{6c116313-c60b-4635-a6c0-527913ed5aef}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\02-Scene\40-FieldScene\10-Event">
+      <UniqueIdentifier>{9a6f2e06-5015-4177-9193-4a040ca636bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\40-FieldScene\10-Event\01-EventData">
+      <UniqueIdentifier>{32d046e5-1fdb-4733-b99b-a2d172ada70e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\40-FieldScene\10-Event\02-EventDataBase">
+      <UniqueIdentifier>{bbee86c9-ec26-4d9d-8d63-4d79a0e6246f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\07-EffectDataBase">
+      <UniqueIdentifier>{9c4915d8-ea49-4584-b966-c0696d8ed7ed}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -426,9 +438,6 @@
     <ClInclude Include="DamageFeedBack.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="EffectDataBase.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="ShopScene.h">
       <Filter>ソース ファイル\02-Scene\50-ShopScene\00-ShopScene</Filter>
     </ClInclude>
@@ -449,6 +458,15 @@
     </ClInclude>
     <ClInclude Include="RelicManager.h">
       <Filter>ソース ファイル\03-Object関連\40-Relic\02-RelicManager</Filter>
+    </ClInclude>
+    <ClInclude Include="EventData.h">
+      <Filter>ソース ファイル\02-Scene\40-FieldScene\10-Event\01-EventData</Filter>
+    </ClInclude>
+    <ClInclude Include="EffectDataBase.h">
+      <Filter>ソース ファイル\01-描画関連\07-EffectDataBase</Filter>
+    </ClInclude>
+    <ClInclude Include="EventDataBase.h">
+      <Filter>ソース ファイル\02-Scene\40-FieldScene\10-Event\02-EventDataBase</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -563,9 +581,6 @@
     <ClCompile Include="TerrainDataBase.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\30-terrains</Filter>
     </ClCompile>
-    <ClCompile Include="EffectDataBase.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="ShopScene.cpp">
       <Filter>ソース ファイル\02-Scene\50-ShopScene\00-ShopScene</Filter>
     </ClCompile>
@@ -577,6 +592,12 @@
     </ClCompile>
     <ClCompile Include="RelicManager.cpp">
       <Filter>ソース ファイル\03-Object関連\40-Relic\02-RelicManager</Filter>
+    </ClCompile>
+    <ClCompile Include="EventDataBase.cpp">
+      <Filter>ソース ファイル\02-Scene\40-FieldScene\10-Event\02-EventDataBase</Filter>
+    </ClCompile>
+    <ClCompile Include="EffectDataBase.cpp">
+      <Filter>ソース ファイル\01-描画関連\07-EffectDataBase</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -35,6 +35,7 @@ public:
     int GetCurrentBattleOverflow() const { return m_currentBattleOverflow; }
     EncCategory GetCurrentBattleCategory() const { return m_currentBattleCategory; }
 
+    std::function<void(const std::string&)> onEvent;
 private:
     void GenerateMap();
     void SaveProgress();

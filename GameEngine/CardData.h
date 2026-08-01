@@ -57,10 +57,13 @@ struct CardData
     std::string  vfx;                               // 使用時に再生するエフェクト名（effects.json）
     CardRarity rarity = CardRarity::Common;         // レアリティ
     std::vector<std::string> tags;                  // カードの軸用のタグ
+    bool generated = false;                         // 生成専用（ナイフ等）＝報酬/店/変化に出さない
 
     CardEffectData   mainEffect;   // メイン効果（ダメージ量やブロック量など）
     CardEffectData   onHitEffect;  // ヒット時効果（攻撃カードのみ）
     CardEffectData   subEffect;    // サブ効果（ドロー/エネルギー/回復/自己バフ）
+
+    bool starter = false;   // 初期デッキ用（移動以外は報酬/店/変化に出さない）
 
     bool exhaust = false;   // 廃棄カードフラグ
     bool pierce = false;    // 貫通フラグ

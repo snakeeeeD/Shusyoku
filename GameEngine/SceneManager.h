@@ -10,6 +10,7 @@
 #include "TextureManager.h"
 #include "MaterialDataBase.h"
 #include "CardDataBase.h"
+#include "EventDataBase.h"
 
 #include "TitleScene.h"
 #include "BattleScene.h"
@@ -49,6 +50,10 @@ public:
     std::vector<std::pair<std::string, int>> CraftMods() const;
     std::string CraftRecipeId() const;
     int CraftModSlots() const;
+
+    void DrawEventRelicPicker();
+    void GetEventRelicSlot(int i, float& x, float& y) const;
+    int  EventRelicAt(POINT p) const;
 
 private:
     Scene* m_currentScene;
@@ -116,4 +121,23 @@ private:
     void DrawRelicBar();
     void GetRelicRect(int i, float& x, float& y, float& w, float& h) const;
     std::string HoveredRelic(POINT mp) const;
+
+
+    bool m_eventOpen = false;
+    std::string m_eventId;
+    int m_eventResult = -1;   // -1=選択中, >=0=結果表示
+    void DrawEvent();
+    void ApplyOutcomes(const EventChoice& c);
+    void GetEventChoiceRect(int i, float& x, float& y, float& w, float& h) const;
+    std::string m_eventPickType;   // "removeCard"/"upgradeCard"/"transformCard"（空=非ピッカー）
+    int m_eventPickChoice = -1;
+    void DrawEventPicker();
+    void ApplyCardPick(int idx);
+    void GetEventCardSlot(int i, float& x, float& y) const;
+    int  EventCardAt(POINT p) const;
+    int m_eventPickAnimIdx = -1;
+    float m_eventPickAnimTimer = 0.0f;
+    std::string m_eventPickAnimTo;   // 変化/強化先（空=削除の塵化）
+    static constexpr float EVENT_PICK_ANIM_DUR = 0.7f;
+    bool ChoiceEnabled(const EventChoice& c) const;
 };

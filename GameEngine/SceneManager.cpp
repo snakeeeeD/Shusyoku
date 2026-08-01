@@ -34,6 +34,7 @@ static XMFLOAT4 MapNodeColor(FieldNodeType t, bool visited, bool isPlayer)
 	{
 	case FieldNodeType::Battle: return XMFLOAT4(0.7f, 0.2f, 0.2f, 1.0f);
 	case FieldNodeType::Rest:   return XMFLOAT4(0.2f, 0.7f, 0.2f, 1.0f);
+	case FieldNodeType::Event:  return XMFLOAT4(0.6f, 0.3f, 0.8f, 1.0f);
 	case FieldNodeType::Boss:   return XMFLOAT4(0.7f, 0.2f, 0.7f, 1.0f);
 	case FieldNodeType::Start:  return XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
 	case FieldNodeType::Shop:   return XMFLOAT4(0.2f, 0.7f, 0.7f, 1.0f);
@@ -49,12 +50,15 @@ static const wchar_t* MapNodeLabel(FieldNodeType t, bool isPlayer)
 	case FieldNodeType::Start:  return L"S";
 	case FieldNodeType::Battle: return L"B";
 	case FieldNodeType::Rest:   return L"R";
+	case FieldNodeType::Event:  return L"Ev";
 	case FieldNodeType::Boss:   return L"BOSS";
 	case FieldNodeType::Shop:   return L"Sh";
-	case FieldNodeType::Elite:  return L"E";
+	case FieldNodeType::Elite:  return L"El";
 	default:                    return L"";
 	}
 }
+
+static std::string EventPickerType(const EventChoice& c);
 
 SceneManager::SceneManager() : m_currentScene(nullptr)
 {
@@ -86,6 +90,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	EffectDataBase::Load("Assets/Data/effects.json");
 	MaterialDataBase::Load("Assets/Data/materials.json");
 	RelicManager::Load("Assets/Data/relics.json");
+	EventDataBase::Load("Assets/Data/events.json");
 	PlayerDataManager::Init();
 
 	TextureManager::Load("white", L"Assets/Test/White.png");
@@ -176,6 +181,7 @@ void SceneManager::ChangeScene(SceneType type)
 			auto scene = new FieldScene();
 			scene->onChangeScene = [this](SceneType type) { ChangeScene(type); };
 			scene->onRest = [this]() { m_restOpen = true; m_restActive = true; }; 
+			scene->onEvent = [this](const std::string& id) { m_eventOpen = true; m_eventId = id; m_eventResult = -1; m_eventPickType.clear(); };
 			m_currentScene = scene;
 			break;
 		}
@@ -208,6 +214,12 @@ void SceneManager::Draw()
 {
 	if (m_currentScene) m_currentScene->Draw();
 	if (m_currentType != SceneType::Title) DrawOverlay();
+	if (m_eventOpen && !m_mapOpen && !m_invOpen && !m_deckOpen)
+	{
+		if (m_eventPickType.empty()) DrawEvent();
+		else if (m_eventPickType == "transformRelic") DrawEventRelicPicker();
+		else DrawEventPicker();
+	}
 	if (m_craftOpen) DrawCraft();
 	if (m_invOpen) DrawInventory();
 	if (m_mapOpen) DrawMap();
@@ -468,6 +480,65 @@ void SceneManager::HandleInput()
 		return;   // 休憩中はフィールドへ渡さない
 	}
 
+	if (m_eventOpen)
+	{
+		// カードピッカー中
+		if (!m_eventPickType.empty())
+		{
+			if (m_eventPickAnimIdx < 0 && m_uiInput.GetMouseButtonTrigger(0))
+			{
+				if (m_eventPickType == "transformRelic")
+				{
+					int idx = EventRelicAt(m_uiInput.GetMousePos());
+					if (idx >= 0)
+					{
+						std::string to = RelicManager::RandomDrop();   // 別レリック（未所持）
+						if (!to.empty()) { m_eventPickAnimTo = to; m_eventPickAnimIdx = idx; m_eventPickAnimTimer = EVENT_PICK_ANIM_DUR; }
+						else { m_eventPickType.clear(); m_eventResult = m_eventPickChoice; }
+					}
+				}
+				else
+				{
+					int idx = EventCardAt(m_uiInput.GetMousePos());
+					if (idx >= 0)
+					{
+						auto& deck = PlayerDataManager::GetData().deck;
+						std::string cur = deck[idx];
+						if (m_eventPickType == "removeCard") m_eventPickAnimTo = "";
+						else if (m_eventPickType == "transformCard") m_eventPickAnimTo = CardDataBase::RandomCard();
+						else if (m_eventPickType == "upgradeCard") m_eventPickAnimTo = CanUpgrade(cur) ? (cur + "+") : cur;
+						m_eventPickAnimIdx = idx;
+						m_eventPickAnimTimer = EVENT_PICK_ANIM_DUR;
+					}
+				}
+			}
+			return;
+		}
+		// 選択肢
+		if (m_uiInput.GetMouseButtonTrigger(0))
+		{
+			if (m_eventResult >= 0) { m_eventOpen = false; }
+			else
+			{
+				const EventDef* e = EventDataBase::Get(m_eventId);
+				POINT m = m_uiInput.GetMousePos();
+				if (e) for (int i = 0; i < (int)e->choices.size(); i++)
+				{
+					float x, y, w, h; GetEventChoiceRect(i, x, y, w, h);
+					if (m.x >= x && m.x <= x + w && m.y >= y && m.y <= y + h && ChoiceEnabled(e->choices[i]))
+					{
+						ApplyOutcomes(e->choices[i]);
+						std::string pick = EventPickerType(e->choices[i]);
+						if (!pick.empty()) { m_eventPickType = pick; m_eventPickChoice = i; }
+						else m_eventResult = i;
+						break;
+					}
+				}
+			}
+		}
+		return;
+	}
+
 	// m_uiInputが消費したホイールをシーンへ戻す（ズーム等が効くように）
 	Input::SetWheelDelta(m_uiInput.GetMouseWheelDelta());
 	if (m_currentScene) m_currentScene->HandleInput();
@@ -514,7 +585,34 @@ void SceneManager::Update(float deltaTime)
 		}
 	}
 
-	if (m_deckOpen || m_craftOpen || m_invOpen || m_restOpen || m_mapOpen || m_craftFxTimer > 0.0f) return;
+	if (m_eventPickAnimIdx >= 0)
+	{
+		m_eventPickAnimTimer -= deltaTime;
+		if (m_eventPickAnimTimer <= 0.0f)
+		{
+			if (m_eventPickType == "transformRelic")
+			{
+				auto& relics = PlayerDataManager::GetData().relics;
+				if (m_eventPickAnimIdx < (int)relics.size())
+				{
+					std::string oldId = relics[m_eventPickAnimIdx];
+					PlayerDataManager::RemoveRelic(oldId);
+					PlayerDataManager::AddRelic(m_eventPickAnimTo);
+				}
+			}
+			else
+			{
+				auto& deck = PlayerDataManager::GetData().deck;
+				if (m_eventPickType == "removeCard") PlayerDataManager::RemoveCard(m_eventPickAnimIdx);
+				else if (m_eventPickAnimIdx < (int)deck.size()) { deck[m_eventPickAnimIdx] = m_eventPickAnimTo; PlayerDataManager::Save(); }
+			}
+			m_eventPickAnimIdx = -1;
+			m_eventPickType.clear();
+			m_eventResult = m_eventPickChoice;
+		}
+	}
+
+	if (m_deckOpen || m_craftOpen || m_invOpen || m_restOpen || m_mapOpen || m_eventOpen || m_craftFxTimer > 0.0f) return;
 	if (m_currentScene) m_currentScene->Update(deltaTime);
 }
 
@@ -1144,4 +1242,245 @@ void SceneManager::DrawRelicBar()
 
 	std::string rid = HoveredRelic(m_uiInput.GetMousePos());
 	if (!rid.empty()) DrawItemTooltip(rid, m_uiInput.GetMousePos());
+}
+
+void SceneManager::GetEventChoiceRect(int i, float& x, float& y, float& w, float& h) const
+{
+	w = 520.0f; h = 50.0f;
+	x = m_screenWidth / 2.0f - w / 2.0f;
+	y = 270.0f + i * 66.0f;
+}
+
+void SceneManager::ApplyOutcomes(const EventChoice& c)
+{
+	auto& pd = PlayerDataManager::GetData();
+	for (auto& o : c.outcomes)
+	{
+		if (o.type == "hp") { pd.hp += o.value; if (pd.hp > pd.maxHp) pd.hp = pd.maxHp; if (pd.hp < 0) pd.hp = 0; }
+		else if (o.type == "maxHp") { pd.maxHp += o.value; pd.hp += o.value; if (pd.hp < 1) pd.hp = 1; }
+		else if (o.type == "gold") { pd.gold += o.value; if (pd.gold < 0) pd.gold = 0; }
+		else if (o.type == "material") { PlayerDataManager::AddMaterial(o.param, o.value > 0 ? o.value : 1); }
+		else if (o.type == "relic")
+		{
+			std::string rid = o.param.empty() ? RelicManager::RandomUnowned("event") : o.param;
+			if (rid.empty()) rid = RelicManager::RandomDrop();
+			if (!rid.empty()) PlayerDataManager::AddRelic(rid);
+		}
+		else if (o.type == "addCard") { PlayerDataManager::AddCard(o.param); }
+	}
+	PlayerDataManager::Save();
+}
+
+void SceneManager::DrawEvent()
+{
+	const EventDef* e = EventDataBase::Get(m_eventId);
+	if (!e) { m_eventOpen = false; return; }
+	ID3D11ShaderResourceView* white = TextureManager::Get("white");
+	POINT mp = m_uiInput.GetMousePos();
+
+	m_uiSprite->Begin();
+	m_uiSprite->DrawSprite(white, 0, BAR_H, (float)m_screenWidth, (float)m_screenHeight - BAR_H, 0.0f,
+		XMFLOAT4(0.05f, 0.03f, 0.09f, 0.96f));
+	if (m_eventResult < 0)
+		for (int i = 0; i < (int)e->choices.size(); i++)
+		{
+			float x, y, w, h; GetEventChoiceRect(i, x, y, w, h);
+			bool en = ChoiceEnabled(e->choices[i]);
+			bool hov = en && mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h;
+			m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f,
+				!en ? XMFLOAT4(0.12f, 0.12f, 0.14f, 1.0f)
+				: hov ? XMFLOAT4(0.4f, 0.32f, 0.5f, 1.0f) : XMFLOAT4(0.2f, 0.17f, 0.28f, 1.0f));
+		}
+	m_uiSprite->End();
+
+	m_textRenderer->Begin();
+	m_textRenderer->DrawText(ToWString(e->title).c_str(), m_screenWidth / 2.0f - 150.0f, 90.0f, 30.0f, D2D1::ColorF(1, 0.9f, 0.6f));
+	if (m_eventResult < 0)
+	{
+		m_textRenderer->DrawText(ToWString(e->desc).c_str(), m_screenWidth / 2.0f - 260.0f, 160.0f, 18.0f, D2D1::ColorF(0.9f, 0.9f, 0.9f));
+		for (int i = 0; i < (int)e->choices.size(); i++)
+		{
+			float x, y, w, h; GetEventChoiceRect(i, x, y, w, h);
+			m_textRenderer->DrawText(ToWString(e->choices[i].label).c_str(), x + 16.0f, y + 13.0f, 20.0f,
+				ChoiceEnabled(e->choices[i]) ? D2D1::ColorF(1, 1, 1) : D2D1::ColorF(0.4f, 0.4f, 0.4f));
+		}
+	}
+	else
+	{
+		m_textRenderer->DrawText(ToWString(e->choices[m_eventResult].result).c_str(), m_screenWidth / 2.0f - 260.0f, 220.0f, 22.0f, D2D1::ColorF(0.8f, 1.0f, 0.8f));
+		m_textRenderer->DrawText(L"クリックで進む", m_screenWidth / 2.0f - 70.0f, m_screenHeight - 100.0f, 20.0f, D2D1::ColorF(0.8f, 0.8f, 0.8f));
+	}
+	m_textRenderer->End();
+}
+
+static std::string EventPickerType(const EventChoice& c)
+{
+	for (auto& o : c.outcomes)
+		if (o.type == "removeCard" || o.type == "upgradeCard" || o.type == "transformCard" || o.type == "transformRelic")
+			return o.type;
+	return "";
+}
+
+void SceneManager::GetEventCardSlot(int i, float& x, float& y) const
+{
+	const float s = 0.85f;
+	float cw = CardVisual::CARD_W * s, ch = CardVisual::CARD_H * s;
+	int perRow = 8; float gapX = 12.0f, gapY = 16.0f;
+	float startX = (m_screenWidth - (perRow * cw + (perRow - 1) * gapX)) / 2.0f;
+	x = startX + (i % perRow) * (cw + gapX);
+	y = 150.0f + (i / perRow) * (ch + gapY);
+}
+int SceneManager::EventCardAt(POINT p) const
+{
+	auto& deck = PlayerDataManager::GetData().deck;
+	for (int i = 0; i < (int)deck.size(); i++)
+	{
+		float bx, by; GetEventCardSlot(i, bx, by);
+		float x, y, w, h; CardVisual::GetRect(bx, by, 0.85f, x, y, w, h);
+		if (p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h) return i;
+	}
+	return -1;
+}
+void SceneManager::ApplyCardPick(int idx)
+{
+	auto& deck = PlayerDataManager::GetData().deck;
+	if (idx < 0 || idx >= (int)deck.size()) return;
+	if (m_eventPickType == "removeCard") PlayerDataManager::RemoveCard(idx);
+	else if (m_eventPickType == "upgradeCard") PlayerDataManager::UpgradeCard(idx);
+	else if (m_eventPickType == "transformCard")
+	{
+		static const char* pool[] = { "ATK_strike","SKL_defend","MOV_move","ATK_Spin Slash","MOV_dash","ATK_poison_blade","POW_power_attack","POW_buff_defense" };
+		deck[idx] = pool[rand() % (int)(sizeof(pool) / sizeof(pool[0]))];
+		PlayerDataManager::Save();
+	}
+}
+
+void SceneManager::DrawEventPicker()
+{
+	auto& deck = PlayerDataManager::GetData().deck;
+	bool anim = (m_eventPickAnimIdx >= 0);
+	int hov = anim ? -1 : EventCardAt(m_uiInput.GetMousePos());
+	ID3D11ShaderResourceView* white = TextureManager::Get("white");
+	float t = anim ? (1.0f - m_eventPickAnimTimer / EVENT_PICK_ANIM_DUR) : 0.0f;
+	bool morph = anim && !m_eventPickAnimTo.empty();
+
+	const CardData* animCard = nullptr; float animScale = 0.85f, animAlpha = 1.0f, animYoff = 0.0f, animBX = 0, animBY = 0;
+	if (anim)
+	{
+		GetEventCardSlot(m_eventPickAnimIdx, animBX, animBY);
+		if (!morph) { if (m_eventPickAnimIdx < (int)deck.size()) animCard = CardDataBase::Get(deck[m_eventPickAnimIdx]); animScale = 0.85f * (1.0f - t * 0.7f); animAlpha = 1.0f - t; animYoff = -t * 40.0f; }
+		else if (t < 0.5f) { if (m_eventPickAnimIdx < (int)deck.size()) animCard = CardDataBase::Get(deck[m_eventPickAnimIdx]); animAlpha = 1.0f - t * 2.0f; }
+		else { animCard = CardDataBase::Get(m_eventPickAnimTo); animAlpha = (t - 0.5f) * 2.0f; }
+	}
+
+	m_uiSprite->Begin();
+	m_uiSprite->DrawSprite(white, 0, BAR_H, (float)m_screenWidth, (float)m_screenHeight - BAR_H, 0.0f, XMFLOAT4(0.05f, 0.03f, 0.09f, 0.96f));
+	for (int i = 0; i < (int)deck.size(); i++)
+	{
+		if (i == m_eventPickAnimIdx) continue;
+		const CardData* d = CardDataBase::Get(deck[i]);
+		if (!d) continue;
+		float bx, by; GetEventCardSlot(i, bx, by);
+		if (i == hov) by -= 12.0f;
+		CardVisual::DrawBase(m_uiSprite, white, bx, by, 0.85f, 0.0f, i == hov ? XMFLOAT4(0.6f, 0.4f, 0.7f, 1.0f) : CardVisual::GetCardColor(d->type), d, m_uiTime);
+	}
+	if (anim && animCard)
+	{
+		XMFLOAT4 col = CardVisual::GetCardColor(animCard->type); col.w = animAlpha;
+		CardVisual::DrawBase(m_uiSprite, white, animBX, animBY + animYoff, animScale, 0.0f, col, animCard, m_uiTime);
+		if (morph)
+		{
+			float flash = 1.0f - fabsf(t - 0.5f) * 4.0f;
+			if (flash > 0.0f) { float x, y, w, h; CardVisual::GetRect(animBX, animBY, 0.85f, x, y, w, h); m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(1, 1, 1, flash * 0.8f)); }
+		}
+	}
+	m_uiSprite->End();
+
+	m_textRenderer->Begin();
+	if (!anim)
+	{
+		std::wstring prompt = L"カードを選択";
+		if (m_eventPickType == "removeCard") prompt = L"削除するカードを選択";
+		else if (m_eventPickType == "upgradeCard") prompt = L"強化するカードを選択";
+		else if (m_eventPickType == "transformCard") prompt = L"変化させるカードを選択";
+		m_textRenderer->DrawText(prompt.c_str(), m_screenWidth / 2.0f - 150.0f, 90.0f, 26.0f, D2D1::ColorF(1, 0.9f, 0.6f));
+	}
+	for (int i = 0; i < (int)deck.size(); i++)
+	{
+		if (i == m_eventPickAnimIdx) continue;
+		const CardData* d = CardDataBase::Get(deck[i]);
+		if (!d) continue;
+		float bx, by; GetEventCardSlot(i, bx, by);
+		if (i == hov) by -= 12.0f;
+		CardVisual::DrawTexts(m_textRenderer, d, nullptr, bx, by, 0.85f, 0.0f, 1.0f);
+	}
+	if (anim && animCard)
+		CardVisual::DrawTexts(m_textRenderer, animCard, nullptr, animBX, animBY + animYoff, animScale, 0.0f, animAlpha);
+	m_textRenderer->End();
+}
+
+bool SceneManager::ChoiceEnabled(const EventChoice& c) const
+{
+	int need = 0;
+	for (auto& o : c.outcomes)
+		if (o.type == "gold" && o.value < 0) need += -o.value;
+	for (auto& o : c.outcomes)
+		if (o.type == "transformRelic" && PlayerDataManager::GetData().relics.empty()) return false;
+	return PlayerDataManager::GetData().gold >= need;
+}
+
+void SceneManager::GetEventRelicSlot(int i, float& x, float& y) const
+{
+	float w = 160.0f, h = 44.0f, gap = 12.0f; int cols = 6;
+	float startX = (m_screenWidth - (cols * w + (cols - 1) * gap)) / 2.0f;
+	x = startX + (i % cols) * (w + gap);
+	y = 180.0f + (i / cols) * (h + gap);
+}
+int SceneManager::EventRelicAt(POINT p) const
+{
+	auto& relics = PlayerDataManager::GetData().relics;
+	for (int i = 0; i < (int)relics.size(); i++)
+	{
+		float x, y; GetEventRelicSlot(i, x, y);
+		if (p.x >= x && p.x <= x + 160.0f && p.y >= y && p.y <= y + 44.0f) return i;
+	}
+	return -1;
+}
+void SceneManager::DrawEventRelicPicker()
+{
+	auto& relics = PlayerDataManager::GetData().relics;
+	bool anim = (m_eventPickAnimIdx >= 0);
+	int hov = anim ? -1 : EventRelicAt(m_uiInput.GetMousePos());
+	ID3D11ShaderResourceView* white = TextureManager::Get("white");
+	float t = anim ? (1.0f - m_eventPickAnimTimer / EVENT_PICK_ANIM_DUR) : 0.0f;
+
+	auto slotInfo = [&](int i, std::string& id, float& a) {
+		id = relics[i]; a = 1.0f;
+		if (i == m_eventPickAnimIdx)
+		{
+			if (t < 0.5f) a = 1.0f - t * 2.0f;
+			else { a = (t - 0.5f) * 2.0f; id = m_eventPickAnimTo; }
+		}
+		};
+
+	m_uiSprite->Begin();
+	m_uiSprite->DrawSprite(white, 0, BAR_H, (float)m_screenWidth, (float)m_screenHeight - BAR_H, 0.0f, XMFLOAT4(0.05f, 0.03f, 0.09f, 0.96f));
+	for (int i = 0; i < (int)relics.size(); i++)
+	{
+		float x, y; GetEventRelicSlot(i, x, y);
+		std::string id; float a; slotInfo(i, id, a);
+		m_uiSprite->DrawSprite(white, x, y, 160.0f, 44.0f, 0.0f, (i == hov) ? XMFLOAT4(0.55f, 0.4f, 0.7f, a) : XMFLOAT4(0.35f, 0.28f, 0.45f, a));
+	}
+	m_uiSprite->End();
+
+	m_textRenderer->Begin();
+	if (!anim) m_textRenderer->DrawText(L"入れ替えるレリックを選択", m_screenWidth / 2.0f - 160.0f, 100.0f, 26.0f, D2D1::ColorF(1, 0.9f, 0.6f));
+	for (int i = 0; i < (int)relics.size(); i++)
+	{
+		float x, y; GetEventRelicSlot(i, x, y);
+		std::string id; float a; slotInfo(i, id, a);
+		auto d = RelicManager::Get(id);
+		m_textRenderer->DrawText((d ? ToWString(d->name) : L"?").c_str(), x + 8.0f, y + 13.0f, 15.0f, D2D1::ColorF(1, 1, 1, a));
+	}
+	m_textRenderer->End();
 }
