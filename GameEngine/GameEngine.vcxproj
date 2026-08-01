@@ -133,6 +133,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Audio.h" />
     <ClInclude Include="BattleHighlighter.h" />
     <ClInclude Include="BattleScene.h" />
     <ClInclude Include="BattleUI.h" />
@@ -206,6 +207,7 @@
     <ClInclude Include="UiNotice.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Audio.cpp" />
     <ClCompile Include="Battlehighlighter.cpp" />
     <ClCompile Include="BattleScene.cpp" />
     <ClCompile Include="BattleSceneDebug.cpp" />

@@ -253,6 +253,9 @@
     <Filter Include="ソース ファイル\01-描画関連\07-EffectDataBase">
       <UniqueIdentifier>{9c4915d8-ea49-4584-b966-c0696d8ed7ed}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\04-Game内関連\03-Audio">
+      <UniqueIdentifier>{d4c1fc19-28df-4b44-8f3c-4caaf930cff0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -468,6 +471,9 @@
     <ClInclude Include="EventDataBase.h">
       <Filter>ソース ファイル\02-Scene\40-FieldScene\10-Event\02-EventDataBase</Filter>
     </ClInclude>
+    <ClInclude Include="Audio.h">
+      <Filter>ソース ファイル\04-Game内関連\03-Audio</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SpriteRenderer.cpp">
@@ -598,6 +604,9 @@
     </ClCompile>
     <ClCompile Include="EffectDataBase.cpp">
       <Filter>ソース ファイル\01-描画関連\07-EffectDataBase</Filter>
+    </ClCompile>
+    <ClCompile Include="Audio.cpp">
+      <Filter>ソース ファイル\04-Game内関連\03-Audio</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

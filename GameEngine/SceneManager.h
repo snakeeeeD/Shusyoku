@@ -55,6 +55,10 @@ public:
     void GetEventRelicSlot(int i, float& x, float& y) const;
     int  EventRelicAt(POINT p) const;
 
+    std::string m_generalBgm;
+    int m_generalBgmLayer = -1;
+    void PlayGeneralBGM();
+
 private:
     Scene* m_currentScene;
     SceneType m_currentType;

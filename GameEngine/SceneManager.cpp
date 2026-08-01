@@ -8,6 +8,7 @@
 #include "TerrainDataBase.h"
 #include "MaterialDataBase.h"
 #include "RelicManager.h"
+#include "Audio.h"
 
 #include <cmath>
 
@@ -71,6 +72,7 @@ SceneManager::~SceneManager()
 	delete m_textRenderer;
 	delete m_uiSprite;
 	TextureManager::Shutdown();
+	Audio::Shutdown();
 }
 
 bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int screenWidth, int screenHeight, HWND hWnd, IDXGISwapChain* swapChain)
@@ -83,6 +85,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	m_swapChain = swapChain;
 
 	TextureManager::Init(device);
+	Audio::Init();
 	EnemyDataBase::Init();
 	EncounterDataBase::Init();
 	CardDataBase::Init();
@@ -184,7 +187,8 @@ void SceneManager::ChangeScene(SceneType type)
 		{
 			auto scene = new FieldScene();
 			scene->onChangeScene = [this](SceneType type) { ChangeScene(type); };
-			scene->onRest = [this]() { m_restOpen = true; m_restActive = true; }; 
+			scene->onRest = [this]() { m_restOpen = true; 
+			m_restActive = true; Audio::PlayBGM("Assets/Sound/bgm/Rest.mp3"); };
 			scene->onEvent = [this](const std::string& id) { m_eventOpen = true; m_eventId = id; m_eventResult = -1; m_eventPickType.clear(); };
 			m_currentScene = scene;
 			break;
@@ -211,6 +215,22 @@ void SceneManager::ChangeScene(SceneType type)
 	if (m_currentScene)
 	{
 		m_currentScene->Init(m_device, m_context, m_screenWidth, m_screenHeight, m_hWnd, m_swapChain);
+	}
+
+	switch (type)
+	{
+	case SceneType::Title:  Audio::PlayBGM("Assets/Sound/bgm/Title.mp3"); break;
+	case SceneType::Battle:
+		if (battleCategory == EncCategory::Boss) Audio::PlayBGM("Assets/Sound/bgm/boss.mp3");
+		else PlayGeneralBGM();
+		break;
+	case SceneType::Field:
+	case SceneType::Shop:
+	case SceneType::CardSelect:
+	case SceneType::Result:
+		PlayGeneralBGM();
+		break;
+	default: break;
 	}
 }
 
@@ -1491,4 +1511,20 @@ void SceneManager::DrawEventRelicPicker()
 		m_textRenderer->DrawText((d ? ToWString(d->name) : L"?").c_str(), x + 8.0f, y + 13.0f, 15.0f, D2D1::ColorF(1, 1, 1, a));
 	}
 	m_textRenderer->End();
+}
+
+void SceneManager::PlayGeneralBGM()
+{
+	int layer = PlayerDataManager::GetData().layer;
+	if (m_generalBgmLayer != layer)   // 層が変わったら選び直し
+	{
+		static const char* pool[] = {
+			"Assets/Sound/bgm/Field1.mp3",
+			"Assets/Sound/bgm/Field2.mp3",
+			"Assets/Sound/bgm/Field3.mp3",
+		};
+		m_generalBgm = pool[rand() % 3];
+		m_generalBgmLayer = layer;
+	}
+	Audio::PlayBGM(m_generalBgm);
 }
