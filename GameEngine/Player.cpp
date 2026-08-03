@@ -5,6 +5,7 @@
 #include "FloatingText.h"
 #include "ScreenShake.h"
 #include "RelicManager.h"
+#include "Audio.h"
 
 Player::Player()
     : m_hp(50), m_maxHp(50)
@@ -35,6 +36,8 @@ void Player::Draw3D(Renderer3D* renderer)
 
 void Player::TakeDamage(int damage, DamageFeel feel)
 {
+    Audio::PlaySE("Assets/Sound/se/shield.mp3");
+
     // Vulnerable: 50%‘
     if (m_buffManager.HasBuff(BuffType::Vulnerable))
         damage = damage * 150 / 100;
@@ -72,6 +75,7 @@ bool Player::UseEnergy(int cost)
 
 void Player::AddBlock(int amount)
 {
+    if (amount > 0) Audio::PlaySE("Assets/Sound/se/shield.mp3");
     m_block += amount;
 }
 

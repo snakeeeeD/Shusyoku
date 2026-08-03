@@ -10,6 +10,7 @@
 #include "DamageFeedback.h"
 #include "RangeShape.h"
 #include "UiNotice.h"
+#include "Audio.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -1101,6 +1102,12 @@ void BattleScene::HandleInput()
 
         m_hoveredCardIndex = m_battleUI->GetCardAtScreenPos(mp);
 
+        if (m_hoveredCardIndex != m_prevHoveredCard)
+        {
+            if (m_hoveredCardIndex >= 0) Audio::PlaySE("Assets/Sound/se/hover.mp3");
+            m_prevHoveredCard = m_hoveredCardIndex;
+        }
+
         if (click)
         {
             // 確定
@@ -1472,6 +1479,8 @@ void BattleScene::HandleInput()
 
                 if (execResult.cardUsed)
                 {
+                    Audio::PlaySE("Assets/Sound/se/card.mp3");
+
                     if (newPlayerCol != m_playerCol || newPlayerRow != m_playerRow)
                     {
                         int oldCol = m_playerCol;
@@ -1621,6 +1630,7 @@ void BattleScene::HandleInput()
             && mousePos.y >= drawPileY && mousePos.y <= drawPileY + 40.0f)
         {
             m_showDrawPile = !m_showDrawPile;
+            Audio::PlaySE("Assets/Sound/se/click.mp3");
             m_showDiscardPile = false;
         }
 
@@ -1629,6 +1639,7 @@ void BattleScene::HandleInput()
             && mousePos.y >= discardY && mousePos.y <= discardY + 40.0f)
         {
             m_showDiscardPile = !m_showDiscardPile;
+            Audio::PlaySE("Assets/Sound/se/click.mp3");
             m_showDrawPile = false;
         }
 
@@ -1638,6 +1649,7 @@ void BattleScene::HandleInput()
             && mousePos.y >= discardY && mousePos.y <= discardY + 40.0f)
         {
             m_showExhaustPile = !m_showExhaustPile;
+            Audio::PlaySE("Assets/Sound/se/click.mp3");
             m_showDrawPile = false;
             m_showDiscardPile = false;
         }
@@ -1773,6 +1785,8 @@ void BattleScene::HandleInput()
 
                 if (execResult.cardUsed)
                 {
+                    Audio::PlaySE("Assets/Sound/se/card.mp3");
+
                     // プレイヤー座標を更新
                         if (newPlayerCol != m_playerCol || newPlayerRow != m_playerRow)
                         {
@@ -1912,10 +1926,13 @@ void BattleScene::HandleInput()
         }
     }
     
-
     m_hoveredCardIndex = m_battleUI->GetCardAtScreenPos(mousePos);
-    
-    
+    if (m_hoveredCardIndex != m_prevHoveredCard)
+    {
+        if (m_hoveredCardIndex >= 0) Audio::PlaySE("Assets/Sound/se/hover.mp3");
+        m_prevHoveredCard = m_hoveredCardIndex;
+    }
+
         // ターンエンドボタン（右下）
         if (m_battleResult == BattleResult::None)
         {
@@ -1930,6 +1947,7 @@ void BattleScene::HandleInput()
                 if (mp.x >= btnX && mp.x <= btnX + btnW
                     && mp.y >= btnY && mp.y <= btnY + btnH)
                 {
+                    Audio::PlaySE("Assets/Sound/se/click.mp3");
                     m_turnManager.EndTurn();
                 }
             }

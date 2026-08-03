@@ -2,6 +2,7 @@
 #include "MaterialDataBase.h"
 #include "RelicManager.h"
 #include "GameUtils.h"
+#include "Audio.h"
 
 #include <cstdlib>
 #include <algorithm>
@@ -14,6 +15,15 @@ static int SellPriceOf(const std::string& id)
     if (auto b = MaterialDataBase::GetBase(id)) return b->sellPrice;
     if (auto m = MaterialDataBase::GetMaterial(id)) return m->sellPrice;
     return 0;
+}
+
+static std::string s_shopHoverKey;
+static bool UiHoverS(float x, float y, float w, float h, POINT mp, const char* key)
+{
+    bool over = mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h;
+    if (over && s_shopHoverKey != key) { Audio::PlaySE("Assets/Sound/se/hover.mp3"); s_shopHoverKey = key; }
+    else if (!over && s_shopHoverKey == key) s_shopHoverKey.clear();
+    return over;
 }
 
 bool ShopScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
@@ -139,18 +149,28 @@ void ShopScene::Draw()
             m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, w, h, 0.0f, col);
         }
     }
+    POINT mp = m_input.GetMousePos();
 
+    // ƒJ[ƒhíœ
     float rmX = 40.0f, rmY = m_screenHeight - 70.0f, rmW = 220.0f, rmH = 44.0f;
-    m_spriteRenderer->DrawSprite(m_whiteTexture, rmX, rmY, rmW, rmH, 0.0f,
+    bool rmHov = !m_removedThisShop && UiHoverS(rmX, rmY, rmW, rmH, mp, "rm");
+    float rmYY = rmHov ? rmY - 6.0f : rmY;
+    m_spriteRenderer->DrawSprite(m_whiteTexture, rmX, rmYY, rmW, rmH, 0.0f,
         m_removedThisShop ? XMFLOAT4(0.25f, 0.25f, 0.25f, 0.95f) : XMFLOAT4(0.5f, 0.25f, 0.25f, 0.95f));
 
+    // ”„‹p
     float slX = 280.0f, slY = m_screenHeight - 70.0f, slW = 160.0f, slH = 44.0f;
-    m_spriteRenderer->DrawSprite(m_whiteTexture, slX, slY, slW, slH, 0.0f, XMFLOAT4(0.25f, 0.42f, 0.25f, 0.95f));
+    bool slHov = UiHoverS(slX, slY, slW, slH, mp, "sell");
+    float slYY = slHov ? slY - 6.0f : slY;
+    m_spriteRenderer->DrawSprite(m_whiteTexture, slX, slYY, slW, slH, 0.0f, XMFLOAT4(0.25f, 0.42f, 0.25f, 0.95f));
 
+    // Leave
     float leaveW = 160.0f, leaveH = 44.0f;
-    float leaveX = (m_screenWidth - leaveW) / 2.0f, leaveY = m_screenHeight - 90.0f;
-    m_spriteRenderer->DrawSprite(m_whiteTexture, leaveX, leaveY, leaveW, leaveH, 0.0f,
-        XMFLOAT4(0.3f, 0.3f, 0.35f, 0.95f));
+    float leaveX = (m_screenWidth - leaveW) / 2.0f, leaveY = m_screenHeight - 70.0f;
+    bool lvHov = UiHoverS(leaveX, leaveY, leaveW, leaveH, mp, "leave");
+    float lvYY = lvHov ? leaveY - 6.0f : leaveY;
+    m_spriteRenderer->DrawSprite(m_whiteTexture, leaveX, lvYY, leaveW, leaveH, 0.0f, XMFLOAT4(0.3f, 0.3f, 0.35f, 0.95f));
+
     m_spriteRenderer->End();
 
     m_textRenderer->Begin();
@@ -218,16 +238,14 @@ void ShopScene::Draw()
     }
 
     if (m_removedThisShop)
-        m_textRenderer->DrawText(L"íœÏ‚Ý", 95.0f, m_screenHeight - 58.0f, 20.0f, D2D1::ColorF(0.6f, 0.6f, 0.6f));
+        m_textRenderer->DrawText(L"íœÏ‚Ý", 95.0f, rmYY + 12.0f, 20.0f, D2D1::ColorF(0.6f, 0.6f, 0.6f));
     else
     {
         wchar_t rmT[48]; swprintf_s(rmT, L"ƒJ[ƒhíœ %dG", RemovePrice());
-        m_textRenderer->DrawText(rmT, 60.0f, m_screenHeight - 58.0f, 20.0f, D2D1::ColorF(1, 1, 1));
+        m_textRenderer->DrawText(rmT, 60.0f, rmYY + 12.0f, 20.0f, D2D1::ColorF(1, 1, 1));
     }
-
-    m_textRenderer->DrawText(L"”„‹p", slX + 55.0f, slY + 12.0f, 20.0f, D2D1::ColorF(1, 1, 1));
-
-    m_textRenderer->DrawText(L"Leave", leaveX + 50, leaveY + 12, 20.0f, D2D1::ColorF(D2D1::ColorF::White));
+    m_textRenderer->DrawText(L"”„‹p", slX + 55.0f, slYY + 12.0f, 20.0f, D2D1::ColorF(1, 1, 1));
+    m_textRenderer->DrawText(L"Leave", leaveX + 50.0f, lvYY + 12.0f, 20.0f, D2D1::ColorF(1, 1, 1));
     m_textRenderer->End();
 
     if (m_removeMode) DrawDeckRemoval();
@@ -245,6 +263,8 @@ void ShopScene::HandleInput()
     {
         if (m_input.GetMouseButtonTrigger(0))
         {
+            Audio::PlaySE("Assets/Sound/se/click.mp3");
+
             int idx = DeckCardAt(mousePos);
             if (idx >= 0 && PlayerDataManager::SpendGold(RemovePrice()))
             {
@@ -263,8 +283,12 @@ void ShopScene::HandleInput()
         if (!m_removedThisShop && m_input.GetMouseButtonTrigger(0)
             && mousePos.x >= rmX && mousePos.x <= rmX + rmW && mousePos.y >= rmY && mousePos.y <= rmY + rmH)
         {
-            if (PlayerDataManager::GetData().gold >= RemovePrice()) m_removeMode = true;
-            return;
+            if (PlayerDataManager::GetData().gold >= RemovePrice())
+            {
+                m_removeMode = true;
+                Audio::PlaySE("Assets/Sound/se/click.mp3");
+                return;
+            }
         }
     }
     // ”„‹pƒ‚[ƒh
@@ -272,6 +296,8 @@ void ShopScene::HandleInput()
     {
         if (m_input.GetMouseButtonTrigger(0))
         {
+            Audio::PlaySE("Assets/Sound/se/click.mp3");
+
             int idx = SellItemAt(mousePos);
             if (idx >= 0)
             {
@@ -290,6 +316,7 @@ void ShopScene::HandleInput()
         if (m_input.GetMouseButtonTrigger(0)
             && mousePos.x >= slX && mousePos.x <= slX + slW && mousePos.y >= slY && mousePos.y <= slY + slH)
         {
+            Audio::PlaySE("Assets/Sound/se/click.mp3");
             m_sellMode = true; return;
         }
     }
@@ -305,8 +332,16 @@ void ShopScene::HandleInput()
         }
     }
 
+    if (m_hoveredIndex != m_prevHovered)
+    {
+        if (m_hoveredIndex >= 0) Audio::PlaySE("Assets/Sound/se/hover.mp3");
+        m_prevHovered = m_hoveredIndex;
+    }
+
     if (m_hoveredIndex >= 0 && m_input.GetMouseButtonTrigger(0))
     {
+        Audio::PlaySE("Assets/Sound/se/click.mp3");
+
         ShopItem& it = m_items[m_hoveredIndex];
         if (!it.bought && PlayerDataManager::SpendGold(it.price))
         {
@@ -324,7 +359,11 @@ void ShopScene::HandleInput()
         && mousePos.y >= leaveY && mousePos.y <= leaveY + leaveH
         && m_input.GetMouseButtonTrigger(0))
     {
-        if (onChangeScene) onChangeScene(SceneType::Field);
+        if (onChangeScene)
+        {
+            Audio::PlaySE("Assets/Sound/se/click.mp3");
+            onChangeScene(SceneType::Field);
+        }
     }
 }
 

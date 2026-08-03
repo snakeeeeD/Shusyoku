@@ -68,6 +68,9 @@ void PlayerDataManager::Save()
 	j["removeCount"] = m_data.removeCount;
 	j["layer"] = m_data.layer;
 
+	j["masterVolume"] = m_data.masterVolume;
+	j["bgmVolume"] = m_data.bgmVolume;
+
 	// ← 全部追加してからファイルに書き込む
 	std::ofstream file(SAVE_PATH);
 	if (file.is_open())
@@ -113,6 +116,9 @@ void PlayerDataManager::Load()
 		m_data.fieldSteps = j.value("fieldSteps", 20);
 		m_data.removeCount = j.value("removeCount", 0);
 		m_data.layer = j.value("layer", 1);
+
+		m_data.masterVolume = j.value("masterVolume", 1.0f); 
+		m_data.bgmVolume = j.value("bgmVolume", 0.5f);
 
 		if (j.contains("fieldNodeTypes"))
 			m_data.fieldNodeTypes = j["fieldNodeTypes"].get<std::vector<int>>();

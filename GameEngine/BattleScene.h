@@ -73,6 +73,8 @@ public:
 
     BattleResult GetBattleResult() const { return m_battleResult; }
 
+    int m_prevHoveredCard = -1;
+
 private:
     BattleUI* m_battleUI;
     GridMap* m_gridMap;

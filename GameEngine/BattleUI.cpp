@@ -10,6 +10,7 @@
 #include "MaterialDataBase.h"
 #include "RelicManager.h"
 #include "GameUtils.h"
+#include "Audio.h"
 #include <algorithm>
 
 using namespace DirectX;
@@ -18,6 +19,15 @@ BattleUI::~BattleUI()
 {
     delete m_spriteRenderer;
     delete m_textRenderer;
+}
+
+static std::string s_hoverKeyB;
+static bool UiHoverB(float x, float y, float w, float h, POINT mp, const char* key)
+{
+    bool over = mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h;
+    if (over && s_hoverKeyB != key) { Audio::PlaySE("Assets/Sound/se/hover.mp3"); s_hoverKeyB = key; }
+    else if (!over && s_hoverKeyB == key) s_hoverKeyB.clear();
+    return over;
 }
 
 bool BattleUI::Init(ID3D11Device* device, ID3D11DeviceContext* context,
@@ -192,25 +202,19 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     float drawPileY = m_screenHeight - 60.0f;
     float drawPileW = 50.0f;
     float drawPileH = 40.0f;
-    bool hoverDrawPile = ctx.mousePos.x >= drawPileX && ctx.mousePos.x <= drawPileX + drawPileW
-        && ctx.mousePos.y >= drawPileY && ctx.mousePos.y <= drawPileY + drawPileH;
-    XMFLOAT4 drawPileColor = hoverDrawPile
-        ? XMFLOAT4(0.3f, 0.3f, 0.9f, 1.0f)
-        : XMFLOAT4(0.2f, 0.2f, 0.6f, 1.0f);
-    m_spriteRenderer->DrawSprite(m_whiteTexture, drawPileX, drawPileY,
-        drawPileW, drawPileH, 0.0f, drawPileColor);
+    bool hoverDrawPile = UiHoverB(drawPileX, drawPileY, drawPileW, drawPileH, ctx.mousePos, "drawpile");
+    float dpy = hoverDrawPile ? drawPileY - 6.0f : drawPileY;
+    XMFLOAT4 drawPileColor = hoverDrawPile ? XMFLOAT4(0.3f, 0.3f, 0.9f, 1.0f) : XMFLOAT4(0.2f, 0.2f, 0.6f, 1.0f);
+    m_spriteRenderer->DrawSprite(m_whiteTexture, drawPileX, dpy, drawPileW, drawPileH, 0.0f, drawPileColor);
 
     float discardX = 80.0f;
     float discardY = m_screenHeight - 60.0f;
     float discardW = 50.0f;
     float discardH = 40.0f;
-    bool hoverDiscard = ctx.mousePos.x >= discardX && ctx.mousePos.x <= discardX + discardW
-        && ctx.mousePos.y >= discardY && ctx.mousePos.y <= discardY + discardH;
-    XMFLOAT4 discardColor = hoverDiscard
-        ? XMFLOAT4(0.8f, 0.3f, 0.3f, 1.0f)
-        : XMFLOAT4(0.5f, 0.2f, 0.2f, 1.0f);
-    m_spriteRenderer->DrawSprite(m_whiteTexture, discardX, discardY,
-        discardW, discardH, 0.0f, discardColor);
+    bool hoverDiscard = UiHoverB(discardX, discardY, discardW, discardH, ctx.mousePos, "discardpile");
+    float ddy = hoverDiscard ? discardY - 6.0f : discardY;
+    XMFLOAT4 discardColor = hoverDiscard ? XMFLOAT4(0.8f, 0.3f, 0.3f, 1.0f) : XMFLOAT4(0.5f, 0.2f, 0.2f, 1.0f);
+    m_spriteRenderer->DrawSprite(m_whiteTexture, discardX, ddy, discardW, discardH, 0.0f, discardColor);
 
     if (ctx.deck->GetExhaustPileCount() > 0)
     {
@@ -218,13 +222,10 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         float exhaustY = m_screenHeight - 60.0f;
         float exhaustW = 50.0f;
         float exhaustH = 40.0f;
-        bool hoverExhaust = ctx.mousePos.x >= exhaustX && ctx.mousePos.x <= exhaustX + exhaustW
-            && ctx.mousePos.y >= exhaustY && ctx.mousePos.y <= exhaustY + exhaustH;
-        XMFLOAT4 exhaustColor = hoverExhaust
-            ? XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f)
-            : XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
-        m_spriteRenderer->DrawSprite(m_whiteTexture, exhaustX, exhaustY,
-            exhaustW, exhaustH, 0.0f, exhaustColor);
+        bool hoverExhaust = UiHoverB(exhaustX, exhaustY, exhaustW, exhaustH, ctx.mousePos, "exhaustpile");
+        float epy = hoverExhaust ? exhaustY - 6.0f : exhaustY;
+        XMFLOAT4 exhaustColor = hoverExhaust ? XMFLOAT4(0.6f, 0.6f, 0.3f, 1.0f) : XMFLOAT4(0.4f, 0.4f, 0.2f, 1.0f);
+        m_spriteRenderer->DrawSprite(m_whiteTexture, exhaustX, epy, exhaustW, exhaustH, 0.0f, exhaustColor);
     }
 
     DrawPlayCardEffects();
@@ -303,19 +304,22 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
     wchar_t drawText[32];
     swprintf_s(drawText, L"山:%d", ctx.deck->GetDrawPileCount());
-    m_textRenderer->DrawText(drawText, drawPileX + 5.0f, drawPileY + 8.0f, 18.0f,
+    m_textRenderer->DrawText(drawText, drawPileX + 5.0f, (hoverDrawPile ? drawPileY - 6.0f : drawPileY) + 8.0f, 18.0f,
         D2D1::ColorF(D2D1::ColorF::White));
 
     wchar_t discardText[32];
     swprintf_s(discardText, L"捨:%d", ctx.deck->GetDiscardPileCount());
-    m_textRenderer->DrawText(discardText, discardX + 5.0f, discardY + 8.0f, 18.0f,
+    m_textRenderer->DrawText(discardText, discardX + 5.0f, (hoverDiscard ? discardY - 6.0f : discardY) + 8.0f, 18.0f,
         D2D1::ColorF(D2D1::ColorF::White));
 
     if (ctx.deck->GetExhaustPileCount() > 0)
     {
+        float ex2 = 140.0f, ey2 = m_screenHeight - 60.0f;
+        bool he = ctx.mousePos.x >= ex2 && ctx.mousePos.x <= ex2 + 50.0f
+            && ctx.mousePos.y >= ey2 && ctx.mousePos.y <= ey2 + 40.0f;
         wchar_t exhaustText[32];
         swprintf_s(exhaustText, L"廃:%d", ctx.deck->GetExhaustPileCount());
-        m_textRenderer->DrawText(exhaustText, 145.0f, m_screenHeight - 52.0f, 18.0f,
+        m_textRenderer->DrawText(exhaustText, ex2 + 5.0f, (he ? ey2 - 6.0f : ey2) + 8.0f, 18.0f,
             D2D1::ColorF(D2D1::ColorF::White));
     }
 
@@ -627,13 +631,11 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         float btnW = 140.0f;
         float btnH = 40.0f;
 
-        bool hoverEnd = ctx.mousePos.x >= btnX && ctx.mousePos.x <= btnX + btnW
-            && ctx.mousePos.y >= btnY && ctx.mousePos.y <= btnY + btnH;
-        XMFLOAT4 btnColor = hoverEnd
-            ? XMFLOAT4(0.3f, 0.7f, 1.0f, 1.0f)
-            : XMFLOAT4(0.2f, 0.5f, 0.8f, 1.0f);
-        m_spriteRenderer->DrawSprite(m_whiteTexture, btnX, btnY, btnW, btnH, 0.0f, btnColor);
-        m_textRenderer->DrawText(L"ターンエンド", btnX + 10.0f, btnY + 10.0f, 18.0f);
+        bool hoverEnd = UiHoverB(btnX, btnY, btnW, btnH, ctx.mousePos, "turnend");
+        float bey = hoverEnd ? btnY - 6.0f : btnY;
+        XMFLOAT4 btnColor = hoverEnd ? XMFLOAT4(0.3f, 0.7f, 1.0f, 1.0f) : XMFLOAT4(0.2f, 0.5f, 0.8f, 1.0f);
+        m_spriteRenderer->DrawSprite(m_whiteTexture, btnX, bey, btnW, btnH, 0.0f, btnColor);
+        m_textRenderer->DrawText(L"ターンエンド", btnX + 10.0f, bey + 10.0f, 18.0f);
     }
 
     if (ctx.battleResult == BattleResult::Win)
@@ -1295,6 +1297,8 @@ void BattleUI::DrawPileViewer(const BattleUIContext& ctx)
 
 void BattleUI::StartDrawCardEffect(const std::string& cardId)
 {
+    Audio::PlaySE("Assets/Sound/se/draw.mp3");
+
     DrawCardEffect effect;
     effect.cardId = cardId;
     effect.x = 20.0f;

@@ -8,6 +8,7 @@
 #include "RangeShape.h"
 #include "FloatingText.h"
 #include "ScreenShake.h"
+#include "Audio.h"
 
 Enemy::Enemy()
     : m_HP(30), m_maxHP(30)
@@ -193,6 +194,8 @@ bool Enemy::MoveDash(int playerCol, int playerRow, GridMap* gridMap, int steps)
 
 void Enemy::TakeDamage(int damage, DamageFeel feel)
 {
+    Audio::PlaySE("Assets/Sound/se/hit.mp3");
+
     // Vulnerable: 50%ëù
     if (m_buffManager.HasBuff(BuffType::Vulnerable))
         damage = damage * 150 / 100;

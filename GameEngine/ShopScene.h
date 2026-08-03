@@ -82,4 +82,6 @@ private:
     std::vector<std::string> OwnedItemIds() const;
     void GetSellSlot(int i, float& x, float& y) const;
     int  SellItemAt(POINT p) const;
+
+    int m_prevHovered = -1;
 };

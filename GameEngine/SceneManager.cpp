@@ -61,6 +61,15 @@ static const wchar_t* MapNodeLabel(FieldNodeType t, bool isPlayer)
 
 static std::string EventPickerType(const EventChoice& c);
 
+static std::string s_lastHoverKey;
+static bool UiHover(float x, float y, float w, float h, POINT mp, const char* key)
+{
+	bool over = mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h;
+	if (over && s_lastHoverKey != key) { Audio::PlaySE("Assets/Sound/se/hover.mp3"); s_lastHoverKey = key; }
+	else if (!over && s_lastHoverKey == key) s_lastHoverKey.clear();
+	return over;   // これで「浮かせるか」を判定
+}
+
 SceneManager::SceneManager() : m_currentScene(nullptr)
 {
 
@@ -95,6 +104,17 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	RelicManager::Load("Assets/Data/relics.json");
 	EventDataBase::Load("Assets/Data/events.json");
 	PlayerDataManager::Init();
+
+	Audio::SetMasterVolume(PlayerDataManager::GetData().masterVolume);
+	Audio::SetBgmVolume(PlayerDataManager::GetData().bgmVolume);
+
+	Audio::SetBgmTrackVolume("Assets/Sound/bgm/Field1.mp3", 0.5f);
+	Audio::SetBgmTrackVolume("Assets/Sound/bgm/Field2.mp3", 0.5f);
+	Audio::SetBgmTrackVolume("Assets/Sound/bgm/Field3.mp3", 0.3f);
+	Audio::SetSeVolume("Assets/Sound/se/hover.mp3", 0.4f);   // ホバーは控えめ
+	Audio::SetSeVolume("Assets/Sound/se/click.mp3", 0.7f);
+	Audio::SetSeVolume("Assets/Sound/se/hit.mp3", 1.0f);
+	// 未設定は 1.0
 
 	TextureManager::Load("white", L"Assets/Test/White.png");
 	TextureManager::Load("title", L"Assets/Test/Title.png");
@@ -389,6 +409,11 @@ void SceneManager::DrawImGui()
 		PlayerDataManager::Save();
 	}
 
+	auto& pd = PlayerDataManager::GetData();
+	float mv = pd.masterVolume, bv = pd.bgmVolume;
+	if (ImGui::SliderFloat("Master", &mv, 0.0f, 1.0f)) { pd.masterVolume = mv; Audio::SetMasterVolume(mv); PlayerDataManager::Save(); }
+	if (ImGui::SliderFloat("BGM", &bv, 0.0f, 1.0f)) { pd.bgmVolume = bv;    Audio::SetBgmVolume(bv);    PlayerDataManager::Save(); }
+
 	if (ImGui::CollapsingHeader("Relics"))
 		for (auto& id : RelicManager::AllIds())
 			if (ImGui::Button(id.c_str()))
@@ -421,6 +446,7 @@ void SceneManager::HandleInput()
 			if (click && !m_deckOpen && !m_craftOpen && !m_invOpen
 				&& m.x >= mapX && m.x <= mapX + 90.0f && m.y >= 5.0f && m.y <= 35.0f)
 			{
+				Audio::PlaySE("Assets/Sound/se/click.mp3");
 				m_mapOpen = true; return;
 			}
 		}
@@ -430,6 +456,7 @@ void SceneManager::HandleInput()
 			&& m.x >= m_screenWidth - 470.0f && m.x <= m_screenWidth - 380.0f
 			&& m.y >= 5.0f && m.y <= 35.0f)
 		{
+			Audio::PlaySE("Assets/Sound/se/click.mp3");
 			m_invOpen = true; return;
 		}
 
@@ -440,34 +467,22 @@ void SceneManager::HandleInput()
 			if (click && !m_deckOpen && !m_craftOpen && !m_mapOpen
 				&& m.x >= itemsX && m.x <= itemsX + 90.0f && m.y >= 5.0f && m.y <= 35.0f)
 			{
+				Audio::PlaySE("Assets/Sound/se/click.mp3");
 				m_invOpen = true; return;
 			}
 		}
 
-		if (onDeckBtn && !m_deckOpen) { m_deckOpen = true; m_deckScroll = 0.0f; return; }
+		if (onDeckBtn && !m_deckOpen)
+		{ 
+			m_deckOpen = true; 
+			m_deckScroll = 0.0f; return;
+			Audio::PlaySE("Assets/Sound/se/click.mp3");
+		}
 		if (m_deckOpen)
 		{
 			m_deckScroll -= m_uiInput.GetMouseWheelDelta() * 0.5f;
 			if (click)
 			{
-				// 削除トグルボタン
-				if (m.x >= 20.0f && m.x <= 120.0f && m.y >= 45.0f && m.y <= 73.0f)
-				{
-					m_deckRemoveMode = !m_deckRemoveMode; return;
-				}
-				if (m_deckRemoveMode)
-				{
-					int idx = GetDeckCardAt(m);
-					if (idx >= 0) { PlayerDataManager::RemoveCard(idx); return; }  // 削除、開いたまま
-					m_deckRemoveMode = false; return;                              // 空白で削除モード解除
-				}
-				// 強化トグル
-				if (m.x >= 130.0f && m.x <= 230.0f && m.y >= 45.0f && m.y <= 73.0f)
-				{
-					m_deckUpgradeMode = !m_deckUpgradeMode;
-					m_deckRemoveMode = false;
-					return;
-				}
 				if (m_deckUpgradeMode)
 				{
 					int idx = GetDeckCardAt(m);
@@ -530,6 +545,7 @@ void SceneManager::HandleInput()
 					int idx = EventCardAt(m_uiInput.GetMousePos());
 					if (idx >= 0)
 					{
+						Audio::PlaySE("Assets/Sound/se/click.mp3");
 						auto& deck = PlayerDataManager::GetData().deck;
 						std::string cur = deck[idx];
 						if (m_eventPickType == "removeCard") m_eventPickAnimTo = "";
@@ -545,7 +561,11 @@ void SceneManager::HandleInput()
 		// 選択肢
 		if (m_uiInput.GetMouseButtonTrigger(0))
 		{
-			if (m_eventResult >= 0) { m_eventOpen = false; }
+			if (m_eventResult >= 0) 
+			{
+				m_eventOpen = false; 
+				Audio::PlaySE("Assets/Sound/se/click.mp3");
+			}
 			else
 			{
 				const EventDef* e = EventDataBase::Get(m_eventId);
@@ -555,6 +575,7 @@ void SceneManager::HandleInput()
 					float x, y, w, h; GetEventChoiceRect(i, x, y, w, h);
 					if (m.x >= x && m.x <= x + w && m.y >= y && m.y <= y + h && ChoiceEnabled(e->choices[i]))
 					{
+						Audio::PlaySE("Assets/Sound/se/click.mp3");
 						ApplyOutcomes(e->choices[i]);
 						std::string pick = EventPickerType(e->choices[i]);
 						if (!pick.empty()) { m_eventPickType = pick; m_eventPickChoice = i; }
@@ -1058,6 +1079,7 @@ void SceneManager::HandleRestClick(POINT m)
 		float x, y, w, h; GetRestBtnRect(i, x, y, w, h);
 		if (m.x >= x && m.x <= x + w && m.y >= y && m.y <= y + h)
 		{
+			Audio::PlaySE("Assets/Sound/se/click.mp3");
 			if (i == 0)          // Heal
 			{
 				auto& pd = PlayerDataManager::GetData();
@@ -1314,8 +1336,10 @@ void SceneManager::DrawEvent()
 		{
 			float x, y, w, h; GetEventChoiceRect(i, x, y, w, h);
 			bool en = ChoiceEnabled(e->choices[i]);
-			bool hov = en && mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h;
-			m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f,
+			char key[16]; sprintf_s(key, "evc%d", i);
+			bool hov = en && UiHover(x, y, w, h, mp, key);   // ← ホバーSE＋判定
+			float yy = hov ? y - 6.0f : y;                   // ← 浮く
+			m_uiSprite->DrawSprite(white, x, yy, w, h, 0.0f,
 				!en ? XMFLOAT4(0.12f, 0.12f, 0.14f, 1.0f)
 				: hov ? XMFLOAT4(0.4f, 0.32f, 0.5f, 1.0f) : XMFLOAT4(0.2f, 0.17f, 0.28f, 1.0f));
 		}
@@ -1329,8 +1353,11 @@ void SceneManager::DrawEvent()
 		for (int i = 0; i < (int)e->choices.size(); i++)
 		{
 			float x, y, w, h; GetEventChoiceRect(i, x, y, w, h);
-			m_textRenderer->DrawText(ToWString(e->choices[i].label).c_str(), x + 16.0f, y + 13.0f, 20.0f,
-				ChoiceEnabled(e->choices[i]) ? D2D1::ColorF(1, 1, 1) : D2D1::ColorF(0.4f, 0.4f, 0.4f));
+			bool en = ChoiceEnabled(e->choices[i]);
+			bool hov = en && mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h;
+			float yy = hov ? y - 6.0f : y;
+			m_textRenderer->DrawText(ToWString(e->choices[i].label).c_str(), x + 16.0f, yy + 13.0f, 20.0f,
+				en ? D2D1::ColorF(1, 1, 1) : D2D1::ColorF(0.4f, 0.4f, 0.4f));
 		}
 	}
 	else
@@ -1518,12 +1545,14 @@ void SceneManager::PlayGeneralBGM()
 	int layer = PlayerDataManager::GetData().layer;
 	if (m_generalBgmLayer != layer)   // 層が変わったら選び直し
 	{
-		static const char* pool[] = {
-			"Assets/Sound/bgm/Field1.mp3",
-			"Assets/Sound/bgm/Field2.mp3",
-			"Assets/Sound/bgm/Field3.mp3",
+		static const std::vector<std::vector<const char*>> pool = {
+			{ "Assets/Sound/bgm/Field1.mp3" },   // 層1
+			{ "Assets/Sound/bgm/Field2.mp3" },   // 層2
+			{ "Assets/Sound/bgm/Field3.mp3" },   // 層3
 		};
-		m_generalBgm = pool[rand() % 3];
+		int li = (layer >= 1 && layer <= 3) ? layer - 1 : 0;
+		auto& tracks = pool[li];
+		m_generalBgm = tracks[rand() % tracks.size()];   // 層内に複数あればランダム
 		m_generalBgmLayer = layer;
 	}
 	Audio::PlayBGM(m_generalBgm);

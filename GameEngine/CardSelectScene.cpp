@@ -1,5 +1,6 @@
 #include "CardSelectScene.h"
 #include "RelicManager.h"
+#include "Audio.h"
 
 #include <cstdlib>
 
@@ -202,6 +203,8 @@ void CardSelectScene::HandleInput()
     // クリックでカード獲得
     if (m_hoveredIndex >= 0 && m_input.GetMouseButtonTrigger(0))
     {
+        Audio::PlaySE("Assets/Sound/se/click.mp3");
+
         PlayerDataManager::AddCard(m_choices[m_hoveredIndex]);
         OutputDebugStringW(L"★ カード獲得！\n");
 
@@ -217,6 +220,7 @@ void CardSelectScene::HandleInput()
         && mousePos.y >= skipY && mousePos.y <= skipY + skipH;
     if (skipHover && m_input.GetMouseButtonTrigger(0))
     {
+        Audio::PlaySE("Assets/Sound/se/click.mp3");
         if (onChangeScene) onChangeScene(SceneType::Field);
         return;
     }
