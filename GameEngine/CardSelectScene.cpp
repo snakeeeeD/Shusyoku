@@ -54,49 +54,7 @@ void CardSelectScene::GenerateChoices()
     bool rare = PlayerDataManager::GetData().rewardRare || RelicManager::HasKind("rewardRare");
     PlayerDataManager::GetData().rewardRare = false;
 
-    // 全カードを重み付きで集める
-    struct WeightedCard {
-        std::string id;
-        int weight;
-    };
-    std::vector<WeightedCard> pool;
-
-    std::vector<std::string> allIds = CardDataBase::RewardPool();
-
-    for (const auto& id : allIds)
-    {
-        const CardData* data = CardDataBase::Get(id);
-        if (!data) continue;
-
-        int w;
-        if (rare)
-            w = (data->rarity == CardRarity::Rare) ? 12
-            : (data->rarity == CardRarity::Uncommon) ? 6 : 1;
-        else
-            w = (data->rarity == CardRarity::Rare) ? 2
-            : (data->rarity == CardRarity::Uncommon) ? 5 : 10;
-        pool.push_back({ id, w });
-    }
-
-    // 重み付きランダムで3枚選ぶ（重複なし）
-    for (int i = 0; i < CHOICE_COUNT && !pool.empty(); i++)
-    {
-        int totalWeight = 0;
-        for (const auto& p : pool) totalWeight += p.weight;
-
-        int roll = rand() % totalWeight;
-        int cumulative = 0;
-        int picked = 0;
-
-        for (int j = 0; j < (int)pool.size(); j++)
-        {
-            cumulative += pool[j].weight;
-            if (roll < cumulative) { picked = j; break; }
-        }
-
-        m_choices.push_back(pool[picked].id);
-        pool.erase(pool.begin() + picked);
-    }
+    m_choices = CardDataBase::PickRewardCards(CHOICE_COUNT, rare, PlayerDataManager::GetData().deck);
 }
 
 void CardSelectScene::Update(float deltaTime)

@@ -38,4 +38,7 @@ enum class BuffType
 
     // 毒
     Poison,         // 毎ターンダメージ、スタック制
+
+    AttackUpTurn,   // このターンのみの攻撃UP（恒久AttackUpと分離）
+    AttackGrowth,   // 毎ターン開始時、攻撃力が上昇（成長）
 };

@@ -177,6 +177,16 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             }
             m_player->GetBuffManager().OnTurnEnd();
 
+            // 攻撃力成長
+            int grow = m_player->GetBuffManager().GetBuffValue(BuffType::AttackGrowth)
+                + RelicManager::SumValue("turnBuffAtk");
+            if (grow > 0)
+            {
+                Buff gb; gb.type = BuffType::AttackUp; gb.value = grow; gb.duration = -1;
+                gb.name = L""; gb.description = L"";
+                m_player->GetBuffManager().AddBuff(gb);
+            }
+
             // デバフダメージ
             auto dmg = m_player->GetBuffManager().GetTurnEndDamage();
             if (dmg.total() > 0)
@@ -789,6 +799,22 @@ void BattleScene::Draw()
             if (d->type == CardType::Move)
             {
                 for (auto& p : m_movePath) raised.insert(p);
+            }
+            else if (d->rangeType == RangeType::Cone)
+            {
+                int range = d->range;
+                if (m_player->GetBuffManager().HasBuff(BuffType::Reposition))
+                    range += m_player->GetBuffManager().GetBuffValue(BuffType::Reposition);
+
+                int aimDx = 0, aimDy = 0;
+                if (m_hoveredCell.first >= 0)
+                    RangeShape::CardinalAim(m_playerCol, m_playerRow,
+                        m_hoveredCell.first, m_hoveredCell.second, aimDx, aimDy);
+                if (aimDx == 0 && aimDy == 0) aimDy = -1;   // 初期は上向き
+
+                for (auto& c : BattleHighlighter::GetCandidates(
+                    m_playerCol, m_playerRow, d->rangeType, range, aimDx, aimDy))
+                    raised.insert(c);
             }
             else if (m_hoveredCell.first >= 0)
             {

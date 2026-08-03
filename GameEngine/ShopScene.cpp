@@ -71,13 +71,13 @@ void ShopScene::GenerateStock()
         m_items.push_back({ id, MaterialDataBase::GetMaterial(id)->buyPrice, false, ShopKind::Material });
         });
 
-    // カード
-    std::vector<std::string> cardIds = CardDataBase::RewardPool();
-
-    pickShuffled(cardIds, CARD_COUNT, [&](const std::string& id) {
+    // カード（デッキのタグに寄せて抽選）
+    auto cardIds = CardDataBase::PickRewardCards(CARD_COUNT, false, PlayerDataManager::GetData().deck);
+    for (const auto& id : cardIds)
+    {
         const CardData* d = CardDataBase::Get(id);
         if (d) m_items.push_back({ id, PriceFor(d), false, ShopKind::Card });
-        });
+    }
 
 
     // レリック

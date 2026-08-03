@@ -6,9 +6,7 @@
       "type": "Attack",
       "starter": true,
       "rarity": "Common",
-      "tags": [
-        "Melee"
-      ],
+      "tags": [ "Strike" ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -25,6 +23,8 @@
       "id": "ATK_pommel_strike",
       "name": "柄打ち",
       "type": "Attack",
+      "rarity": "Common",
+      "tags": [ "Strike" ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -48,6 +48,7 @@
       "type": "Attack",
       "starter": true,
       "rarity": "Uncommon",
+      "tags": [ "Strike" ],
       "cost": 2,
       "range": 1,
       "rangeType": "Area",
@@ -58,6 +59,56 @@
       "mainEffect": {
         "type": "Damage",
         "value": 10
+      }
+    },
+    {
+      "id": "ATK_fan_slash",
+      "name": "扇薙ぎ",
+      "type": "Attack",
+      "rarity": "Common",
+      "tags": [ "Strike" ],
+      "cost": 1,
+      "range": 2,
+      "rangeType": "Cone",
+      "description": "扇状の範囲の敵に{value}ダメージ",
+      "upgrade": { "mainValue": 3 },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 8
+      }
+    },
+    {
+      "id": "ATK_double_strike",
+      "name": "二連撃",
+      "type": "Attack",
+      "rarity": "Common",
+      "tags": [ "Strike" ],
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "hits": 2,
+      "description": "{value}ダメージ×2",
+      "upgrade": { "mainValue": 2 },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 4
+      }
+    },
+    {
+      "id": "ATK_flurry",
+      "name": "乱れ突き",
+      "type": "Attack",
+      "rarity": "Rare",
+      "tags": [ "Strike" ],
+      "cost": 2,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "hits": 4,
+      "description": "{value}ダメージ×4",
+      "upgrade": { "hits": 1 },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 3
       }
     },
     {
@@ -106,6 +157,8 @@
       "id": "ATK_dash_attack",
       "name": "猪突猛進",
       "type": "Attack",
+      "tags": [ "Strike" ],
+      "rarity": "Common",
       "cost": 2,
       "range": 4,
       "rangeType": "Cross",
@@ -167,23 +220,26 @@
       "id": "ATK_reckless_strike",
       "name": "捨て身",
       "type": "Attack",
+      "tags": [ "Strike", "Berserk" ],
+      "rarity": "Uncommon",
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
-      "description": "自傷5。敵に{value}ダメージ",
-      "selfDamage": 5,
+      "description": "自傷1。敵に{value}ダメージ",
+      "selfDamage": 1,
       "upgrade": {
         "mainValue": 5
       },
       "mainEffect": {
         "type": "Damage",
-        "value": 20
+        "value": 15
       }
     },
     {
       "id": "ATK_piercing_beam",
       "name": "貫通ビーム",
       "type": "Attack",
+      "rarity": "Uncommon",
       "cost": 2,
       "range": 5,
       "rangeType": "Cross",
@@ -202,6 +258,7 @@
       "name": "強打",
       "type": "Attack",
       "rarity": "Common",
+      "tags": [ "Strike" ],
       "cost": 2,
       "range": 1,
       "rangeType": "Cross",
@@ -222,6 +279,23 @@
         "buffType": "Vulnerable"
       }
     },
+    {
+      "id": "ATK_heavy_blow",
+      "name": "豪打",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "tags": [ "Strike" ],
+      "cost": 4,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "敵単体に{value}ダメージ",
+      "upgrade": { "mainValue": 6 },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 36
+      }
+    },
+
     {
       "id": "SKL_defend",
       "name": "ディフェンド",
@@ -255,6 +329,24 @@
       "mainEffect": {
         "type": "Block",
         "value": 12
+      }
+    },
+    {
+      "id": "SKL_flex",
+      "name": "渾身",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "tags": [ "Strike" ],
+      "cost": 0,
+      "range": 0,
+      "rangeType": "None",
+      "description": "このターン、攻撃力+{value}",
+      "upgrade": { "mainValue": 2 },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 3,
+        "duration": 1,
+        "buffType": "AttackUpTurn"
       }
     },
     {
@@ -429,16 +521,33 @@
       "name": "戦士の誓い",
       "type": "Power",
       "rarity": "Rare",
+      "tags": [ "Strike" ],
       "cost": 2,
       "range": 0,
       "rangeType": "None",
-      "description": "攻撃力を永続で+{value}",
-      "upgrade": {
-        "mainValue": 1
-      },
+      "description": "毎ターン、攻撃力が{value}上昇",
+      "upgrade": { "mainValue": 1 },
       "mainEffect": {
         "type": "ApplyBuff",
-        "value": 3,
+        "value": 2,
+        "duration": -1,
+        "buffType": "AttackGrowth"
+      }
+    },
+    {
+      "id": "POW_rage",
+      "name": "憤怒",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "tags": [ "Strike" ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "攻撃力を+{value}（戦闘中）",
+      "upgrade": { "mainValue": 1 },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 2,
         "duration": -1,
         "buffType": "AttackUp"
       }

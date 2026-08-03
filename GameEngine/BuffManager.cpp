@@ -8,8 +8,10 @@ BuffManager::BuffManager() {}
 void BuffManager::AddBuff(const Buff& buff)
 {
     // 毒・攻撃UPはスタック（加算）
-    if (buff.type == BuffType::Poison || 
-        buff.type == BuffType::AttackUp || 
+    if (buff.type == BuffType::Poison ||
+        buff.type == BuffType::AttackUp ||
+        buff.type == BuffType::AttackUpTurn ||
+        buff.type == BuffType::AttackGrowth ||
         buff.type == BuffType::RangeUp)
     {
         for (auto& b : m_buffs)
@@ -100,6 +102,7 @@ int BuffManager::GetFinalAttack(int baseAttack) const
 {
     int value = baseAttack;
     value += GetBuffValue(BuffType::AttackUp);
+    value += GetBuffValue(BuffType::AttackUpTurn);
     value -= GetBuffValue(BuffType::AttackDown);
 
     // Weak: 25%減

@@ -20,11 +20,11 @@ Enemy* CardExecutor::GetEnemyAt(int col, int row, std::vector<Enemy*>& enemies)
 
 std::vector<Enemy*> CardExecutor::GetEnemiesInRange(
     const CardData& data, int playerCol, int playerRow,
-    std::vector<Enemy*>& enemies)
+    std::vector<Enemy*>& enemies, int aimDx, int aimDy)
 {
     std::vector<Enemy*> result;
     auto candidates = BattleHighlighter::GetCandidates(
-        playerCol, playerRow, data.rangeType, data.range);
+        playerCol, playerRow, data.rangeType, data.range, aimDx, aimDy);
 
     for (auto enemy : enemies)
     {
@@ -79,9 +79,15 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     {
     case CardType::Attack:
     {
-        if (data.rangeType == RangeType::Area)
+        if (data.rangeType == RangeType::Area || data.rangeType == RangeType::Cone)
         {
-            auto targets = GetEnemiesInRange(data, playerCol, playerRow, enemies);
+            int aimDx = 0, aimDy = 0;
+            if (data.rangeType == RangeType::Cone)
+            {
+                RangeShape::CardinalAim(playerCol, playerRow, targetCol, targetRow, aimDx, aimDy);
+                if (aimDx == 0 && aimDy == 0) aimDy = -1;   // ê^è„/ñ¢éwíËÇÕè„å¸Ç´
+            }
+            auto targets = GetEnemiesInRange(data, playerCol, playerRow, enemies, aimDx, aimDy);
             if (targets.empty())
             {
                 return result;

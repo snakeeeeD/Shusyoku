@@ -36,11 +36,15 @@ public:
 	bool HasMoreActions() const { return m_actionIndex < (int)m_plannedActions.size(); }
 
 	void UpdateDisplayHp(float deltaTime) {
-		float speed = 0.5f;
+		float speed = 0.5f;        // ”ä—á•ªi·‚ª‘å‚«‚¢‚Ù‚Ç‘¬‚¢j
+		float minSpeed = 15.0f;    // Å’á‘¬“x(HP/•b) ¨ ’x‰„‚ð–h‚®
 		if (m_displayHp > (float)GetHp())
-			m_displayHp -= speed * deltaTime * (m_displayHp - GetHp());
-		if (m_displayHp < (float)GetHp())
-			m_displayHp = (float)GetHp();
+		{
+			float rate = speed * (m_displayHp - GetHp());
+			if (rate < minSpeed) rate = minSpeed;
+			m_displayHp -= rate * deltaTime;
+			if (m_displayHp < (float)GetHp()) m_displayHp = (float)GetHp();
+		}
 	}
 
 	void TakeDamage(int damage, DamageFeel feel = DamageFeel::Hit);

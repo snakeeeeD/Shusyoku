@@ -246,9 +246,66 @@ std::vector<std::string> CardDataBase::RewardPool()
 
     return v;
 }
+
 std::string CardDataBase::RandomCard()
 {
     auto pool = RewardPool();
     if (pool.empty()) return "";
     return pool[rand() % (int)pool.size()];
+}
+
+static int RarityBaseWeight(CardRarity r, bool rareBias)
+{
+    if (rareBias)
+        return (r == CardRarity::Rare) ? 12 : (r == CardRarity::Uncommon) ? 6 : 1;
+    return (r == CardRarity::Rare) ? 2 : (r == CardRarity::Uncommon) ? 5 : 10;
+}
+
+std::vector<std::string> CardDataBase::PickRewardCards(int count, bool rareBias, const std::vector<std::string>& deck)
+{
+    // デッキのタグ枚数を集計
+    std::unordered_map<std::string, int> tagCounts;
+    for (const auto& id : deck)
+    {
+        const CardData* c = Get(id);
+        if (!c) continue;
+        for (const auto& t : c->tags) tagCounts[t]++;
+    }
+
+    const float K = 0.5f;   // タグ1枚あたりの出やすさ係数
+
+    struct WC { std::string id; float w; };
+    std::vector<WC> pool;
+    for (const auto& id : RewardPool())
+    {
+        const CardData* c = Get(id);
+        if (!c) continue;
+        int aff = 0;
+        for (const auto& t : c->tags)
+        {
+            auto it = tagCounts.find(t);
+            if (it != tagCounts.end() && it->second > aff) aff = it->second;
+        }
+        float w = RarityBaseWeight(c->rarity, rareBias) * (1.0f + K * aff);
+        pool.push_back({ id, w });
+    }
+
+    // 重み付き・重複なしで count 枚
+    std::vector<std::string> result;
+    for (int n = 0; n < count && !pool.empty(); ++n)
+    {
+        float total = 0.0f;
+        for (const auto& p : pool) total += p.w;
+
+        float roll = (float)rand() / (float)RAND_MAX * total;
+        int picked = 0;
+        for (int i = 0; i < (int)pool.size(); ++i)
+        {
+            roll -= pool[i].w;
+            if (roll <= 0.0f) { picked = i; break; }
+        }
+        result.push_back(pool[picked].id);
+        pool.erase(pool.begin() + picked);
+    }
+    return result;
 }

@@ -84,6 +84,9 @@ inline BuffType StringToBuffType(const std::string& str)
     if (str == "Slow")        return BuffType::Slow;
     if (str == "Burn")        return BuffType::Burn;
     if (str == "Poison")      return BuffType::Poison;
+
+    if (str == "AttackUpTurn") return BuffType::AttackUpTurn;
+    if (str == "AttackGrowth") return BuffType::AttackGrowth;
     return BuffType::AttackUp;
 }
 

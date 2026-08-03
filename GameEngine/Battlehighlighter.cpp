@@ -11,13 +11,14 @@
 #include <set>
 
 std::vector<std::pair<int, int>> BattleHighlighter::GetCandidates(
-    int centerCol, int centerRow, RangeType rangeType, int range)
+    int centerCol, int centerRow, RangeType rangeType, int range, int aimDx, int aimDy)
 {
     std::vector<std::pair<int, int>> out;
     int R = (range < 1) ? 1 : range;
     for (int dr = -R; dr <= R; dr++)
         for (int dc = -R; dc <= R; dc++)
-            if (RangeShape::Contains(centerCol, centerRow, centerCol + dc, centerRow + dr, rangeType, range))
+            if (RangeShape::Contains(centerCol, centerRow, centerCol + dc, centerRow + dr,
+                rangeType, range, 0, aimDx, aimDy))
                 out.push_back({ centerCol + dc, centerRow + dr });
     return out;
 }
@@ -186,7 +187,15 @@ void BattleHighlighter::UpdatePlayerHighlight(
         return;
     }
 
-    auto candidates = GetCandidates(centerCol, centerRow, data->rangeType, data->range);
+    int aimDx = 0, aimDy = 0;
+    if (data->rangeType == RangeType::Cone)
+    {
+        if (hoveredCell.first >= 0)
+            RangeShape::CardinalAim(centerCol, centerRow,
+                hoveredCell.first, hoveredCell.second, aimDx, aimDy);
+        if (aimDx == 0 && aimDy == 0) aimDy = -1;   // 初期状態は上に扇
+    }
+    auto candidates = GetCandidates(centerCol, centerRow, data->rangeType, data->range, aimDx, aimDy);
 
     int actualRange = player->GetMoveRange(data->range);
 
@@ -194,7 +203,7 @@ void BattleHighlighter::UpdatePlayerHighlight(
     float hoverBrightness = 0.3f + 0.7f * ((pulse + 1.0f) / 2.0f);
 
     bool isAreaHovered = false;
-    if (data->rangeType == RangeType::Area)
+    if (data->rangeType == RangeType::Area || data->rangeType == RangeType::Cone)
     {
         if (data->type == CardType::Attack)
         {
@@ -268,7 +277,8 @@ void BattleHighlighter::UpdatePlayerHighlight(
 
                 for (auto& [dc2, dr2] : enemy->GetGridShape())
                     if (RangeShape::Contains(centerCol, centerRow,
-                        enemy->gridCol + dc2, enemy->gridRow + dr2, data->rangeType, data->range))
+                        enemy->gridCol + dc2, enemy->gridRow + dr2,
+                        data->rangeType, data->range, 0, aimDx, aimDy))
                     {
                         inShape = true; break;
                     }
@@ -302,7 +312,7 @@ void BattleHighlighter::UpdatePlayerHighlight(
         // 色設定
         XMFLOAT4 base = HighlightPalette::ForCard(data->type);
 
-        if (data->rangeType == RangeType::Area)
+        if (data->rangeType == RangeType::Area || data->rangeType == RangeType::Cone)
         {
             float brightness = isEnemy ? finalBrightness
                 : (isAreaHovered ? finalBrightness : 0.6f);

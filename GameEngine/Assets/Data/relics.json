@@ -74,6 +74,14 @@
       "desc": "最初のターン、+1ドロー"
     },
     {
+      "id": "war_god_seal",
+      "name": "戦神の刻印",
+      "kind": "startBuffAtk",
+      "value": 1,
+      "rarity": "uncommon",
+      "desc": "戦闘開始時、攻撃力+1"
+    },
+    {
       "id": "trekker_boots",
       "name": "踏破のブーツ",
       "kind": "moveBlock",
@@ -104,6 +112,14 @@
       "value": 1,
       "rarity": "uncommon",
       "desc": "合成カードのコスト-1"
+    },
+    {
+      "id": "giant_gauntlet",
+      "name": "巨人の篭手",
+      "kind": "turnBuffAtk",
+      "value": 1,
+      "rarity": "rare",
+      "desc": "毎ターン開始時、攻撃力+1"
     },
     {
       "id": "wind_boots",

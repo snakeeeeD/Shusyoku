@@ -47,4 +47,12 @@ namespace RangeShape
         default: return false;
         }
     }
+
+    // from→to の主方向（上下左右の単位ベクトル）
+    inline void CardinalAim(int fc, int fr, int tc, int tr, int& ax, int& ay)
+    {
+        int dc = tc - fc, dr = tr - fr;
+        if (abs(dc) >= abs(dr)) { ax = (dc > 0) - (dc < 0); ay = 0; }
+        else { ax = 0; ay = (dr > 0) - (dr < 0); }
+    }
 }

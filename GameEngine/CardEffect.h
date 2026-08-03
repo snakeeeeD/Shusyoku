@@ -78,6 +78,16 @@ namespace CardEffect
                 buff.name = L"UŒ‚—ÍUP";
                 buff.description = L"UŒ‚—Í+" + std::to_wstring(effect.value);
             }
+            else if (effect.buffType == "AttackUpTurn")
+            {
+                buff.name = L"UŒ‚—ÍUP(¡ƒ^[ƒ“)";
+                buff.description = L"‚±‚Ìƒ^[ƒ“UŒ‚—Í+" + std::to_wstring(effect.value);
+            }
+            else if (effect.buffType == "AttackGrowth")
+            {
+                buff.name = L"“¬‹C";
+                buff.description = L"–ˆƒ^[ƒ“UŒ‚—Í+" + std::to_wstring(effect.value);
+            }
             else if (effect.buffType == "DefenseUp")
             {
                 buff.name = L"–hŒäUP";

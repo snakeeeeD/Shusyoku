@@ -14,8 +14,8 @@ class BattleHighlighter
 public:
     // 範囲内のマスを取得（静的・汎用）
     static std::vector<std::pair<int, int>> GetCandidates(
-        int centerCol, int centerRow,
-        RangeType rangeType, int range);
+        int centerCol, int centerRow, RangeType rangeType, int range,
+        int aimDx = 0, int aimDy = 0);
 
     void UpdatePlayerHighlight(
         int centerCol, int centerRow,

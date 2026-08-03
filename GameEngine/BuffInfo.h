@@ -36,6 +36,9 @@ struct BuffInfo
             { L"鈍化",       L"移動距離が{value}減少する",                        {0.5f, 0.5f, 0.3f, 1.0f} },  // Slow
             { L"火傷",       L"移動するたびに{value}ダメージを受ける",            {0.9f, 0.4f, 0.1f, 1.0f} },  // Burn
             { L"毒",         L"毎ターン{value}ダメージを受け、1減少する",         {0.5f, 0.0f, 0.8f, 1.0f} },  // Poison
+
+            { L"攻撃UP(今)", L"このターン攻撃力が{value}上昇する", {0.9f, 0.45f, 0.15f, 1.0f} },  // AttackUpTurn
+            { L"闘気", L"毎ターン開始時、攻撃力が{value}上昇する", {0.95f, 0.35f, 0.05f, 1.0f} },  // AttackGrowth
         };
         return infos[static_cast<int>(type)];
     }

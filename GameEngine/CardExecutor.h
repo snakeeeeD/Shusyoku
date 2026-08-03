@@ -66,7 +66,7 @@ private:
     std::vector<Enemy*> GetEnemiesInRange(
         const CardData& data,
         int playerCol, int playerRow,
-        std::vector<Enemy*>& enemies);
+        std::vector<Enemy*>& enemies, int aimDx, int aimDy);
 
     static Enemy* GetEnemyAt(int col, int row, std::vector<Enemy*>& enemies);
 
