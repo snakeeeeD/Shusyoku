@@ -258,6 +258,14 @@ void FieldScene::GenerateMap()
                 if (neighbors <= 1) { m_nodes[idx].type = FieldNodeType::Empty; changed = true; }
             }
     }
+
+    // 1列目（最初のマス）は必ず戦闘に
+    for (int row = 0; row < GRID_ROWS; row++)
+    {
+        int idx = GetNodeIndex(1, row);
+        if (m_nodes[idx].type != FieldNodeType::Empty)
+            m_nodes[idx].type = FieldNodeType::Battle;
+    }
 }
 int FieldScene::GetNodeIndex(int col, int row) const
 {
@@ -312,7 +320,8 @@ void FieldScene::Update(float deltaTime)
 
 void FieldScene::Draw()
 {
-   
+    POINT mp = m_input.GetMousePos();
+
     m_spriteRenderer->Begin();
 
     m_spriteRenderer->DrawSprite(
@@ -450,8 +459,11 @@ void FieldScene::Draw()
                 }
             }
 
-            m_spriteRenderer->DrawSprite(m_whiteTexture,
-                pos.x, pos.y, CELL_SIZE, CELL_SIZE, 0.0f, color);
+            bool hovMove = CanMove(col, row)
+                && mp.x >= pos.x && mp.x <= pos.x + CELL_SIZE
+                && mp.y >= pos.y && mp.y <= pos.y + CELL_SIZE;
+            float ny = hovMove ? pos.y - 8.0f : pos.y;   // ホバーで浮く
+            m_spriteRenderer->DrawSprite(m_whiteTexture, pos.x, ny, CELL_SIZE, CELL_SIZE, 0.0f, color);
         }
     }
 
@@ -485,9 +497,12 @@ void FieldScene::Draw()
             default: break;
             }
 
-            m_textRenderer->DrawText(label,
-                pos.x + 5.0f, pos.y + CELL_SIZE / 2.0f - 10.0f,
-                14.0f, D2D1::ColorF(D2D1::ColorF::White));
+            bool hovMove = CanMove(col, row)
+                && mp.x >= pos.x && mp.x <= pos.x + CELL_SIZE
+                && mp.y >= pos.y && mp.y <= pos.y + CELL_SIZE;
+            float ny = hovMove ? pos.y - 8.0f : pos.y;
+            m_textRenderer->DrawText(label, pos.x + 5.0f, ny + CELL_SIZE / 2.0f - 10.0f, 14.0f,
+                D2D1::ColorF(D2D1::ColorF::White));
         }
     }
 

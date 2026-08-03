@@ -32,10 +32,27 @@ public:
 
     void ChangeScene(SceneType type);
 
+    enum class Fade { None, Out, In };
+    Fade m_fadeState = Fade::None;
+    float m_fadeAlpha = 0.0f;                 // 1=ê^Ç¡çï, 0=ìßñæ
+    SceneType m_pendingScene = SceneType::Title;
+    static constexpr float FADE_SPEED = 3.0f; // 1ïbÇ†ÇΩÇËÅiñÒ0.33ïbÇ≈äÆóπÅj
+    void DoChangeScene(SceneType type);       // é¿ç€ÇÃêÿë÷
+
     void Update(float deltaTime);
     void Draw();
     void DrawImGui();
     void HandleInput();
+
+    struct TutorialPage { std::wstring text; float hx = 0, hy = 0, hw = 0, hh = 0; int hoverCard = -1; bool stepsTip = false; };
+    std::vector<TutorialPage> m_tutorialPages;
+    int m_tutorialPage = 0;
+    bool m_tutorialOpen = false;
+    void ShowTutorial(const std::vector<TutorialPage>& pages);
+    void DrawTutorial();
+    std::vector<TutorialPage> m_pendingTutorial;
+    float m_tutorialDelay = 0.0f;
+    void ShowTutorialDelayed(const std::vector<TutorialPage>& pages, float delay);
 
     void DrawBarTips();
 

@@ -14,6 +14,9 @@ struct PlayerData
     int fieldPlayerRow;
     int fieldSteps;
 
+    bool tutorialField = false;
+    bool tutorialBattle = false;
+
     int gold = 0;
     std::map<std::string, int> materials;   // ‘fŞID ¨ ŒÂ”
     std::vector<std::string> relics;

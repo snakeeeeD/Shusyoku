@@ -62,6 +62,9 @@ void PlayerDataManager::Save()
 	j["fieldNodeEnemyIds"] = m_data.fieldNodeEnemyIds;
 	j["fieldNodeVisited"] = m_data.fieldNodeVisited;
 
+	j["tutorialField"] = m_data.tutorialField; 
+	j["tutorialBattle"] = m_data.tutorialBattle;
+
 	j["gold"] = m_data.gold;
 	j["materials"] = m_data.materials;
 	j["relics"] = m_data.relics;
@@ -114,6 +117,8 @@ void PlayerDataManager::Load()
 		m_data.fieldPlayerCol = j.value("fieldPlayerCol", 0);
 		m_data.fieldPlayerRow = j.value("fieldPlayerRow", 3);
 		m_data.fieldSteps = j.value("fieldSteps", 20);
+		m_data.tutorialField = j.value("tutorialField", false);
+		m_data.tutorialBattle = j.value("tutorialBattle", false);
 		m_data.removeCount = j.value("removeCount", 0);
 		m_data.layer = j.value("layer", 1);
 
@@ -177,6 +182,9 @@ void PlayerDataManager::StartNewGame()
 	   "SKL_defend", "SKL_defend", "SKL_defend", "SKL_defend",
 	   "MOV_move",   "MOV_move",   "MOV_dash",
 	};
+
+	m_data.tutorialField = false;
+	m_data.tutorialBattle = false;
 
 	m_data.gold = 100;          // äJénèäéùã‡
 	m_data.materials.clear();

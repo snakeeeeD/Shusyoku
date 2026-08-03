@@ -148,6 +148,14 @@ public:
 
     int GetCardAnimCount() const { return (int)m_cardAnims.size(); }
 
+    bool GetCardRect(int i, float& x, float& y, float& w, float& h) const
+    {
+        if (i < 0 || i >= (int)m_cardAnims.size()) return false;
+        CardVisual::GetRect(m_cardAnims[i].currentX, m_cardAnims[i].currentY,
+            m_cardAnims[i].currentScale, x, y, w, h);
+        return true;
+    }
+
     void GetDiscardConfirmRect(float& x, float& y, float& w, float& h) const;
     void GetDiscardViewRect(float& x, float& y, float& w, float& h) const;
     bool IsOnDiscardConfirm(POINT p) const;

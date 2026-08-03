@@ -139,11 +139,20 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	m_uiSprite->Init(device, context, screenWidth, screenHeight);
 	m_uiInput.SetWindowHandle(hWnd);
 
-	ChangeScene(SceneType::Title);
+	DoChangeScene(SceneType::Title);
+	m_fadeState = Fade::In;
+	m_fadeAlpha = 1.0f;   // 真っ黒から明転
 	return true;
 }
 
 void SceneManager::ChangeScene(SceneType type)
+{
+	if (m_fadeState == Fade::Out) return;   // 二重予約防止
+	m_pendingScene = type;
+	m_fadeState = Fade::Out;                 // まず暗転
+}
+
+void SceneManager::DoChangeScene(SceneType type)
 {
 	// 削除前に必要な情報を取得
 	std::string battleEnemyId;
@@ -252,6 +261,29 @@ void SceneManager::ChangeScene(SceneType type)
 		break;
 	default: break;
 	}
+
+	auto& pd = PlayerDataManager::GetData();
+	if (type == SceneType::Field && !pd.tutorialField)
+	{
+		pd.tutorialField = true; PlayerDataManager::Save();
+		ShowTutorial({
+			{ L"マスをクリックして進もう",                         170, 130, 940, 540 },
+			{ L"戦闘/休憩/ショップ/イベント\nエリート/ボスがある", 170, 130, 940, 540 },
+			{ L"歩数(Steps)が尽きて進むと敵が強くなる",                                130,   5, 110,  28, -1, true },  // ← stepsTip=true
+			{ L"右端のボスを倒すと次の層へ",                       1050, 130, 120, 540 },
+					});
+	}
+	if (type == SceneType::Battle && !pd.tutorialBattle)
+	{
+		pd.tutorialBattle = true; PlayerDataManager::Save();
+		ShowTutorialDelayed({
+			{ L"手札のカードをクリックし対象を選んで使う", 340, 580, 600, 220 },
+			{ L"コストはエナジーで払う",                    15, 185,  70,  70 },
+			{ L"一番左は移動カード。マスを移動できる",     340, 630, 130, 170, 0 },   // ← hoverCard=0で浮く
+			{ L"ターンエンドで相手の番",                  1100, 730, 160,  50 },
+			{ L"HPが0になると敗北",                         20,  85, 220,  90 },
+					}, 1.2f);
+	}
 }
 
 void SceneManager::Draw()
@@ -270,6 +302,18 @@ void SceneManager::Draw()
 	if (m_restOpen && !m_mapOpen && !m_invOpen && !m_deckOpen && !m_craftOpen) DrawRest();
 	if (m_craftFxTimer > 0.0f) DrawCraftFx();  
 	if (m_currentType != SceneType::Title) { DrawRelicBar(); DrawBarTips(); }
+
+	if (m_tutorialOpen) DrawTutorial();
+	// この後にフェードの黒幕
+
+	if (m_fadeAlpha > 0.0f)
+	{
+		m_uiSprite->Begin();
+		m_uiSprite->DrawSprite(TextureManager::Get("white"), 0, 0,
+			(float)m_screenWidth, (float)m_screenHeight, 0.0f, XMFLOAT4(0, 0, 0, m_fadeAlpha));
+		m_uiSprite->End();
+	}
+
 }
 
 void SceneManager::DrawOverlay()
@@ -428,6 +472,18 @@ void SceneManager::DrawImGui()
 void SceneManager::HandleInput()
 {
 	m_uiInput.Update();
+	if (m_fadeState != Fade::None) return;   // フェード中は入力無効
+
+	if (m_tutorialOpen)
+	{
+		if (m_uiInput.GetMouseButtonTrigger(0))
+		{
+			Audio::PlaySE("Assets/Sound/se/click.mp3");
+			m_tutorialPage++;
+			if (m_tutorialPage >= (int)m_tutorialPages.size()) m_tutorialOpen = false;
+		}
+		return;
+	}
 
 	if (m_craftFxTimer > 0.0f) return;           // 演出中は入力停止
 
@@ -593,6 +649,80 @@ void SceneManager::HandleInput()
 	if (m_currentScene) m_currentScene->HandleInput();
 }
 
+void SceneManager::ShowTutorial(const std::vector<TutorialPage>& pages)
+{
+	if (pages.empty()) return;
+	m_tutorialPages = pages; 
+	m_tutorialPage = 0; 
+	m_tutorialOpen = true;
+}
+
+void SceneManager::DrawTutorial()
+{
+	if (m_tutorialPage >= (int)m_tutorialPages.size()) { m_tutorialOpen = false; return; }
+	const auto& pg = m_tutorialPages[m_tutorialPage];
+	float hx = pg.hx, hy = pg.hy, hw = pg.hw, hh = pg.hh;
+	if (pg.hoverCard >= 0)
+		if (auto battle = dynamic_cast<BattleScene*>(m_currentScene))
+		{
+			float x, y, w, h;
+			if (battle->GetCardRect(pg.hoverCard, x, y, w, h)) { hx = x; hy = y; hw = w; hh = h; }
+		}
+	ID3D11ShaderResourceView* white = TextureManager::Get("white");
+	float sw = (float)m_screenWidth, sh = (float)m_screenHeight;
+	XMFLOAT4 dim(0, 0, 0, 0.7f);
+
+	m_uiSprite->Begin();
+	if (hw > 0.0f)
+	{
+		float x = hx, y = hy, w = hw, h = hh;
+		m_uiSprite->DrawSprite(white, 0, 0, sw, y, 0.0f, dim);
+		m_uiSprite->DrawSprite(white, 0, y + h, sw, sh - (y + h), 0.0f, dim);
+		m_uiSprite->DrawSprite(white, 0, y, x, h, 0.0f, dim);
+		m_uiSprite->DrawSprite(white, x + w, y, sw - (x + w), h, 0.0f, dim);
+		XMFLOAT4 fr(1.0f, 0.85f, 0.2f, 1.0f);
+		m_uiSprite->DrawSprite(white, x - 3, y - 3, w + 6, 3, 0.0f, fr);
+		m_uiSprite->DrawSprite(white, x - 3, y + h, w + 6, 3, 0.0f, fr);
+		m_uiSprite->DrawSprite(white, x - 3, y, 3, h + 3, 0.0f, fr);
+		m_uiSprite->DrawSprite(white, x + w, y, 3, h + 3, 0.0f, fr);
+	}
+	else m_uiSprite->DrawSprite(white, 0, 0, sw, sh, 0.0f, dim);
+
+	// テキストボックス（対象が上なら下側、下なら上側に置く）
+	float bw = 560.0f, bh = 150.0f, bx = sw / 2.0f - bw / 2.0f;
+	float by = (pg.hy + pg.hh * 0.5f < sh * 0.5f) ? sh - bh - 60.0f : 80.0f;
+	m_uiSprite->DrawSprite(white, bx - 2, by - 2, bw + 4, bh + 4, 0.0f, XMFLOAT4(0.4f, 0.4f, 0.6f, 1.0f));
+	m_uiSprite->DrawSprite(white, bx, by, bw, bh, 0.0f, XMFLOAT4(0.08f, 0.08f, 0.14f, 0.98f));
+	m_uiSprite->End();
+
+	m_textRenderer->Begin();
+	m_textRenderer->DrawText(pg.text.c_str(), bx + 25.0f, by + 25.0f, 22.0f, D2D1::ColorF(1, 1, 1));
+	wchar_t pgn[32]; swprintf_s(pgn, L"%d / %d", m_tutorialPage + 1, (int)m_tutorialPages.size());
+	m_textRenderer->DrawText(pgn, bx + bw - 80.0f, by + 10.0f, 16.0f, D2D1::ColorF(0.7f, 0.7f, 0.7f));
+	bool last = (m_tutorialPage == (int)m_tutorialPages.size() - 1);
+	m_textRenderer->DrawText(last ? L"クリックで閉じる" : L"クリックで次へ",
+		bx + bw / 2.0f - 70.0f, by + bh - 34.0f, 18.0f, D2D1::ColorF(0.85f, 0.85f, 0.6f));
+	m_textRenderer->End();
+
+	if (pg.stepsTip)
+	{
+		float tx = pg.hx - 20.0f, ty = pg.hy + pg.hh + 10.0f, tw = 320.0f, th = 60.0f;
+		m_uiSprite->Begin();
+		m_uiSprite->DrawSprite(white, tx, ty, tw, th, 0.0f, XMFLOAT4(0.05f, 0.05f, 0.1f, 0.98f));
+		m_uiSprite->End();
+		m_textRenderer->Begin();
+		m_textRenderer->DrawText(L"歩数", tx + 10.0f, ty + 6.0f, 16.0f, D2D1::ColorF(1, 0.9f, 0.6f));
+		m_textRenderer->DrawText(L"0を超えて進むと敵が強くなる", tx + 10.0f, ty + 30.0f, 13.0f, D2D1::ColorF(0.9f, 0.9f, 0.9f));
+		m_textRenderer->End();
+	}
+}
+
+void SceneManager::ShowTutorialDelayed(const std::vector<TutorialPage>& pages, float delay)
+{
+	m_pendingTutorial = pages;
+	m_tutorialDelay = delay;
+}
+
 void SceneManager::DrawBarTips()
 {
 	POINT mp = m_uiInput.GetMousePos();
@@ -622,6 +752,29 @@ void SceneManager::DrawBarTips()
 
 void SceneManager::Update(float deltaTime)
 {
+	if (m_fadeState == Fade::Out)
+	{
+		m_fadeAlpha += FADE_SPEED * deltaTime;
+		if (m_fadeAlpha >= 1.0f) { m_fadeAlpha = 1.0f; DoChangeScene(m_pendingScene); m_fadeState = Fade::In; }
+		return;   // 暗転中はシーンを止める
+	}
+
+	if (m_tutorialDelay > 0.0f)
+	{
+		m_tutorialDelay -= deltaTime;
+		if (m_tutorialDelay <= 0.0f && !m_pendingTutorial.empty())
+		{
+			ShowTutorial(m_pendingTutorial);
+			m_pendingTutorial.clear();
+		}
+	}
+
+	if (m_fadeState == Fade::In)
+	{
+		m_fadeAlpha -= FADE_SPEED * deltaTime;
+		if (m_fadeAlpha <= 0.0f) { m_fadeAlpha = 0.0f; m_fadeState = Fade::None; }
+	}
+
 	m_uiTime += deltaTime;
 
 	if (m_craftFxTimer > 0.0f)
@@ -662,6 +815,12 @@ void SceneManager::Update(float deltaTime)
 	}
 
 	if (m_deckOpen || m_craftOpen || m_invOpen || m_restOpen || m_mapOpen || m_eventOpen || m_craftFxTimer > 0.0f) return;
+
+	// チュートリアルのカード強制ホバー
+	if (m_tutorialOpen)
+		if (auto battle = dynamic_cast<BattleScene*>(m_currentScene))
+			battle->SetHoveredCard(m_tutorialPages[m_tutorialPage].hoverCard);
+
 	if (m_currentScene) m_currentScene->Update(deltaTime);
 }
 

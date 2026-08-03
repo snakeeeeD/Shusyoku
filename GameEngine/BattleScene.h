@@ -47,6 +47,13 @@ public:
     int GetPlayerHp() const { return m_player ? m_player->GetHp() : 0; }
     int GetPlayerMaxHp() const { return m_player ? m_player->GetMaxHp() : 0; }
 
+    BattleResult GetBattleResult() const { return m_battleResult; }
+
+    bool GetCardRect(int i, float& x, float& y, float& w, float& h) const
+    {
+        return m_battleUI ? m_battleUI->GetCardRect(i, x, y, w, h) : false;
+    }
+
     void GridToWorld(int col, int row, float& outX, float& outZ)
     {
         outX = (col - m_gridMap->GetCols() / 2.0f + 0.5f) * 1.1f;
@@ -67,11 +74,11 @@ public:
     int m_battleTier = 1;
     void SetTier(int t) { m_battleTier = t; }
 
+    void SetHoveredCard(int i) { m_hoveredCardIndex = i; }
+
     void OnPlayerMoved();
 
     std::vector<DropShown> m_dropResult;
-
-    BattleResult GetBattleResult() const { return m_battleResult; }
 
     int m_prevHoveredCard = -1;
 
