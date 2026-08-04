@@ -4,7 +4,7 @@
 #define MINIAUDIO_IMPLEMENTATION
 #include "External/miniaudio/miniaudio.h"
 
-static const int SE_VOICES = 6;   // “¯‚¶SE‚ğ“¯‚É‰½ŒÂ‚Ü‚Åd‚Ë‚é‚©
+static const int SE_VOICES = 10;   // “¯‚¶SE‚ğ“¯‚É‰½ŒÂ‚Ü‚Åd‚Ë‚é‚©
 struct SeVoicePool { std::vector<ma_sound*> voices; int next = 0; };
 static std::unordered_map<std::string, SeVoicePool> g_seCache;
 static std::unordered_map<std::string, float> g_seVol;

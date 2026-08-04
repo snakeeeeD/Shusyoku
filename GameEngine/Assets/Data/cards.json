@@ -87,7 +87,7 @@
       "range": 1,
       "rangeType": "Adjacent",
       "hits": 2,
-      "description": "{value}ダメージ×2",
+      "description": "{value}ダメージ×{hits}",
       "upgrade": { "mainValue": 2 },
       "mainEffect": {
         "type": "Damage",
@@ -100,15 +100,15 @@
       "type": "Attack",
       "rarity": "Rare",
       "tags": [ "Strike" ],
-      "cost": 2,
+      "cost": 3,
       "range": 1,
       "rangeType": "Adjacent",
-      "hits": 4,
-      "description": "{value}ダメージ×4",
-      "upgrade": { "hits": 1 },
+      "hits": 7,
+      "description": "{value}ダメージ×{hits}",
+      "upgrade": { "hits": 3 },
       "mainEffect": {
         "type": "Damage",
-        "value": 3
+        "value": 2
       }
     },
     {
@@ -285,7 +285,7 @@
       "type": "Attack",
       "rarity": "Uncommon",
       "tags": [ "Strike" ],
-      "cost": 4,
+      "cost": 5,
       "range": 1,
       "rangeType": "Adjacent",
       "description": "敵単体に{value}ダメージ",
@@ -293,6 +293,117 @@
       "mainEffect": {
         "type": "Damage",
         "value": 36
+      }
+    },
+    {
+      "id": "ATK_momentum",
+      "name": "気勢斬",
+      "type": "Attack",
+      "rarity": "Common",
+      "tags": [ "Strike" ],
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "{value}ダメージ、\nこのターン攻撃力+{sub}",
+      "upgrade": { "mainValue": 4 },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 3
+      },
+      "subEffect": {
+        "type": "ApplyBuff",
+        "value": 1,
+        "duration": 1,
+        "buffType": "AttackUpTurn"
+      }
+    },
+    {
+      "id": "ATK_jab",
+      "name": "牽制突き",
+      "type": "Attack",
+      "rarity": "Common",
+      "tags": [ "Strike" ],
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "{value}ダメージ、\n弱体{onhit}付与",
+      "upgrade": {
+        "mainValue": 2,
+        "onHitDuration": 1
+      },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 5
+      },
+      "onHitEffect": {
+        "type": "ApplyDebuff",
+        "value": 1,
+        "duration": 1,
+        "buffType": "Weak"
+      }
+    },
+    {
+      "id": "ATK_parry_slash",
+      "name": "受け流し斬り",
+      "type": "Attack",
+      "rarity": "Common",
+      "tags": [ "Strike" ],
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "{value}ダメージ、\nブロック{sub}",
+      "upgrade": { "subValue": 2 },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 5
+      },
+      "subEffect": {
+        "type": "Block",
+        "value": 3
+      }
+    },
+    {
+      "id": "ATK_cleave",
+      "name": "なぎ払い",
+      "type": "Attack",
+      "rarity": "Common",
+      "tags": [ "Strike" ],
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Area",
+      "description": "周囲の敵に{value}ダメージ",
+      "upgrade": { "mainValue": 3 },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 5
+      }
+    },
+    {
+      "id": "ATK_curse_slash",
+      "name": "呪詛斬",
+      "type": "Attack",
+      "rarity": "Rare",
+      "tags": [ "Strike" ],
+      "cost": 3,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "{value}ダメージ、\n弱体・脆弱を付与",
+      "upgrade": { "onHitDuration": 1 },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 8
+      },
+      "onHitEffect": {
+        "type": "ApplyDebuff",
+        "value": 1,
+        "duration": 1,
+        "buffType": "Weak"
+      },
+      "onHitEffect2": {
+        "type": "ApplyDebuff",
+        "value": 1,
+        "duration": 1,
+        "buffType": "Vulnerable"
       }
     },
 
@@ -522,7 +633,7 @@
       "type": "Power",
       "rarity": "Rare",
       "tags": [ "Strike" ],
-      "cost": 2,
+      "cost": 4,
       "range": 0,
       "rangeType": "None",
       "description": "毎ターン、攻撃力が{value}上昇",
@@ -553,10 +664,51 @@
       }
     },
     {
+      "id": "POW_battle_thirst",
+      "name": "戦いの渇き",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "tags": [ "Strike" ],
+      "cost": 2,
+      "range": 0,
+      "rangeType": "None",
+      "description": "攻撃力を+{value}。\nただし敵全体の攻撃力+1",
+      "upgrade": { "mainValue": 1 },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 2,
+        "duration": -1,
+        "buffType": "AttackUp"
+      },
+      "allEnemyEffect": {
+        "buffType": "AttackUp",
+        "value": 1,
+        "duration": -1
+      }
+    },
+    {
+      "id": "POW_frenzy",
+      "name": "狂乱",
+      "type": "Power",
+      "rarity": "Rare",
+      "tags": [ "Strike" ],
+      "cost": 2,
+      "range": 0,
+      "rangeType": "None",
+      "description": "与ダメージ+50%。\n被ダメージ+50%、\n移動すると自傷",
+      "upgrade": { "cost": -1 },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 1,
+        "duration": -1,
+        "buffType": "Frenzy"
+      }
+    },
+    {
       "id": "POW_buff_defense",
       "name": "鉄の意志",
       "type": "Power",
-      "rarity": "Rare",
+      "rarity": "Uncommon",
       "cost": 1,
       "range": 0,
       "rangeType": "None",

@@ -3,6 +3,7 @@
 #include "Player.h"
 #include "SpriteRenderer.h"
 #include "TextRenderer.h"
+#include "RelicManager.h"
 #include <DirectXMath.h>
 #include <string>
 
@@ -90,6 +91,16 @@ public:
         size_t op = result.find(L"{onhit}");
         if (op != std::wstring::npos)
             result.replace(op, 7, std::to_wstring(data->onHitEffect.value));
+
+        size_t hp = result.find(L"{hits}");
+        if (hp != std::wstring::npos)
+        {
+            int hits = data->hits;
+            if (data->type == CardType::Attack)
+                hits += RelicManager::SumValue("multiHit");   // combo_blade“™
+            if (hits < 1) hits = 1;
+            result.replace(hp, 6, std::to_wstring(hits));      // "{hits}"=6•¶Žš
+        }
 
         if (data->exhaust)
             result += L" \n[”pŠü]";

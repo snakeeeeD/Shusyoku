@@ -41,6 +41,8 @@ void Player::TakeDamage(int damage, DamageFeel feel)
     // Vulnerable: 50%増
     if (m_buffManager.HasBuff(BuffType::Vulnerable))
         damage = damage * 150 / 100;
+    if (int fr = m_buffManager.GetBuffValue(BuffType::Frenzy))
+        damage = damage * (100 + 50 * fr) / 100;   // 狂乱：1枚ごとに被ダメ+50%
 
     // ブロックで先に受ける
     int blocked = 0;

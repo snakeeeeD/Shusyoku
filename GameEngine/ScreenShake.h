@@ -30,8 +30,8 @@ public:
     // ダメージ量 → 揺れの強さ
     static float PowerForDamage(int dmg)
     {
-        float p = dmg / 20.0f;
-        return p < 0.25f ? 0.25f : (p > 1.0f ? 1.0f : p);
+        float p = dmg / 12.0f;                              // 分母を小さく＝ダメージあたり強く
+        return p < 0.3f ? 0.3f : (p > 2.5f ? 2.5f : p);     // 上限2.5＝大ダメージほど大きく揺れる
     }
 
 private:

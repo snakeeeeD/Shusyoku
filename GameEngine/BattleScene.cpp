@@ -325,6 +325,8 @@ void BattleScene::AddEnemy(int col, int row, const std::string& id)
 void BattleScene::OnPlayerMoved()
 {
     m_player->AddBlock(RelicManager::SumValue("moveBlock"));
+    if (m_player->GetBuffManager().HasBuff(BuffType::Frenzy))
+        m_player->TakeDamage(1, DamageFeel::Hit);   // 狂乱中の移動は身を削る
     // 今後の「移動時○○」レリックはここに追記
 }
 
@@ -2039,6 +2041,12 @@ void BattleScene::ProcessDeadEnemies()
 
         PlayerDataManager::GetData().gold += RelicManager::SumValue("killGold");   // レリック
         m_player->Heal(RelicManager::SumValue("killHeal"));                        // レリック
+        if (int ks = RelicManager::SumValue("killStrength"))                       // レリック（撃破で攻撃UP）
+        {
+            Buff b; b.type = BuffType::AttackUp; b.value = ks; b.duration = -1;
+            b.name = L""; b.description = L"";
+            m_player->GetBuffManager().AddBuff(b);
+        }
 
         delete enemy;
     }

@@ -7,35 +7,40 @@ BuffManager::BuffManager() {}
 
 void BuffManager::AddBuff(const Buff& buff)
 {
-    // 毒・攻撃UPはスタック（加算）
+    // 値加算スタック（毒・攻撃UP等）
     if (buff.type == BuffType::Poison ||
         buff.type == BuffType::AttackUp ||
         buff.type == BuffType::AttackUpTurn ||
         buff.type == BuffType::AttackGrowth ||
+        buff.type == BuffType::Frenzy ||
         buff.type == BuffType::RangeUp)
     {
         for (auto& b : m_buffs)
-        {
-            if (b.type == buff.type)
-            {
-                b.value += buff.value;
-                return;
-            }
-        }
+            if (b.type == buff.type) { b.value += buff.value; return; }
         m_buffs.push_back(buff);
         return;
     }
 
-    // それ以外は同種上書き
-    for (auto& b : m_buffs)
+    // 二値デバフ：重ねがけで持続を延長
+    if (buff.type == BuffType::Weak ||
+        buff.type == BuffType::Vulnerable ||
+        buff.type == BuffType::Frail ||
+        buff.type == BuffType::Root)
     {
+        for (auto& b : m_buffs)
+            if (b.type == buff.type) { b.duration += buff.duration; return; }
+        m_buffs.push_back(buff);
+        return;
+    }
+
+    // それ以外は上書き
+    for (auto& b : m_buffs)
         if (b.type == buff.type)
         {
             b.value = buff.value;
             b.duration = buff.duration;
             return;
         }
-    }
     m_buffs.push_back(buff);
 }
 
@@ -105,10 +110,9 @@ int BuffManager::GetFinalAttack(int baseAttack) const
     value += GetBuffValue(BuffType::AttackUpTurn);
     value -= GetBuffValue(BuffType::AttackDown);
 
-    // Weak: 25%減
-    if (HasBuff(BuffType::Weak))
-        value = value * 75 / 100;
-
+    if (int fr = GetBuffValue(BuffType::Frenzy))
+        value = value * (100 + 50 * fr) / 100;   // 狂乱：1枚ごとに+50%
+    if (HasBuff(BuffType::Weak))   value = value * 75 / 100;
     return max(0, value);
 }
 

@@ -61,7 +61,9 @@ struct CardData
 
     CardEffectData   mainEffect;   // メイン効果（ダメージ量やブロック量など）
     CardEffectData   onHitEffect;  // ヒット時効果（攻撃カードのみ）
+    CardEffectData onHitEffect2;   // 2つ目のonHit（複数デバフ攻撃用）
     CardEffectData   subEffect;    // サブ効果（ドロー/エネルギー/回復/自己バフ）
+    CardEffectData allEnemyEffect; // 使用時に全敵へ付与（バフ/デバフ共用）
 
     bool starter = false;   // 初期デッキ用（移動以外は報酬/店/変化に出さない）
 

@@ -441,7 +441,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 {
                     m_hasHoveredBuff = true;
                     m_hoveredBuffType = buff.type;
-                    m_hoveredBuffValue = buff.value;
+                    m_hoveredBuffValue = BuffInfo::IsDurationBased(buff.type) ? buff.duration : buff.value;
                     m_hoveredBuffX = buffIconX;
                     m_hoveredBuffY = buffIconY;
                 }
@@ -570,7 +570,10 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                     buffIconY += iconSize + 6.0f;
                 }
                 wchar_t buffVal[16];
-                swprintf_s(buffVal, L"%d", buff.value);
+                if (BuffInfo::IsDurationBased(buff.type))
+                    swprintf_s(buffVal, L"%dT", buff.duration);
+                else
+                    swprintf_s(buffVal, L"%d", buff.value);
                 m_textRenderer->DrawText(buffVal,
                     buffIconX + iconSize + 2.0f, buffIconY + 1.0f,
                     11.0f, D2D1::ColorF(D2D1::ColorF::White));
@@ -606,6 +609,8 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         wchar_t buffText[64];
         if (buff.type == BuffType::Poison)
             swprintf_s(buffText, L"%s %d", info.name.c_str(), buff.value);
+        else if (BuffInfo::IsDurationBased(buff.type))
+            swprintf_s(buffText, L"%s %dターン", info.name.c_str(), buff.duration);
         else
             swprintf_s(buffText, L"%s %d (%dT)", info.name.c_str(), buff.value, buff.duration);
         D2D1::ColorF textColor = buffHover
@@ -616,10 +621,21 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         // ホバーで説明
         if (buffHover)
         {
-            std::wstring desc = BuffInfo::GetDescription(buff.type, buff.value);
-            m_textRenderer->DrawText(desc.c_str(), 40.0f, buffY, 12.0f,
-                D2D1::ColorF(0.8f, 0.8f, 0.8f));
-            buffY += 18.0f;
+            int descNum = BuffInfo::IsDurationBased(buff.type) ? buff.duration : buff.value;
+            std::wstring desc = BuffInfo::GetDescription(buff.type, descNum);
+
+            // 背景ウィンドウ
+            float dw = 300.0f, dh = 20.0f;
+            m_textRenderer->End();
+            m_spriteRenderer->Begin();
+            m_spriteRenderer->DrawSprite(m_whiteTexture, 38.0f, buffY, dw, dh, 0.0f,
+                XMFLOAT4(0.08f, 0.08f, 0.15f, 0.95f));
+            m_spriteRenderer->End();
+            m_textRenderer->Begin();
+
+            m_textRenderer->DrawText(desc.c_str(), 44.0f, buffY + 3.0f, 12.0f,
+                D2D1::ColorF(0.85f, 0.85f, 0.85f));
+            buffY += 22.0f;
         }
     }
 
@@ -1827,9 +1843,15 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
             for (auto& buff : enemy->GetBuffManager().GetBuffs())
             {
                 const auto& info = BuffInfo::Get(buff.type);
-                std::wstring buffText = info.name + L": " + std::to_wstring(buff.value);
-                if (buff.type != BuffType::Poison)
-                    buffText += L" (" + std::to_wstring(buff.duration) + L"T)";
+                std::wstring buffText;
+                if (BuffInfo::IsDurationBased(buff.type))
+                    buffText = info.name + L": " + std::to_wstring(buff.duration) + L"ターン";
+                else
+                {
+                    buffText = info.name + L": " + std::to_wstring(buff.value);
+                    if (buff.type != BuffType::Poison)
+                        buffText += L" (" + std::to_wstring(buff.duration) + L"T)";
+                }
                 bool buffHover = (mp.x >= detailX && mp.x <= detailX + 190.0f
                     && mp.y >= lineY && mp.y <= lineY + 20.0f);
                 D2D1::ColorF buffColor = buffHover
@@ -1840,7 +1862,8 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
                 lineY += 20.0f;
                 if (buffHover)
                 {
-                    std::wstring desc = BuffInfo::GetDescription(buff.type, buff.value);
+                    int descNum = BuffInfo::IsDurationBased(buff.type) ? buff.duration : buff.value;
+                    std::wstring desc = BuffInfo::GetDescription(buff.type, descNum);
                     m_textRenderer->DrawText(desc.c_str(),
                         detailX + 10.0f, lineY, 12.0f,
                         D2D1::ColorF(0.8f, 0.8f, 0.8f));

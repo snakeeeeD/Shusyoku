@@ -81,6 +81,16 @@ void CardDataBase::Init()
                 data.onHitEffect.hasEffect = false;
             }
 
+            if (c.contains("onHitEffect2"))
+            {
+                data.onHitEffect2.hasEffect = true;
+                data.onHitEffect2.type = StringToCardEffectType(c["onHitEffect2"]["type"]);
+                data.onHitEffect2.value = c["onHitEffect2"]["value"];
+                data.onHitEffect2.duration = c["onHitEffect2"].value("duration", 0);
+                data.onHitEffect2.buffType = c["onHitEffect2"].value("buffType", "");
+            }
+            else data.onHitEffect2.hasEffect = false;
+
             if (c.contains("subEffect"))
             {
                 data.subEffect.hasEffect = true;
@@ -93,6 +103,18 @@ void CardDataBase::Init()
             else
             {
                 data.subEffect.hasEffect = false;
+            }
+
+            if (c.contains("allEnemyEffect"))
+            {
+                data.allEnemyEffect.hasEffect = true;
+                data.allEnemyEffect.value = c["allEnemyEffect"]["value"];
+                data.allEnemyEffect.duration = c["allEnemyEffect"].value("duration", 0);
+                data.allEnemyEffect.buffType = c["allEnemyEffect"].value("buffType", "");
+            }
+            else
+            {
+                data.allEnemyEffect.hasEffect = false;
             }
 
             m_data[data.id] = data;
@@ -111,6 +133,8 @@ void CardDataBase::Init()
                 up.mainEffect.value += u.value("mainValue", 0);
                 up.mainEffect.duration += u.value("duration", 0);
                 if (up.onHitEffect.hasEffect) up.onHitEffect.value += u.value("onHitValue", 0);
+                if (up.onHitEffect.hasEffect)  up.onHitEffect.duration += u.value("onHitDuration", 0);
+                if (up.onHitEffect2.hasEffect) up.onHitEffect2.duration += u.value("onHitDuration", 0);
                 if (up.subEffect.hasEffect)   up.subEffect.value += u.value("subValue", 0);
                 if (up.cost < 0) up.cost = 0;
                 if (u.contains("rangeType"))

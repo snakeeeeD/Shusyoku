@@ -49,6 +49,20 @@ static int EffectiveHits(const CardData& data)
     return h < 1 ? 1 : h;
 }
 
+static void ApplyAllEnemyEffect(const CardData& data, std::vector<Enemy*>& enemies)
+{
+    if (!data.allEnemyEffect.hasEffect || data.allEnemyEffect.buffType.empty()) return;
+    BuffType bt = StringToBuffType(data.allEnemyEffect.buffType);
+    for (auto e : enemies)
+    {
+        Buff b; b.type = bt;
+        b.value = data.allEnemyEffect.value;
+        b.duration = data.allEnemyEffect.duration;
+        b.name = BuffInfo::Get(bt).name; b.description = L"";
+        e->GetBuffManager().AddBuff(b);
+    }
+}
+
 CardExecutor::ExecuteResult CardExecutor::Execute(
     const CardData& data, const std::string& cardId,
     int targetCol, int targetRow,
@@ -347,6 +361,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             if (target->GetBuffManager().HasBuff(BuffType::Thorns))
                 player->TakeDamage(target->GetBuffManager().GetBuffValue(BuffType::Thorns));
             CardEffect::ApplyOnHitEffect(data.onHitEffect, target->GetBuffManager());
+            CardEffect::ApplyOnHitEffect(data.onHitEffect2, target->GetBuffManager());
 
             // ノックバック/引き寄せ
             if (data.onHitEffect.hasEffect)
@@ -570,6 +585,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
         player->UseEnergy(data.cost);
         CardEffect::ApplyEffectToPlayer(data.mainEffect, player);
         // パワーカードは捨て札に入れない
+        ApplyAllEnemyEffect(data, enemies);
         hand.RemoveCard(cardIndex);
         return { true, true };
     }
@@ -617,6 +633,8 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             break;
         }
     }
+
+    ApplyAllEnemyEffect(data, enemies);
 
     if (data.exhaust)
         deck.ExhaustCard(cardId);

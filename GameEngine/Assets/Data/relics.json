@@ -137,6 +137,14 @@
       "rarity": "uncommon",
       "desc": "カード報酬のレア率上昇"
     },
+    {
+      "id": "warriors_medal",
+      "name": "闘志の勲章",
+      "kind": "killStrength",
+      "value": 1,
+      "rarity": "uncommon",
+      "desc": "敵を倒すと攻撃力+1（戦闘中）"
+    },
 
     {
       "id": "mana_furnace",
