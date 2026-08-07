@@ -53,11 +53,15 @@ inline CardEffectType StringToCardEffectType(const std::string& str)
     if (str == "CreateCard")  return CardEffectType::CreateCard;
     if (str == "Knockback")   return CardEffectType::Knockback;
     if (str == "Pull")        return CardEffectType::Pull;
-    if (str == "Search")    return CardEffectType::Search;
-    if (str == "Salvage")   return CardEffectType::Salvage;
-    if (str == "PlaceTrap") return CardEffectType::PlaceTrap;
+    if (str == "Search")      return CardEffectType::Search;
+    if (str == "Salvage")     return CardEffectType::Salvage;
+    if (str == "PlaceTrap")   return CardEffectType::PlaceTrap;
+    if (str == "PlaceTrapArea")  return CardEffectType::PlaceTrapArea;
+    if (str == "Detonate")    return CardEffectType::Detonate;
+    if (str == "DetonateAt")  return CardEffectType::DetonateAt;
+    if (str == "DetonateChain")  return CardEffectType::DetonateChain;
     if (str == "UpgradeHand") return CardEffectType::UpgradeHand;
-    if (str == "Discard") return CardEffectType::Discard;
+    if (str == "Discard")     return CardEffectType::Discard;
     return CardEffectType::None;
 }
 

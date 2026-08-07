@@ -82,6 +82,10 @@ public:
 
     int m_prevHoveredCard = -1;
 
+    std::vector<std::pair<int, int>> m_chainQueue;
+    float m_chainTimer = 0.0f;
+    bool  m_chainFull = false;
+
 private:
     BattleUI* m_battleUI;
     GridMap* m_gridMap;

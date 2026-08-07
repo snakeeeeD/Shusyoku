@@ -1,4 +1,4 @@
-#include "BattleUI.h"
+ï»¿#include "BattleUI.h"
 #include "BuffInfo.h"
 #include "CardExecutor.h"
 #include "CardVisual.h"
@@ -60,7 +60,7 @@ void BattleUI::DrawHPBar(float x, float y, float w, float h, const HPBarInfo& in
     float displayRatio = info.displayHP / (float)info.maxHP;
     float poisonRatio = (float)info.poisonDmg / (float)info.maxHP;
 
-    // ƒuƒƒbƒNFŠO˜g‚ğÂ”’‚­
+    // ãƒ–ãƒ­ãƒƒã‚¯æ™‚ï¼šå¤–æ ã‚’é’ç™½ã
     if (info.block > 0)
     {
         float glow = 0.7f + 0.3f * sin(time * 3.0f);
@@ -69,23 +69,23 @@ void BattleUI::DrawHPBar(float x, float y, float w, float h, const HPBarInfo& in
             0.0f, glowColor);
     }
 
-    // •‚¢ŠO˜g
+    // é»’ã„å¤–æ 
     m_spriteRenderer->DrawSprite(m_whiteTexture, x - 1.0f, y - 1.0f, w + 2.0f, h + 2.0f,
         0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
-    // ”wŒiiˆÃ‚¢Ôj
+    // èƒŒæ™¯ï¼ˆæš—ã„èµ¤ï¼‰
     m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, w, h,
         0.0f, XMFLOAT4(0.3f, 0.0f, 0.0f, 1.0f));
 
-    // Œ¸­ƒAƒjƒ[ƒVƒ‡ƒ“iƒIƒŒƒ“ƒWj
+    // æ¸›å°‘ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ï¼ˆã‚ªãƒ¬ãƒ³ã‚¸ï¼‰
     if (displayRatio > hpRatio)
     {
         m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, w * displayRatio, h,
             0.0f, XMFLOAT4(0.9f, 0.6f, 0.1f, 1.0f));
     }
 
-    // HPƒo[–{‘Ì
+    // HPãƒãƒ¼æœ¬ä½“
     XMFLOAT4 barColor;
-    // ƒuƒƒbƒNFÂ”’‚¢ŠO˜g
+    // ãƒ–ãƒ­ãƒƒã‚¯æ™‚ï¼šé’ç™½ã„å¤–æ 
     if (info.block > 0)
     {
          barColor = XMFLOAT4(0.3f, 0.5f , 1.0f, 1.0f);
@@ -103,7 +103,7 @@ void BattleUI::DrawHPBar(float x, float y, float w, float h, const HPBarInfo& in
     m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, w * hpRatio, h,
         0.0f, barColor);
 
-    // “Åƒ_ƒ[ƒW—\‘ªi‡j
+    // æ¯’ãƒ€ãƒ¡ãƒ¼ã‚¸äºˆæ¸¬ï¼ˆç´«ï¼‰
     if (info.poisonDmg > 0 && hpRatio > 0.0f)
     {
         float poisonW = w * min(poisonRatio, hpRatio);
@@ -192,8 +192,8 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
     {
         float ex = 20.0f, ey = 190.0f, es = 60.0f;
-        m_spriteRenderer->DrawSprite(m_whiteTexture, ex - 3, ey - 3, es + 6, es + 6, 0.0f, XMFLOAT4(0.15f, 0.10f, 0.0f, 1.0f)); // ‰
-        m_spriteRenderer->DrawSprite(m_whiteTexture, ex, ey, es, es, 0.0f, XMFLOAT4(0.95f, 0.72f, 0.12f, 1.0f));               // –{‘Ìi‹àj
+        m_spriteRenderer->DrawSprite(m_whiteTexture, ex - 3, ey - 3, es + 6, es + 6, 0.0f, XMFLOAT4(0.15f, 0.10f, 0.0f, 1.0f)); // ç¸
+        m_spriteRenderer->DrawSprite(m_whiteTexture, ex, ey, es, es, 0.0f, XMFLOAT4(0.95f, 0.72f, 0.12f, 1.0f));               // æœ¬ä½“ï¼ˆé‡‘ï¼‰
     }
 
     int topIdx = (ctx.selectedCardIndex >= 0) ? ctx.selectedCardIndex : ctx.hoveredCardIndex;
@@ -255,11 +255,30 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             ctx.discardViewMode ? XMFLOAT4(0.3f, 0.5f, 0.7f, 1.0f) : XMFLOAT4(0.3f, 0.3f, 0.35f, 1.0f));
     }
     m_spriteRenderer->End();
-
     m_textRenderer->Begin();
     DrawPlayCardEffectTexts(ctx);
 
-    // èDF–{‘Ì¨•¶š ‚ğ1–‡‚¸‚ÂŒğŒİ‚É•`‚­i‰E‚ÌƒJ[ƒh‚ª¶‚Ì•¶š‚ğ•¢‚¤j
+    // ä½¿ç”¨å¯èƒ½ã‚«ãƒ¼ãƒ‰ã®ç™ºå…‰ï¼ˆç¸ãƒ»ãƒ‘ãƒ«ã‚¹ï¼‰ã‚’1æšæã
+    auto drawPlayableGlow = [&](int i) {
+        if (i < 0 || i >= (int)m_cardAnims.size()) return;
+        if (cards[i]->GetData()->cost > ctx.player->GetEnergy()) return;
+        float gx, gy, gw, gh;
+        CardVisual::GetRect(m_cardAnims[i].currentX, m_cardAnims[i].currentY,
+            m_cardAnims[i].currentScale, gx, gy, gw, gh);
+        float pulse = 0.5f + 0.5f * sinf(ctx.highlightTimer * 3.0f);
+
+        // å¤§ãã•é•ã„ã®3æšï¼ˆå¤–ï¼å¤§ãƒ»æ·¡ â†’ å†…ï¼å°ãƒ»æ¿ƒï¼‰ã€‚å¤§ãã„æ–¹ã‹ã‚‰æã
+        for (int k = 2; k >= 0; k--)
+        {
+            float pad = 2.0f + k * 3.0f + 1.5f * pulse;              // å†…2 â†’ å¤–8
+            float a = (0.5f + 0.3f * pulse) * (1.0f - k * 0.28f);  // å†…æ¿ƒ â†’ å¤–æ·¡
+            XMFLOAT4 glow(1.0f, 0.8f, 0.2f, a);
+            m_spriteRenderer->DrawSprite(m_whiteTexture, gx - pad, gy - pad,
+                gw + pad * 2, gh + pad * 2, m_cardAnims[i].currentRot, glow);
+        }
+        };
+
+    // æ‰‹æœ­ï¼šæœ¬ä½“â†’æ–‡å­— ã‚’1æšãšã¤äº¤äº’ã«æã
     for (int i = 0; i < (int)cards.size(); i++)
     {
         if (i >= (int)m_cardAnims.size()) continue;
@@ -269,6 +288,9 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
         m_textRenderer->End();
         m_spriteRenderer->Begin();
+
+        drawPlayableGlow(i);
+
         CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture,
             m_cardAnims[i].currentX, m_cardAnims[i].currentY,
             m_cardAnims[i].currentScale, m_cardAnims[i].currentRot,
@@ -283,11 +305,13 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     }
 
 
-    // ã‚É—ˆ‚éƒJ[ƒh‚ÍA–{‘Ì ¨ •¶š ‚Ì‡‚ÅÅŒã‚É•`‚­i‰º‚Ì•¶š‚ğ•¢‚¤j
+    // ä¸Šã«æ¥ã‚‹ã‚«ãƒ¼ãƒ‰ã¯ã€æœ¬ä½“ â†’ æ–‡å­— ã®é †ã§æœ€å¾Œã«æãï¼ˆä¸‹ã®æ–‡å­—ã‚’è¦†ã†ï¼‰
     if (topIdx >= 0 && topIdx < (int)cards.size() && topIdx < (int)m_cardAnims.size())
     {
         m_textRenderer->End();
         m_spriteRenderer->Begin();
+        drawPlayableGlow(topIdx);
+
         CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture,
             m_cardAnims[topIdx].currentX, m_cardAnims[topIdx].currentY,
             m_cardAnims[topIdx].currentScale, m_cardAnims[topIdx].currentRot,
@@ -303,12 +327,12 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
 
     wchar_t drawText[32];
-    swprintf_s(drawText, L"R:%d", ctx.deck->GetDrawPileCount());
+    swprintf_s(drawText, L"å±±:%d", ctx.deck->GetDrawPileCount());
     m_textRenderer->DrawText(drawText, drawPileX + 5.0f, (hoverDrawPile ? drawPileY - 6.0f : drawPileY) + 8.0f, 18.0f,
         D2D1::ColorF(D2D1::ColorF::White));
 
     wchar_t discardText[32];
-    swprintf_s(discardText, L"Ì:%d", ctx.deck->GetDiscardPileCount());
+    swprintf_s(discardText, L"æ¨:%d", ctx.deck->GetDiscardPileCount());
     m_textRenderer->DrawText(discardText, discardX + 5.0f, (hoverDiscard ? discardY - 6.0f : discardY) + 8.0f, 18.0f,
         D2D1::ColorF(D2D1::ColorF::White));
 
@@ -318,7 +342,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         bool he = ctx.mousePos.x >= ex2 && ctx.mousePos.x <= ex2 + 50.0f
             && ctx.mousePos.y >= ey2 && ctx.mousePos.y <= ey2 + 40.0f;
         wchar_t exhaustText[32];
-        swprintf_s(exhaustText, L"”p:%d", ctx.deck->GetExhaustPileCount());
+        swprintf_s(exhaustText, L"å»ƒ:%d", ctx.deck->GetExhaustPileCount());
         m_textRenderer->DrawText(exhaustText, ex2 + 5.0f, (he ? ey2 - 6.0f : ey2) + 8.0f, 18.0f,
             D2D1::ColorF(D2D1::ColorF::White));
     }
@@ -331,7 +355,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     {
         float ex = 20.0f, ey = 196.0f, es = 46.0f;
         wchar_t eCur[16]; swprintf_s(eCur, L"%d", ctx.player->GetEnergy());
-        m_textRenderer->DrawText(eCur, ex + es / 2.0f - 11.0f, ey + 5.0f, 32.0f, D2D1::ColorF(0.15f, 0.08f, 0.0f)); // ‘å‚«‚­
+        m_textRenderer->DrawText(eCur, ex + es / 2.0f - 11.0f, ey + 5.0f, 32.0f, D2D1::ColorF(0.15f, 0.08f, 0.0f)); // å¤§ãã
         wchar_t eMax[16]; swprintf_s(eMax, L"/%d", ctx.player->GetMaxEnergy());
         m_textRenderer->DrawText(eMax, ex + es - 4.0f, ey + es - 20.0f, 15.0f, D2D1::ColorF(0.35f, 0.2f, 0.0f));
     }
@@ -340,25 +364,25 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     {
         float a = UiNotice::GetAlpha();
         float y = m_screenHeight - 240.0f - UiNotice::GetRise();
-        m_textRenderer->DrawText(L"èD‚ª‚¢‚Á‚Ï‚¢I", m_screenWidth / 2.0f - 90.0f, y + 2.0f, 26.0f,
-            D2D1::ColorF(0, 0, 0, a));                       // ‰e
-        m_textRenderer->DrawText(L"èD‚ª‚¢‚Á‚Ï‚¢I", m_screenWidth / 2.0f - 90.0f, y, 26.0f,
-            D2D1::ColorF(1.0f, 0.5f, 0.2f, a));              // –{‘Ì
+        m_textRenderer->DrawText(L"æ‰‹æœ­ãŒã„ã£ã±ã„ï¼", m_screenWidth / 2.0f - 90.0f, y + 2.0f, 26.0f,
+            D2D1::ColorF(0, 0, 0, a));                       // å½±
+        m_textRenderer->DrawText(L"æ‰‹æœ­ãŒã„ã£ã±ã„ï¼", m_screenWidth / 2.0f - 90.0f, y, 26.0f,
+            D2D1::ColorF(1.0f, 0.5f, 0.2f, a));              // æœ¬ä½“
     }
 
     if (ctx.discardSelectCount > 0)
     {
         int sel = ctx.discardSelected ? (int)ctx.discardSelected->size() : 0;
         wchar_t msg[64];
-        swprintf_s(msg, L"Ì‚Ä‚éƒJ[ƒh‚ğ‘I‘ğ (%d/%d)", sel, ctx.discardSelectCount);
+        swprintf_s(msg, L"æ¨ã¦ã‚‹ã‚«ãƒ¼ãƒ‰ã‚’é¸æŠ (%d/%d)", sel, ctx.discardSelectCount);
         m_textRenderer->DrawText(msg, m_screenWidth / 2.0f - 120.0f, m_screenHeight - 380.0f, 24.0f,
             D2D1::ColorF(1.0f, 0.8f, 0.3f));
 
         float x, y, w, h;
         GetDiscardConfirmRect(x, y, w, h);
-        m_textRenderer->DrawText(L"Šm’è", x + 45.0f, y + 8.0f, 20.0f, D2D1::ColorF(1, 1, 1));
+        m_textRenderer->DrawText(L"ç¢ºå®š", x + 45.0f, y + 8.0f, 20.0f, D2D1::ColorF(1, 1, 1));
         GetDiscardViewRect(x, y, w, h);
-        m_textRenderer->DrawText(ctx.discardViewMode ? L"–ß‚é" : L"”Õ–Ê‚ğŒ©‚é",
+        m_textRenderer->DrawText(ctx.discardViewMode ? L"æˆ»ã‚‹" : L"ç›¤é¢ã‚’è¦‹ã‚‹",
             x + 20.0f, y + 8.0f, 20.0f, D2D1::ColorF(1, 1, 1));
     }
 
@@ -381,7 +405,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             bFontSize, D2D1::ColorF(D2D1::ColorF::White));
     }
 
-    // “GUI
+    // æ•µUI
         m_textRenderer->End();
         m_spriteRenderer->Begin();
 
@@ -391,12 +415,12 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             if (!GetEnemyScreenPos(enemy, ctx.renderer3D, headX, headY)) continue;
             if (!GetEnemyFootPos(enemy, ctx.renderer3D, footX, footY)) continue;
 
-            float scale = 1.0f / ctx.cameraZoom;  // ƒY[ƒ€ƒAƒEƒg‚É¬‚³‚­‚È‚é
+            float scale = 1.0f / ctx.cameraZoom;  // ã‚ºãƒ¼ãƒ ã‚¢ã‚¦ãƒˆæ™‚ã«å°ã•ããªã‚‹
 
             float barWidth = (enemy->IsBoss() ? 100.0f : 50.0f) * scale;
             float barHeight = (enemy->IsBoss() ? 10.0f : 7.0f) * scale;
 
-            // --- HPƒo[i‘«Œ³‚Ì­‚µ‰ºj ---
+            // --- HPãƒãƒ¼ï¼ˆè¶³å…ƒã®å°‘ã—ä¸‹ï¼‰ ---
             float barX = footX - barWidth / 2.0f;
             float barY = footY - 30.0f;
 
@@ -408,7 +432,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             eBar.hasBurn = enemy->GetBuffManager().HasBuff(BuffType::Burn);
             DrawHPBar(barX, barY, barWidth, barHeight, eBar, ctx.highlightTimer);
 
-            // ƒuƒƒbƒNƒAƒCƒRƒ“iHPƒo[¶’[j
+            // ãƒ–ãƒ­ãƒƒã‚¯ã‚¢ã‚¤ã‚³ãƒ³ï¼ˆHPãƒãƒ¼å·¦ç«¯ï¼‰
             if (enemy->GetBlock() > 0)
             {
                 float iconSize = barHeight * 1.5f;
@@ -422,7 +446,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                     0.0f, XMFLOAT4(0.3f, 0.6f, 1.0f, 1.0f));
             }
 
-            // --- ƒoƒt/ƒfƒoƒtƒAƒCƒRƒ“iHPƒo[‚Ì‰ºj ---
+            // --- ãƒãƒ•/ãƒ‡ãƒãƒ•ã‚¢ã‚¤ã‚³ãƒ³ï¼ˆHPãƒãƒ¼ã®ä¸‹ï¼‰ ---
             float buffIconY = barY + barHeight + 4.0f;
             float buffIconX = barX;
             float buffMaxX = barX + barWidth + 40.0f;
@@ -464,7 +488,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 buffIconX += iconSize + 20.0f;
             }
 
-            // --- Ÿ‚Ìs“®ƒAƒCƒRƒ“i“ªãj ---
+            // --- æ¬¡ã®è¡Œå‹•ã‚¢ã‚¤ã‚³ãƒ³ï¼ˆé ­ä¸Šï¼‰ ---
             {
                 float iconSize = EnemyIntentVisual::ICON_SIZE;
                 float iconX = barX;
@@ -497,7 +521,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             float barY = footY - 30.0f;
             float fontSize = max(8.0f, (enemy->IsBoss() ? 10.0f : 8.0f) * scale);
 
-            // HP”’l
+            // HPæ•°å€¤
             wchar_t hpText[32];
             swprintf_s(hpText, L"%d/%d", enemy->GetHp(), enemy->GetMaxHp());
             float textW = wcslen(hpText) * fontSize * 0.5f;
@@ -508,7 +532,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             m_textRenderer->DrawText(hpText, textX, textY,
                 fontSize, D2D1::ColorF(D2D1::ColorF::White));
 
-            // ƒuƒƒbƒN”’l
+            // ãƒ–ãƒ­ãƒƒã‚¯æ•°å€¤
             if (enemy->GetBlock() > 0)
             {
                 float iconSize = barHeight * 1.5f;
@@ -528,9 +552,9 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                     blockFontSize, D2D1::ColorF(D2D1::ColorF::White));
             }
 
-            // s“®‚Ì”’li“ªãj
+            // è¡Œå‹•ã®æ•°å€¤ï¼ˆé ­ä¸Šï¼‰
             const EnemyAction* action = enemy->GetNextAction();
-            // s“®‚Ì”’li•¡‡s“®‚Í‚·‚×‚Ä•À‚×‚éj
+            // è¡Œå‹•ã®æ•°å€¤ï¼ˆè¤‡åˆè¡Œå‹•ã¯ã™ã¹ã¦ä¸¦ã¹ã‚‹ï¼‰
             {
                 float iconSize = EnemyIntentVisual::ICON_SIZE;
                 float ix = barX;
@@ -557,7 +581,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                     }
             }
 
-            // ƒoƒt/ƒfƒoƒt”’l
+            // ãƒãƒ•/ãƒ‡ãƒãƒ•æ•°å€¤
             float buffIconY = barY + barHeight + 4.0f;
             float buffIconX = barX;
             float buffMaxX = barX + barWidth + 40.0f;
@@ -583,10 +607,10 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     
 
         if (ctx.turnManager->IsPlayerTurn())
-            m_textRenderer->DrawText(L"ƒvƒŒƒCƒ„[ƒ^[ƒ“", 500.0f, 50.0f, 24.0f,
+            m_textRenderer->DrawText(L"ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚¿ãƒ¼ãƒ³", 500.0f, 50.0f, 24.0f,
                 D2D1::ColorF(D2D1::ColorF::White));
         else
-            m_textRenderer->DrawText(L"“Gƒ^[ƒ“", 500.0f, 50.0f, 24.0f,
+            m_textRenderer->DrawText(L"æ•µã‚¿ãƒ¼ãƒ³", 500.0f, 50.0f, 24.0f,
                 D2D1::ColorF(D2D1::ColorF::Red));
 
     const auto& buffs = ctx.player->GetBuffManager().GetBuffs();
@@ -596,7 +620,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         const auto& info = BuffInfo::Get(buff.type);
         bool buffHover = (ctx.mousePos.x >= 20.0f && ctx.mousePos.x <= 200.0f
             && ctx.mousePos.y >= buffY && ctx.mousePos.y <= buffY + 20.0f);
-        // ƒAƒCƒRƒ“
+        // ã‚¢ã‚¤ã‚³ãƒ³
         m_textRenderer->End();
         m_spriteRenderer->Begin();
         m_spriteRenderer->DrawSprite(m_whiteTexture, 20.0f, buffY, 16.0f, 16.0f, 0.0f,
@@ -605,12 +629,12 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             info.color);
         m_spriteRenderer->End();
         m_textRenderer->Begin();
-        // –¼‘O‚Æ’l
+        // åå‰ã¨å€¤
         wchar_t buffText[64];
         if (buff.type == BuffType::Poison)
             swprintf_s(buffText, L"%s %d", info.name.c_str(), buff.value);
         else if (BuffInfo::IsDurationBased(buff.type))
-            swprintf_s(buffText, L"%s %dƒ^[ƒ“", info.name.c_str(), buff.duration);
+            swprintf_s(buffText, L"%s %dã‚¿ãƒ¼ãƒ³", info.name.c_str(), buff.duration);
         else
             swprintf_s(buffText, L"%s %d (%dT)", info.name.c_str(), buff.value, buff.duration);
         D2D1::ColorF textColor = buffHover
@@ -618,13 +642,13 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             : D2D1::ColorF(0.6f, 1.0f, 0.6f);
         m_textRenderer->DrawText(buffText, 40.0f, buffY, 14.0f, textColor);
         buffY += 20.0f;
-        // ƒzƒo[‚Åà–¾
+        // ãƒ›ãƒãƒ¼ã§èª¬æ˜
         if (buffHover)
         {
             int descNum = BuffInfo::IsDurationBased(buff.type) ? buff.duration : buff.value;
             std::wstring desc = BuffInfo::GetDescription(buff.type, descNum);
 
-            // ”wŒiƒEƒBƒ“ƒhƒE
+            // èƒŒæ™¯ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦
             float dw = 300.0f, dh = 20.0f;
             m_textRenderer->End();
             m_spriteRenderer->Begin();
@@ -639,7 +663,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         }
     }
 
-    // ƒ^[ƒ“ƒGƒ“ƒhƒ{ƒ^ƒ“
+    // ã‚¿ãƒ¼ãƒ³ã‚¨ãƒ³ãƒ‰ãƒœã‚¿ãƒ³
     if (ctx.battleResult == BattleResult::None && ctx.isPlayerTurn)
     {
         float btnX = ctx.screenWidth - 160.0f;
@@ -651,7 +675,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         float bey = hoverEnd ? btnY - 6.0f : btnY;
         XMFLOAT4 btnColor = hoverEnd ? XMFLOAT4(0.3f, 0.7f, 1.0f, 1.0f) : XMFLOAT4(0.2f, 0.5f, 0.8f, 1.0f);
         m_spriteRenderer->DrawSprite(m_whiteTexture, btnX, bey, btnW, btnH, 0.0f, btnColor);
-        m_textRenderer->DrawText(L"ƒ^[ƒ“ƒGƒ“ƒh", btnX + 10.0f, bey + 10.0f, 18.0f);
+        m_textRenderer->DrawText(L"ã‚¿ãƒ¼ãƒ³ã‚¨ãƒ³ãƒ‰", btnX + 10.0f, bey + 10.0f, 18.0f);
     }
 
     if (ctx.battleResult == BattleResult::Win)
@@ -675,14 +699,14 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                     if (d.rare)
                     {
                         float pulse = 0.5f + 0.5f * sinf(ctx.highlightTimer * 4.0f);   // 0..1
-                        // Œõ‚é‘Ñ
+                        // å…‰ã‚‹å¸¯
                         float bw = 340.0f, bh = 28.0f;
                         m_spriteRenderer->DrawSprite(m_whiteTexture, cx - bw / 2.0f, y - 3.0f, bw, bh, 0.0f,
                             XMFLOAT4(1.0f, 0.85f, 0.2f, 0.12f + 0.22f * pulse));
-                        // ‚«‚ç‚ß‚«—±i‘Ñ‚Ìü‚è‚ğ‰ñ‚éj
+                        // ãã‚‰ã‚ãç²’ï¼ˆå¸¯ã®å‘¨ã‚Šã‚’å›ã‚‹ï¼‰
                         for (int k = 0; k < 6; k++)
                         {
-                            float a = ctx.highlightTimer * 2.0f + k * 1.0472f;             // 60“x‚İ
+                            float a = ctx.highlightTimer * 2.0f + k * 1.0472f;             // 60åº¦åˆ»ã¿
                             float px = cx + cosf(a) * (170.0f + 8.0f * sinf(ctx.highlightTimer * 3.0f + k));
                             float py = y + 11.0f + sinf(a) * 9.0f;
                             float sz = 4.0f + 3.0f * pulse;
@@ -708,12 +732,12 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             {
                 std::wstring rn;
                 if (auto r = RelicManager::Get(*ctx.rewardRelic)) rn = ToWString(r->name);
-                m_textRenderer->DrawText((L"ƒŒƒŠƒbƒNŠl“¾: " + rn).c_str(),
+                m_textRenderer->DrawText((L"ãƒ¬ãƒªãƒƒã‚¯ç²å¾—: " + rn).c_str(),
                     cx - 120.0f, y, 24.0f, D2D1::ColorF(0.9f, 0.7f, 1.0f));
                 y += 32.0f;
             }
         }
-        m_textRenderer->DrawText(L"ƒNƒŠƒbƒN‚ÅŸ‚Ö",
+        m_textRenderer->DrawText(L"ã‚¯ãƒªãƒƒã‚¯ã§æ¬¡ã¸",
             m_screenWidth / 2.0f - 80.0f, m_screenHeight / 2.0f + 40.0f,
             24.0f, D2D1::ColorF(D2D1::ColorF::White));
     }
@@ -722,7 +746,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         m_textRenderer->DrawText(L"Game Over...",
             m_screenWidth / 2.0f - 100.0f, m_screenHeight / 2.0f - 30.0f,
             60.0f, D2D1::ColorF(D2D1::ColorF::Red));
-        m_textRenderer->DrawText(L"ƒNƒŠƒbƒN‚Åƒ^ƒCƒgƒ‹‚Ö",
+        m_textRenderer->DrawText(L"ã‚¯ãƒªãƒƒã‚¯ã§ã‚¿ã‚¤ãƒˆãƒ«ã¸",
             m_screenWidth / 2.0f - 100.0f, m_screenHeight / 2.0f + 40.0f,
             24.0f, D2D1::ColorF(D2D1::ColorF::White));
     }
@@ -749,7 +773,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             D2D1::ColorF(0.8f, 0.8f, 0.8f));
     }
 
-    // ã©‚Ìƒzƒo[Ú×
+    // ç½ ã®ãƒ›ãƒãƒ¼è©³ç´°
     if (ctx.hoveredCell.first >= 0 && ctx.hoveredCell.second >= 0
         && ctx.hoveredCell.first < ctx.gridMap->GetCols()
         && ctx.hoveredCell.second < ctx.gridMap->GetRows())
@@ -762,9 +786,9 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             {
                 wchar_t detailText[64];
                 if (def->effect == "Damage")
-                    swprintf_s(detailText, L"ƒ_ƒ[ƒW: %d", hCell.tileEffect.value);
+                    swprintf_s(detailText, L"ãƒ€ãƒ¡ãƒ¼ã‚¸: %d", hCell.tileEffect.value);
                 else if (def->effect == "Slide")
-                    swprintf_s(detailText, L"ˆÚ“®•ûŒü‚ÉŠŠ‚é");
+                    swprintf_s(detailText, L"ç§»å‹•æ–¹å‘ã«æ»‘ã‚‹");
                 else
                 {
                     BuffType bt = StringToBuffType(def->buffType);
@@ -865,13 +889,13 @@ void BattleUI::DrawTargetIndicators(const BattleUIContext& ctx)
 
                 if (hitEnemy)
                 {
-                    // “G‚ÉÔ–îˆó
+                    // æ•µã«èµ¤çŸ¢å°
                     float sx, sy;
                     if (GetEnemyScreenPos(hitEnemy, ctx.renderer3D, sx, sy))
                         DrawArrowIndicator(sx, sy, XMFLOAT4(1.0f, 0.3f, 0.1f, 1.0f), ctx.highlightTimer);
                 }
 
-                // ˆÚ“®æ‚É—Î–îˆó
+                // ç§»å‹•å…ˆã«ç·‘çŸ¢å°
                 if (moveCol != ctx.playerCol || moveRow != ctx.playerRow)
                 {
                     float wx, wz;
@@ -974,7 +998,7 @@ void BattleUI::DrawTargetIndicators(const BattleUIContext& ctx)
                 if (GetEnemyScreenPos(enemy, ctx.renderer3D, sx, sy))
                     DrawArrowIndicator(sx, sy, arrowColor, ctx.highlightTimer);
 
-                // ƒmƒbƒNƒoƒbƒN/ˆø‚«Šñ‚¹ƒvƒŒƒrƒ…[
+                // ãƒãƒƒã‚¯ãƒãƒƒã‚¯/å¼•ãå¯„ã›ãƒ—ãƒ¬ãƒ“ãƒ¥ãƒ¼
                 if (data->onHitEffect.hasEffect)
                 {
                     if (data->onHitEffect.type == CardEffectType::Knockback)
@@ -985,7 +1009,7 @@ void BattleUI::DrawTargetIndicators(const BattleUIContext& ctx)
 
                         if (preview.immovable)
                         {
-                            // ~ƒ}[ƒNi“G‚Í“®‚©‚È‚¢j
+                            // Ã—ãƒãƒ¼ã‚¯ï¼ˆæ•µã¯å‹•ã‹ãªã„ï¼‰
                             m_spriteRenderer->DrawSprite(m_whiteTexture,
                                 sx - 12.0f, sy - 62.0f, 24.0f, 4.0f, 0.78f,
                                 XMFLOAT4(1.0f, 0.2f, 0.2f, 0.9f));
@@ -1044,7 +1068,7 @@ void BattleUI::DrawTargetIndicators(const BattleUIContext& ctx)
 
                         if (preview.immovable)
                         {
-                            // ~ƒ}[ƒNi“G‚Í“®‚©‚È‚¢j
+                            // Ã—ãƒãƒ¼ã‚¯ï¼ˆæ•µã¯å‹•ã‹ãªã„ï¼‰
                             m_spriteRenderer->DrawSprite(m_whiteTexture,
                                 sx - 12.0f, sy - 62.0f, 24.0f, 4.0f, 0.78f,
                                 XMFLOAT4(1.0f, 0.2f, 0.2f, 0.9f));
@@ -1052,7 +1076,7 @@ void BattleUI::DrawTargetIndicators(const BattleUIContext& ctx)
                                 sx - 12.0f, sy - 62.0f, 24.0f, 4.0f, -0.78f,
                                 XMFLOAT4(1.0f, 0.2f, 0.2f, 0.9f));
 
-                            // ƒvƒŒƒCƒ„[‚ÌˆÚ“®æ•\¦
+                            // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®ç§»å‹•å…ˆè¡¨ç¤º
                             if (preview.playerDestCol != ctx.playerCol || preview.playerDestRow != ctx.playerRow)
                             {
                                 float wx, wz;
@@ -1118,8 +1142,8 @@ void BattleUI::DrawTargetIndicators(const BattleUIContext& ctx)
     else if (data->type == CardType::Skill || data->type == CardType::Power)
     {
         XMFLOAT4 arrowColor = (data->type == CardType::Power)
-            ? XMFLOAT4(0.8f, 0.3f, 0.9f, 1.0f)   // ƒpƒ[‡
-            : XMFLOAT4(0.2f, 0.8f, 1.0f, 1.0f);  // ƒXƒLƒ‹Â
+            ? XMFLOAT4(0.8f, 0.3f, 0.9f, 1.0f)   // ãƒ‘ãƒ¯ãƒ¼ï¼ç´«
+            : XMFLOAT4(0.2f, 0.8f, 1.0f, 1.0f);  // ã‚¹ã‚­ãƒ«ï¼é’
 
         float pitch = XMConvertToRadians(-Renderer3D::BILLBOARD_PITCH);
         XMVECTOR worldPos = XMVectorSet(
@@ -1139,7 +1163,7 @@ void BattleUI::DrawTargetIndicators(const BattleUIContext& ctx)
             auto& cell = ctx.gridMap->GetCell(ctx.playerCol, ctx.playerRow);
             if (cell.tileEffect.active)
             {
-                // ƒvƒŒƒCƒ„[‚Ì“ªã‚É~ƒ}[ƒN
+                // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®é ­ä¸Šã«Ã—ãƒãƒ¼ã‚¯
                 float pitch = XMConvertToRadians(-Renderer3D::BILLBOARD_PITCH);
                 XMVECTOR worldPos = XMVectorSet(
                     ctx.player->worldX,
@@ -1233,11 +1257,11 @@ void BattleUI::DrawPileViewer(const BattleUIContext& ctx)
 
     const wchar_t* title;
     if (ctx.cardSelecting)
-        title = ctx.showDrawPile ? L"RD‚©‚ç‘I‘ğ" : L"Ì‚ÄD‚©‚ç‘I‘ğ";
+        title = ctx.showDrawPile ? L"å±±æœ­ã‹ã‚‰é¸æŠ" : L"æ¨ã¦æœ­ã‹ã‚‰é¸æŠ";
     else
-        title = ctx.showDrawPile ? L"RD"
-        : ctx.showDiscardPile ? L"Ì‚ÄD"
-        : L"”pŠüD";
+        title = ctx.showDrawPile ? L"å±±æœ­"
+        : ctx.showDiscardPile ? L"æ¨ã¦æœ­"
+        : L"å»ƒæ£„æœ­";
 
     float bgX = m_screenWidth / 2.0f - 300.0f;
     float bgY = 50.0f;
@@ -1253,10 +1277,10 @@ void BattleUI::DrawPileViewer(const BattleUIContext& ctx)
         D2D1::ColorF(D2D1::ColorF::White));
 
     if (ctx.cardSelecting)
-        m_textRenderer->DrawText(L"[ƒJ[ƒh‚ğƒNƒŠƒbƒN‚µ‚Ä‘I‘ğ]", bgX + bgW - 220.0f, bgY + 10.0f, 16.0f,
+        m_textRenderer->DrawText(L"[ã‚«ãƒ¼ãƒ‰ã‚’ã‚¯ãƒªãƒƒã‚¯ã—ã¦é¸æŠ]", bgX + bgW - 220.0f, bgY + 10.0f, 16.0f,
             D2D1::ColorF(D2D1::ColorF::Yellow));
     else
-        m_textRenderer->DrawText(L"[˜gŠOƒNƒŠƒbƒN‚Å•Â‚¶‚é]", bgX + bgW - 150.0f, bgY + 10.0f, 16.0f,
+        m_textRenderer->DrawText(L"[æ å¤–ã‚¯ãƒªãƒƒã‚¯ã§é–‰ã˜ã‚‹]", bgX + bgW - 150.0f, bgY + 10.0f, 16.0f,
             D2D1::ColorF(D2D1::ColorF::Gray));
 
     std::vector<std::string> displayPile = pile;
@@ -1270,7 +1294,7 @@ void BattleUI::DrawPileViewer(const BattleUIContext& ctx)
     const float gap = 12.0f;
     const int   cols = 6;
 
-    // –{‘ÌiƒXƒvƒ‰ƒCƒgj
+    // æœ¬ä½“ï¼ˆã‚¹ãƒ—ãƒ©ã‚¤ãƒˆï¼‰
     m_textRenderer->End();
     m_spriteRenderer->Begin();
     for (int i = 0; i < (int)displayPile.size(); i++)
@@ -1296,7 +1320,7 @@ void BattleUI::DrawPileViewer(const BattleUIContext& ctx)
     }
     m_spriteRenderer->End();
 
-    // •¶šiƒeƒLƒXƒgj
+    // æ–‡å­—ï¼ˆãƒ†ã‚­ã‚¹ãƒˆï¼‰
     m_textRenderer->Begin();
     for (int i = 0; i < (int)displayPile.size(); i++)
     {
@@ -1383,8 +1407,8 @@ void BattleUI::StartDiscardEffects()
 void BattleUI::StartOverflowDiscardEffect()
 {
     DiscardCardEffect effect;
-    effect.startX = m_screenWidth / 2.0f - CARD_WIDTH / 2.0f;   // èD‚ÌˆÊ’u‚©‚ç
-    effect.startY = m_screenHeight - 320.0f;   // èD‚æ‚èã‚©‚çi‰B‚ê‚È‚¢‚æ‚¤‚Éj
+    effect.startX = m_screenWidth / 2.0f - CARD_WIDTH / 2.0f;   // æ‰‹æœ­ã®ä½ç½®ã‹ã‚‰
+    effect.startY = m_screenHeight - 320.0f;   // æ‰‹æœ­ã‚ˆã‚Šä¸Šã‹ã‚‰ï¼ˆéš ã‚Œãªã„ã‚ˆã†ã«ï¼‰
     effect.alpha = 1.0f;
     effect.timer = 0.0f;
     effect.done = false;
@@ -1419,7 +1443,7 @@ void BattleUI::DrawDiscardEffects()
         float x = e.startX + (targetX - e.startX) * ease;
         float y = e.startY + (targetY - e.startY) * ease;
 
-        y -= sinf(t * 3.14159f) * 70.0f;      // “r’†‚Å‚Ó‚í‚Á‚Æã‚ÖiR‚È‚èj
+        y -= sinf(t * 3.14159f) * 70.0f;      // é€”ä¸­ã§ãµã‚ã£ã¨ä¸Šã¸ï¼ˆå±±ãªã‚Šï¼‰
 
         XMFLOAT4 color(0.4f, 0.4f, 0.4f, e.alpha);
         m_spriteRenderer->DrawSprite(m_whiteTexture, x, y,
@@ -1434,7 +1458,7 @@ void BattleUI::UpdatePlayCardEffects(float deltaTime)
         if (e.done) continue;
         e.timer += deltaTime;
         float t = min(1.0f, e.timer / PLAY_EFFECT_DUR);
-        e.alpha = (t < 0.4f) ? 1.0f : 1.0f - (t - 0.4f) / 0.6f;   // Œã”¼‚ÅƒtƒF[ƒh
+        e.alpha = (t < 0.4f) ? 1.0f : 1.0f - (t - 0.4f) / 0.6f;   // å¾ŒåŠã§ãƒ•ã‚§ãƒ¼ãƒ‰
         if (t >= 1.0f) e.done = true;
     }
     m_playCardEffects.erase(
@@ -1471,25 +1495,25 @@ void BattleUI::UpdateCardAnimations(float deltaTime, int handSize, int hoveredIn
     {
         float targetX = CardVisual::HandSlotX(i, handSize, (float)m_screenWidth);
 
-        // ƒzƒo[’†‚ÌƒJ[ƒh‚Ì—×‚ğŠO‚Ö”ğ‚¯‚é
+        // ãƒ›ãƒãƒ¼ä¸­ã®ã‚«ãƒ¼ãƒ‰ã®éš£ã‚’å¤–ã¸é¿ã‘ã‚‹
         if (hoveredIndex >= 0 && i != hoveredIndex)
             targetX += (i < hoveredIndex) ? -18.0f : 18.0f;
 
-        // ƒzƒo[‚ÅŠg‘å
+        // ãƒ›ãƒãƒ¼ã§æ‹¡å¤§
         float targetScale = (i == hoveredIndex || i == selectedIndex) ? 1.18f : 1.0f;
         m_cardAnims[i].currentScale += (targetScale - m_cardAnims[i].currentScale)
             * min(1.0f, 12.0f * dt);
 
         float targetY = 0;
 
-        // îŒ`‚É•À‚×‚éiŠO‘¤‚Ù‚ÇŒX‚­E‰º‚ª‚éj
+        // æ‰‡å½¢ã«ä¸¦ã¹ã‚‹ï¼ˆå¤–å´ã»ã©å‚¾ããƒ»ä¸‹ãŒã‚‹ï¼‰
         float center = (handSize - 1) / 2.0f;
         float off = i - center;
-        float targetRot = off * 0.03f;                  // ƒ‰ƒWƒAƒ“
+        float targetRot = off * 0.03f;                  // ãƒ©ã‚¸ã‚¢ãƒ³
 
         if (i == hoveredIndex || i == selectedIndex)
         {
-            targetRot = 0.0f;                            // ƒzƒo[’†‚Í—§‚Ä‚é
+            targetRot = 0.0f;                            // ãƒ›ãƒãƒ¼ä¸­ã¯ç«‹ã¦ã‚‹
         }
 
         m_cardAnims[i].currentRot += (targetRot - m_cardAnims[i].currentRot)
@@ -1534,13 +1558,13 @@ void BattleUI::UpdateCardAnimations(float deltaTime, int handSize, int hoveredIn
         else
             targetY = cardHideY;
 
-        // Ì‚Ä‚é‘I‘ğ’†‚ÌƒJ[ƒh‚Íã‚É‚¿ã‚°‚é
+        // æ¨ã¦ã‚‹é¸æŠä¸­ã®ã‚«ãƒ¼ãƒ‰ã¯ä¸Šã«æŒã¡ä¸Šã’ã‚‹
         if (discardSelected &&
             std::find(discardSelected->begin(), discardSelected->end(), i)
             != discardSelected->end())
             targetY -= 60.0f;
 
-        // î‚ÌŒÊi’†‰›‚Ù‚Çã‚ª‚éjBƒzƒo[’†‚Í•½‚ç  © •âŠÔ‚æ‚è‘O
+        // æ‰‡ã®å¼§ï¼ˆä¸­å¤®ã»ã©ä¸ŠãŒã‚‹ï¼‰ã€‚ãƒ›ãƒãƒ¼ä¸­ã¯å¹³ã‚‰  â† è£œé–“ã‚ˆã‚Šå‰
         if (i != hoveredIndex)
             targetY += fabsf(off) * fabsf(off) * 2.5f;
 
@@ -1565,7 +1589,7 @@ int BattleUI::GetCardAtScreenPos(POINT p) const
     int n = (int)m_cardAnims.size();
     if (n == 0) return -1;
 
-    // èD‚Ìã’[‚Íu‚¿ã‚ª‚Á‚½ˆÊ’uv‚Ü‚ÅŠÜ‚ß‚éiŒÅ’èE“®‚©‚È‚¢j
+    // æ‰‹æœ­ã®ä¸Šç«¯ã¯ã€ŒæŒã¡ä¸ŠãŒã£ãŸä½ç½®ã€ã¾ã§å«ã‚ã‚‹ï¼ˆå›ºå®šãƒ»å‹•ã‹ãªã„ï¼‰
     float topY = m_screenHeight - CARD_HIDE_Y_OFFSET - 40.0f;
     for (int i = 0; i < n; i++)
     {
@@ -1600,16 +1624,16 @@ void BattleUI::DrawPlayerOffScreenIndicator(const BattleUIContext& ctx)
 
     float margin = 40.0f;
 
-    // ‰æ–Ê“à‚É‚¢‚½‚ç‰½‚à‚µ‚È‚¢
+    // ç”»é¢å†…ã«ã„ãŸã‚‰ä½•ã‚‚ã—ãªã„
     if (sx >= margin && sx <= m_screenWidth - margin
         && sy >= margin && sy <= m_screenHeight - margin)
         return;
 
-    // ‰æ–Ê’[‚ÉƒNƒ‰ƒ“ƒv
+    // ç”»é¢ç«¯ã«ã‚¯ãƒ©ãƒ³ãƒ—
     float edgeX = max(margin, min((float)m_screenWidth - margin, sx));
     float edgeY = max(margin, min((float)m_screenHeight - margin, sy));
 
-    // ƒvƒŒƒCƒ„[ƒAƒCƒRƒ“ik¬•\¦j
+    // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚¢ã‚¤ã‚³ãƒ³ï¼ˆç¸®å°è¡¨ç¤ºï¼‰
     float iconSize = 32.0f;
     ID3D11ShaderResourceView* playerTex = TextureManager::Get("player");
     m_spriteRenderer->DrawSprite(playerTex,
@@ -1617,7 +1641,7 @@ void BattleUI::DrawPlayerOffScreenIndicator(const BattleUIContext& ctx)
         iconSize, iconSize, 0.0f,
         XMFLOAT4(1.0f, 1.0f, 1.0f, 0.8f));
 
-    // –îˆóiƒvƒŒƒCƒ„[•ûŒü‚ğ¦‚·OŠpŒ`j
+    // çŸ¢å°ï¼ˆãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼æ–¹å‘ã‚’ç¤ºã™ä¸‰è§’å½¢ï¼‰
     float dx = sx - edgeX;
     float dy = sy - edgeY;
     float len = sqrtf(dx * dx + dy * dy);
@@ -1650,9 +1674,9 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
         Enemy* enemy = (*ctx.enemies)[i];
         float entryY = panelY + i * (entryH + 5.0f);
 
-        // ”wŒi
+        // èƒŒæ™¯
         float detailX = panelX - 200.0f;
-        // Ú×ƒpƒlƒ‹‚Ì‚‚³‚ğŒvZ
+        // è©³ç´°ãƒ‘ãƒãƒ«ã®é«˜ã•ã‚’è¨ˆç®—
         float detailH = 10.0f;
         detailH += 22.0f * (float)enemy->GetPlannedActions().size();
         if (enemy->GetBlock() > 0) detailH += 18.0f;
@@ -1670,7 +1694,7 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
 
         bool isSel = (ctx.selectedEnemy == i);
         XMFLOAT4 bgColor = (isHover || isSel)
-            ? XMFLOAT4(0.2f, 0.5f, 0.7f, 0.9f)      // …FƒOƒŠƒbƒh‚Ì‹­’²F‚Æ‘Î‰
+            ? XMFLOAT4(0.2f, 0.5f, 0.7f, 0.9f)      // æ°´è‰²ï¼ã‚°ãƒªãƒƒãƒ‰ã®å¼·èª¿è‰²ã¨å¯¾å¿œ
             : XMFLOAT4(0.45f, 0.45f, 0.25f, 0.7f);
 
         m_spriteRenderer->DrawSprite(m_whiteTexture, panelX, entryY,
@@ -1681,21 +1705,21 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
             XMFLOAT4 line(0.2f, 0.7f, 1.0f, 1.0f);
             const float th = 3.0f, L = 14.0f;
             float rx = panelX + panelW, by = entryY + entryH;
-            // ¶ã
+            // å·¦ä¸Š
             m_spriteRenderer->DrawSprite(m_whiteTexture, panelX, entryY, L, th, 0.0f, line);
             m_spriteRenderer->DrawSprite(m_whiteTexture, panelX, entryY, th, L, 0.0f, line);
-            // ‰Eã
+            // å³ä¸Š
             m_spriteRenderer->DrawSprite(m_whiteTexture, rx - L, entryY, L, th, 0.0f, line);
             m_spriteRenderer->DrawSprite(m_whiteTexture, rx - th, entryY, th, L, 0.0f, line);
-            // ¶‰º
+            // å·¦ä¸‹
             m_spriteRenderer->DrawSprite(m_whiteTexture, panelX, by - th, L, th, 0.0f, line);
             m_spriteRenderer->DrawSprite(m_whiteTexture, panelX, by - L, th, L, 0.0f, line);
-            // ‰E‰º
+            // å³ä¸‹
             m_spriteRenderer->DrawSprite(m_whiteTexture, rx - L, by - th, L, th, 0.0f, line);
             m_spriteRenderer->DrawSprite(m_whiteTexture, rx - th, by - L, th, L, 0.0f, line);
         }
 
-        // ƒAƒCƒRƒ“
+        // ã‚¢ã‚¤ã‚³ãƒ³
         ID3D11ShaderResourceView* tex = TextureManager::Get(enemy->GetTextureName());
         if (tex)
         {
@@ -1703,7 +1727,7 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
                 iconSize, iconSize, 0.0f, XMFLOAT4(1, 1, 1, 1));
         }
 
-        // HPƒo[
+        // HPãƒãƒ¼
         float barX = panelX + iconSize + 10.0f;
         float barY = entryY + 5.0f;
         float barW = panelW - iconSize - 20.0f;
@@ -1736,7 +1760,7 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
 
     }
 
-    // ƒzƒo[’†‚ÌÚ×”wŒiiƒXƒvƒ‰ƒCƒgj
+    // ãƒ›ãƒãƒ¼ä¸­ã®è©³ç´°èƒŒæ™¯ï¼ˆã‚¹ãƒ—ãƒ©ã‚¤ãƒˆï¼‰
     if (hoveredEnemy >= 0)
     {
         Enemy* hEnemy = (*ctx.enemies)[hoveredEnemy];
@@ -1759,13 +1783,13 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
     m_spriteRenderer->End();
     m_textRenderer->Begin();
 
-    // ƒeƒLƒXƒg•`‰æi‘SƒGƒlƒ~[‚Ü‚Æ‚ß‚Äj
+    // ãƒ†ã‚­ã‚¹ãƒˆæç”»ï¼ˆå…¨ã‚¨ãƒãƒŸãƒ¼ã¾ã¨ã‚ã¦ï¼‰
     for (int i = 0; i < (int)ctx.enemies->size(); i++)
     {
         Enemy* enemy = (*ctx.enemies)[i];
         float entryY = panelY + i * (entryH + 5.0f);
 
-        // HP”’l
+        // HPæ•°å€¤
         wchar_t hpText[32];
         swprintf_s(hpText, L"%d/%d", enemy->GetHp(), enemy->GetMaxHp());
         m_textRenderer->DrawText(hpText,
@@ -1794,7 +1818,7 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
                 bFont, D2D1::ColorF(D2D1::ColorF::White));
         }
 
-        // Ÿ‚Ìs“®
+        // æ¬¡ã®è¡Œå‹•
         const EnemyAction* action = enemy->GetNextAction();
         if (action)
         {
@@ -1806,7 +1830,7 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
                 D2D1::ColorF(D2D1::ColorF::Orange));
         }
 
-        // ƒzƒo[’†‚ÌÚ×ƒeƒLƒXƒg
+        // ãƒ›ãƒãƒ¼ä¸­ã®è©³ç´°ãƒ†ã‚­ã‚¹ãƒˆ
         if (hoveredEnemy == i)
         {
             float detailX = panelX - 200.0f;
@@ -1831,10 +1855,10 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
                 lineY += 18.0f;
             }
 
-            // ˆÚ“®•s‰Â•\¦
+            // ç§»å‹•ä¸å¯è¡¨ç¤º
             if (enemy->IsImmovable())
             {
-                m_textRenderer->DrawText(L"ˆÚ“®•s‰Â",
+                m_textRenderer->DrawText(L"ç§»å‹•ä¸å¯",
                     detailX + 10.0f, lineY, 14.0f,
                     D2D1::ColorF(0.9f, 0.4f, 0.4f));
                 lineY += 20.0f;
@@ -1845,7 +1869,7 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
                 const auto& info = BuffInfo::Get(buff.type);
                 std::wstring buffText;
                 if (BuffInfo::IsDurationBased(buff.type))
-                    buffText = info.name + L": " + std::to_wstring(buff.duration) + L"ƒ^[ƒ“";
+                    buffText = info.name + L": " + std::to_wstring(buff.duration) + L"ã‚¿ãƒ¼ãƒ³";
                 else
                 {
                     buffText = info.name + L": " + std::to_wstring(buff.value);
@@ -1892,7 +1916,7 @@ void BattleUI::StartPlayCardEffect(CardType type, int cardIndex)
     PlayCardEffect effect;
     if (cardIndex >= 0 && cardIndex < (int)m_cardAnims.size())
     {
-        effect.startX = m_cardAnims[cardIndex].currentX;   // ¡ƒJ[ƒh‚ª‚ ‚éˆÊ’u
+        effect.startX = m_cardAnims[cardIndex].currentX;   // ä»Šã‚«ãƒ¼ãƒ‰ãŒã‚ã‚‹ä½ç½®
         effect.startY = m_cardAnims[cardIndex].currentY;
     }
     else
@@ -1928,8 +1952,8 @@ void BattleUI::GetPlayEffectTransform(const PlayCardEffect& e, float& x, float& 
 {
     float t = min(1.0f, e.timer / PLAY_EFFECT_DUR);
     scale = (t < 0.6f)
-        ? 1.0f + 0.4f * (t / 0.6f)                  // ’†‰›‚ÖŒü‚©‚¢‚È‚ª‚çŠg‘å
-        : 1.4f - 1.1f * ((t - 0.6f) / 0.4f);        // ’…‚¢‚Ä‚©‚çˆê‹C‚Ék‚Ş
+        ? 1.0f + 0.4f * (t / 0.6f)                  // ä¸­å¤®ã¸å‘ã‹ã„ãªãŒã‚‰æ‹¡å¤§
+        : 1.4f - 1.1f * ((t - 0.6f) / 0.4f);        // ç€ã„ã¦ã‹ã‚‰ä¸€æ°—ã«ç¸®ã‚€
     float ease = 1.0f - (1.0f - t) * (1.0f - t);
     float tx = m_screenWidth / 2.0f - CARD_WIDTH / 2.0f;
     float ty = m_screenHeight / 2.0f - CARD_HEIGHT / 2.0f;
@@ -1946,7 +1970,7 @@ void BattleUI::DrawPlayCardEffects()
     {
         float x, y, s;
         GetPlayEffectTransform(e, x, y, s);
-        // GetPlayEffectTransform ‚Í¶ãÀ•W‚È‚Ì‚ÅADrawBase ‚ÌŠî€À•W‚É–ß‚·
+        // GetPlayEffectTransform ã¯å·¦ä¸Šåº§æ¨™ãªã®ã§ã€DrawBase ã®åŸºæº–åº§æ¨™ã«æˆ»ã™
         float baseX = x + (CardVisual::CARD_W * s - CardVisual::CARD_W) / 2.0f;
         float baseY = y + (CardVisual::CARD_H * s - CardVisual::CARD_H) / 2.0f;
 
@@ -1965,7 +1989,7 @@ void BattleUI::DrawPlayCardEffectTexts(const BattleUIContext& ctx)
         if (!e.data) continue;
         float x, y, s;
         GetPlayEffectTransform(e, x, y, s);
-        // GetPlayEffectTransform ‚Í¶ãÀ•W‚ğ•Ô‚·‚Ì‚ÅA’†SŠî€‚É–ß‚·
+        // GetPlayEffectTransform ã¯å·¦ä¸Šåº§æ¨™ã‚’è¿”ã™ã®ã§ã€ä¸­å¿ƒåŸºæº–ã«æˆ»ã™
         float baseX = x + (CardVisual::CARD_W * s - CardVisual::CARD_W) / 2.0f;
         float baseY = y + (CardVisual::CARD_H * s - CardVisual::CARD_H) / 2.0f;
 
@@ -1998,9 +2022,9 @@ void BattleUI::DrawFloatingTexts(const BattleUIContext& ctx)
         if (!WorldToScreen(t.worldX, t.worldY + rise, t.worldZ, ctx.renderer3D, sx, sy))
             continue;
 
-        sx += t.offsetX - t.text.size() * size * 0.25f;    // ’†‰›Šñ‚¹
+        sx += t.offsetX - t.text.size() * size * 0.25f;    // ä¸­å¤®å¯„ã›
 
-        float o = size * 0.06f;                        // •¶šƒTƒCƒY‚É”ä—á‚³‚¹‚é
+        float o = size * 0.06f;                        // æ–‡å­—ã‚µã‚¤ã‚ºã«æ¯”ä¾‹ã•ã›ã‚‹
         const float dir[4][2] = { {-1,0},{1,0},{0,-1},{0,1} };
         for (auto& d : dir)
             m_textRenderer->DrawText(t.text.c_str(), sx + d[0] * o, sy + d[1] * o, size,
@@ -2041,7 +2065,7 @@ void BattleUI::StartDiscardEffectAt(int cardIndex)
     if (cardIndex < 0 || cardIndex >= (int)m_cardAnims.size()) return;
 
     DiscardCardEffect effect;
-    effect.startX = m_cardAnims[cardIndex].currentX;   // ‚»‚ÌƒJ[ƒh‚Ì¡‚ÌˆÊ’u‚©‚ç
+    effect.startX = m_cardAnims[cardIndex].currentX;   // ãã®ã‚«ãƒ¼ãƒ‰ã®ä»Šã®ä½ç½®ã‹ã‚‰
     effect.startY = m_cardAnims[cardIndex].currentY;
     effect.alpha = 1.0f;
     effect.timer = 0.0f;

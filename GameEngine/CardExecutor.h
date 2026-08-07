@@ -22,6 +22,9 @@ public:
         Enemy* multiHitTarget = nullptr;   // 追撃対象
         int    multiHitRemain = 0;         // 残りヒット数
         int    multiHitDamage = 0;         // 1発の確定ダメージ
+        bool startChainDetonate = false;
+        int  chainCol = 0, chainRow = 0;
+        bool chainFull = false;
     };
 
     struct MovePreview 
@@ -61,6 +64,10 @@ public:
         GridMap* gridMap, std::vector<Enemy*>& enemies);
 
     static void TriggerTerrain(Cell& cell, Player* player);
+
+    static bool DetonateTrap(Cell& cell, int col, int row,
+        GridMap* gridMap, std::vector<Enemy*>& enemies,
+        bool fullPower = false, bool chain = false);
 
 private:
     std::vector<Enemy*> GetEnemiesInRange(

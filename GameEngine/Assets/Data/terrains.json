@@ -36,6 +36,41 @@
       "duration": 0
     },
     {
+      "id": "expose",
+      "name": "脆弱罠",
+      "texture": "",
+      "color": [ 0.9, 0.4, 0.5, 0.5 ],
+      "effect": "ApplyDebuff",
+      "value": 1,
+      "buffType": "Vulnerable",
+      "buffDuration": 2,
+      "persistent": false,
+      "duration": 0
+    },
+    {
+      "id": "weaken",
+      "name": "弱体罠",
+      "texture": "",
+      "color": [ 0.6, 0.35, 0.35, 0.5 ],
+      "effect": "ApplyDebuff",
+      "value": 1,
+      "buffType": "Weak",
+      "buffDuration": 2,
+      "persistent": false,
+      "duration": 0
+    },
+    {
+      "id": "landmine",
+      "name": "大地雷",
+      "texture": "",
+      "color": [ 1.0, 0.75, 0.1, 0.5 ],
+      "effect": "Damage",
+      "value": 14,
+      "aoe": true,
+      "persistent": false,
+      "duration": 0
+    },
+    {
       "id": "fire",
       "name": "炎",
       "texture": "",

@@ -5,6 +5,7 @@
 #include "TerrainDataBase.h"
 #include "RelicManager.h"
 #include "RangeShape.h"
+#include "ScreenShake.h"
 #include <algorithm>
 #include <queue>
 #include <map>
@@ -508,12 +509,44 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
        }
     case CardType::Skill:
     {
-        // 罠設置不可チェック（エナジー消費前）
+        // 設置カード：エナジー消費前に対象セルを検証
         if (data.mainEffect.type == CardEffectType::PlaceTrap)
         {
-            auto& cell = gridMap->GetCell(playerCol, playerRow);
-            if (cell.tileEffect.active)
+            if (!RangeShape::Contains(playerCol, playerRow, targetCol, targetRow,
+                data.rangeType, data.range))
                 return result;
+            if (targetCol < 0 || targetCol >= gridMap->GetCols() ||
+                targetRow < 0 || targetRow >= gridMap->GetRows())
+                return result;
+            auto& cell = gridMap->GetCell(targetCol, targetRow);
+            if (cell.type != CellType::Empty || cell.tileEffect.active)
+                return result;
+        }
+
+        if (data.mainEffect.type == CardEffectType::Detonate)
+        {
+            bool any = false;
+            for (int r = 0; r < gridMap->GetRows() && !any; r++)
+                for (int c = 0; c < gridMap->GetCols() && !any; c++)
+                    if (gridMap->GetCell(c, r).tileEffect.active &&
+                        RangeShape::Contains(playerCol, playerRow, c, r, data.rangeType, data.range))
+                        any = true;
+            if (!any) return result;   // 範囲内に罠が無ければ不発（ノーコスト）
+        }
+
+        if (data.mainEffect.type == CardEffectType::DetonateAt)
+        {
+            if (!RangeShape::Contains(playerCol, playerRow, targetCol, targetRow,
+                data.rangeType, data.range))
+                return result;
+            if (!gridMap->GetCell(targetCol, targetRow).tileEffect.active)
+                return result;   // 罠が無いマスは不可（ノーコスト）
+        }
+        if (data.mainEffect.type == CardEffectType::DetonateChain)
+        {
+            if (!RangeShape::Contains(playerCol, playerRow, targetCol, targetRow,
+                data.rangeType, data.range)) return result;
+            if (!gridMap->GetCell(targetCol, targetRow).tileEffect.active) return result;
         }
 
         player->UseEnergy(data.cost);
@@ -558,11 +591,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             break;
         case CardEffectType::PlaceTrap:
         {
-            auto& cell = gridMap->GetCell(playerCol, playerRow);
-            if (cell.tileEffect.active)
-            {
-                return result;
-            }
+            auto& cell = gridMap->GetCell(targetCol, targetRow);
             cell.tileEffect.active = true;
             cell.tileEffect.id = data.mainEffect.trapType;
             cell.tileEffect.value = data.mainEffect.value;
@@ -570,6 +599,51 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             const TerrainDef* tDef = TerrainDataBase::Get(data.mainEffect.trapType);
             if (tDef) cell.tileEffect.persistent = tDef->persistent;
             break;
+        }
+        case CardEffectType::PlaceTrapArea:
+        {
+            for (int r = 0; r < gridMap->GetRows(); r++)
+                for (int c = 0; c < gridMap->GetCols(); c++)
+                {
+                    if (!RangeShape::Contains(playerCol, playerRow, c, r, data.rangeType, data.range)) continue;
+                    Cell& cell = gridMap->GetCell(c, r);
+                    if (cell.type != CellType::Empty || cell.tileEffect.active) continue;
+                    cell.tileEffect.active = true;
+                    cell.tileEffect.id = data.mainEffect.trapType;
+                    cell.tileEffect.value = data.mainEffect.value;
+                    cell.tileEffect.duration = data.mainEffect.duration;
+                    const TerrainDef* tDef = TerrainDataBase::Get(data.mainEffect.trapType);
+                    if (tDef) cell.tileEffect.persistent = tDef->persistent;
+                }
+            break;
+        }
+        case CardEffectType::Detonate:
+        {
+            bool full = (data.mainEffect.value > 0);   // 強化で value>0 → 全開
+            for (int r = 0; r < gridMap->GetRows(); r++)
+                for (int c = 0; c < gridMap->GetCols(); c++)
+                {
+                    Cell& cell = gridMap->GetCell(c, r);
+                    if (!cell.tileEffect.active) continue;
+                    if (RangeShape::Contains(playerCol, playerRow, c, r, data.rangeType, data.range))
+                        CardExecutor::DetonateTrap(cell, c, r, gridMap, enemies, full);
+                }
+            break;
+        }
+        case CardEffectType::DetonateAt:
+        {
+            bool full = (data.mainEffect.value > 0);
+            Cell& cell = gridMap->GetCell(targetCol, targetRow);
+            CardExecutor::DetonateTrap(cell, targetCol, targetRow, gridMap, enemies, full);
+            break;
+        }
+        case CardEffectType::DetonateChain:
+        {
+            result.startChainDetonate = true;
+            result.chainCol = targetCol;
+            result.chainRow = targetRow;
+            result.chainFull = (data.mainEffect.value > 0);
+            break;   // 実際の起爆はBattleSceneが時間差で行う
         }
         case CardEffectType::Search:
         case CardEffectType::Salvage:
@@ -738,6 +812,53 @@ void CardExecutor::TriggerTerrain(Cell& cell, Player* player)
     }
 }
 
+bool CardExecutor::DetonateTrap(Cell& cell, int col, int row,
+    GridMap* gridMap, std::vector<Enemy*>& enemies, bool fullPower, bool chain)
+{
+    if (!cell.tileEffect.active) return false;
+    const TerrainDef* def = TerrainDataBase::Get(cell.tileEffect.id);
+    if (!def) return false;
+
+    for (int dr = -1; dr <= 1; dr++)
+        for (int dc = -1; dc <= 1; dc++)
+        {
+            int nc = col + dc, nr = row + dr;
+            if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) continue;
+            Enemy* e = GetEnemyAt(nc, nr, enemies);
+            if (!e) continue;
+
+            bool center = (dc == 0 && dr == 0);
+            int val = cell.tileEffect.value;
+            if (!center && !fullPower) val /= 2;          // 周囲は半分（強化で全開）
+
+            if (def->effect == "Damage")
+                e->TakeDamage(val);
+            else if (def->effect == "ApplyDebuff")
+            {
+                Buff b; b.type = StringToBuffType(def->buffType);
+                b.value = val; b.duration = def->buffDuration;
+                b.name = def->name; b.description = L"";
+                e->GetBuffManager().AddBuff(b);
+            }
+        }
+    cell.tileEffect = TileEffect();
+
+    if (chain)
+    {
+        for (int dr = -1; dr <= 1; dr++)
+            for (int dc = -1; dc <= 1; dc++)
+            {
+                if (dc == 0 && dr == 0) continue;
+                int nc = col + dc, nr = row + dr;
+                if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) continue;
+                Cell& nx = gridMap->GetCell(nc, nr);
+                if (nx.tileEffect.active)
+                    DetonateTrap(nx, nc, nr, gridMap, enemies, fullPower, true);  // 再帰
+            }
+    }
+    return true;
+    return true;
+}
 
 void CardExecutor::ApplyKnockback(Enemy* target, int playerCol, int playerRow,
     int distance, GridMap* gridMap, std::vector<Enemy*>& enemies)
@@ -757,6 +878,7 @@ void CardExecutor::ApplyKnockback(Enemy* target, int playerCol, int playerRow,
         dirR = (dr > 0) ? 1 : -1;
 
     int moved = 0;
+    std::vector<std::pair<float, float>> path;   // 通過するワールド座標（アニメ用）
     for (int i = 0; i < distance; i++)
     {
         int nextCol = target->gridCol + dirC;
@@ -787,8 +909,17 @@ void CardExecutor::ApplyKnockback(Enemy* target, int playerCol, int playerRow,
         target->gridCol = nextCol;
         target->gridRow = nextRow;
         gridMap->SetCellType(nextCol, nextRow, CellType::Enemy);
-        target->worldX = (nextCol - gridMap->GetCols() / 2.0f) * 1.1f;
-        target->worldZ = (nextRow - gridMap->GetRows() / 2.0f) * 1.1f;
+        path.push_back({ (nextCol - gridMap->GetCols() / 2.0f) * 1.1f,
+                          (nextRow - gridMap->GetRows() / 2.0f) * 1.1f });
+        if (!path.empty())
+        {
+            float os = 0.35f;                 // 行き過ぎ量（マス比）
+            auto fin = path.back();
+            path.push_back({ fin.first + dirC * os * 1.1f, fin.second + dirR * os * 1.1f }); // 行き過ぎ
+            path.push_back(fin);                                                             // 戻って着地
+            target->StartWalk(path, 0.05f);   // 速く（吹っ飛び）
+            ScreenShake::Add(0.4f);           // 手応え
+        }
         auto& passedCell = gridMap->GetCell(nextCol, nextRow);
         TriggerTrap(passedCell, target, nextCol, nextRow, gridMap, enemies);
         moved++;
@@ -841,6 +972,8 @@ void CardExecutor::ApplyPull(Enemy* target, int playerCol, int playerRow,
         dirR = (dr > 0) ? 1 : -1;
 
     int moved = 0;
+    std::vector<std::pair<float, float>> path;   // 通過するワールド座標（アニメ用）
+    for (int i = 0; i < distance; i++)
     for (int i = 0; i < distance; i++)
     {
         int nextCol = target->gridCol + dirC;
@@ -863,12 +996,24 @@ void CardExecutor::ApplyPull(Enemy* target, int playerCol, int playerRow,
         target->gridCol = nextCol;
         target->gridRow = nextRow;
         gridMap->SetCellType(nextCol, nextRow, CellType::Enemy);
-        target->worldX = (nextCol - gridMap->GetCols() / 2.0f) * 1.1f;
-        target->worldZ = (nextRow - gridMap->GetRows() / 2.0f) * 1.1f;
+        path.push_back({ (nextCol - gridMap->GetCols() / 2.0f) * 1.1f,
+                                 (nextRow - gridMap->GetRows() / 2.0f) * 1.1f });
 
         auto& passedCell = gridMap->GetCell(nextCol, nextRow);
         TriggerTrap(passedCell, target, nextCol, nextRow, gridMap, enemies);
         moved++;
+    }
+    if (!path.empty())
+    {
+        float back = 0.35f, os = 0.3f;
+        auto fin = path.back();
+        std::vector<std::pair<float, float>> yank;
+        yank.push_back({ target->worldX - dirC * back * 1.1f,
+                         target->worldZ - dirR * back * 1.1f });                
+        yank.push_back({ fin.first + dirC * os * 1.1f, fin.second + dirR * os * 1.1f }); 
+        yank.push_back(fin);           
+        target->StartWalk(yank, 0.06f);  
+        ScreenShake::Add(0.4f);
     }
 }
 

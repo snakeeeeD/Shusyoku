@@ -21,8 +21,13 @@ enum class CardEffectType
     Search,      // 山札検索
     Salvage,     // 捨て札回収
     PlaceTrap,   // 罠セット
+    PlaceTrapArea,//罠を複数セット
+    Detonate,    // 罠を即起爆
+    DetonateAt,  // 指定した罠を即起爆
+    DetonateChain,//連鎖
     UpgradeHand, // 手札を強化（この戦闘中のみ）
     Discard,     // 手札からランダムに捨てる
+
 };
 
 // カードレアリティ

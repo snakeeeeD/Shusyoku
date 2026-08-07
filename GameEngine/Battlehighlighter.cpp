@@ -237,6 +237,9 @@ void BattleHighlighter::UpdatePlayerHighlight(
 
         auto& cell = gridMap->GetCell(col, row);
 
+        if (data->mainEffect.type == CardEffectType::PlaceTrap &&
+            cell.type != CellType::Empty) continue;   // 罠は空マスのみ
+
         if (data->type == CardType::Move &&
             (cell.type == CellType::Enemy || cell.type == CellType::Boss)) continue;
 

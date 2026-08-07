@@ -5,6 +5,7 @@
 #include "CardExecutor.h"
 #include "TerrainDataBase.h"
 #include "MaterialDataBase.h"
+#include "HighlightPalette.h"
 #include "FloatingText.h"
 #include "ScreenShake.h"
 #include "DamageFeedback.h"
@@ -364,6 +365,36 @@ void BattleScene::Update(float deltaTime)
             }
         }
     }
+
+    if (!m_chainQueue.empty())
+    {
+        m_chainTimer -= deltaTime;
+        if (m_chainTimer <= 0.0f)
+        {
+            auto wave = m_chainQueue;          // 今の波
+            m_chainQueue.clear();
+            for (auto& [c, r] : wave)
+            {
+                auto& cell = m_gridMap->GetCell(c, r);
+                if (!cell.tileEffect.active) continue;
+                CardExecutor::DetonateTrap(cell, c, r, m_gridMap, m_enemies, m_chainFull, false);
+                // 隣接の罠を次の波へ
+                for (int dr = -1; dr <= 1; dr++)
+                    for (int dc = -1; dc <= 1; dc++)
+                    {
+                        if (dc == 0 && dr == 0) continue;
+                        int nc = c + dc, nr = r + dr;
+                        if (nc < 0 || nc >= m_gridMap->GetCols() || nr < 0 || nr >= m_gridMap->GetRows()) continue;
+                        if (m_gridMap->GetCell(nc, nr).tileEffect.active)
+                            m_chainQueue.push_back({ nc, nr });
+                    }
+            }
+            ScreenShake::Add(0.3f);
+            ProcessDeadEnemies();
+            m_chainTimer = 0.12f;   // 波の間隔（大きいほどゆっくり連鎖）
+        }
+    }
+
     UiNotice::Update(deltaTime);
     if (UiNotice::ConsumeTriggered())
         m_battleUI->StartOverflowDiscardEffect();
@@ -548,8 +579,12 @@ void BattleScene::Update(float deltaTime)
         bool selectedNeedsTarget = false;
         if (m_selectedCardIndex >= 0 && m_selectedCardIndex < (int)m_hand.GetCards().size())
         {
-            CardType ct = m_hand.GetCards()[m_selectedCardIndex]->GetData()->type;
-            selectedNeedsTarget = (ct == CardType::Attack || ct == CardType::Move);
+            const CardData* sd = m_hand.GetCards()[m_selectedCardIndex]->GetData();
+            CardType ct = sd->type;
+            selectedNeedsTarget = (ct == CardType::Attack || ct == CardType::Move
+                || sd->mainEffect.type == CardEffectType::PlaceTrap
+                || sd->mainEffect.type == CardEffectType::DetonateAt
+                || sd->mainEffect.type == CardEffectType::DetonateChain);
         }
         m_battleUI->UpdateCardAnimations(deltaTime, (int)m_hand.GetCards().size(), m_hoveredCardIndex, 
             m_selectedCardIndex, m_input.GetMousePos(), selectedNeedsTarget,
@@ -818,6 +853,51 @@ void BattleScene::Draw()
                     m_playerCol, m_playerRow, d->rangeType, range, aimDx, aimDy))
                     raised.insert(c);
             }
+            else if (d->mainEffect.type == CardEffectType::Detonate)
+            {
+                for (auto& cc : BattleHighlighter::GetCandidates(
+                    m_playerCol, m_playerRow, d->rangeType, d->range))
+                    raised.insert(cc);
+            }
+            else if (d->mainEffect.type == CardEffectType::DetonateAt)
+            {
+                // 3x3プレビュー
+                if (m_hoveredCell.first >= 0 &&
+                    RangeShape::Contains(m_playerCol, m_playerRow,
+                        m_hoveredCell.first, m_hoveredCell.second, d->rangeType, d->range) &&
+                    m_gridMap->GetCell(m_hoveredCell.first, m_hoveredCell.second).tileEffect.active)
+                {
+                    for (int dr = -1; dr <= 1; dr++)
+                        for (int dc = -1; dc <= 1; dc++)
+                            raised.insert({ m_hoveredCell.first + dc, m_hoveredCell.second + dr });
+                }
+            }
+            else if (d->mainEffect.type == CardEffectType::DetonateChain)
+            {
+                // 連鎖は起点の1マスだけ（連鎖は動的に広がる）
+                if (m_hoveredCell.first >= 0 &&
+                    RangeShape::Contains(m_playerCol, m_playerRow,
+                        m_hoveredCell.first, m_hoveredCell.second, d->rangeType, d->range) &&
+                    m_gridMap->GetCell(m_hoveredCell.first, m_hoveredCell.second).tileEffect.active)
+                {
+                    raised.insert({ m_hoveredCell.first, m_hoveredCell.second });
+                }
+            }
+            else if (d->mainEffect.type == CardEffectType::PlaceTrapArea)
+            {
+                for (auto& cc : BattleHighlighter::GetCandidates(
+                    m_playerCol, m_playerRow, d->rangeType, d->range))
+                    raised.insert(cc);
+            }
+            else if ((d->type == CardType::Skill || d->type == CardType::Power)
+                && d->mainEffect.type != CardEffectType::PlaceTrap
+                && d->mainEffect.type != CardEffectType::Detonate
+                && d->mainEffect.type != CardEffectType::DetonateAt)
+            {
+                raised.insert({ m_playerCol, m_playerRow });
+                m_gridMap->GetCell(m_playerCol, m_playerRow).gameObject.color
+                    = HighlightPalette::ForCard(d->type);   // 危険色よりスキル色を優先
+            }
             else if (m_hoveredCell.first >= 0)
             {
                 // 効果範囲内のマスだけ浮かせる
@@ -929,6 +1009,7 @@ void BattleScene::Draw()
         }
     }
 
+    m_player->worldY = m_gridMap->GetCell(m_playerCol, m_playerRow).gameObject.worldY;
     m_player->Draw3D(m_renderer3D);
     for (auto enemy : m_enemies)
         enemy->Draw3D(m_renderer3D);
@@ -1008,6 +1089,54 @@ void BattleScene::Draw()
             trapBlockX - trapLen / 2.0f, trapBlockY - 2.5f,
             trapLen, 5.0f, trapAngle2,
             XMFLOAT4(1.0f, 0.1f, 0.1f, 0.8f));
+        m_spriteRenderer->End();
+    }
+
+    // 対象マス（上がっているマス）の四隅にL字枠
+    {
+        XMMATRIX vp = m_renderer3D->GetViewMatrix() * m_renderer3D->GetProjectionMatrix();
+        auto toScreen = [&](float wx, float wy, float wz, float& ox, float& oy) -> bool {
+            XMVECTOR w = XMVectorSet(wx, wy, wz, 1.0f);
+            XMVECTOR c = XMVector4Transform(w, vp);
+            XMFLOAT4 cl; XMStoreFloat4(&cl, c);
+            if (cl.w <= 0.0f) return false;
+            ox = (cl.x / cl.w + 1.0f) * 0.5f * m_screenWidth;
+            oy = (1.0f - cl.y / cl.w) * 0.5f * m_screenHeight;
+            return true;
+            };
+        auto drawLine = [&](float ax, float ay, float bx, float by, float th, const XMFLOAT4& c) {
+            float mx = (ax + bx) * 0.5f, my = (ay + by) * 0.5f;
+            float dx = bx - ax, dy = by - ay;
+            float len = sqrtf(dx * dx + dy * dy);
+            float ang = atan2f(dy, dx);
+            m_spriteRenderer->DrawSprite(m_whiteTexture, mx - len * 0.5f, my - th * 0.5f, len, th, ang, c);
+            };
+
+        m_spriteRenderer->Begin();
+        const float h = 0.5f;       // セル半径（枠の位置、要調整）
+        const float t = 0.32f;      // 角の長さ比
+        const XMFLOAT4 col(1.0f, 0.9f, 0.3f, 0.95f);
+        for (int row = 0; row < m_gridMap->GetRows(); row++)
+            for (int cc = 0; cc < m_gridMap->GetCols(); cc++)
+            {
+                auto& cell = m_gridMap->GetCell(cc, row);
+                if (cell.gameObject.worldY < 0.05f) continue;   // 上がってるマスだけ
+                float wx = (cc - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                float wz = (row - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                float wy = cell.gameObject.worldY + 0.02f;
+                float sx[4], sy[4];
+                bool ok = toScreen(wx - h, wy, wz - h, sx[0], sy[0])
+                    && toScreen(wx + h, wy, wz - h, sx[1], sy[1])
+                    && toScreen(wx + h, wy, wz + h, sx[2], sy[2])
+                    && toScreen(wx - h, wy, wz + h, sx[3], sy[3]);
+                if (!ok) continue;
+                for (int k = 0; k < 4; k++)
+                {
+                    int n = (k + 1) % 4, p = (k + 3) % 4;
+                    drawLine(sx[k], sy[k], sx[k] + (sx[n] - sx[k]) * t, sy[k] + (sy[n] - sy[k]) * t, 3.0f, col);
+                    drawLine(sx[k], sy[k], sx[k] + (sx[p] - sx[k]) * t, sy[k] + (sy[p] - sy[k]) * t, 3.0f, col);
+                }
+            }
         m_spriteRenderer->End();
     }
 
@@ -1444,7 +1573,10 @@ void BattleScene::HandleInput()
             int targetRow = m_playerRow;
             bool canTry = !moveCanceled;
 
-            if ((ct == CardType::Attack || ct == CardType::Move) && !usePath && !moveCanceled)
+            CardEffectType met = cards[m_selectedCardIndex]->GetData()->mainEffect.type;
+            bool needCell = (met == CardEffectType::PlaceTrap || met == CardEffectType::DetonateAt || met == CardEffectType::DetonateChain);
+            if ((ct == CardType::Attack || ct == CardType::Move || needCell)
+                && !usePath && !moveCanceled)
             {
                 auto result = m_gridMap->GetClickedCell3D(
                     releasePos,
@@ -1496,6 +1628,13 @@ void BattleScene::HandleInput()
                     newPlayerCol, newPlayerRow,
                     usePath
                 );
+                if (execResult.startChainDetonate)
+                {
+                    m_chainQueue.clear();
+                    m_chainQueue.push_back({ execResult.chainCol, execResult.chainRow });
+                    m_chainTimer = 0.0f;
+                    m_chainFull = execResult.chainFull;
+                }
 
                 if (faBonus > 0)
                 {
@@ -1802,6 +1941,13 @@ void BattleScene::HandleInput()
                     m_hand, m_selectedCardIndex, m_deck,
                     newPlayerCol, newPlayerRow
                 );
+                if (execResult.startChainDetonate)
+                {
+                    m_chainQueue.clear();
+                    m_chainQueue.push_back({ execResult.chainCol, execResult.chainRow });
+                    m_chainTimer = 0.0f;
+                    m_chainFull = execResult.chainFull;
+                }
 
                 if (faBonus > 0)
                 {
