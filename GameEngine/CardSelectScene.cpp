@@ -50,11 +50,24 @@ void CardSelectScene::GenerateChoices()
 {
     m_readyForInput = false;
     m_choices.clear();
+    auto& deck = PlayerDataManager::GetData().deck;
 
-    bool rare = PlayerDataManager::GetData().rewardRare || RelicManager::HasKind("rewardRare");
-    PlayerDataManager::GetData().rewardRare = false;
-
-    m_choices = CardDataBase::PickRewardCards(CHOICE_COUNT, rare, PlayerDataManager::GetData().deck);
+    if (m_mode == RewardMode::Rare)
+    {
+        m_choices = CardDataBase::PickRewardCards(CHOICE_COUNT, true, deck, /*rareOnly*/true);
+    }
+    else if (m_mode == RewardMode::Upgraded)
+    {
+        m_choices = CardDataBase::PickRewardCards(CHOICE_COUNT, false, deck, false, /*upgradableOnly*/true);
+        for (auto& id : m_choices)
+            if (CardDataBase::Get(id + "+")) id += "+";
+    }
+    else
+    {
+        bool rare = PlayerDataManager::GetData().rewardRare || RelicManager::HasKind("rewardRare");
+        PlayerDataManager::GetData().rewardRare = false;
+        m_choices = CardDataBase::PickRewardCards(CHOICE_COUNT, rare, deck);
+    }
 }
 
 void CardSelectScene::Update(float deltaTime)

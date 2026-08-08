@@ -252,7 +252,9 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
     int encCount = EncounterDataBase::GetCount();
     int layer = PlayerDataManager::GetData().layer;
-    const EncounterData* encounter = EncounterDataBase::GetEncounter(layer, m_category, m_battleTier, m_battleSeed);
+    const EncounterData* encounter = EncounterDataBase::GetById(m_battleEnemyId);   // 指名戦（あれば）
+    if (!encounter)
+        encounter = EncounterDataBase::GetEncounter(layer, m_category, m_battleTier, m_battleSeed);
     if (encounter)
     {
         for (auto& ee : encounter->enemies)

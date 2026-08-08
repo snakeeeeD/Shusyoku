@@ -1010,6 +1010,7 @@
       "range": 3,
       "rangeType": "Diamond",
       "description": "指定マスに身代わりを置く。\n敵の攻撃を1回引き受ける",
+      "upgrade": { "cost": -1 },
       "mainEffect": {
         "type": "PlaceDecoy",
         "value": 0

@@ -39,6 +39,9 @@ public:
 
     int m_currentBattleTier = 1;
     int GetCurrentBattleTier() const { return m_currentBattleTier; }
+
+    void SetupEventBattle(EncCategory cat, const std::string& param = "");
+
 private:
     void GenerateMap();
     void SaveProgress();

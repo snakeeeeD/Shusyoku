@@ -10,4 +10,5 @@ enum class FieldNodeType
     Elite,    // エリート
     Boss,     // ボス
     Event,    // イベント
+    Treasure, // 財宝
 };

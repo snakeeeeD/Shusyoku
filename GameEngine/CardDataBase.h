@@ -15,7 +15,8 @@ public:
     static std::string RandomCard();
 
     // デッキのタグ構成に寄せて count 枚を重複なし抽選（報酬/ショップ共通）
-    static std::vector<std::string> PickRewardCards(int count, bool rareBias, const std::vector<std::string>& deck);
+    static std::vector<std::string> PickRewardCards(int count, bool rareBias,
+        const std::vector<std::string>& deck, bool rareOnly = false, bool upgradableOnly = false);
 
 private:
     static void LoadHardcodedData();

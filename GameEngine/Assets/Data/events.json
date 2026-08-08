@@ -171,6 +171,164 @@
           "outcomes": []
         }
       ]
+    },
+
+    {
+      "id": "ambush",
+      "title": "怪しい足音",
+      "desc": "暗がりから何かが近づいてくる。",
+      "choices": [
+        {
+          "label": "身構える",
+          "result": "敵が飛びかかってきた！",
+          "outcomes": [ { "type": "battle" } ]
+        },
+        {
+          "label": "そっと離れる",
+          "result": "何事もなく通り過ぎた。",
+          "outcomes": [
+            {
+              "type": "hp",
+              "value": -3
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": "dark_altar",
+      "title": "暗い祭壇",
+      "desc": "触れれば力を得られそうだが…何かが潜んでいる。",
+      "choices": [
+        {
+          "label": "力を奪い取る（レリック＋番人と戦闘）",
+          "result": "力を得たが、闇の番人が目覚めた！",
+          "outcomes": [
+            { "type": "relic" },
+            {
+              "type": "battle",
+              "param": "altar_guardian"
+            }
+          ]
+        },
+        {
+          "label": "立ち去る",
+          "result": "無事に通り過ぎた。",
+          "outcomes": []
+        }
+      ]
+    },
+
+    {
+      "id": "merchant",
+      "title": "怪しい行商人",
+      "desc": "「どこにでも現れる商人さ。見ていくかい？」",
+      "choices": [
+        {
+          "label": "店を見る",
+          "result": "商人は荷を広げた。",
+          "outcomes": [ { "type": "shop" } ]
+        },
+        {
+          "label": "無視する",
+          "result": "商人は去っていった。",
+          "outcomes": []
+        }
+      ]
+    },
+
+    {
+      "id": "lost_cache",
+      "title": "忘れ去られた蓄え",
+      "desc": "土に埋もれた箱。掘り返せば何か出そうだが…",
+      "choices": [
+        {
+          "label": "掘り返す",
+          "result": "土を掘り進めた…",
+          "outcomes": [
+            {
+              "type": "treasure",
+              "chance": 100
+            },
+            {
+              "type": "battle",
+              "param": "event",
+              "chance": 40
+            }
+          ]
+        },
+        {
+          "label": "やめておく",
+          "result": "先へ進んだ。",
+          "outcomes": []
+        }
+      ]
+    },
+
+    {
+      "id": "sealed_vault",
+      "title": "封印された金庫",
+      "desc": "古い封印。中身は空かもしれないが…",
+      "choices": [
+        {
+          "label": "こじ開ける（-8HP）",
+          "result": "封印が砕けた。",
+          "outcomes": [
+            {
+              "type": "hp",
+              "value": -8
+            },
+            {
+              "type": "gold",
+              "value": 30
+            },
+            {
+              "type": "treasure",
+              "chance": 20
+            }
+          ]
+        },
+        {
+          "label": "触れない",
+          "result": "先へ進んだ。",
+          "outcomes": []
+        }
+      ]
+    },
+
+    {
+      "id": "treasure",
+      "title": "財宝",
+      "desc": "宝が眠っている。一つだけ持ち出せそうだ。",
+      "random": false,
+      "choices": [
+        {
+          "label": "レアカード（3枚から1枚）",
+          "result": "カードを手に入れた。",
+          "outcomes": [
+            {
+              "type": "pickCard",
+              "param": "rare"
+            }
+          ]
+        },
+        {
+          "label": "遺物を得る",
+          "result": "遺物を手に入れた。",
+          "outcomes": [ { "type": "relic" } ]
+        },
+        {
+          "label": "強化カード（3枚から1枚）",
+          "result": "カードを手に入れた。",
+          "outcomes": [
+            {
+              "type": "pickCard",
+              "param": "upgraded"
+            }
+          ]
+        }
+      ]
     }
 
   ]

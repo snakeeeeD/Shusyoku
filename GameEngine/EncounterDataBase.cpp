@@ -20,6 +20,7 @@ static EncCategory ParseCategory(const std::string& s)
 {
     if (s == "elite") return EncCategory::Elite;
     if (s == "boss")  return EncCategory::Boss;
+    if (s == "event") return EncCategory::Event;
     return EncCategory::Normal;
 }
 
@@ -43,6 +44,7 @@ void EncounterDataBase::Init()
         }
         data.layer = e.value("layer", 1);
         data.tier = e.value("tier", 1);
+        data.id = e.value("id", "");
         data.category = ParseCategory(e.value("category", std::string("normal")));
         data.weight = e["weight"];
         if (e.contains("escalation"))
@@ -94,6 +96,14 @@ const EncounterData* EncounterDataBase::GetEncounter(int layer, EncCategory cat,
     int roll = (int)(h % (unsigned)total), acc = 0;
     for (auto* e : cand) { acc += (e->weight > 0 ? e->weight : 1); if (roll < acc) return e; }
     return cand.back();
+}
+
+const EncounterData* EncounterDataBase::GetById(const std::string& id)
+{
+    if (id.empty()) return nullptr;
+    for (auto& enc : m_data)
+        if (enc.id == id) return &enc;
+    return nullptr;
 }
 
 const std::vector<EscalationTier>& EncounterDataBase::DefaultEscalation()

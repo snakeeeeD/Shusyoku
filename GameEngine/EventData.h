@@ -6,6 +6,7 @@ struct EventOutcome
 {
 	std::string type, param; 
 	int value = 0; 
+	int chance = 100;   // 発動確率%（省略時100=必ず）
 };
 
 struct EventChoice
@@ -16,7 +17,7 @@ struct EventChoice
 
 struct EventDef 
 { 
-	int layer = 0;   // 0=全層で出る, 1/2/3=その層限定
-	std::string id, title, desc; 
-	std::vector<EventChoice> choices; 
+	int layer = 0;
+	bool random = true;
+	std::string id, title, desc; std::vector<EventChoice> choices; 
 };

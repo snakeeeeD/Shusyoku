@@ -27,6 +27,9 @@ public:
 
     std::function<void(SceneType)> onChangeScene;
 
+    enum class RewardMode { Normal, Rare, Upgraded };
+    void SetMode(RewardMode m) { m_mode = m; }
+
 private:
     void GenerateChoices();
 
@@ -50,4 +53,6 @@ private:
     static constexpr float CARD_W = 150.0f;
     static constexpr float CARD_H = 200.0f;
     static constexpr float SEL_SCALE = 1.4f;
+
+    RewardMode m_mode = RewardMode::Normal;
 };

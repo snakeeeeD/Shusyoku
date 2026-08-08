@@ -40,6 +40,7 @@ static XMFLOAT4 MapNodeColor(FieldNodeType t, bool visited, bool isPlayer)
 	case FieldNodeType::Start:  return XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
 	case FieldNodeType::Shop:   return XMFLOAT4(0.2f, 0.7f, 0.7f, 1.0f);
 	case FieldNodeType::Elite:  return XMFLOAT4(0.9f, 0.5f, 0.1f, 1.0f);
+	case FieldNodeType::Treasure: return XMFLOAT4(0.95f, 0.78f, 0.2f, 1.0f);
 	default:                    return XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
 	}
 }
@@ -55,6 +56,7 @@ static const wchar_t* MapNodeLabel(FieldNodeType t, bool isPlayer)
 	case FieldNodeType::Boss:   return L"BOSS";
 	case FieldNodeType::Shop:   return L"Sh";
 	case FieldNodeType::Elite:  return L"El";
+	case FieldNodeType::Treasure: return L"Tr";
 	default:                    return L"";
 	}
 }
@@ -137,6 +139,9 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	TextureManager::Load("enemy_reaper", L"Assets/Enemy/reaper.png");
 	TextureManager::Load("enemy_tentacle", L"Assets/Enemy/cyaegha.png");
 	TextureManager::Load("enemy_bear", L"Assets/Enemy/bear.png");
+	TextureManager::Load("enemy_golem", L"Assets/Enemy/golem.png");
+	TextureManager::Load("enemy_obake", L"Assets/Enemy/obake.png");
+	TextureManager::Load("enemy_mimic", L"Assets/Enemy/mimic.png");
 
 	m_textRenderer = new TextRenderer();
 	if (!m_textRenderer->Init(device, context, swapChain))
@@ -215,6 +220,9 @@ void SceneManager::DoChangeScene(SceneType type)
 		case SceneType::CardSelect:
 		{
 			auto scene = new CardSelectScene();
+			if (m_cardSelectMode == "rare")          scene->SetMode(CardSelectScene::RewardMode::Rare);
+			else if (m_cardSelectMode == "upgraded") scene->SetMode(CardSelectScene::RewardMode::Upgraded);
+			m_cardSelectMode.clear();   // 使い切り
 			scene->onChangeScene = [this](SceneType type) {ChangeScene(type); };
 			m_currentScene = scene;
 			break;
@@ -624,10 +632,41 @@ void SceneManager::HandleInput()
 		// 選択肢
 		if (m_uiInput.GetMouseButtonTrigger(0))
 		{
-			if (m_eventResult >= 0) 
+			if (m_eventResult >= 0)
 			{
-				m_eventOpen = false; 
 				Audio::PlaySE("Assets/Sound/se/click.mp3");
+				if (m_eventPending == EventPending::Battle)
+				{
+					m_eventPending = EventPending::None;
+					m_eventOpen = false;
+					EncCategory cat = (m_eventBattleParam == "event") ? EncCategory::Event : EncCategory::Normal;
+					if (auto field = dynamic_cast<FieldScene*>(m_currentScene)) field->SetupEventBattle(cat, m_eventBattleParam);
+					ChangeScene(SceneType::Battle);
+				}
+				else if (m_eventPending == EventPending::Shop)
+				{
+					m_eventPending = EventPending::None;
+					m_eventOpen = false;
+					ChangeScene(SceneType::Shop);
+				}
+				else if (m_eventPending == EventPending::CardSelect)
+				{
+					m_eventPending = EventPending::None;
+					m_eventOpen = false;
+					ChangeScene(SceneType::CardSelect);
+				}
+				else if (m_eventPending == EventPending::Treasure)
+				{
+					m_eventPending = EventPending::None;
+					m_eventId = "treasure";      // 財宝イベントを開き直す
+					m_eventResult = -1;
+					m_eventPickType.clear();
+					// m_eventOpen は true のまま
+				}
+				else
+				{
+					m_eventOpen = false;
+				}
 			}
 			else
 			{
@@ -1483,6 +1522,10 @@ void SceneManager::ApplyOutcomes(const EventChoice& c)
 			if (!rid.empty()) PlayerDataManager::AddRelic(rid);
 		}
 		else if (o.type == "addCard") { PlayerDataManager::AddCard(o.param); }
+		else if (o.type == "battle") { if (m_eventPending == EventPending::None) { m_eventPending = EventPending::Battle; m_eventBattleParam = o.param; } }
+		else if (o.type == "shop") { if (m_eventPending == EventPending::None) m_eventPending = EventPending::Shop; }
+		else if (o.type == "treasure") { if (m_eventPending == EventPending::None) m_eventPending = EventPending::Treasure; }
+		else if (o.type == "pickCard") { if (m_eventPending == EventPending::None) { m_eventPending = EventPending::CardSelect; m_cardSelectMode = o.param; } }
 	}
 	PlayerDataManager::Save();
 }

@@ -124,7 +124,7 @@
     {
       "layer": 1,
       "category": "elite",
-      "weight":150,
+      "weight": 150,
       "enemies": [
         {
           "id": "elite_bear",
@@ -145,6 +145,52 @@
         }
       ]
     },
+    {
+      "layer": 1,
+      "tier": 1,
+      "category": "event",
+      "weight": 1,
+      "enemies": [
+        {
+          "id": "warden",
+          "col": 6,
+          "row": 2
+        }
+      ]
+    },
+    {
+      "layer": 1,
+      "tier": 2,
+      "category": "event",
+      "weight": 1,
+      "enemies": [
+        {
+          "id": "wraith",
+          "col": 7,
+          "row": 3
+        }
+      ]
+    },
+    {
+      "id": "altar_guardian",
+      "category": "event",
+      "layer": 1,
+      "tier": 1,
+      "weight": 1,
+      "enemies": [
+        {
+          "id": "warden",
+          "col": 4,
+          "row": 2
+        },
+        {
+          "id": "wraith",
+          "col": 4,
+          "row": 0
+        }
+      ]
+    },
+   
     {
       "layer": 1,
       "category": "boss",

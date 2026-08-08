@@ -106,7 +106,8 @@ void FieldScene::GenerateMap()
         { FieldNodeType::Event,   12,  4 },
         { FieldNodeType::Rest,    4,  3 },
         { FieldNodeType::Shop, 2, 3 },
-         { FieldNodeType::Elite, 2, 2 },
+        { FieldNodeType::Elite, 2, 3 },
+        { FieldNodeType::Treasure, 2, 2 },
     };
 
     // 全マスをEmptyで初期化
@@ -177,7 +178,8 @@ void FieldScene::GenerateMap()
             // スタート付近(左3列)はRest/Shopを置かない
             if (col < 3 && (limit.type == FieldNodeType::Rest
                 || limit.type == FieldNodeType::Shop
-                || limit.type == FieldNodeType::Elite))
+                || limit.type == FieldNodeType::Elite
+                || limit.type == FieldNodeType::Treasure))
                 continue;
             available.push_back({ limit.type, limit.weight });
         }
@@ -426,6 +428,8 @@ void FieldScene::Draw()
                     color = XMFLOAT4(0.2f, blink, blink, 1.0f); break;
                 case FieldNodeType::Elite:
                     color = XMFLOAT4(0.9f, blink * 0.6f, 0.1f, 1.0f); break;
+                case FieldNodeType::Treasure:
+                    color = XMFLOAT4(blink, blink * 0.8f, 0.15f, 1.0f); break;   // 金
                 default:
                     color = XMFLOAT4(blink, blink, blink, 1.0f); break;
                 }
@@ -454,6 +458,8 @@ void FieldScene::Draw()
                     color = XMFLOAT4(0.2f, 0.7f, 0.7f, 1.0f); break;
                 case FieldNodeType::Elite:
                     color = XMFLOAT4(0.9f, 0.5f, 0.1f, 1.0f); break;
+                case FieldNodeType::Treasure:
+                    color = XMFLOAT4(0.95f, 0.78f, 0.2f, 1.0f); break; 
                 default:
                     color = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f); break;
                 }
@@ -494,6 +500,7 @@ void FieldScene::Draw()
             case FieldNodeType::Boss:   label = L"BOSS";   break;
             case FieldNodeType::Shop:   label = L"SHOP";   break;
             case FieldNodeType::Elite:  label = L"ELITE";  break;
+            case FieldNodeType::Treasure: label = L"LOOT"; break;
             default: break;
             }
 
@@ -578,6 +585,18 @@ void FieldScene::HandleInput()
                     {
                         node.visited = true;
                         SaveProgress();
+
+                        if (rand() % 100 < 15)   // 15%で即戦闘（?マスがモンスターに化ける）
+                        {
+                            m_currentEnemyId = "";                        // encounterはcategory+tierで決まる
+                            m_currentBattleSeed = idx;
+                            m_currentBattleTier = 1 + node.col * 3 / GRID_COLS; if (m_currentBattleTier > 3) m_currentBattleTier = 3;
+                            m_currentBattleOverflow = (m_steps < 0) ? -m_steps : 0;
+                            m_currentBattleCategory = EncCategory::Normal;
+                            if (onChangeScene) onChangeScene(SceneType::Battle);
+                            return;
+                        }
+
                         if (onEvent) onEvent(EventDataBase::RandomId(PlayerDataManager::GetData().layer));
                         break;
                     }
@@ -586,6 +605,13 @@ void FieldScene::HandleInput()
                         SaveProgress();
                         if (onChangeScene) onChangeScene(SceneType::Shop);
                         return;
+                    case FieldNodeType::Treasure:
+                    {
+                        node.visited = true;
+                        SaveProgress();
+                        if (onEvent) onEvent("treasure");   // 財宝イベントを開くだけ
+                        break;
+                    }
                     default:
                         node.visited = true;
                         break;
@@ -622,6 +648,17 @@ void FieldScene::SaveProgress()
     PlayerDataManager::Save();
 }
 
+void FieldScene::SetupEventBattle(EncCategory cat, const std::string& param)
+{
+    int idx = GetNodeIndex(m_playerCol, m_playerRow);
+    bool specific = (!param.empty() && param != "event" && param != "normal");
+    m_currentEnemyId = specific ? param : "";   // ← 指名idをbattleへ運ぶ（m_battleEnemyId経由）
+    m_currentBattleSeed = idx;
+    m_currentBattleTier = 1 + m_playerCol * 3 / GRID_COLS; if (m_currentBattleTier > 3) m_currentBattleTier = 3;
+    m_currentBattleOverflow = (m_steps < 0) ? -m_steps : 0;
+    m_currentBattleCategory = cat;
+}
+
 void FieldScene::DrawImGui()
 {
 #ifdef _DEBUG
@@ -629,6 +666,13 @@ void FieldScene::DrawImGui()
     ImGui::InputInt("Steps", &m_steps);
     ImGui::Checkbox("Free Move (teleport)", &m_freeMove);
     ImGui::Text("Overflow: %d", (m_steps < 0) ? -m_steps : 0);
+
+    ImGui::Separator();
+    ImGui::Text("Events (click to open)");
+    for (const auto& id : EventDataBase::AllIds())
+        if (ImGui::Button(id.c_str()) && onEvent)
+            onEvent(id);
+
     ImGui::End();
 #endif
 }

@@ -286,7 +286,8 @@ static int RarityBaseWeight(CardRarity r, bool rareBias)
     return (r == CardRarity::Rare) ? 2 : (r == CardRarity::Uncommon) ? 5 : 10;
 }
 
-std::vector<std::string> CardDataBase::PickRewardCards(int count, bool rareBias, const std::vector<std::string>& deck)
+std::vector<std::string> CardDataBase::PickRewardCards(int count, bool rareBias,
+    const std::vector<std::string>& deck, bool rareOnly, bool upgradableOnly)
 {
     // デッキのタグ枚数を集計
     std::unordered_map<std::string, int> tagCounts;
@@ -305,6 +306,8 @@ std::vector<std::string> CardDataBase::PickRewardCards(int count, bool rareBias,
     {
         const CardData* c = Get(id);
         if (!c) continue;
+        if (rareOnly && c->rarity != CardRarity::Rare) continue;      // レアのみ
+        if (upgradableOnly && !Get(id + "+")) continue;               // 強化版がある札のみ
         int aff = 0;
         for (const auto& t : c->tags)
         {
