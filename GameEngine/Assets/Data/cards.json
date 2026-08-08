@@ -6,7 +6,6 @@
       "type": "Attack",
       "starter": true,
       "rarity": "Common",
-      "tags": [ "Strike" ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -769,6 +768,7 @@
       "id": "SKL_Trap_explosion_trap",
       "name": "爆発の罠",
       "type": "Skill",
+      "rarity": "Common",
       "cost": 1,
       "tags": [ "Trap" ],
       "rangeType": "Diamond",
@@ -787,6 +787,7 @@
       "id": "SKL_Trap_root_trap",
       "name": "拘束の罠",
       "type": "Skill",
+      "rarity": "Common",
       "cost": 1,
       "tags": [ "Trap" ],
       "rangeType": "Area",
@@ -806,6 +807,7 @@
       "id": "SKL_Trap_poison_trap",
       "name": "毒の罠",
       "type": "Skill",
+      "rarity": "Common",
       "cost": 1,
       "tags": [ "Trap" ],
       "rangeType": "Diamond",
@@ -861,7 +863,7 @@
       "id": "SKL_Trap_landmine",
       "name": "大地雷",
       "type": "Skill",
-      "rarity": "Uncommon",
+      "rarity": "Rare",
       "tags": [ "Trap" ],
       "cost": 3,
       "range": 1,
@@ -895,10 +897,10 @@
       "id": "SKL_detonate",
       "name": "一斉起爆",
       "type": "Skill",
-      "rarity": "Rare",
+      "rarity": "Uncommon",
       "tags": [ "Trap" ],
-      "cost": 3,
-      "range": 3,
+      "cost": 2,
+      "range": 2,
       "rangeType": "Diamond",
       "description": "範囲内の罠を全て起爆。\n罠の効果を敵に（周囲は半分）",
       "upgrade": {
@@ -951,7 +953,7 @@
       "id": "SKL_chain_detonate",
       "name": "連鎖起爆",
       "type": "Skill",
-      "rarity": "Uncommon",
+      "rarity": "Rare",
       "tags": [ "Trap" ],
       "cost": 3,
       "range": 4,
@@ -963,6 +965,54 @@
       "mainEffect": {
         "type": "DetonateChain",
         "value": 1
+      }
+    },
+    {
+      "id": "SKL_recall_traps",
+      "name": "罠回収",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "tags": [ "Trap" ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "盤面の罠を全て回収。\n1つにつきエナジー+1、1枚ドロー",
+      "upgrade": { "cost": -1 },
+      "mainEffect": {
+        "type": "RecallTraps",
+        "value": 1
+      }
+    },
+    {
+      "id": "ATK_resonance",
+      "name": "共鳴爆破",
+      "type": "Attack",
+      "rarity": "Rare",
+      "tags": [ "Trap" ],
+      "cost": 2,
+      "range": 1,
+      "rangeType": "Area",
+      "scaleByTrapCount": true,
+      "description": "周囲の敵に、盤面の罠\n1つにつき{value}ダメージ",
+      "upgrade": { "mainValue": 2 },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 4
+      }
+    },
+    {
+      "id": "SKL_decoy",
+      "name": "身代わり人形",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "tags": [ "Trap" ],
+      "cost": 1,
+      "range": 3,
+      "rangeType": "Diamond",
+      "description": "指定マスに身代わりを置く。\n敵の攻撃を1回引き受ける",
+      "mainEffect": {
+        "type": "PlaceDecoy",
+        "value": 0
       }
     }
 

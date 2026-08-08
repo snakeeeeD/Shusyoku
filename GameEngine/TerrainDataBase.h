@@ -19,6 +19,7 @@ struct TerrainDef {
     int animFrames = 0;
     float animSpeed = 0.0f;
     bool aoe = false;
+    std::string vfx;
 };
 
 class TerrainDataBase

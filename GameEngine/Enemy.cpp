@@ -400,25 +400,30 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
 }
 
 int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
-    GridMap* gridMap, Player* player, std::vector<Enemy*>& enemies)
+    GridMap* gridMap, Player* player, std::vector<Enemy*>& enemies,
+    int moveTargetCol , int moveTargetRow, bool* didAttack)
 {
+    int mtC = (moveTargetCol >= 0) ? moveTargetCol : playerCol;
+    int mtR = (moveTargetRow >= 0) ? moveTargetRow : playerRow;
+
     if (actionIdx < 0 || actionIdx >= (int)m_plannedActions.size()) return 0;
     const EnemyAction& act = m_plannedActions[actionIdx];
     const TargetSpec& tg = act.target;
 
     // 移動より前に「当たるか」を確定させる（＝予告と一致させる）
-    bool hitPlayer = tg.unavoidable
-        || IsInRange(playerCol, playerRow, tg.range, tg.rangeType, tg.minRange);
+    bool hitPlayer = IsThreateningCell(playerCol, playerRow, act);
+
+    bool hitTarget = IsThreateningCell(mtC, mtR, act);
 
     if (!tg.unavoidable)
     {
         switch (tg.approach)
         {
         case ApproachType::Toward:
-            if (!hitPlayer) MoveToward(playerCol, playerRow, gridMap, tg.moveRange);  // 届かないなら詰めるだけ
+            if (!hitTarget) MoveToward(mtC, mtR, gridMap, tg.moveRange);
             break;
         case ApproachType::Dash:
-            if (!hitPlayer) hitPlayer = MoveDash(playerCol, playerRow, gridMap, tg.moveRange); // 突進は詰めて当てる
+            if (!hitTarget) hitTarget = MoveDash(mtC, mtR, gridMap, tg.moveRange);
             break;
         default: break;
         }
@@ -430,19 +435,18 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
     {
         switch (e.kind)
         {
-        case EffectKind::MoveToward: MoveToward(playerCol, playerRow, gridMap, e.value); break;
-        case EffectKind::MoveAway:   MoveAway(playerCol, playerRow, gridMap, e.value);   break;
+        case EffectKind::MoveToward: MoveToward(mtC, mtR, gridMap, e.value); break;
+        case EffectKind::MoveAway:   MoveAway(mtC, mtR, gridMap, e.value);   break;
 
         case EffectKind::Damage:
+            if (hitTarget && didAttack) *didAttack = true;   // 標的が射程内＝実際に攻撃した時だけ
             if (tg.approach != ApproachType::Dash && !tg.unavoidable)
             {
-                if (tg.rangeType == RangeType::Area)
-                    StartJump(1.5f, 0.4f);     // 範囲：大きく跳ねる
-                else
-                    StartJump(0.5f, 0.25f);    // 単体：小さくくいっと
+                if (tg.rangeType == RangeType::Area) StartJump(1.5f, 0.4f);
+                else                                 StartJump(0.5f, 0.25f);
             }
             if (hitPlayer)
-                damage += m_buffManager.GetFinalAttack(e.value);
+                damage += m_buffManager.GetFinalAttack(e.value);   // 実ダメージは本物のプレイヤー
             break;
 
         case EffectKind::Block:

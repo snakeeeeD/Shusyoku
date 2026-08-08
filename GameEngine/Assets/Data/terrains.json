@@ -21,7 +21,8 @@
       "buffType": "Root",
       "buffDuration": 2,
       "persistent": false,
-      "duration": 0
+      "duration": 0,
+      "vfx": "bind"
     },
     {
       "id": "poison",
@@ -33,7 +34,8 @@
       "buffType": "Poison",
       "buffDuration": 3,
       "persistent": false,
-      "duration": 0
+      "duration": 0,
+      "vfx": "poison"
     },
     {
       "id": "expose",
@@ -45,7 +47,8 @@
       "buffType": "Vulnerable",
       "buffDuration": 2,
       "persistent": false,
-      "duration": 0
+      "duration": 0,
+      "vfx": "expose"
     },
     {
       "id": "weaken",
@@ -57,7 +60,8 @@
       "buffType": "Weak",
       "buffDuration": 2,
       "persistent": false,
-      "duration": 0
+      "duration": 0,
+      "vfx": "weaken"
     },
     {
       "id": "landmine",
@@ -68,7 +72,8 @@
       "value": 14,
       "aoe": true,
       "persistent": false,
-      "duration": 0
+      "duration": 0,
+      "vfx": "explosion"
     },
     {
       "id": "fire",

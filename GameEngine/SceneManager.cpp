@@ -117,11 +117,18 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	// 未設定は 1.0
 
 	TextureManager::Load("white", L"Assets/Test/White.png");
+	TextureManager::Load("particle", L"Assets/Particles/circle.png");
+	TextureManager::Load("particle_poison", L"Assets/Particles/circle_01.png");
+	TextureManager::Load("fire", L"Assets/Particles/fire.png");
+	TextureManager::Load("magic", L"Assets/Particles/magic.png");
+	TextureManager::Load("smoke", L"Assets/Particles/smoke.png");
+	TextureManager::Load("star", L"Assets/Particles/star.png");
 	TextureManager::Load("title", L"Assets/Test/Title.png");
 	TextureManager::Load("battle_bg", L"Assets/Field/GrassField.jpg");
 	TextureManager::Load("map_bg", L"Assets/Field/Map.jpg");
 	TextureManager::Load("cardSelect_bg", L"Assets/Field/CardSelect.jpeg");
 	TextureManager::Load("player", L"Assets/Player/yuusya_game.png");
+	TextureManager::Load("kakashi", L"Assets/Player/kakashi.png");
 	TextureManager::Load("enemy_slime", L"Assets/Enemy/slime.png");
 	TextureManager::Load("enemy_goblin", L"Assets/Enemy/goblin.png");
 	TextureManager::Load("enemy_orc", L"Assets/Enemy/orc.png");

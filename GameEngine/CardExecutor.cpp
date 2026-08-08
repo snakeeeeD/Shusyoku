@@ -110,10 +110,20 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
 
             player->UseEnergy(data.cost);
 
+            int baseVal = data.mainEffect.value;
+            if (data.scaleByTrapCount)
+            {
+                int traps = 0;
+                for (int r = 0; r < gridMap->GetRows(); r++)
+                    for (int c = 0; c < gridMap->GetCols(); c++)
+                        if (gridMap->GetCell(c, r).tileEffect.active) traps++;
+                baseVal *= traps;   // 盤面の罠数だけ倍
+            }
+
             for (auto enemy : targets)
             {
                 for (int h = 0; h < EffectiveHits(data); h++)
-                    enemy->TakeDamage(player->GetBuffManager().GetFinalAttack(data.mainEffect.value));
+                    enemy->TakeDamage(player->GetBuffManager().GetFinalAttack(baseVal));
 
                 // Thorns反射
                 if (enemy->GetBuffManager().HasBuff(BuffType::Thorns))
@@ -523,6 +533,16 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 return result;
         }
 
+        if (data.mainEffect.type == CardEffectType::PlaceTrap ||
+            data.mainEffect.type == CardEffectType::PlaceTrapArea)
+        {
+            for (int i = 0; i < RelicManager::SumValue("trapDraw"); i++)
+            {
+                std::string id = deck.DrawCard();
+                if (!id.empty()) { hand.AddCard(id); result.drawnCards.push_back(id); }
+            }
+        }
+
         if (data.mainEffect.type == CardEffectType::Detonate)
         {
             bool any = false;
@@ -617,6 +637,16 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 }
             break;
         }
+        case CardEffectType::PlaceDecoy:
+        {
+            if (!RangeShape::Contains(playerCol, playerRow, targetCol, targetRow,
+                data.rangeType, data.range)) return result;
+            if (gridMap->GetCell(targetCol, targetRow).type != CellType::Empty) return result;
+            result.placeDecoy = true;
+            result.decoyCol = targetCol;
+            result.decoyRow = targetRow;
+            break;
+        }
         case CardEffectType::Detonate:
         {
             bool full = (data.mainEffect.value > 0);   // 強化で value>0 → 全開
@@ -628,6 +658,27 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                     if (RangeShape::Contains(playerCol, playerRow, c, r, data.rangeType, data.range))
                         CardExecutor::DetonateTrap(cell, c, r, gridMap, enemies, full);
                 }
+            break;
+        }
+        case CardEffectType::RecallTraps:
+        {
+            int recalled = 0;
+            for (int r = 0; r < gridMap->GetRows(); r++)
+                for (int c = 0; c < gridMap->GetCols(); c++)
+                {
+                    Cell& cell = gridMap->GetCell(c, r);
+                    if (cell.tileEffect.active)
+                    {
+                        cell.tileEffect = TileEffect();   // 削除（起爆せず消す）
+                        recalled++;
+                    }
+                }
+            player->AddEnergy(recalled * data.mainEffect.value);
+            for (int i = 0; i < recalled * data.mainEffect.value; i++)
+            {
+                std::string id = deck.DrawCard();
+                if (!id.empty()) { hand.AddCard(id); result.drawnCards.push_back(id); }
+            }
             break;
         }
         case CardEffectType::DetonateAt:
@@ -742,9 +793,14 @@ void CardExecutor::TriggerTrap(Cell& cell, Enemy* enemy, int col, int row,
     const TerrainDef* def = TerrainDataBase::Get(cell.tileEffect.id);
     if (!def) return;
 
+    float wx = (col - gridMap->GetCols() / 2.0f) * 1.1f;
+    float wz = (row - gridMap->GetRows() / 2.0f) * 1.1f;
+    std::string fx = def->vfx.empty() ? "explosion" : def->vfx;
+    EffectManager::Play(fx, wx, 0.5f, wz);
+
     if (def->effect == "Damage")
     {
-        enemy->TakeDamage(cell.tileEffect.value);
+        enemy->TakeDamage(cell.tileEffect.value + RelicManager::SumValue("trapDamage"));
 
         if (def->aoe)
         {
@@ -769,8 +825,8 @@ void CardExecutor::TriggerTrap(Cell& cell, Enemy* enemy, int col, int row,
     {
         Buff debuff;
         debuff.type = StringToBuffType(def->buffType);
-        debuff.value = cell.tileEffect.value;
-        debuff.duration = def->buffDuration;
+        debuff.value = cell.tileEffect.value + RelicManager::SumValue("trapDebuff");   // ←毒等の値
+        debuff.duration = def->buffDuration + RelicManager::SumValue("trapDebuff");   // ←二値の持続
         debuff.name = def->name;
         debuff.description = L"";
         enemy->GetBuffManager().AddBuff(debuff);
@@ -819,6 +875,13 @@ bool CardExecutor::DetonateTrap(Cell& cell, int col, int row,
     const TerrainDef* def = TerrainDataBase::Get(cell.tileEffect.id);
     if (!def) return false;
 
+    // 演出：爆発エフェクト＋揺れ
+    float wx = (col - gridMap->GetCols() / 2.0f) * 1.1f;
+    float wz = (row - gridMap->GetRows() / 2.0f) * 1.1f;
+    std::string fx = def->vfx.empty() ? "explosion" : def->vfx;
+    EffectManager::Play(fx, wx, 0.5f, wz);
+    ScreenShake::Add(0.3f);
+
     for (int dr = -1; dr <= 1; dr++)
         for (int dc = -1; dc <= 1; dc++)
         {
@@ -832,11 +895,12 @@ bool CardExecutor::DetonateTrap(Cell& cell, int col, int row,
             if (!center && !fullPower) val /= 2;          // 周囲は半分（強化で全開）
 
             if (def->effect == "Damage")
-                e->TakeDamage(val);
+                e->TakeDamage(val + RelicManager::SumValue("trapDamage"));                
             else if (def->effect == "ApplyDebuff")
             {
                 Buff b; b.type = StringToBuffType(def->buffType);
-                b.value = val; b.duration = def->buffDuration;
+                b.value = val + RelicManager::SumValue("trapDebuff");
+                b.duration = def->buffDuration + RelicManager::SumValue("trapDebuff");
                 b.name = def->name; b.description = L"";
                 e->GetBuffManager().AddBuff(b);
             }
@@ -901,6 +965,9 @@ void CardExecutor::ApplyKnockback(Enemy* target, int playerCol, int playerRow,
             int remaining = distance - moved;
             target->TakeDamage(remaining * 3);
             blocker->TakeDamage(remaining * 3);
+            // 物理ドミノ：勢いを1減らして相手も吹き飛ばす（連鎖）
+            if (remaining - 1 > 0)
+                ApplyKnockback(blocker, playerCol, playerRow, remaining - 1, gridMap, enemies);
             break;
         }
 

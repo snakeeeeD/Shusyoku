@@ -58,8 +58,10 @@ inline CardEffectType StringToCardEffectType(const std::string& str)
     if (str == "PlaceTrap")   return CardEffectType::PlaceTrap;
     if (str == "PlaceTrapArea")  return CardEffectType::PlaceTrapArea;
     if (str == "Detonate")    return CardEffectType::Detonate;
+    if (str == "RecallTraps") return CardEffectType::RecallTraps;
     if (str == "DetonateAt")  return CardEffectType::DetonateAt;
     if (str == "DetonateChain")  return CardEffectType::DetonateChain;
+    if (str == "PlaceDecoy")  return CardEffectType::PlaceDecoy;
     if (str == "UpgradeHand") return CardEffectType::UpgradeHand;
     if (str == "Discard")     return CardEffectType::Discard;
     return CardEffectType::None;

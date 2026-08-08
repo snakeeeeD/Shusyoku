@@ -76,8 +76,8 @@ public:
 	bool IsDeathFinished() const { return m_dying && m_deathTimer >= DEATH_DUR; }
 
 	int ExecuteAction(int actionIdx, int playerCol, int playerRow,
-		class GridMap* gridMap, class Player* player,
-		std::vector<Enemy*>& enemies);
+		GridMap* gridMap, Player* player, std::vector<Enemy*>& enemies,
+		int moveTargetCol = -1, int moveTargetRow = -1, bool* didAttack = nullptr);
 
 	bool IsThreateningCell(int col, int row, const EnemyAction& a) const;
 	std::vector<std::pair<int, int>> GetThreatCells(const EnemyAction& a, class GridMap* gridMap) const;
@@ -85,7 +85,6 @@ public:
 	const std::vector<std::pair<int, int>>& GetGridShape() const { return m_gridShape; }
 
 	void ApplyDifficulty(float hpMul, float dmgMul, int bonusActions);
-
 
 private:
 	bool IsAdjacentTo(int playerCol, int playerRow);

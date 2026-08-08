@@ -25,6 +25,8 @@ public:
         bool startChainDetonate = false;
         int  chainCol = 0, chainRow = 0;
         bool chainFull = false;
+        bool placeDecoy = false;
+        int  decoyCol = 0, decoyRow = 0;
     };
 
     struct MovePreview 

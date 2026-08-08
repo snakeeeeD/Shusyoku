@@ -30,6 +30,7 @@ void TerrainDataBase::Load(const std::string& path)
         def.animFrames = t.value("animFrames", 0);
         def.animSpeed = t.value("animSpeed", 0.0f);
         def.aoe = t.value("aoe", false);
+        def.vfx = t.value("vfx", "");
 
         auto c = t["color"];
         def.color = XMFLOAT4(c[0], c[1], c[2], c[3]);

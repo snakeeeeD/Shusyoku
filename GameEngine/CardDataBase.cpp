@@ -40,6 +40,7 @@ void CardDataBase::Init()
             data.generated = c.value("generated", false);
             data.starter = c.value("starter", false);
             data.vfx = c.value("vfx", std::string(""));
+            data.scaleByTrapCount = c.value("scaleByTrapCount", false);
 
             std::string rarityStr = c.value("rarity", "Common");
             if (rarityStr == "Uncommon") data.rarity = CardRarity::Uncommon;

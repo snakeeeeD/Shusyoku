@@ -4,6 +4,8 @@
 #include "SpriteRenderer.h"
 #include "TextRenderer.h"
 #include "RelicManager.h"
+#include "TerrainDataBase.h"
+#include "RelicManager.h"
 #include <DirectXMath.h>
 #include <string>
 
@@ -76,6 +78,18 @@ public:
                 actualValue = player->GetBuffManager().GetFinalAttack(data->mainEffect.value);
             else if (data->mainEffect.type == CardEffectType::Block)
                 actualValue = player->GetBuffManager().GetFinalBlock(data->mainEffect.value);
+            else if (data->mainEffect.type == CardEffectType::PlaceTrap
+                || data->mainEffect.type == CardEffectType::PlaceTrapArea)
+            {
+                const TerrainDef* def = TerrainDataBase::Get(data->mainEffect.trapType);
+                if (def)
+                {
+                    if (def->effect == "Damage")
+                        actualValue += RelicManager::SumValue("trapDamage");
+                    else if (def->effect == "ApplyDebuff")
+                        actualValue += RelicManager::SumValue("trapDebuff");
+                }
+            }
         }
 
         std::wstring result = data->description;

@@ -13,6 +13,7 @@ struct BurstDef
     float gravity = 4.0f, drag = 0.02f;
     XMFLOAT4 colorStart = { 1,1,1,1 };
     XMFLOAT4 colorEnd = { 1,1,1,0 };
+    std::string texture;
 };
 
 struct EffectDef

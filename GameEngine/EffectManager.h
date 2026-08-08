@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include "Renderer3D.h"
 #include "EffectDataBase.h"
+#include "TextureManager.h"
 
 using namespace DirectX;
 
@@ -14,6 +15,7 @@ struct Particle
     XMFLOAT4 colorStart, colorEnd;
     float life, lifeMax;
     float scale, gravity, drag;
+    ID3D11ShaderResourceView* tex = nullptr;
 };
 
 // パーティクルの発生・更新・描画を1箇所に集約
@@ -53,7 +55,8 @@ public:
                 p.colorStart.y + (p.colorEnd.y - p.colorStart.y) * t,
                 p.colorStart.z + (p.colorEnd.z - p.colorStart.z) * t,
                 p.colorStart.w + (p.colorEnd.w - p.colorStart.w) * t);
-            r->DrawBillboard(tex, p.pos.x, p.pos.y, p.pos.z, p.scale, p.scale, 0.0f, c);
+            ID3D11ShaderResourceView* pt = p.tex ? p.tex : tex;   // 粒子のtex優先、無ければ引数のデフォルト
+            r->DrawBillboard(pt, p.pos.x, p.pos.y, p.pos.z, p.scale, p.scale, 0.0f, c);
         }
     }
 
@@ -62,7 +65,8 @@ public:
     // 球状にばらまく（講義のCreateRingの分布を流用）
     static void SpawnBurst(float x, float y, float z, int count,
         float speed, XMFLOAT4 colorStart, XMFLOAT4 colorEnd, float life, float scale,
-        float gravity = 4.0f, float drag = 0.02f)
+        float gravity = 4.0f, float drag = 0.02f,
+        ID3D11ShaderResourceView* tex = nullptr)
     {
         const float golden = XM_PI * (3.0f - sqrtf(5.0f));
         for (int i = 0; i < count; i++)
@@ -85,6 +89,7 @@ public:
             p.scale = scale;
             p.gravity = gravity;
             p.drag = drag;
+            p.tex = tex;
             m_particles.push_back(p);
         }
     }
@@ -95,8 +100,11 @@ public:
         const EffectDef* def = EffectDataBase::Get(id);
         if (!def) return;
         for (auto& b : def->bursts)
+        {
+            ID3D11ShaderResourceView* t = b.texture.empty() ? nullptr : TextureManager::Get(b.texture);
             SpawnBurst(x, y, z, b.count, b.speed,
-                b.colorStart, b.colorEnd, b.life, b.scale, b.gravity, b.drag);
+                b.colorStart, b.colorEnd, b.life, b.scale, b.gravity, b.drag, t);
+        }
     }
 
 private:

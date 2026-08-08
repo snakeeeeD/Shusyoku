@@ -23,8 +23,10 @@ enum class CardEffectType
     PlaceTrap,   // 罠セット
     PlaceTrapArea,//罠を複数セット
     Detonate,    // 罠を即起爆
+    RecallTraps, // 罠の回収
     DetonateAt,  // 指定した罠を即起爆
     DetonateChain,//連鎖
+    PlaceDecoy,  // デコイ
     UpgradeHand, // 手札を強化（この戦闘中のみ）
     Discard,     // 手札からランダムに捨てる
 
@@ -77,4 +79,6 @@ struct CardData
     bool dash = false;      // moveカード以外に移動効果があるかフラグ
     int selfDamage = 0;     // 自傷ダメージ
     int hits = 1;         // 攻撃回数（マルチヒット）
+
+    bool scaleByTrapCount = false;
 };

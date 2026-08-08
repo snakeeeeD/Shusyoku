@@ -156,6 +156,8 @@ private:
     static constexpr float ENEMY_ACTION_PAUSE = 0.05f;
     static constexpr float ENEMY_BETWEEN_PAUSE = 0.4f;
 
+    int m_decoyCol = -1, m_decoyRow = -1;
+
     std::pair<int, int> m_hoveredCell;
 
     float m_highlightTimer;

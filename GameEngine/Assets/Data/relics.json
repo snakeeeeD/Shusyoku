@@ -74,6 +74,15 @@
       "desc": "最初のターン、+1ドロー"
     },
     {
+      "id": "trapper",
+      "name": "仕掛け好き",
+      "kind": "trapDraw",
+      "value": 1,
+      "rarity": "common",
+      "desc": "罠を設置するとカードを1枚引く"
+    },
+
+    {
       "id": "war_god_seal",
       "name": "戦神の刻印",
       "kind": "startBuffAtk",
@@ -113,6 +122,23 @@
       "rarity": "uncommon",
       "desc": "合成カードのコスト-1"
     },
+    {
+      "id": "trap_master",
+      "name": "罠の達人",
+      "kind": "trapDamage",
+      "value": 4,
+      "rarity": "uncommon",
+      "desc": "罠のダメージ+4"
+    },
+    {
+      "id": "trap_adept",
+      "name": "仕掛けの妙",
+      "kind": "trapDebuff",
+      "value": 1,
+      "rarity": "uncommon",
+      "desc": "罠のデバフ持続+1ターン"
+    },
+
     {
       "id": "giant_gauntlet",
       "name": "巨人の篭手",

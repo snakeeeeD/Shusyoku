@@ -31,6 +31,7 @@ void EffectDataBase::Load(const std::string& path)
             auto ce = b["colorEnd"];
             bd.colorStart = XMFLOAT4(cs[0], cs[1], cs[2], cs[3]);
             bd.colorEnd = XMFLOAT4(ce[0], ce[1], ce[2], ce[3]);
+            bd.texture = b.value("texture", "");
             def.bursts.push_back(bd);
         }
         s_effects[def.id] = def;

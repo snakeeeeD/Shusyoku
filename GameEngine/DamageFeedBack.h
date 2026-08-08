@@ -38,27 +38,9 @@ namespace DamageFeedback
         if (dmg <= 0) return;
         switch (feel)
         {
-        case DamageFeel::Poison:
-        {
-            XMFLOAT4 pc = BuffInfo::Get(BuffType::Poison).color;
-            EffectManager::SpawnBurst(x, y, z, 10, 0.8f,
-                XMFLOAT4(pc.x, pc.y, pc.z, 0.9f),                       // 開始：毒の色
-                XMFLOAT4(pc.x * 0.4f, pc.y * 0.4f, pc.z * 0.5f, 0.0f),  // 終了：暗く・透明
-                0.9f, 0.10f);
-            break;
-        }
-        case DamageFeel::Burn:
-        {
-            XMFLOAT4 bc = BuffInfo::Get(BuffType::Burn).color;
-            EffectManager::SpawnBurst(x, y, z, 12, 1.2f,
-                XMFLOAT4(bc.x, bc.y, bc.z, 1.0f),                       // 開始：炎の色
-                XMFLOAT4(bc.x * 0.5f, bc.y * 0.2f, bc.z * 0.1f, 0.0f),  // 終了：暗く・透明
-                0.6f, 0.09f);
-            break;
-        }
-        default:
-            EffectManager::Play("hit", x, y, z);
-            break;
+        case DamageFeel::Poison: EffectManager::Play("poison", x, y, z); break;
+        case DamageFeel::Burn:   EffectManager::Play("burn", x, y, z + 0.4f); break;
+        default:                 EffectManager::Play("hit", x, y, z); break;
         }
     }
 }

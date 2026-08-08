@@ -196,7 +196,11 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             m_turnCount++;
 
             for (auto enemy : m_enemies)
-                enemy->DecideNextAction(m_playerCol, m_playerRow, m_turnCount);
+            {
+                int tC = (m_decoyCol >= 0) ? m_decoyCol : m_playerCol;
+                int tR = (m_decoyCol >= 0) ? m_decoyRow : m_playerRow;
+                enemy->DecideNextAction(tC, tR, m_turnCount);
+            }
 
             // 山札と捨て札から移動カードを探す
             std::vector<std::string> moveCardIds;
@@ -285,7 +289,11 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     }
 
     for (auto enemy : m_enemies)
-        enemy->DecideNextAction(m_playerCol, m_playerRow, m_turnCount);
+    {
+        int tC = (m_decoyCol >= 0) ? m_decoyCol : m_playerCol;
+        int tR = (m_decoyCol >= 0) ? m_decoyRow : m_playerRow;
+        enemy->DecideNextAction(tC, tR, m_turnCount);
+    }
 
      m_input.SetWindowHandle(hWnd);
 
@@ -584,7 +592,8 @@ void BattleScene::Update(float deltaTime)
             selectedNeedsTarget = (ct == CardType::Attack || ct == CardType::Move
                 || sd->mainEffect.type == CardEffectType::PlaceTrap
                 || sd->mainEffect.type == CardEffectType::DetonateAt
-                || sd->mainEffect.type == CardEffectType::DetonateChain);
+                || sd->mainEffect.type == CardEffectType::DetonateChain
+                || sd->mainEffect.type == CardEffectType::PlaceDecoy);
         }
         m_battleUI->UpdateCardAnimations(deltaTime, (int)m_hand.GetCards().size(), m_hoveredCardIndex, 
             m_selectedCardIndex, m_input.GetMousePos(), selectedNeedsTarget,
@@ -713,14 +722,34 @@ void BattleScene::Update(float deltaTime)
                     }
                 }
 
+                int tC = m_playerCol, tR = m_playerRow;
+                if (m_decoyCol >= 0) {
+                    int dP = abs(enemy->gridCol - m_playerCol) + abs(enemy->gridRow - m_playerRow);
+                    int dD = abs(enemy->gridCol - m_decoyCol) + abs(enemy->gridRow - m_decoyRow);
+                    if (dD < dP) { tC = m_decoyCol; tR = m_decoyRow; }
+                }
+
                 // 現在の行動を実行
                 int ai = enemy->GetActionIndex();
-                int damage = enemy->ExecuteAction(ai, m_playerCol, m_playerRow, m_gridMap, m_player, m_enemies);
+                bool targetedDecoy = (m_decoyCol >= 0 && tC == m_decoyCol && tR == m_decoyRow);
+                bool atk = false;
+                int damage = enemy->ExecuteAction(ai, m_playerCol, m_playerRow, m_gridMap, m_player, m_enemies, tC, tR, &atk);
+
                 m_playerCol = m_player->gridCol;   // 引き寄せで動いた分を反映
                 m_playerRow = m_player->gridRow;
                 if (damage > 0)
                     m_player->TakeDamage(damage);
                 enemy->SetActionIndex(ai + 1);
+
+                // デコイを狙って攻撃した時だけ破壊（移動だけでは壊れない）
+                if (targetedDecoy && atk)
+                {
+                    float x = (m_decoyCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                    float z = (m_decoyRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                    EffectManager::Play("decoy_break", x, 0.5f, z);
+                    ScreenShake::Add(0.3f);
+                    m_decoyCol = -1; m_decoyRow = -1;
+                }
 
                 auto& cell = m_gridMap->GetCell(enemy->gridCol, enemy->gridRow);
                 if (cell.tileEffect.active)
@@ -957,6 +986,13 @@ void BattleScene::Draw()
         }
     }
 
+    if (m_decoyCol >= 0)
+    {
+        float x = (m_decoyCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+        float z = (m_decoyRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+        m_renderer3D->DrawBillboard(TextureManager::Get("kakashi"), x, 0.05f, z , 0.8f, 0.8f, 0.0f, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+    }
+
     // 敵は乗っているマスの高さに合わせる
     for (auto enemy : m_enemies)
         enemy->worldY = 0.05f + m_gridMap->GetCell(enemy->gridCol, enemy->gridRow).gameObject.worldY;
@@ -1014,7 +1050,7 @@ void BattleScene::Draw()
     for (auto enemy : m_enemies)
         enemy->Draw3D(m_renderer3D);
 
-    EffectManager::Draw(m_renderer3D, m_whiteTexture);
+    EffectManager::Draw(m_renderer3D, TextureManager::Get("particle"));
 
     // 移動経路の終点に半透明プレイヤー
     if (m_pathBuilding && !m_movePath.empty())
@@ -1574,7 +1610,8 @@ void BattleScene::HandleInput()
             bool canTry = !moveCanceled;
 
             CardEffectType met = cards[m_selectedCardIndex]->GetData()->mainEffect.type;
-            bool needCell = (met == CardEffectType::PlaceTrap || met == CardEffectType::DetonateAt || met == CardEffectType::DetonateChain);
+            bool needCell = (met == CardEffectType::PlaceTrap || met == CardEffectType::DetonateAt 
+                || met == CardEffectType::DetonateChain || met == CardEffectType::PlaceDecoy);
             if ((ct == CardType::Attack || ct == CardType::Move || needCell)
                 && !usePath && !moveCanceled)
             {
@@ -1634,6 +1671,12 @@ void BattleScene::HandleInput()
                     m_chainQueue.push_back({ execResult.chainCol, execResult.chainRow });
                     m_chainTimer = 0.0f;
                     m_chainFull = execResult.chainFull;
+                }
+
+                if (execResult.placeDecoy)
+                {
+                    m_decoyCol = execResult.decoyCol;
+                    m_decoyRow = execResult.decoyRow;
                 }
 
                 if (faBonus > 0)
@@ -1947,6 +1990,11 @@ void BattleScene::HandleInput()
                     m_chainQueue.push_back({ execResult.chainCol, execResult.chainRow });
                     m_chainTimer = 0.0f;
                     m_chainFull = execResult.chainFull;
+                }
+                if (execResult.placeDecoy)        
+                {
+                    m_decoyCol = execResult.decoyCol;
+                    m_decoyRow = execResult.decoyRow;
                 }
 
                 if (faBonus > 0)
