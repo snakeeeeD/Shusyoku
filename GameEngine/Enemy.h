@@ -23,6 +23,7 @@ public:
 	int GetBlock() const { return m_block; }
 	int GetAimDx() const { return m_aimDx; }
 	int GetAimDy() const { return m_aimDy; }
+	int GetActionIndex() const { return m_actionIndex; }
 	float GetDisplayHp() const { return m_displayHp; }
 	BuffManager& GetBuffManager() { return m_buffManager; }
 	const std::string& GetTextureName() const { return m_textureName; }
@@ -30,10 +31,14 @@ public:
 
 	// セッター
 	void SetHp(int hp) { m_HP = hp; }
-
-	int GetActionIndex() const { return m_actionIndex; }
 	void SetActionIndex(int i) { m_actionIndex = i; }
+
 	bool HasMoreActions() const { return m_actionIndex < (int)m_plannedActions.size(); }
+
+	bool IsActionUnavoidable(int idx) const {
+		return idx >= 0 && idx < (int)m_plannedActions.size()
+			&& m_plannedActions[idx].target.unavoidable;
+	}
 
 	void UpdateDisplayHp(float deltaTime) {
 		float speed = 0.5f;        // 比例分（差が大きいほど速い）

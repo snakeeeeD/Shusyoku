@@ -162,6 +162,11 @@ public:
     bool IsOnDiscardView(POINT p) const;
     void StartDiscardEffectAt(int cardIndex);
 
+    void DrawUnitStatusSprites(float footX, float footY, float scale, bool isBoss,
+        const HPBarInfo& bar, BuffManager& bm, POINT mousePos, float timer);
+    void DrawUnitStatusText(float footX, float footY, float scale, bool isBoss,
+        const HPBarInfo& bar, BuffManager& bm);
+
 private:
     SpriteRenderer* m_spriteRenderer = nullptr;
     TextRenderer* m_textRenderer = nullptr;

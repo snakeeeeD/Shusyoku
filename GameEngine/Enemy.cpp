@@ -411,7 +411,10 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
     const TargetSpec& tg = act.target;
 
     // 移動より前に「当たるか」を確定させる（＝予告と一致させる）
-    bool hitPlayer = IsThreateningCell(playerCol, playerRow, act);
+    bool aimingDecoy = (moveTargetCol >= 0 && (mtC != playerCol || mtR != playerRow));
+    bool hitPlayer = tg.unavoidable
+        ? !aimingDecoy                                   // 必中：デコイを狙ってなければプレイヤーへ
+        : IsThreateningCell(playerCol, playerRow, act);
 
     bool hitTarget = IsThreateningCell(mtC, mtR, act);
 

@@ -30,11 +30,8 @@ public:
         const RECT& cardArea);
 
     void UpdateEnemyHighlight(
-        const std::vector<Enemy*>& enemies,
-        GridMap* gridMap,
-        const Player* player,
-        int playerCol, int playerRow,
-        float timer);
+        const std::vector<Enemy*>& enemies, GridMap* gridMap, const Player* player,
+        int playerCol, int playerRow, float timer, int decoyCol, int decoyRow);
 
     void ClearPlayerHighlight(GridMap* gridMap);
     void ClearEnemyHighlight(GridMap* gridMap);

@@ -25,6 +25,7 @@
 
 enum class EnemyTurnPhase {
     WaitStart,
+    PoisonTick,
     ProcessEnemy,
     WaitAction,
     NextEnemy,
@@ -152,6 +153,8 @@ private:
 
     EnemyTurnPhase m_enemyPhase = EnemyTurnPhase::WaitStart;
     int m_currentEnemyIdx = 0;
+    int m_poisonIdx = 0;
+    int m_poisonSubTicks = 0;
     float m_enemyActionDelay = 0;
     static constexpr float ENEMY_ACTION_PAUSE = 0.05f;
     static constexpr float ENEMY_BETWEEN_PAUSE = 0.4f;

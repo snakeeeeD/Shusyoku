@@ -188,6 +188,22 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
                 m_player->GetBuffManager().AddBuff(gb);
             }
 
+            // 毒の瘴気：毎ターン開始時、全敵に毒を付与
+            int nox = m_player->GetBuffManager().GetBuffValue(BuffType::NoxiousFumes);
+            if (nox > 0)
+                for (auto enemy : m_enemies)
+                {
+                    if (enemy->GetHp() <= 0) continue;
+                    Buff pb; pb.type = BuffType::Poison; pb.value = nox; pb.duration = nox;
+                    pb.name = BuffInfo::Get(BuffType::Poison).name; pb.description = L"";
+                    enemy->GetBuffManager().AddBuff(pb);
+                    float wx = (enemy->gridCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                    float wz = (enemy->gridRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                    EffectManager::Play("poison_apply", wx, 0.5f, wz);
+                    FloatingTextManager::Spawn(wx, 0.7f, wz, std::to_wstring(nox),
+                        BuffInfo::Get(BuffType::Poison).color, 32.0f);
+                }
+
             // デバフダメージ
             auto dmg = m_player->GetBuffManager().GetTurnEndDamage();
             if (dmg.total() > 0)
@@ -247,6 +263,8 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
             m_enemyPhase = EnemyTurnPhase::WaitStart;
             m_currentEnemyIdx = 0;
+            m_poisonIdx = 0;         
+            m_poisonSubTicks = 0;
             m_enemyActionDelay = 0.8f;
         };
 
@@ -582,7 +600,8 @@ void BattleScene::Update(float deltaTime)
         if (m_battleResult != BattleResult::None) return;   // 勝敗決定後は何もしない
         m_highlighter.UpdateEnemyHighlight(
             m_enemies, m_gridMap, m_player,
-            m_playerCol, m_playerRow, m_highlightTimer);
+            m_playerCol, m_playerRow, m_highlightTimer,
+            m_decoyCol, m_decoyRow);
 
         m_battleUI->UpdateDrawCardEffects(deltaTime);
         m_battleUI->UpdatePlayCardEffects(deltaTime);
@@ -684,15 +703,66 @@ void BattleScene::Update(float deltaTime)
             switch (m_enemyPhase)
             {
             case EnemyTurnPhase::WaitStart:
+            {
                 m_enemyActionDelay -= deltaTime;
                 if (m_enemyActionDelay <= 0)
                 {
                     if (m_enemies.empty())
                         m_enemyPhase = EnemyTurnPhase::EndTurn;
                     else
-                        m_enemyPhase = EnemyTurnPhase::ProcessEnemy;
+                        m_enemyPhase = EnemyTurnPhase::PoisonTick;
                 }
                 break;
+            }
+            case EnemyTurnPhase::PoisonTick:
+            {
+                m_enemyActionDelay -= deltaTime;
+                if (m_enemyActionDelay > 0) break;
+
+                // 現在の敵にサブティックが残っていれば1回（連続攻撃風・少しずらす）
+                if (m_poisonSubTicks > 0)
+                {
+                    Enemy* e = (m_poisonIdx < (int)m_enemies.size()) ? m_enemies[m_poisonIdx] : nullptr;
+                    if (e && e->GetHp() > 0)
+                    {
+                        int pd = e->GetBuffManager().TickPoison();   // 現在の毒→ダメージ、毒-1
+                        if (pd > 0)
+                        {
+                            e->TakeDamage(pd, DamageFeel::Poison);
+                            ScreenShake::Add(0.15f);                 // 毒でも画面振動
+                        }
+                        if (e->GetHp() <= 0) m_poisonSubTicks = 1;   // 死んだら残り打ち切り
+                    }
+                    m_poisonSubTicks--;
+                    m_enemyActionDelay = 0.12f;                       // 連続の間隔
+                    if (m_poisonSubTicks <= 0) m_poisonIdx++;         // この敵完了→次へ
+                    break;
+                }
+
+                // 次の「生存＆毒持ち」敵を探す
+                while (m_poisonIdx < (int)m_enemies.size())
+                {
+                    Enemy* e = m_enemies[m_poisonIdx];
+                    if (e->GetHp() > 0 && e->GetBuffManager().GetBuffValue(BuffType::Poison) > 0) break;
+                    m_poisonIdx++;
+                }
+
+                if (m_poisonIdx >= (int)m_enemies.size())
+                {
+                    ProcessDeadEnemies();
+                    m_currentEnemyIdx = 0;
+                    m_enemyPhase = m_enemies.empty()
+                        ? EnemyTurnPhase::EndTurn : EnemyTurnPhase::ProcessEnemy;
+                    break;
+                }
+
+                // この敵のサブティック数をセット（1 + 脈動）
+                m_poisonSubTicks = 1 + m_player->GetBuffManager().GetBuffValue(BuffType::ToxicRhythm);
+                m_enemyActionDelay = 0.0f;   // すぐ最初のティックへ
+                break;
+            }
+
+
             case EnemyTurnPhase::ProcessEnemy:
             {
                 while (m_currentEnemyIdx < (int)m_enemies.size()
@@ -707,37 +777,28 @@ void BattleScene::Update(float deltaTime)
 
                 Enemy* enemy = m_enemies[m_currentEnemyIdx];
 
-                // 毒ダメージはこの敵の最初の行動時のみ
-                if (enemy->GetActionIndex() == 0)
+                int ai = enemy->GetActionIndex();
+                int tC = m_playerCol, tR = m_playerRow;
+                if (m_decoyCol >= 0)
                 {
-                    auto dmg = enemy->GetBuffManager().GetTurnEndDamage();
-                    if (dmg.total() > 0)
+                    if (enemy->IsActionUnavoidable(ai))
                     {
-                        enemy->TakeDamage(dmg.total(), DamageFeel::Poison);
-                        if (enemy->GetHp() <= 0)
-                        {
-                            ProcessDeadEnemies();          // 今死んだ敵を即座に消す
-                            m_enemyPhase = EnemyTurnPhase::WaitAction;
-                            m_enemyActionDelay = ENEMY_ACTION_PAUSE;
-                            break;
-                        }
+                        tC = m_decoyCol; tR = m_decoyRow;   // 必中はデコイ優先（近さ無視）
+                    }
+                    else
+                    {
+                        int dP = abs(enemy->gridCol - m_playerCol) + abs(enemy->gridRow - m_playerRow);
+                        int dD = abs(enemy->gridCol - m_decoyCol) + abs(enemy->gridRow - m_decoyRow);
+                        if (dD < dP) { tC = m_decoyCol; tR = m_decoyRow; }
                     }
                 }
 
-                int tC = m_playerCol, tR = m_playerRow;
-                if (m_decoyCol >= 0) {
-                    int dP = abs(enemy->gridCol - m_playerCol) + abs(enemy->gridRow - m_playerRow);
-                    int dD = abs(enemy->gridCol - m_decoyCol) + abs(enemy->gridRow - m_decoyRow);
-                    if (dD < dP) { tC = m_decoyCol; tR = m_decoyRow; }
-                }
-
                 // 現在の行動を実行
-                int ai = enemy->GetActionIndex();
                 bool targetedDecoy = (m_decoyCol >= 0 && tC == m_decoyCol && tR == m_decoyRow);
                 bool atk = false;
                 int damage = enemy->ExecuteAction(ai, m_playerCol, m_playerRow, m_gridMap, m_player, m_enemies, tC, tR, &atk);
 
-                m_playerCol = m_player->gridCol;   // 引き寄せで動いた分を反映
+                m_playerCol = m_player->gridCol;
                 m_playerRow = m_player->gridRow;
                 if (damage > 0)
                     m_player->TakeDamage(damage);
@@ -804,7 +865,7 @@ void BattleScene::Update(float deltaTime)
             case EnemyTurnPhase::EndTurn:
                 ProcessDeadEnemies();
                 for (auto enemy : m_enemies)
-                    enemy->GetBuffManager().OnTurnEnd();
+                    enemy->GetBuffManager().OnTurnEnd(false);  
                 m_turnManager.EndTurn();
                 break;
             }
@@ -1052,7 +1113,38 @@ void BattleScene::Draw()
     for (auto enemy : m_enemies)
         enemy->Draw3D(m_renderer3D);
 
+    m_renderer3D->SetDepthEnabled(false);
     EffectManager::Draw(m_renderer3D, TextureManager::Get("particle"));
+    // 必中攻撃の対象にクロスヘア（デコイ優先）。対象の実座標に合わせて画面端でもズレないように
+    bool showCross = false;
+    for (auto enemy : m_enemies)
+    {
+        const EnemyAction* act = enemy->GetNextAction();
+        if (act && act->target.unavoidable) { showCross = true; break; }
+    }
+    if (showCross)
+    {
+        float cx, cy, cz;
+        if (m_decoyCol >= 0)
+        {
+            cx = (m_decoyCol - m_gridMap->GetCols() / 2.0f) * 1.1f;   // デコイはマス固定
+            cz = (m_decoyRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+            cy = 0.4f;
+        }
+        else
+        {
+            cx = m_player->worldX;              // プレイヤーは実際の描画位置に合わせる
+            cz = m_player->worldZ;
+            cy = m_player->worldY + 0.35f;
+        }
+
+        m_renderer3D->SetDepthEnabled(false);
+        float pulse = 0.85f + 0.15f * sinf(m_highlightTimer * 6.0f);
+        m_renderer3D->DrawBillboard(TextureManager::Get("crosshair"),
+            cx, cy, cz, 0.9f * pulse, 0.9f * pulse, 0.0f, XMFLOAT4(1.0f, 0.3f, 0.2f, 0.95f));
+        m_renderer3D->SetDepthEnabled(true);
+    }
+    m_renderer3D->SetDepthEnabled(true);
 
     // 移動経路の終点に半透明プレイヤー
     if (m_pathBuilding && !m_movePath.empty())
@@ -1797,6 +1889,16 @@ void BattleScene::HandleInput()
                         m_multiHitDamage = execResult.multiHitDamage;
                         m_multiHitTimer = MULTI_HIT_INTERVAL;
                     }
+                    if (execResult.pendingSelection != CardEffectType::None)
+                    {
+                        m_cardSelecting = true;
+                        m_selectingType = execResult.pendingSelection;
+                        if (m_selectingType == CardEffectType::Search)
+                            m_showDrawPile = true;
+                        else if (m_selectingType == CardEffectType::Salvage)
+                            m_showDiscardPile = true;
+                    }
+
                     m_battleUI->OnCardRemoved(m_selectedCardIndex);
                     m_selectedCardIndex = -1;
                     cardJustUsed = true;
@@ -1871,10 +1973,11 @@ void BattleScene::HandleInput()
         {
             float bgX = m_screenWidth / 2.0f - 300.0f;
             float bgY = 50.0f;
-            const float cardW = 160.0f;
-            const float cardH = 50.0f;
-            const float padding = 10.0f;
-            const int cols = 3;
+            const float scale = 0.7f;
+            const float cardW = CardVisual::CARD_W * scale;
+            const float cardH = CardVisual::CARD_H * scale;
+            const float gap = 12.0f;
+            const int cols = 6;
 
             const auto& pile = m_showDrawPile
                 ? m_deck.GetDrawPile()
@@ -1889,8 +1992,8 @@ void BattleScene::HandleInput()
             {
                 int col = i % cols;
                 int row = i / cols;
-                float cx = bgX + 20.0f + col * (cardW + padding);
-                float cy = bgY + 50.0f + row * (cardH + padding);
+                float cx = bgX + 25.0f + col * (cardW + gap);
+                float cy = bgY + 50.0f + row * (cardH + gap);
 
                 if (mousePos.x >= cx && mousePos.x <= cx + cardW
                     && mousePos.y >= cy && mousePos.y <= cy + cardH)
@@ -2242,6 +2345,29 @@ void BattleScene::ProcessDeadEnemies()
             Buff b; b.type = BuffType::AttackUp; b.value = ks; b.duration = -1;
             b.name = L""; b.description = L"";
             m_player->GetBuffManager().AddBuff(b);
+        }
+        // 毒の伝染レリック：毒持ちが倒れたら周囲の敵へ同量の毒を分散
+        if (RelicManager::HasKind("poisonSpread"))
+        {
+            int pz = enemy->GetBuffManager().GetBuffValue(BuffType::Poison);
+            if (pz > 0)
+            {
+                for (auto other : m_enemies)   // 死んだ敵はerase済み＝生存のみ対象
+                {
+                    if (other->GetHp() <= 0) continue;   // 同時に死んだ敵は除外
+                    int dc = abs(other->gridCol - enemy->gridCol);
+                    int dr = abs(other->gridRow - enemy->gridRow);
+                    if (dc > 1 || dr > 1) continue;      // 周囲8マスのみ
+
+                    Buff pb; pb.type = BuffType::Poison; pb.value = pz; pb.duration = pz;
+                    pb.name = BuffInfo::Get(BuffType::Poison).name; pb.description = L"";
+                    other->GetBuffManager().AddBuff(pb);
+
+                    float wx = (other->gridCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                    float wz = (other->gridRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                    EffectManager::Play("poison_apply", wx, 0.5f, wz);
+                }
+            }
         }
 
         delete enemy;

@@ -9,7 +9,9 @@ public:
 
     void AddBuff(const Buff& buff);
     void RemoveBuff(BuffType type);
-    void OnTurnEnd();
+    void OnTurnEnd(bool decrementPoison = true);
+
+    int  TickPoison();
 
     bool  HasBuff(BuffType type) const;
     int   GetBuffValue(BuffType type) const;

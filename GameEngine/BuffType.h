@@ -42,4 +42,7 @@ enum class BuffType
     AttackUpTurn,   // このターンのみの攻撃UP（恒久AttackUpと分離）
     AttackGrowth,   // 毎ターン開始時、攻撃力が上昇（成長）
     Frenzy,         // 狂乱：与ダメ+value／被ダメ+50%／移動-1
+
+    NoxiousFumes,   // 毎ターン開始時、全敵に毒
+    ToxicRhythm,    // 毒の発動回数追加
 };

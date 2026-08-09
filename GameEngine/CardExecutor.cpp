@@ -50,6 +50,29 @@ static int EffectiveHits(const CardData& data)
     return h < 1 ? 1 : h;
 }
 
+// onHitデバフ付与時のVFX（buffType → effects.jsonのID）
+static void PlayOnHitVfx(const CardEffectData& e, Enemy* enemy, GridMap* gridMap)
+{
+    if (!e.hasEffect || e.buffType.empty() || !enemy) return;
+
+    std::string fx;
+    const std::string& b = e.buffType;
+    if (b == "Poison")     fx = "poison_apply";
+    else if (b == "Weak")       fx = "weaken";
+    else if (b == "Vulnerable") fx = "expose";
+    else if (b == "Root")       fx = "bind";
+    else if (b == "Burn")       fx = "burn";
+    else return;   // 対応エフェクトが無い種は出さない
+
+    float wx = (enemy->gridCol - gridMap->GetCols() / 2.0f) * 1.1f;
+    float wz = (enemy->gridRow - gridMap->GetRows() / 2.0f) * 1.1f;
+    EffectManager::Play(fx, wx, 0.5f, wz);
+
+    if (b == "Poison")
+        FloatingTextManager::Spawn(wx, 0.7f, wz, std::to_wstring(e.value),
+            BuffInfo::Get(BuffType::Poison).color, 32.0f);
+}
+
 static void ApplyAllEnemyEffect(const CardData& data, std::vector<Enemy*>& enemies)
 {
     if (!data.allEnemyEffect.hasEffect || data.allEnemyEffect.buffType.empty()) return;
@@ -129,6 +152,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 if (enemy->GetBuffManager().HasBuff(BuffType::Thorns))
                     player->TakeDamage(enemy->GetBuffManager().GetBuffValue(BuffType::Thorns));
                 CardEffect::ApplyOnHitEffect(data.onHitEffect, enemy->GetBuffManager());
+                PlayOnHitVfx(data.onHitEffect, enemy, gridMap);
 
                 if (data.onHitEffect.hasEffect)
                 {
@@ -196,6 +220,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                         if (enemy->GetBuffManager().HasBuff(BuffType::Thorns))
                             player->TakeDamage(enemy->GetBuffManager().GetBuffValue(BuffType::Thorns));
                         CardEffect::ApplyOnHitEffect(data.onHitEffect, enemy->GetBuffManager());
+                        PlayOnHitVfx(data.onHitEffect, enemy, gridMap);
                     }
                 }
 
@@ -305,6 +330,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                         if (hitEnemy->GetBuffManager().HasBuff(BuffType::Thorns))
                             player->TakeDamage(hitEnemy->GetBuffManager().GetBuffValue(BuffType::Thorns));
                         CardEffect::ApplyOnHitEffect(data.onHitEffect, hitEnemy->GetBuffManager());
+                        PlayOnHitVfx(data.onHitEffect, hitEnemy, gridMap);
                     }
 
                     result.cardUsed = true;
@@ -359,8 +385,61 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 }
             }
 
-            int dmg = player->GetBuffManager().GetFinalAttack(data.mainEffect.value);
-            target->TakeDamage(dmg);
+            int dmg = 0;
+            if (data.mainEffect.type == CardEffectType::Catalyst)
+            {
+                float wx = (target->gridCol - gridMap->GetCols() / 2.0f) * 1.1f;
+                float wz = (target->gridRow - gridMap->GetRows() / 2.0f) * 1.1f;
+                EffectManager::Play("poison_apply", wx, 0.5f, wz);
+
+                int p = target->GetBuffManager().GetBuffValue(BuffType::Poison);
+                if (p > 0)
+                {
+                    int add = p * (data.mainEffect.value - 1);
+                    Buff b; b.type = BuffType::Poison;
+                    b.value = add;
+                    b.duration = add;
+                    b.name = BuffInfo::Get(BuffType::Poison).name; b.description = L"";
+                    target->GetBuffManager().AddBuff(b);
+                }
+            }
+            else if (data.mainEffect.type == CardEffectType::DrainPoison)
+            {
+                // 対象の毒を吸収（消す）→ その value分の1 を回復
+                int p = target->GetBuffManager().GetBuffValue(BuffType::Poison);
+                if (p > 0)
+                {
+                    int heal = p / data.mainEffect.value;   // value=10→1/10, 強化5→1/5
+                    if (heal < 1) heal = 1;                  // 毒があれば最低1回復
+                    player->Heal(heal);
+                    target->GetBuffManager().RemoveBuff(BuffType::Poison);   // 吸収＝消費
+                }
+                float wx = (target->gridCol - gridMap->GetCols() / 2.0f) * 1.1f;
+                float wz = (target->gridRow - gridMap->GetRows() / 2.0f) * 1.1f;
+                EffectManager::Play("poison_apply", wx, 0.5f, wz);
+            }
+            else if (data.mainEffect.type == CardEffectType::PoisonBurst)
+            {
+                // 毒を付与 → その毒ぶんを即座にダメージ（毒は残って継続）
+                Buff b; b.type = BuffType::Poison;
+                b.value = data.mainEffect.value;
+                b.duration = data.mainEffect.value;
+                b.name = BuffInfo::Get(BuffType::Poison).name; b.description = L"";
+                target->GetBuffManager().AddBuff(b);
+
+                int total = target->GetBuffManager().GetBuffValue(BuffType::Poison);
+                target->TakeDamage(total, DamageFeel::Poison);   // 今ある毒の総量ぶん即ダメージ
+
+                float wx = (target->gridCol - gridMap->GetCols() / 2.0f) * 1.1f;
+                float wz = (target->gridRow - gridMap->GetRows() / 2.0f) * 1.1f;
+                EffectManager::Play("poison_apply", wx, 0.5f, wz);
+            }
+            else
+            {
+                dmg = player->GetBuffManager().GetFinalAttack(data.mainEffect.value);
+                target->TakeDamage(dmg);
+            }
+
             int totalHits = EffectiveHits(data);
             if (totalHits > 1)
             {
@@ -373,6 +452,8 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 player->TakeDamage(target->GetBuffManager().GetBuffValue(BuffType::Thorns));
             CardEffect::ApplyOnHitEffect(data.onHitEffect, target->GetBuffManager());
             CardEffect::ApplyOnHitEffect(data.onHitEffect2, target->GetBuffManager());
+            PlayOnHitVfx(data.onHitEffect, target, gridMap); 
+            PlayOnHitVfx(data.onHitEffect2, target, gridMap);
 
             // ノックバック/引き寄せ
             if (data.onHitEffect.hasEffect)

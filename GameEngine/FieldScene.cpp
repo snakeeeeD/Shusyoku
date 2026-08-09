@@ -83,6 +83,8 @@ bool FieldScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         m_currentBattleCategory =
             (curNode.type == FieldNodeType::Elite) ? EncCategory::Elite :
             (curNode.type == FieldNodeType::Boss) ? EncCategory::Boss : EncCategory::Normal;
+        m_currentBattleTier = 1 + m_playerCol * 3 / GRID_COLS;
+        if (m_currentBattleTier > 3) m_currentBattleTier = 3;
         m_resumeBattle = true;
     }
 

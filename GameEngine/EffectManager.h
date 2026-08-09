@@ -47,16 +47,18 @@ public:
 
     static void Draw(Renderer3D* r, ID3D11ShaderResourceView* tex)
     {
+        const float SCALE = 2.0f;   // 全体のエフェクト倍率（ここ1つで調整）
         for (auto& p : m_particles)
         {
-            float t = 1.0f - p.life / p.lifeMax;    // 0→1
+            float t = 1.0f - p.life / p.lifeMax;
             XMFLOAT4 c(
                 p.colorStart.x + (p.colorEnd.x - p.colorStart.x) * t,
                 p.colorStart.y + (p.colorEnd.y - p.colorStart.y) * t,
                 p.colorStart.z + (p.colorEnd.z - p.colorStart.z) * t,
                 p.colorStart.w + (p.colorEnd.w - p.colorStart.w) * t);
-            ID3D11ShaderResourceView* pt = p.tex ? p.tex : tex;   // 粒子のtex優先、無ければ引数のデフォルト
-            r->DrawBillboard(pt, p.pos.x, p.pos.y, p.pos.z, p.scale, p.scale, 0.0f, c);
+            ID3D11ShaderResourceView* pt = p.tex ? p.tex : tex;
+            float sc = p.scale * SCALE;                          // ← 倍率をかける
+            r->DrawBillboard(pt, p.pos.x, p.pos.y, p.pos.z, sc, sc, 0.0f, c);
         }
     }
 

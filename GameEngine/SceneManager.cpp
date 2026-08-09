@@ -119,18 +119,24 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	// 未設定は 1.0
 
 	TextureManager::Load("white", L"Assets/Test/White.png");
+
 	TextureManager::Load("particle", L"Assets/Particles/circle.png");
 	TextureManager::Load("particle_poison", L"Assets/Particles/circle_01.png");
 	TextureManager::Load("fire", L"Assets/Particles/fire.png");
 	TextureManager::Load("magic", L"Assets/Particles/magic.png");
 	TextureManager::Load("smoke", L"Assets/Particles/smoke.png");
 	TextureManager::Load("star", L"Assets/Particles/star.png");
+	TextureManager::Load("skull", L"Assets/Particles/skull.png");
+	TextureManager::Load("crosshair", L"Assets/Particles/crosshair.png");
+
 	TextureManager::Load("title", L"Assets/Test/Title.png");
 	TextureManager::Load("battle_bg", L"Assets/Field/GrassField.jpg");
 	TextureManager::Load("map_bg", L"Assets/Field/Map.jpg");
 	TextureManager::Load("cardSelect_bg", L"Assets/Field/CardSelect.jpeg");
+
 	TextureManager::Load("player", L"Assets/Player/yuusya_game.png");
 	TextureManager::Load("kakashi", L"Assets/Player/kakashi.png");
+
 	TextureManager::Load("enemy_slime", L"Assets/Enemy/slime.png");
 	TextureManager::Load("enemy_goblin", L"Assets/Enemy/goblin.png");
 	TextureManager::Load("enemy_orc", L"Assets/Enemy/orc.png");
@@ -304,6 +310,8 @@ void SceneManager::DoChangeScene(SceneType type)
 void SceneManager::Draw()
 {
 	if (m_currentScene) m_currentScene->Draw();
+	if (m_invOpen) DrawInventory();
+	if (m_mapOpen) DrawMap();
 	if (m_currentType != SceneType::Title) DrawOverlay();
 	if (m_eventOpen && !m_mapOpen && !m_invOpen && !m_deckOpen)
 	{
@@ -312,8 +320,6 @@ void SceneManager::Draw()
 		else DrawEventPicker();
 	}
 	if (m_craftOpen) DrawCraft();
-	if (m_invOpen) DrawInventory();
-	if (m_mapOpen) DrawMap();
 	if (m_restOpen && !m_mapOpen && !m_invOpen && !m_deckOpen && !m_craftOpen) DrawRest();
 	if (m_craftFxTimer > 0.0f) DrawCraftFx();  
 	if (m_currentType != SceneType::Title) { DrawRelicBar(); DrawBarTips(); }
@@ -354,12 +360,6 @@ void SceneManager::DrawOverlay()
 	{
 		m_uiSprite->DrawSprite(white, 0.0f, 0.0f, (float)m_screenWidth, (float)m_screenHeight,
 			0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.8f));          // 暗幕
-		m_uiSprite->DrawSprite(white, 20.0f, 45.0f, 100.0f, 28.0f, 0.0f,
-			m_deckRemoveMode ? XMFLOAT4(0.7f, 0.2f, 0.2f, 1.0f)
-			: XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f));   // 削除トグル
-		m_uiSprite->DrawSprite(white, 130.0f, 45.0f, 100.0f, 28.0f, 0.0f,
-			m_deckUpgradeMode ? XMFLOAT4(0.8f, 0.7f, 0.2f, 1.0f)
-			: XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f));
 		DrawDeckCards(false);
 	}
 
@@ -371,8 +371,6 @@ void SceneManager::DrawOverlay()
 	wchar_t buf[32];
 	swprintf_s(buf, L"%d", deckCount);
 	m_textRenderer->DrawText(buf, btnX + 108.0f, 10.0f, 16.0f, D2D1::ColorF(1, 1, 1));    // ボタンの右横に枚数
-	if (m_deckOpen)
-		m_textRenderer->DrawText(L"Remove", 30.0f, 50.0f, 16.0f, D2D1::ColorF(1, 1, 1));
 	if (m_deckOpen) DrawDeckCards(true);
 	m_textRenderer->DrawText(L"Map", m_screenWidth - 670.0f, 10.0f, 16.0f, D2D1::ColorF(1, 1, 1));
 	wchar_t gbuf[32];
@@ -400,8 +398,6 @@ void SceneManager::DrawOverlay()
 	m_textRenderer->DrawText(lbuf, 280.0f, 10.0f, 16.0f, D2D1::ColorF(0.75f, 0.8f, 1.0f));
 
 	m_textRenderer->DrawText(L"Items", m_screenWidth - 460.0f, 10.0f, 16.0f, D2D1::ColorF(1, 1, 1));
-	if (m_deckOpen)
-		m_textRenderer->DrawText(L"Upgrade", 140.0f, 50.0f, 16.0f, D2D1::ColorF(1, 1, 1));
 	m_textRenderer->End();
 }
 

@@ -424,69 +424,19 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             float barX = footX - barWidth / 2.0f;
             float barY = footY - 30.0f;
 
+            float footX2, footY2;
+
+            int trE = 1 + ctx.player->GetBuffManager().GetBuffValue(BuffType::ToxicRhythm);
+            int ppE = enemy->GetBuffManager().GetBuffValue(BuffType::Poison);
+            int psumE = 0; for (int i = 0; i < trE; i++) { int v = ppE - i; if (v <= 0) break; psumE += v; }
+
             HPBarInfo eBar;
-            eBar.currentHP = enemy->GetHp();
-            eBar.maxHP = enemy->GetMaxHp();
-            eBar.displayHP = enemy->GetDisplayHp();
-            eBar.poisonDmg = enemy->GetBuffManager().GetTurnEndDamage().total();
-            eBar.hasBurn = enemy->GetBuffManager().HasBuff(BuffType::Burn);
-            DrawHPBar(barX, barY, barWidth, barHeight, eBar, ctx.highlightTimer);
+            eBar.currentHP = enemy->GetHp(); eBar.maxHP = enemy->GetMaxHp();
+            eBar.displayHP = enemy->GetDisplayHp(); eBar.block = enemy->GetBlock();
+            eBar.poisonDmg = psumE; eBar.hasBurn = enemy->GetBuffManager().HasBuff(BuffType::Burn);
 
-            // ブロックアイコン（HPバー左端）
-            if (enemy->GetBlock() > 0)
-            {
-                float iconSize = barHeight * 1.5f;
-                float iconX = barX - iconSize / 2.0f;
-                float iconY = barY + (barHeight - iconSize) / 2.0f;
-                m_spriteRenderer->DrawSprite(m_whiteTexture,
-                    iconX - 1.0f, iconY - 1.0f, iconSize + 2.0f, iconSize + 2.0f,
-                    0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
-                m_spriteRenderer->DrawSprite(m_whiteTexture,
-                    iconX, iconY, iconSize, iconSize,
-                    0.0f, XMFLOAT4(0.3f, 0.6f, 1.0f, 1.0f));
-            }
-
-            // --- バフ/デバフアイコン（HPバーの下） ---
-            float buffIconY = barY + barHeight + 4.0f;
-            float buffIconX = barX;
-            float buffMaxX = barX + barWidth + 40.0f;
-            for (auto& buff : enemy->GetBuffManager().GetBuffs())
-            {
-                float iconSize = 16.0f;
-                if (buffIconX + iconSize + 20.0f > buffMaxX)
-                {
-                    buffIconX = barX;
-                    buffIconY += iconSize + 6.0f;
-                }
-                XMFLOAT4 buffColor = BuffInfo::Get(buff.type).color;
-                bool iconHover = (ctx.mousePos.x >= buffIconX && ctx.mousePos.x <= buffIconX + iconSize
-                    && ctx.mousePos.y >= buffIconY && ctx.mousePos.y <= buffIconY + iconSize);
-                if (iconHover)
-                {
-                    m_hasHoveredBuff = true;
-                    m_hoveredBuffType = buff.type;
-                    m_hoveredBuffValue = BuffInfo::IsDurationBased(buff.type) ? buff.duration : buff.value;
-                    m_hoveredBuffX = buffIconX;
-                    m_hoveredBuffY = buffIconY;
-                }
-                    auto btex = TextureManager::Get(BuffInfo::Get(buff.type).texture);
-                if (btex)
-                {
-                    m_spriteRenderer->DrawSprite(btex,
-                        buffIconX, buffIconY, iconSize, iconSize, 0.0f,
-                        iconHover ? XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f) : XMFLOAT4(0.85f, 0.85f, 0.85f, 1.0f));
-                }
-                else
-                {
-                    m_spriteRenderer->DrawSprite(m_whiteTexture,
-                        buffIconX - 1.0f, buffIconY - 1.0f, iconSize + 2.0f, iconSize + 2.0f,
-                        0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
-                    m_spriteRenderer->DrawSprite(m_whiteTexture,
-                        buffIconX, buffIconY, iconSize, iconSize, 0.0f,
-                        iconHover ? XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f) : buffColor);
-                }
-                buffIconX += iconSize + 20.0f;
-            }
+            DrawUnitStatusSprites(footX, footY, scale, enemy->IsBoss(), eBar,
+                enemy->GetBuffManager(), ctx.mousePos, ctx.highlightTimer);
 
             // --- 次の行動アイコン（頭上） ---
             {
@@ -502,6 +452,28 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                                 iconX, iconY, EnemyIntentVisual::ICON_SIZE);
                             iconX += EnemyIntentVisual::STEP;
                         }
+            }
+
+            {
+                float footX, footY;
+                if (WorldToScreen(ctx.player->worldX, 0.0f, ctx.player->worldZ + 0.5f, ctx.renderer3D, footX, footY))
+                {
+                    float scale = 1.0f / ctx.cameraZoom;
+                    HPBarInfo pBar;
+                    pBar.currentHP = ctx.player->GetHp(); pBar.maxHP = ctx.player->GetMaxHp();
+                    pBar.displayHP = ctx.player->GetDisplayHp(); pBar.block = ctx.player->GetBlock();
+                    pBar.poisonDmg = ctx.player->GetBuffManager().GetTurnEndDamage().total();
+                    pBar.hasBurn = ctx.player->GetBuffManager().HasBuff(BuffType::Burn);
+
+                    m_spriteRenderer->Begin();
+                    DrawUnitStatusSprites(footX, footY, scale, false, pBar,
+                        ctx.player->GetBuffManager(), ctx.mousePos, ctx.highlightTimer);
+                    m_spriteRenderer->End();
+
+                    m_textRenderer->Begin();
+                    DrawUnitStatusText(footX, footY, scale, false, pBar, ctx.player->GetBuffManager());
+                    m_textRenderer->End();
+                }
             }
         }
 
@@ -521,36 +493,10 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             float barY = footY - 30.0f;
             float fontSize = max(8.0f, (enemy->IsBoss() ? 10.0f : 8.0f) * scale);
 
-            // HP数値
-            wchar_t hpText[32];
-            swprintf_s(hpText, L"%d/%d", enemy->GetHp(), enemy->GetMaxHp());
-            float textW = wcslen(hpText) * fontSize * 0.5f;
-            float textX = barX + (barWidth - textW) / 2.0f;
-            float textY = barY + (barHeight - fontSize) / 2.0f - 3.0;
-            m_textRenderer->DrawText(hpText, textX + 1.0f, textY + 1.0f,
-                fontSize, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
-            m_textRenderer->DrawText(hpText, textX, textY,
-                fontSize, D2D1::ColorF(D2D1::ColorF::White));
-
-            // ブロック数値
-            if (enemy->GetBlock() > 0)
-            {
-                float iconSize = barHeight * 1.5f;
-                float iconX = barX - iconSize / 2.0f;
-                float iconY = barY + (barHeight - iconSize) / 2.0f - 2.0;
-                wchar_t blockText[16];
-                swprintf_s(blockText, L"%d", enemy->GetBlock());
-                float blockFontSize = max(7.0f, fontSize * 0.9f);
-                float bTextW = wcslen(blockText) * blockFontSize * 0.5f;
-                m_textRenderer->DrawText(blockText,
-                    iconX + (iconSize - bTextW) / 2.0f + 1.0f,
-                    iconY + (iconSize - blockFontSize) / 2.0f + 1.0f,
-                    blockFontSize, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
-                m_textRenderer->DrawText(blockText,
-                    iconX + (iconSize - bTextW) / 2.0f,
-                    iconY + (iconSize - blockFontSize) / 2.0f,
-                    blockFontSize, D2D1::ColorF(D2D1::ColorF::White));
-            }
+            HPBarInfo eBar;
+            eBar.currentHP = enemy->GetHp(); eBar.maxHP = enemy->GetMaxHp();
+            eBar.block = enemy->GetBlock();
+            DrawUnitStatusText(footX, footY, scale, enemy->IsBoss(), eBar, enemy->GetBuffManager());
 
             // 行動の数値（頭上）
             const EnemyAction* action = enemy->GetNextAction();
@@ -1738,7 +1684,11 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
         panelBar.maxHP = enemy->GetMaxHp();
         panelBar.displayHP = enemy->GetDisplayHp();
         panelBar.block = enemy->GetBlock();
-        panelBar.poisonDmg = enemy->GetBuffManager().GetTurnEndDamage().total();
+        int tr = 1 + ctx.player->GetBuffManager().GetBuffValue(BuffType::ToxicRhythm);
+        int pp = enemy->GetBuffManager().GetBuffValue(BuffType::Poison);
+        int psum = 0;
+        for (int i = 0; i < tr; i++) { int v = pp - i; if (v <= 0) break; psum += v; }
+        panelBar.poisonDmg = psum;
         panelBar.hasBurn = enemy->GetBuffManager().HasBuff(BuffType::Burn);
         DrawHPBar(barX, barY, barW, barH, panelBar, ctx.highlightTimer);
 
@@ -2071,4 +2021,96 @@ void BattleUI::StartDiscardEffectAt(int cardIndex)
     effect.timer = 0.0f;
     effect.done = false;
     m_discardCardEffects.push_back(effect);
+}
+
+void BattleUI::DrawUnitStatusSprites(float footX, float footY, float scale, bool isBoss,
+    const HPBarInfo& bar, BuffManager& bm, POINT mousePos, float timer)
+{
+    float barWidth = (isBoss ? 100.0f : 50.0f) * scale;
+    float barHeight = (isBoss ? 15.0f : 10.0f) * scale;
+    float barX = footX - barWidth / 2.0f;
+    float barY = footY - 30.0f;
+
+    DrawHPBar(barX, barY, barWidth, barHeight, bar, timer);
+
+    // ブロックアイコン（HPバー左端）
+    if (bar.block > 0)
+    {
+        float iconSize = barHeight * 1.5f;
+        float iconX = barX - iconSize / 2.0f;
+        float iconY = barY + (barHeight - iconSize) / 2.0f;
+        m_spriteRenderer->DrawSprite(m_whiteTexture, iconX - 1.0f, iconY - 1.0f, iconSize + 2.0f, iconSize + 2.0f, 0.0f, XMFLOAT4(0, 0, 0, 1));
+        m_spriteRenderer->DrawSprite(m_whiteTexture, iconX, iconY, iconSize, iconSize, 0.0f, XMFLOAT4(0.3f, 0.6f, 1.0f, 1.0f));
+    }
+
+    // バフ/デバフアイコン
+    float bIconY = barY + barHeight + 4.0f, bIconX = barX;
+    float bMaxX = barX + barWidth + 40.0f;
+    for (auto& buff : bm.GetBuffs())
+    {
+        float iconSize = 16.0f;
+        if (bIconX + iconSize + 20.0f > bMaxX) { bIconX = barX; bIconY += iconSize + 6.0f; }
+        XMFLOAT4 buffColor = BuffInfo::Get(buff.type).color;
+        bool hov = (mousePos.x >= bIconX && mousePos.x <= bIconX + iconSize
+            && mousePos.y >= bIconY && mousePos.y <= bIconY + iconSize);
+        if (hov)
+        {
+            m_hasHoveredBuff = true; m_hoveredBuffType = buff.type;
+            m_hoveredBuffValue = BuffInfo::IsDurationBased(buff.type) ? buff.duration : buff.value;
+            m_hoveredBuffX = bIconX; m_hoveredBuffY = bIconY;
+        }
+        auto btex = TextureManager::Get(BuffInfo::Get(buff.type).texture);
+        if (btex)
+            m_spriteRenderer->DrawSprite(btex, bIconX, bIconY, iconSize, iconSize, 0.0f, hov ? XMFLOAT4(1, 1, 1, 1) : XMFLOAT4(0.85f, 0.85f, 0.85f, 1));
+        else
+        {
+            m_spriteRenderer->DrawSprite(m_whiteTexture, bIconX - 1, bIconY - 1, iconSize + 2, iconSize + 2, 0.0f, XMFLOAT4(0, 0, 0, 1));
+            m_spriteRenderer->DrawSprite(m_whiteTexture, bIconX, bIconY, iconSize, iconSize, 0.0f, hov ? XMFLOAT4(1, 1, 1, 1) : buffColor);
+        }
+        bIconX += iconSize + 20.0f;
+    }
+}
+
+void BattleUI::DrawUnitStatusText(float footX, float footY, float scale, bool isBoss,
+    const HPBarInfo& bar, BuffManager& bm)
+{
+    float barWidth = (isBoss ? 100.0f : 50.0f) * scale;
+    float barHeight = (isBoss ? 15.0f : 10.0f) * scale;
+    float barX = footX - barWidth / 2.0f;
+    float barY = footY - 30.0f;
+    float fontSize = max(8.0f, (isBoss ? 10.0f : 8.0f) * scale);
+
+    // HP数値
+    wchar_t hp[32]; swprintf_s(hp, L"%d/%d", bar.currentHP, bar.maxHP);
+    float tw = wcslen(hp) * fontSize * 0.5f;
+    float tx = barX + (barWidth - tw) / 2.0f;
+    float ty = barY + (barHeight - fontSize) / 2.0f - 3.0f;
+    m_textRenderer->DrawText(hp, tx + 1, ty + 1, fontSize, D2D1::ColorF(0, 0, 0, 1));
+    m_textRenderer->DrawText(hp, tx, ty, fontSize, D2D1::ColorF(D2D1::ColorF::White));
+
+    // ブロック数値
+    if (bar.block > 0)
+    {
+        float iconSize = barHeight * 1.5f;
+        float iconX = barX - iconSize / 2.0f;
+        float iconY = barY + (barHeight - iconSize) / 2.0f - 2.0f;
+        wchar_t bt[16]; swprintf_s(bt, L"%d", bar.block);
+        float bFont = max(7.0f, fontSize * 0.9f);
+        float btW = wcslen(bt) * bFont * 0.5f;
+        m_textRenderer->DrawText(bt, iconX + (iconSize - btW) / 2.0f + 1.0f, iconY + (iconSize - bFont) / 2.0f + 1.0f, bFont, D2D1::ColorF(0, 0, 0, 1));
+        m_textRenderer->DrawText(bt, iconX + (iconSize - btW) / 2.0f, iconY + (iconSize - bFont) / 2.0f, bFont, D2D1::ColorF(D2D1::ColorF::White));
+    }
+
+    // バフ/デバフ数値
+    float vY = barY + barHeight + 4.0f, vX = barX, vMaxX = barX + barWidth + 40.0f;
+    for (auto& buff : bm.GetBuffs())
+    {
+        float iconSize = 16.0f;
+        if (vX + iconSize + 20.0f > vMaxX) { vX = barX; vY += iconSize + 6.0f; }
+        wchar_t bv[16];
+        if (BuffInfo::IsDurationBased(buff.type)) swprintf_s(bv, L"%dT", buff.duration);
+        else swprintf_s(bv, L"%d", buff.value);
+        m_textRenderer->DrawText(bv, vX + iconSize + 2.0f, vY + 1.0f, 11.0f, D2D1::ColorF(D2D1::ColorF::White));
+        vX += iconSize + 20.0f;
+    }
 }

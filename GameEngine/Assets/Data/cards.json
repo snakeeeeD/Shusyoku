@@ -135,6 +135,228 @@
       }
     },
     {
+      "id": "ATK_venom_coat",
+      "name": "毒塗り",
+      "type": "Attack",
+      "rarity": "Common",
+      "tags": [ "Poison" ],
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "毒{onhit}を付与",
+      "upgrade": { "onHitValue": 2 },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 0
+      },
+      "onHitEffect": {
+        "type": "ApplyDebuff",
+        "value": 5,
+        "duration": 5,
+        "buffType": "Poison"
+      }
+    },
+    {
+      "id": "ATK_poison_mist",
+      "name": "毒霧",
+      "type": "Attack",
+      "rarity": "Common",
+      "tags": [ "Poison" ],
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Area",
+      "description": "範囲{value}ダメージ 毒{onhit}",
+      "upgrade": { "onHitValue": 1 },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 2
+      },
+      "onHitEffect": {
+        "type": "ApplyDebuff",
+        "value": 2,
+        "duration": 3,
+        "buffType": "Poison"
+      }
+    },
+    {
+      "id": "ATK_venom_lash",
+      "name": "毒鞭",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "tags": [ "Poison" ],
+      "cost": 1,
+      "range": 3,
+      "rangeType": "Cross",
+      "pierce": true,
+      "description": "直線{value}ダメージ 毒{onhit}",
+      "upgrade": { "range": 1 },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 3
+      },
+      "onHitEffect": {
+        "type": "ApplyDebuff",
+        "value": 3,
+        "duration": 3,
+        "buffType": "Poison"
+      }
+    },
+    {
+      "id": "ATK_enfeeble_sting",
+      "name": "衰弱の毒",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "tags": [ "Poison" ],
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "{value}ダメージ 毒{onhit} 弱体",
+      "upgrade": { "onHitValue": 2 },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 3
+      },
+      "onHitEffect": {
+        "type": "ApplyDebuff",
+        "value": 3,
+        "duration": 3,
+        "buffType": "Poison"
+      },
+      "onHitEffect2": {
+        "type": "ApplyDebuff",
+        "value": 1,
+        "duration": 2,
+        "buffType": "Weak"
+      }
+    },
+    {
+      "id": "ATK_venom_fan",
+      "name": "毒の扇",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "tags": [ "Poison" ],
+      "cost": 1,
+      "range": 2,
+      "rangeType": "Cone",
+      "description": "扇状に{value}ダメージ 毒{onhit}",
+      "upgrade": { "onHitValue": 2 },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 4
+      },
+      "onHitEffect": {
+        "type": "ApplyDebuff",
+        "value": 3,
+        "duration": 3,
+        "buffType": "Poison"
+      }
+    },
+    {
+      "id": "ATK_catalyst",
+      "name": "触媒",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "tags": [ "Poison" ],
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "対象の毒を2倍にする",
+      "exhaust": true,
+      "upgrade": {
+        "mainValue": 1,
+        "description": "対象の毒を3倍にする"
+      },
+      "mainEffect": {
+        "type": "Catalyst",
+        "value": 2
+      }
+    },
+    {
+      "id": "ATK_drain",
+      "name": "毒吸い",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "tags": [ "Poison" ],
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "exhaust": true,
+      "description": "対象の毒を吸収し その1/10を回復",
+      "upgrade": {
+        "mainValue": -5,
+        "description": "対象の毒を吸収し その1/5を回復"
+      },
+      "mainEffect": {
+        "type": "DrainPoison",
+        "value": 10
+      }
+    },
+    {
+      "id": "ATK_plague_storm",
+      "name": "疫病の嵐",
+      "type": "Attack",
+      "rarity": "Rare",
+      "tags": [ "Poison" ],
+      "cost": 3,
+      "range": 2,
+      "rangeType": "Area",
+      "description": "範囲{value}ダメージ 毒{onhit}",
+      "upgrade": { "onHitValue": 3 },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 6
+      },
+      "onHitEffect": {
+        "type": "ApplyDebuff",
+        "value": 6,
+        "duration": 6,
+        "buffType": "Poison"
+      }
+    },
+    {
+      "id": "ATK_venom_bloom",
+      "name": "毒の華",
+      "type": "Attack",
+      "rarity": "Rare",
+      "tags": [ "Poison" ],
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "{value}ダメージ 毒{onhit} 全敵に毒2",
+      "upgrade": { "onHitValue": 2 },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 3
+      },
+      "onHitEffect": {
+        "type": "ApplyDebuff",
+        "value": 3,
+        "duration": 3,
+        "buffType": "Poison"
+      },
+      "allEnemyEffect": {
+        "buffType": "Poison",
+        "value": 2,
+        "duration": 2
+      }
+    },
+    {
+      "id": "ATK_envenom",
+      "name": "猛毒注入",
+      "type": "Attack",
+      "rarity": "Rare",
+      "tags": [ "Poison" ],
+      "cost": 2,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "毒を{value}付与し 現在の毒ぶん即ダメージ",
+      "upgrade": { "mainValue": 4 },
+      "mainEffect": {
+        "type": "PoisonBurst",
+        "value": 9
+      }
+    },
+    {
       "id": "ATK_knife",
       "name": "ナイフ",
       "type": "Attack",
@@ -764,6 +986,43 @@
         "buffType": "DefenseUp"
       }
     },
+    {
+      "id": "POW_noxious",
+      "name": "毒の瘴気",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "tags": [ "Poison" ],
+      "cost": 2,
+      "range": 0,
+      "rangeType": "None",
+      "description": "毎ターン全ての敵に毒{value}",
+      "upgrade": { "mainValue": 1 },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 2,
+        "buffType": "NoxiousFumes",
+        "duration": -1
+      }
+    },
+    {
+      "id": "POW_toxic_rhythm",
+      "name": "毒の脈動",
+      "type": "Power",
+      "rarity": "Rare",
+      "tags": [ "Poison" ],
+      "cost": 3,
+      "range": 0,
+      "rangeType": "None",
+      "description": "毒のダメージ回数+{value}",
+      "upgrade": { "mainValue": 1 },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 1,
+        "buffType": "ToxicRhythm",
+        "duration": -1
+      }
+    },
+
     {
       "id": "SKL_Trap_explosion_trap",
       "name": "爆発の罠",

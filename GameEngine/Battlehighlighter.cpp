@@ -347,52 +347,68 @@ void BattleHighlighter::UpdatePlayerHighlight(
 
 void BattleHighlighter::UpdateEnemyHighlight(
     const std::vector<Enemy*>& enemies, GridMap* gridMap, const Player* player,
-    int playerCol, int playerRow, float timer)
+    int playerCol, int playerRow, float timer, int decoyCol, int decoyRow)
 {
+    // 敵ごとの色（範囲を識別しやすく）
+    static const XMFLOAT4 kHues[] = {
+        {1.0f, 0.40f, 0.35f, 1.0f}, {0.40f, 0.65f, 1.0f, 1.0f}, {0.50f, 1.0f, 0.45f, 1.0f},
+        {1.0f, 0.55f, 1.0f, 1.0f}, {1.0f, 0.85f, 0.30f, 1.0f}, {0.50f, 0.95f, 0.95f, 1.0f},
+    };
+    const int kHueCount = 6;
+
     ClearEnemyHighlight(gridMap);
     for (auto e : enemies) e->color = HighlightPalette::EnemyNormal;
 
-    std::map<std::pair<int, int>, int> cellDist;
+    std::map<std::pair<int, int>, std::pair<int, int>> cellOwner;  // マス -> (距離, 敵index)
     std::set<std::pair<int, int>> selCells;
+
     for (int ei = 0; ei < (int)enemies.size(); ei++)
     {
         Enemy* enemy = enemies[ei];
         const EnemyAction* action = enemy->GetNextAction();
         if (!action || !EnemyIntentVisual::IsHarmful(*action)) continue;
 
+        auto mark = [&](int c, int r, int dist)
+            {
+                auto key = std::make_pair(c, r);
+                auto it = cellOwner.find(key);
+                if (it == cellOwner.end() || dist < it->second.first)
+                    cellOwner[key] = { dist, ei };            // 近い敵が優先
+                if (ei == m_selectedEnemy) selCells.insert(key);
+            };
+
         if (action->target.unavoidable)
         {
-            // 必中：どこにいても当たるので、プレイヤーのマスだけ示す
-            auto it = cellDist.find({ playerCol, playerRow });
-            if (it == cellDist.end() || 1 < it->second) cellDist[{playerCol, playerRow}] = 1;
-            if (ei == m_selectedEnemy) selCells.insert({ playerCol, playerRow });
+            // 必中：デコイがあればデコイのマス、無ければプレイヤーのマス
+            int tc = (decoyCol >= 0) ? decoyCol : playerCol;
+            int tr = (decoyCol >= 0) ? decoyRow : playerRow;
+            mark(tc, tr, 1);
             continue;
         }
+
         for (auto& [c, r] : enemy->GetThreatCells(*action, gridMap))
         {
             auto& cell = gridMap->GetCell(c, r);
             if (cell.type == CellType::Enemy || cell.type == CellType::Boss) continue;
-
             int dist = abs(c - enemy->gridCol) + abs(r - enemy->gridRow);
-            auto it = cellDist.find({ c, r });
-            if (it == cellDist.end() || dist < it->second) cellDist[{c, r}] = dist;
-
-            if (ei == m_selectedEnemy) selCells.insert({ c, r });
+            mark(c, r, dist);
         }
     }
 
     m_enemyCycleTimer += 0.005f;
-    for (auto& [pos, dist] : cellDist)
+    for (auto& [pos, info] : cellOwner)
     {
+        int dist = info.first;
+        int ei = info.second;
         float w = 0.5f + 0.5f * sin(m_enemyCycleTimer - dist * 0.8f);
         float br = 0.25f + 0.45f * w;
+        const XMFLOAT4& hue = kHues[ei % kHueCount];
 
         XMFLOAT4 c = selCells.count(pos)
-            ? HighlightPalette::Scale(HighlightPalette::ThreatFocus, br * 1.4f)   // 同じ波・明るく
-            : HighlightPalette::Scale(HighlightPalette::Threat, br * 0.55f);      // 同じ波・沈む
+            ? HighlightPalette::Scale(hue, br * 1.5f)   // 選択中の敵は明るく
+            : HighlightPalette::Scale(hue, br * 0.7f);
 
         gridMap->GetCell(pos.first, pos.second).gameObject.color = c;
         m_enemyHighlightCells.push_back(pos);
     }
-
 }

@@ -29,7 +29,9 @@ enum class CardEffectType
     PlaceDecoy,  // デコイ
     UpgradeHand, // 手札を強化（この戦闘中のみ）
     Discard,     // 手札からランダムに捨てる
-
+    Catalyst,    // 毒を倍化
+    DrainPoison, // 毒を吸収
+    PoisonBurst, // 毒を即発動
 };
 
 // カードレアリティ

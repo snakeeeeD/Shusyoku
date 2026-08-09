@@ -64,6 +64,9 @@ inline CardEffectType StringToCardEffectType(const std::string& str)
     if (str == "PlaceDecoy")  return CardEffectType::PlaceDecoy;
     if (str == "UpgradeHand") return CardEffectType::UpgradeHand;
     if (str == "Discard")     return CardEffectType::Discard;
+    if (str == "Catalyst") return CardEffectType::Catalyst;
+    if (str == "DrainPoison") return CardEffectType::DrainPoison;
+    if (str == "PoisonBurst") return CardEffectType::PoisonBurst;
     return CardEffectType::None;
 }
 
@@ -94,6 +97,9 @@ inline BuffType StringToBuffType(const std::string& str)
     if (str == "AttackUpTurn") return BuffType::AttackUpTurn;
     if (str == "AttackGrowth") return BuffType::AttackGrowth;
     if (str == "Frenzy") return BuffType::Frenzy;
+    if (str == "NoxiousFumes") return BuffType::NoxiousFumes;
+    if (str == "ToxicRhythm") return BuffType::ToxicRhythm;
+
     return BuffType::AttackUp;
 }
 

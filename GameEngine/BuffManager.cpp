@@ -13,7 +13,9 @@ void BuffManager::AddBuff(const Buff& buff)
         buff.type == BuffType::AttackUpTurn ||
         buff.type == BuffType::AttackGrowth ||
         buff.type == BuffType::Frenzy ||
-        buff.type == BuffType::RangeUp)
+        buff.type == BuffType::RangeUp ||
+        buff.type == BuffType::NoxiousFumes ||
+        buff.type == BuffType::ToxicRhythm)
     {
         for (auto& b : m_buffs)
             if (b.type == buff.type) { b.value += buff.value; return; }
@@ -53,33 +55,33 @@ void BuffManager::RemoveBuff(BuffType type)
     );
 }
 
-void BuffManager::OnTurnEnd()
+void BuffManager::OnTurnEnd(bool decrementPoison)
 {
-    // 毒：ダメージ後に1減少
-    for (auto& b : m_buffs)
-    {
-        if (b.type == BuffType::Poison)
-            b.value--;
-    }
+    if (decrementPoison)
+        for (auto& b : m_buffs)
+            if (b.type == BuffType::Poison) b.value--;
 
-    // その他：duration減少
     for (auto& buff : m_buffs)
-    {
         if (buff.type != BuffType::Poison && !buff.isPermanent())
             buff.duration--;
-    }
 
-    // 期限切れ削除（毒はvalue<=0、他はduration<=0）
     m_buffs.erase(
         std::remove_if(m_buffs.begin(), m_buffs.end(),
-            [](const Buff& b)
+            [decrementPoison](const Buff& b)
             {
-                if (b.type == BuffType::Poison)
-                    return b.value <= 0;
+                if (b.type == BuffType::Poison) return decrementPoison && b.value <= 0;
                 return !b.isPermanent() && b.duration <= 0;
             }),
-        m_buffs.end()
-    );
+        m_buffs.end());
+}
+
+int BuffManager::TickPoison()
+{
+    int dealt = 0; bool remove = false;
+    for (auto& b : m_buffs)
+        if (b.type == BuffType::Poison) { dealt = b.value; b.value--; if (b.value <= 0) remove = true; break; }
+    if (remove) RemoveBuff(BuffType::Poison);
+    return dealt;
 }
 
 bool BuffManager::HasBuff(BuffType type) const

@@ -40,6 +40,8 @@ struct BuffInfo
             { L"攻撃UP(今)", L"このターン攻撃力が{value}上昇する", {0.9f, 0.45f, 0.15f, 1.0f} },  // AttackUpTurn
             { L"闘気", L"毎ターン開始時、攻撃力が{value}上昇する", {0.95f, 0.35f, 0.05f, 1.0f} },  // AttackGrowth
             { L"狂乱", L"与ダメージ+{pct}%／被ダメージ+{pct}%／移動で自傷{self}", {0.85f, 0.15f, 0.15f, 1.0f} },  // Frenzy
+            { L"毒の瘴気", L"毎ターン開始時 全ての敵に毒{value}", {0.4f, 0.7f, 0.3f, 1.0f} },  // NoxiousFumes
+            { L"毒の脈動", L"毒のダメージ回数+{value}", {0.5f, 0.8f, 0.3f, 1.0f} },  // ToxicRhythm
         };
         return infos[static_cast<int>(type)];
     }

@@ -171,6 +171,14 @@
       "rarity": "uncommon",
       "desc": "敵を倒すと攻撃力+1（戦闘中）"
     },
+    {
+      "id": "plague_heart",
+      "name": "疫病の心臓",
+      "kind": "poisonSpread",
+      "value": 1,
+      "rarity": "uncommon",
+      "desc": "毒を持つ敵が倒れると 周囲の敵に同量の毒が伝染する"
+    },
 
     {
       "id": "mana_furnace",
