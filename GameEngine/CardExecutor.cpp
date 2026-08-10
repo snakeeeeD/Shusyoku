@@ -442,6 +442,8 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             else
             {
                 dmg = player->GetBuffManager().GetFinalAttack(data.mainEffect.value);
+                if (std::find(data.tags.begin(), data.tags.end(), "Knife") != data.tags.end())
+                    dmg += player->GetBuffManager().GetBuffValue(BuffType::KnifePower);   // ƒiƒCƒt‹­‰»
                 target->TakeDamage(dmg);
             }
 

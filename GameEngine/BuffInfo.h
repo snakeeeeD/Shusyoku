@@ -44,6 +44,10 @@ struct BuffInfo
             { L"毒の脈動", L"毒のダメージ回数+{value}", {0.5f, 0.8f, 0.3f, 1.0f} },  // ToxicRhythm
             { L"移動不可", L"このターン移動できない", {0.5f, 0.5f, 0.6f, 1.0f} },  // MoveLock
             { L"受け返し", L"攻撃を完全に防ぐと 敵に{value}ダメージ", {0.4f, 0.7f, 1.0f, 1.0f} },  // Riposte
+            { L"研磨", L"ナイフのダメージ+{value}", {0.7f, 0.7f, 0.8f, 1.0f} },  // KnifePower
+            { L"投擲術", L"ナイフが遠距離攻撃になる", {0.6f, 0.75f, 0.9f, 1.0f} },  // KnifeThrow
+            { L"刃の守り", L"カードを使うたび ブロック{value}", {0.3f, 0.6f, 0.9f, 1.0f} },  // CardBlock
+            { L"刃の心得", L"毎ターン ナイフを{value}枚生成", {0.7f, 0.7f, 0.8f, 1.0f} },  // KnifeGen
         };
         return infos[static_cast<int>(type)];
     }

@@ -75,7 +75,11 @@ public:
         if (player)
         {
             if (data->type == CardType::Attack)
+            {
                 actualValue = player->GetBuffManager().GetFinalAttack(data->mainEffect.value);
+                if (std::find(data->tags.begin(), data->tags.end(), "Knife") != data->tags.end())
+                    actualValue += player->GetBuffManager().GetBuffValue(BuffType::KnifePower);   // Œ¤–‚Ô‚ñ‚à•\Ž¦
+            }
             else if (data->mainEffect.type == CardEffectType::Block)
                 actualValue = player->GetBuffManager().GetFinalBlock(data->mainEffect.value);
             else if (data->mainEffect.type == CardEffectType::PlaceTrap

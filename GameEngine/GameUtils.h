@@ -104,6 +104,11 @@ inline BuffType StringToBuffType(const std::string& str)
     if (str == "MoveLock") return BuffType::MoveLock;
     if (str == "Riposte") return BuffType::Riposte;
 
+    if (str == "KnifePower") return BuffType::KnifePower;
+    if (str == "KnifeThrow") return BuffType::KnifeThrow;
+    if (str == "CardBlock") return BuffType::CardBlock;
+    if (str == "KnifeGen") return BuffType::KnifeGen;
+
     return BuffType::AttackUp;
 }
 

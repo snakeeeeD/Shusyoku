@@ -48,4 +48,9 @@ enum class BuffType
 
     MoveLock,       // 移動不可
     Riposte,        // 反射
+
+    KnifePower,     // ナイフ強化
+    KnifeThrow,     // ナイフ投げ
+    CardBlock,      // カード使うたびにブロック
+    KnifeGen,       // 自動ナイフ生成
 };

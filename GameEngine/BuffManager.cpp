@@ -17,7 +17,10 @@ void BuffManager::AddBuff(const Buff& buff)
         buff.type == BuffType::NoxiousFumes ||
         buff.type == BuffType::ToxicRhythm || 
         buff.type == BuffType::Thorns || 
-        buff.type == BuffType::Riposte)
+        buff.type == BuffType::Riposte ||
+        buff.type == BuffType::KnifePower ||
+        buff.type == BuffType::CardBlock || 
+        buff.type == BuffType::KnifeGen)
     {
         for (auto& b : m_buffs)
             if (b.type == buff.type) { b.value += buff.value; return; }

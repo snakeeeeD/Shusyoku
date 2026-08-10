@@ -395,6 +395,7 @@
       "id": "ATK_knife",
       "name": "ナイフ",
       "type": "Attack",
+      "tags": [ "Knife" ],
       "cost": 0,
       "range": 1,
       "rangeType": "Adjacent",
@@ -407,6 +408,30 @@
       "mainEffect": {
         "type": "Damage",
         "value": 4
+      }
+    },
+    {
+      "id": "ATK_quickcut",
+      "name": "切り裂き",
+      "type": "Attack",
+      "rarity": "Common",
+      "tags": [ "Knife" ],
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "{value}ダメージ ナイフ{sub}枚生成",
+      "upgrade": {
+        "mainValue": 3,
+        "subValue": 1
+      },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 5
+      },
+      "subEffect": {
+        "type": "CreateCard",
+        "cardId": "ATK_knife",
+        "value": 1
       }
     },
     {
@@ -867,7 +892,8 @@
       "id": "SKL_blade_dance",
       "name": "剣の舞",
       "type": "Skill",
-      "rarity": "Uncommon",
+      "rarity": "Common",
+      "tags": [ "Knife" ],
       "cost": 1,
       "range": 0,
       "rangeType": "None",
@@ -879,6 +905,30 @@
         "type": "CreateCard",
         "value": 3,
         "cardId": "ATK_knife"
+      }
+    },
+    {
+      "id": "SKL_guard_knives",
+      "name": "護りの仕込み",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "tags": [ "Knife"],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "ブロック{value} ナイフ{sub}枚生成",
+      "upgrade": {
+        "mainValue": 3,
+        "subValue": 1
+      },
+      "mainEffect": {
+        "type": "Block",
+        "value": 6
+      },
+      "subEffect": {
+        "type": "CreateCard",
+        "cardId": "ATK_knife",
+        "value": 1
       }
     },
     {
@@ -1075,14 +1125,14 @@
       "cost": 1,
       "range": 0,
       "rangeType": "None",
-      "description": "2ターン間、ブロック値を+{value}",
+      "description": "ブロック値を+{value}",
       "upgrade": {
         "mainValue": 2
       },
       "mainEffect": {
         "type": "ApplyBuff",
         "value": 2,
-        "duration": 2,
+        "duration": -1,
         "buffType": "DefenseUp"
       }
     },
@@ -1173,6 +1223,78 @@
         "type": "ApplyBuff",
         "value": 1,
         "buffType": "ToxicRhythm",
+        "duration": -1
+      }
+    },
+    {
+      "id": "POW_whetstone",
+      "name": "研磨",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "tags": [ "Knife" ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "ナイフのダメージ+{value}",
+      "upgrade": { "mainValue": 1 },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 2,
+        "buffType": "KnifePower",
+        "duration": -1
+      }
+    },
+    {
+      "id": "POW_knife_throw",
+      "name": "投擲術",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "tags": [ "Knife" ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "ナイフが射程{value}の遠距離攻撃になる",
+      "upgrade": { "mainValue": 1 },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 2,
+        "buffType": "KnifeThrow",
+        "duration": -1
+      }
+    },
+    {
+      "id": "POW_bladeguard",
+      "name": "刃の守り",
+      "type": "Power",
+      "rarity": "Rare",
+      "tags": [ "Knife", "Bulwark" ],
+      "cost": 3,
+      "range": 0,
+      "rangeType": "None",
+      "description": "カードを使うたび ブロック{value}",
+      "upgrade": { "cost": -2 },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 1,
+        "buffType": "CardBlock",
+        "duration": -1
+      }
+    },
+    {
+      "id": "POW_knife_ritual",
+      "name": "刃の心得",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "tags": [ "Knife" ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "毎ターン開始時 ナイフを{value}枚生成",
+      "upgrade": { "mainValue": 1 },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 1,
+        "buffType": "KnifeGen",
         "duration": -1
       }
     },

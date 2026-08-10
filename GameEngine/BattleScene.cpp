@@ -23,6 +23,17 @@
 #include "External/imgui/imgui.h"
 #endif
 
+// ナイフ＋投擲術なら遠距離化（Diamond=範囲内の任意の敵を狙える。単体パスのままなので研磨も効く）
+static void ApplyKnifeThrow(CardData& d, const Player* p)
+{
+    if (p->GetBuffManager().HasBuff(BuffType::KnifeThrow)
+        && std::find(d.tags.begin(), d.tags.end(), "Knife") != d.tags.end())
+    {
+        d.rangeType = RangeType::Diamond;
+        d.range = p->GetBuffManager().GetBuffValue(BuffType::KnifeThrow);   // バフ値＝射程
+    }
+}
+
 BattleScene::BattleScene()
     : m_battleUI(nullptr)
     , m_gridMap(nullptr)
@@ -250,6 +261,15 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
                     m_battleUI->StartDrawCardEffect(id);
                 }
             }
+
+            // 毎ターン ナイフを生成（刃の心得）
+            int kg = m_player->GetBuffManager().GetBuffValue(BuffType::KnifeGen);
+            for (int i = 0; i < kg; i++)
+            {
+                m_hand.AddCard("ATK_knife");
+                m_battleUI->StartDrawCardEffect("ATK_knife");
+            }
+    
         };
     m_turnManager.onEnemyTurnStart = [this]()
         {
@@ -565,7 +585,9 @@ void BattleScene::Update(float deltaTime)
         int highlightCardIndex = m_selectedCardIndex >= 0 ? m_selectedCardIndex : m_hoveredCardIndex;
         if (highlightCardIndex >= 0 && highlightCardIndex < (int)m_hand.GetCards().size())
         {
-            const CardData* data = m_hand.GetCards()[highlightCardIndex]->GetData();
+            CardData dataThrow = *m_hand.GetCards()[highlightCardIndex]->GetData();
+            ApplyKnifeThrow(dataThrow, m_player);
+            const CardData* data = &dataThrow;
 
             RECT cardArea = { 0, 0, 0, 0 };
             if (!m_hand.GetCards().empty())
@@ -891,8 +913,9 @@ void BattleScene::Update(float deltaTime)
         int highlightCardIndex2 = m_selectedCardIndex >= 0 ? m_selectedCardIndex : m_hoveredCardIndex;
         if (highlightCardIndex2 >= 0 && highlightCardIndex2 < (int)m_hand.GetCards().size())
         {
-            const CardData* data =
-                m_hand.GetCards()[highlightCardIndex2]->GetData();
+            CardData dataThrow2 = *m_hand.GetCards()[highlightCardIndex2]->GetData();
+            ApplyKnifeThrow(dataThrow2, m_player);
+            const CardData* data = &dataThrow2;
 
             // 手札エリアの範囲を計算
             RECT cardArea = { 0, 0, 0, 0 };
@@ -941,7 +964,9 @@ void BattleScene::Draw()
         std::set<std::pair<int, int>> raised;
         if (m_selectedCardIndex >= 0 && m_selectedCardIndex < (int)m_hand.GetCards().size())
         {
-            const CardData* d = m_hand.GetCards()[m_selectedCardIndex]->GetData();
+            CardData dThrow = *m_hand.GetCards()[m_selectedCardIndex]->GetData();
+            ApplyKnifeThrow(dThrow, m_player);
+            const CardData* d = &dThrow;
             if (d->type == CardType::Move)
             {
                 for (auto& p : m_movePath) raised.insert(p);
@@ -1702,6 +1727,7 @@ void BattleScene::HandleInput()
         {
             const Card* card = cards[m_selectedCardIndex];
             CardData dataCopy = *card->GetData();
+            ApplyKnifeThrow(dataCopy, m_player);
             CardType ct = dataCopy.type;
 
             const std::vector<std::pair<int, int>>* usePath = nullptr;
@@ -1803,6 +1829,13 @@ void BattleScene::HandleInput()
                 if (execResult.cardUsed)
                 {
                     Audio::PlaySE("Assets/Sound/se/card.mp3");
+
+                    // カードを使うたびブロック（刃の守り）
+                    if (int cb = m_player->GetBuffManager().GetBuffValue(BuffType::CardBlock))
+                    {
+                        m_player->AddBlock(cb);
+                        EffectManager::Play("block_gain", m_player->worldX, m_player->worldY + 0.4f, m_player->worldZ);
+                    }
 
                     if (newPlayerCol != m_playerCol || newPlayerRow != m_playerRow)
                     {
@@ -2079,6 +2112,7 @@ void BattleScene::HandleInput()
                 const Card* card = m_hand.GetCards()[m_selectedCardIndex];
                 std::string cardId = card->GetId();
                 CardData dataCopy = *card->GetData();
+                ApplyKnifeThrow(dataCopy, m_player);
 
                 int newPlayerCol = m_playerCol;
                 int newPlayerRow = m_playerRow;
@@ -2132,6 +2166,13 @@ void BattleScene::HandleInput()
                 if (execResult.cardUsed)
                 {
                     Audio::PlaySE("Assets/Sound/se/card.mp3");
+
+                    // カードを使うたびブロック（刃の守り）
+                    if (int cb = m_player->GetBuffManager().GetBuffValue(BuffType::CardBlock))
+                    {
+                        m_player->AddBlock(cb);
+                        EffectManager::Play("block_gain", m_player->worldX, m_player->worldY + 0.4f, m_player->worldZ);
+                    }
 
                     // プレイヤー座標を更新
                         if (newPlayerCol != m_playerCol || newPlayerRow != m_playerRow)
