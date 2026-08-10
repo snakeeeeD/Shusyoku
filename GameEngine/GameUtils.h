@@ -67,6 +67,7 @@ inline CardEffectType StringToCardEffectType(const std::string& str)
     if (str == "Catalyst") return CardEffectType::Catalyst;
     if (str == "DrainPoison") return CardEffectType::DrainPoison;
     if (str == "PoisonBurst") return CardEffectType::PoisonBurst;
+    if (str == "BlockDamage") return CardEffectType::BlockDamage;
     return CardEffectType::None;
 }
 
@@ -99,6 +100,9 @@ inline BuffType StringToBuffType(const std::string& str)
     if (str == "Frenzy") return BuffType::Frenzy;
     if (str == "NoxiousFumes") return BuffType::NoxiousFumes;
     if (str == "ToxicRhythm") return BuffType::ToxicRhythm;
+
+    if (str == "MoveLock") return BuffType::MoveLock;
+    if (str == "Riposte") return BuffType::Riposte;
 
     return BuffType::AttackUp;
 }

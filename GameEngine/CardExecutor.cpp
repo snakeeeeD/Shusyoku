@@ -434,6 +434,11 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 float wz = (target->gridRow - gridMap->GetRows() / 2.0f) * 1.1f;
                 EffectManager::Play("poison_apply", wx, 0.5f, wz);
             }
+            else if (data.mainEffect.type == CardEffectType::BlockDamage)
+            {
+                dmg = player->GetBlock() * data.mainEffect.value / 100;   // ブロック×value%
+                if (dmg > 0) target->TakeDamage(dmg);                     // ブロックは残す
+            }
             else
             {
                 dmg = player->GetBuffManager().GetFinalAttack(data.mainEffect.value);
@@ -655,8 +660,12 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
         switch (data.mainEffect.type)
         {
         case CardEffectType::Block:
-            player->AddBlock(player->GetBuffManager().GetFinalBlock(data.mainEffect.value));
+        {
+            int gained = player->GetBuffManager().GetFinalBlock(data.mainEffect.value);
+            player->AddBlock(gained);
+            if (gained > 0) EffectManager::Play("block_gain", player->worldX, player->worldY + 0.4f, player->worldZ);
             break;
+        }
         case CardEffectType::Draw:
             for (int i = 0; i < data.mainEffect.value; i++)
             {
@@ -823,8 +832,12 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             CardEffect::ApplyEffectToPlayer(data.subEffect, player);
             break;
         case CardEffectType::Block:
-            player->AddBlock(player->GetBuffManager().GetFinalBlock(data.subEffect.value));
+        {
+            int gainedS = player->GetBuffManager().GetFinalBlock(data.subEffect.value);
+            player->AddBlock(gainedS);
+            if (gainedS > 0) EffectManager::Play("block_gain", player->worldX, player->worldY + 0.4f, player->worldZ);
             break;
+        }
         case CardEffectType::CreateCard:
             for (int i = 0; i < data.subEffect.value; i++)
             {

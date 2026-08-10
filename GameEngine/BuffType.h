@@ -45,4 +45,7 @@ enum class BuffType
 
     NoxiousFumes,   // 毎ターン開始時、全敵に毒
     ToxicRhythm,    // 毒の発動回数追加
+
+    MoveLock,       // 移動不可
+    Riposte,        // 反射
 };

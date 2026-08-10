@@ -32,6 +32,7 @@ enum class CardEffectType
     Catalyst,    // 毒を倍化
     DrainPoison, // 毒を吸収
     PoisonBurst, // 毒を即発動
+    BlockDamage, // ブロック分ダメージ
 };
 
 // カードレアリティ

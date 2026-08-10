@@ -61,7 +61,8 @@ void BattleHighlighter::UpdatePlayerHighlight(
     std::pair<int, int> hoveredCell,
     Renderer3D* renderer3D,
     int screenWidth, int screenHeight,
-    const RECT& cardArea)
+    const RECT& cardArea,
+    bool moveLocked)
 {
     ClearPlayerHighlight(gridMap);
     if (!data) return;
@@ -124,6 +125,12 @@ void BattleHighlighter::UpdatePlayerHighlight(
             auto [col, row] = pos;
 
             m_playerHighlightCells.push_back({ col, row });
+
+            if (moveLocked)
+            {
+                m_outOfRangeCells.push_back({ col, row });   // 移動不可：全マスに×
+                continue;                                    // 緑ハイライトはしない
+            }
             auto& cell = gridMap->GetCell(col, row);
 
             bool isHovered = (col == hoveredCell.first && row == hoveredCell.second);

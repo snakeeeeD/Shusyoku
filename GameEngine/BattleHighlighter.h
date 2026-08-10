@@ -18,16 +18,11 @@ public:
         int aimDx = 0, int aimDy = 0);
 
     void UpdatePlayerHighlight(
-        int centerCol, int centerRow,
-        const CardData* data,
-        const std::vector<Enemy*>& enemies,
-        GridMap* gridMap,
-        const Player* player,
-        float timer,
-        std::pair<int, int> hoveredCell,
-        Renderer3D* renderer3D,
-        int screenWidth, int screenHeight,
-        const RECT& cardArea);
+        int centerCol, int centerRow, const CardData* data,
+        const std::vector<Enemy*>& enemies, GridMap* gridMap, const Player* player,
+        float timer, std::pair<int, int> hoveredCell, Renderer3D* renderer3D,
+        int screenWidth, int screenHeight, const RECT& cardArea,
+        bool moveLocked = false);
 
     void UpdateEnemyHighlight(
         const std::vector<Enemy*>& enemies, GridMap* gridMap, const Player* player,

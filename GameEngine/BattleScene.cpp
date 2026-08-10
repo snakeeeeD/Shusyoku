@@ -585,7 +585,7 @@ void BattleScene::Update(float deltaTime)
                 m_enemies, m_gridMap, m_player,
                 m_highlightTimer, m_hoveredCell,
                 m_renderer3D, m_screenWidth, m_screenHeight,
-                cardArea);
+                cardArea, m_player->GetBuffManager().HasBuff(BuffType::MoveLock));
         }
         else
         {
@@ -801,7 +801,24 @@ void BattleScene::Update(float deltaTime)
                 m_playerCol = m_player->gridCol;
                 m_playerRow = m_player->gridRow;
                 if (damage > 0)
+                {
+                    int hpBefore = m_player->GetHp();
                     m_player->TakeDamage(damage);
+                    bool fullyBlocked = (m_player->GetHp() == hpBefore);   // HPが減ってない＝完全に受けきった
+
+                    int th = m_player->GetBuffManager().GetBuffValue(BuffType::Thorns);
+                    if (th > 0 && enemy->GetHp() > 0) enemy->TakeDamage(th);
+
+                    int rip = m_player->GetBuffManager().GetBuffValue(BuffType::Riposte);
+                    if (fullyBlocked && rip > 0 && enemy->GetHp() > 0)
+                    {
+                        enemy->TakeDamage(rip);
+                        float wx = (enemy->gridCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                        float wz = (enemy->gridRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                        EffectManager::Play("hit", wx, 0.6f, wz);   // 反撃の一撃
+                        ScreenShake::Add(0.2f);
+                    }
+                }
                 enemy->SetActionIndex(ai + 1);
 
                 // デコイを狙って攻撃した時だけ破壊（移動だけでは壊れない）
@@ -896,7 +913,7 @@ void BattleScene::Update(float deltaTime)
                 m_enemies, m_gridMap, m_player,
                 m_highlightTimer, m_hoveredCell,
                 m_renderer3D, m_screenWidth, m_screenHeight,
-                cardArea);
+                cardArea, m_player->GetBuffManager().HasBuff(BuffType::MoveLock));
         }
         else
         {
@@ -1691,12 +1708,14 @@ void BattleScene::HandleInput()
             bool moveCanceled = false;
             if (ct == CardType::Move)
             {
-                if (m_moveReleaseSuppress)
-                    moveCanceled = true;                        // 右クリックでキャンセル済み
+                if (m_player->GetBuffManager().HasBuff(BuffType::MoveLock))
+                    moveCanceled = true;                        // 踏ん張り中は移動不可
+                else if (m_moveReleaseSuppress)
+                    moveCanceled = true;
                 else if (m_pathBuilding && !m_movePath.empty())
-                    usePath = &m_movePath;                       // 手動経路で移動
+                    usePath = &m_movePath;
                 else if (m_pathBuilding && m_movePath.empty())
-                    moveCanceled = true;                         // プレイヤー上で離した＝キャンセル
+                    moveCanceled = true;
             }
 
             int targetCol = m_playerCol;

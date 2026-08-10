@@ -111,6 +111,41 @@
       }
     },
     {
+      "id": "ATK_body_slum",
+      "name": "ボディスラム",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "tags": [ "Bulwark" ],
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "現在のブロックぶんダメージ",
+      "upgrade": { "cost": -1 },
+      "mainEffect": {
+        "type": "BlockDamage",
+        "value": 100
+      }
+    },
+    {
+      "id": "ATK_rampart_smash",
+      "name": "城壁強打",
+      "type": "Attack",
+      "rarity": "Rare",
+      "tags": [ "Bulwark" ],
+      "cost": 3,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "ブロックの2倍ダメージ",
+      "upgrade": {
+        "mainValue": 50,
+        "description": "ブロックの2.5倍ダメージ"
+      },
+      "mainEffect": {
+        "type": "BlockDamage",
+        "value": 200
+      }
+    },
+    {
       "id": "ATK_poison_blade",
       "name": "毒刃",
       "type": "Attack",
@@ -693,6 +728,7 @@
       "name": "鉄壁",
       "type": "Skill",
       "rarity": "Common",
+      "tags": [ "Bulwark" ],
       "cost": 2,
       "range": 0,
       "rangeType": "None",
@@ -703,6 +739,70 @@
       "mainEffect": {
         "type": "Block",
         "value": 12
+      }
+    },
+    {
+      "id": "SKL_shield_ready",
+      "name": "盾の備え",
+      "type": "Skill",
+      "rarity": "Common",
+      "tags": [ "Bulwark" ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "ブロック{value} 1ドロー",
+      "upgrade": { "mainValue": 3 },
+      "mainEffect": {
+        "type": "Block",
+        "value": 8
+      },
+      "subEffect": {
+        "type": "Draw",
+        "value": 1
+      }
+    },
+    {
+      "id": "SKL_brace",
+      "name": "踏ん張り",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "tags": [ "Bulwark" ],
+      "cost": 2,
+      "range": 0,
+      "rangeType": "None",
+      "description": "ブロック{value} このターン移動不可",
+      "upgrade": { "mainValue": 8 },
+      "mainEffect": {
+        "type": "Block",
+        "value": 20
+      },
+      "subEffect": {
+        "type": "ApplyBuff",
+        "value": 1,
+        "buffType": "MoveLock",
+        "duration": 1
+      }
+    },
+    {
+      "id": "SKL_unbreak",
+      "name": "不動",
+      "type": "Skill",
+      "rarity": "Rare",
+      "tags": [ "Bulwark" ],
+      "cost": 5,
+      "range": 0,
+      "rangeType": "None",
+      "description": "ブロック{value} このターン移動不可",
+      "upgrade": { "mainValue": 20 },
+      "mainEffect": {
+        "type": "Block",
+        "value": 100
+      },
+      "subEffect": {
+        "type": "ApplyBuff",
+        "value": 1,
+        "buffType": "MoveLock",
+        "duration": 1
       }
     },
     {
@@ -984,6 +1084,60 @@
         "value": 2,
         "duration": 2,
         "buffType": "DefenseUp"
+      }
+    },
+    {
+      "id": "POW_fortress",
+      "name": "要塞",
+      "type": "Power",
+      "rarity": "Rare",
+      "tags": [ "Bulwark" ],
+      "cost": 4,
+      "range": 0,
+      "rangeType": "None",
+      "description": "ブロックが毎ターン持ち越される",
+      "upgrade": { "cost": -1 },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 1,
+        "buffType": "Barricade",
+        "duration": -1
+      }
+    },
+    {
+      "id": "POW_thorns",
+      "name": "茨の鎧",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "tags": [ "Bulwark" ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "攻撃を受けると 攻撃した敵に{value}ダメージ",
+      "upgrade": { "mainValue": 2 },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 3,
+        "buffType": "Thorns",
+        "duration": -1
+      }
+    },
+    {
+      "id": "POW_riposte",
+      "name": "受け返し",
+      "type": "Power",
+      "rarity": "Rare",
+      "tags": [ "Bulwark" ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "攻撃を完全に防ぐと 攻撃した敵に{value}ダメージ",
+      "upgrade": { "mainValue": 3 },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 6,
+        "buffType": "Riposte",
+        "duration": -1
       }
     },
     {

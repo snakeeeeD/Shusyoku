@@ -15,7 +15,9 @@ void BuffManager::AddBuff(const Buff& buff)
         buff.type == BuffType::Frenzy ||
         buff.type == BuffType::RangeUp ||
         buff.type == BuffType::NoxiousFumes ||
-        buff.type == BuffType::ToxicRhythm)
+        buff.type == BuffType::ToxicRhythm || 
+        buff.type == BuffType::Thorns || 
+        buff.type == BuffType::Riposte)
     {
         for (auto& b : m_buffs)
             if (b.type == buff.type) { b.value += buff.value; return; }
