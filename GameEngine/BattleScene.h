@@ -87,6 +87,9 @@ public:
     float m_chainTimer = 0.0f;
     bool  m_chainFull = false;
 
+    void ApplyDiscardEffect(const CardEffectData& e);
+    void AutoDiscardAll();
+
 private:
     BattleUI* m_battleUI;
     GridMap* m_gridMap;

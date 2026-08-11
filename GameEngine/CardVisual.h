@@ -120,6 +120,10 @@ public:
             result.replace(hp, 6, std::to_wstring(hits));      // "{hits}"=6•¶š
         }
 
+        size_t dp = result.find(L"{ondiscard}");
+        if (dp != std::wstring::npos)
+            result.replace(dp, 11, std::to_wstring(data->onDiscardEffect.value));
+
         if (data->exhaust)
             result += L" \n[”pŠü]";
 

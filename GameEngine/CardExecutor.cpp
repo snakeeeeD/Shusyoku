@@ -863,7 +863,6 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
         deck.DiscardCard(cardId);
 
     hand.RemoveCard(cardIndex);
-    if (pendingDiscard > 0) hand.DiscardRandom(pendingDiscard);   // 使ったカードを除いてから捨てる
     result.pendingDiscard = pendingDiscard;      // 選択はシーン側に任せる
     result.success = true;
     if (data.selfDamage > 0)

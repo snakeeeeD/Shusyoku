@@ -1443,16 +1443,20 @@ void BattleScene::HandleInput()
             if (m_battleUI->IsOnDiscardConfirm(mp)
                 && (int)m_discardSelected.size() == m_discardSelectCount)
             {
-                std::sort(m_discardSelected.rbegin(), m_discardSelected.rend());   // 後ろから消す
+                std::sort(m_discardSelected.rbegin(), m_discardSelected.rend());
+                std::vector<CardEffectData> effects;
                 for (int idx : m_discardSelected)
                 {
-                    m_battleUI->StartDiscardEffectAt(idx);   // ← 消す前に位置を取る
+                    const CardData* dd = CardDataBase::Get(m_hand.GetCards()[idx]->GetId());
+                    if (dd && dd->onDiscardEffect.hasEffect) effects.push_back(dd->onDiscardEffect);
+                    m_battleUI->StartDiscardEffectAt(idx);
                     m_hand.DiscardAt(idx);
                     m_battleUI->OnCardRemoved(idx);
                 }
                 m_discardSelected.clear();
                 m_discardSelectCount = 0;
                 m_hoveredCardIndex = -1;
+                for (auto& e : effects) ApplyDiscardEffect(e);   // ← 捨て終わってから発動
                 return;
             }
 
@@ -1957,7 +1961,7 @@ void BattleScene::HandleInput()
 
                     if (execResult.pendingDiscard > 0)
                     {
-                        m_discardSelectCount = execResult.pendingDiscard;
+                        m_discardSelectCount = min(execResult.pendingDiscard, (int)m_hand.GetCards().size());
                         m_discardSelected.clear();
                         m_discardViewMode = false;
                     }
@@ -2284,7 +2288,7 @@ void BattleScene::HandleInput()
 
                     if (execResult.pendingDiscard > 0)
                     {
-                        m_discardSelectCount = execResult.pendingDiscard;
+                        m_discardSelectCount = min(execResult.pendingDiscard, (int)m_hand.GetCards().size());
                         m_discardSelected.clear();
                         m_discardViewMode = false;
                     }
@@ -2440,4 +2444,37 @@ void BattleScene::ProcessDeadEnemies()
         for (int i = 0; i < (int)m_enemies.size(); i++)
             if (m_enemies[i] == selected) { m_selectedEnemyRange = i; break; }
     }
+}
+
+void BattleScene::ApplyDiscardEffect(const CardEffectData& e)
+{
+    if (!e.hasEffect) return;
+    switch (e.type)
+    {
+    case CardEffectType::Draw:
+        for (int i = 0; i < e.value; i++)
+        {
+            std::string id = m_deck.DrawCard();
+            if (!id.empty()) { m_hand.AddCard(id); m_battleUI->StartDrawCardEffect(id); }
+        }
+        break;
+    case CardEffectType::AddEnergy: m_player->AddEnergy(e.value); break;
+    case CardEffectType::Block:     m_player->AddBlock(m_player->GetBuffManager().GetFinalBlock(e.value)); break;
+    case CardEffectType::CreateCard: for (int i = 0; i < e.value; i++) { m_hand.AddCard(e.cardId); m_battleUI->StartDrawCardEffect(e.cardId); } break;
+    default: break;
+    }
+}
+
+void BattleScene::AutoDiscardAll()
+{
+    std::vector<CardEffectData> effects;
+    for (int i = (int)m_hand.GetCards().size() - 1; i >= 0; i--)   // 後ろから消す
+    {
+        const CardData* dd = CardDataBase::Get(m_hand.GetCards()[i]->GetId());
+        if (dd && dd->onDiscardEffect.hasEffect) effects.push_back(dd->onDiscardEffect);
+        m_battleUI->StartDiscardEffectAt(i);
+        m_hand.DiscardAt(i);
+        m_battleUI->OnCardRemoved(i);
+    }
+    for (auto& e : effects) ApplyDiscardEffect(e);   // 全部捨ててから発動
 }

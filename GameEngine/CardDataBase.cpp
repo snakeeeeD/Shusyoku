@@ -92,6 +92,15 @@ void CardDataBase::Init()
             }
             else data.onHitEffect2.hasEffect = false;
 
+            if (c.contains("onDiscardEffect"))
+            {
+                data.onDiscardEffect.hasEffect = true;
+                data.onDiscardEffect.type = StringToCardEffectType(c["onDiscardEffect"]["type"]);
+                data.onDiscardEffect.value = c["onDiscardEffect"]["value"];
+                data.onDiscardEffect.cardId = c["onDiscardEffect"].value("cardId", "");
+            }
+            else data.onDiscardEffect.hasEffect = false;
+
             if (c.contains("subEffect"))
             {
                 data.subEffect.hasEffect = true;
@@ -142,6 +151,7 @@ void CardDataBase::Init()
                     up.rangeType = StringToRangeType(u["rangeType"]);
                 if (u.contains("description"))
                     up.description = ToWString(u["description"]);
+                if (up.onDiscardEffect.hasEffect) up.onDiscardEffect.value += u.value("onDiscardValue", 0);
 
                 m_data[up.id] = up;
             }

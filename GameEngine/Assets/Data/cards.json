@@ -912,7 +912,7 @@
       "name": "護りの仕込み",
       "type": "Skill",
       "rarity": "Uncommon",
-      "tags": [ "Knife"],
+      "tags": [ "Knife" ],
       "cost": 1,
       "range": 0,
       "rangeType": "None",
@@ -1005,6 +1005,70 @@
         "value": 1
       }
     },
+    {
+      "id": "SKL_sift",
+      "name": "見切り",
+      "type": "Skill",
+      "rarity": "Common",
+      "tags": [ "Discard" ],
+      "cost": 0,
+      "range": 0,
+      "rangeType": "None",
+      "description": "{sub}枚捨てて {value}ドロー",
+      "upgrade": {
+        "mainValue": 1,
+        "subValue": 1
+      },
+      "mainEffect": {
+        "type": "Draw",
+        "value": 1
+      },
+      "subEffect": {
+        "type": "Discard",
+        "value": 1
+      }
+    },
+    {
+      "id": "SKL_reflex",
+      "name": "反射神経",
+      "type": "Skill",
+      "rarity": "Common",
+      "tags": [ "Discard" ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "捨てられた時 {ondiscard}ドロー",
+      "upgrade": { "onDiscardValue": 1 },
+      "mainEffect": {
+        "type": "None",
+        "value": 0
+      },
+      "onDiscardEffect": {
+        "type": "Draw",
+        "value": 2
+      }
+    },
+    {
+      "id": "SKL_tactician",
+      "name": "戦術家",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "tags": [ "Discard" ],
+      "cost": 0,
+      "range": 0,
+      "rangeType": "None",
+      "description": "捨てられた時 エナジー+{ondiscard}",
+      "upgrade": { "onDiscardValue": 1 },
+      "mainEffect": {
+        "type": "None",
+        "value": 0
+      },
+      "onDiscardEffect": {
+        "type": "AddEnergy",
+        "value": 1
+      }
+    },
+
     {
       "id": "MOV_move",
       "name": "ステップ",
