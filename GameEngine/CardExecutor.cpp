@@ -619,6 +619,24 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                        enemy->TakeDamage(hitDmg);
                }
            }
+
+           // 移動カード自身の付随効果（移動＋α）
+           switch (data.mainEffect.type)
+           {
+           case CardEffectType::Block:
+               player->AddBlock(data.mainEffect.value);
+               break;
+           case CardEffectType::Draw:
+               for (int i = 0; i < data.mainEffect.value; i++)
+               {
+                   std::string id = deck.DrawCard();
+                   if (!id.empty()) { hand.AddCard(id); result.drawnCards.push_back(id); }
+               }
+               break;
+           default: break;
+           }
+           break;  
+
            break;
        }
     case CardType::Skill:

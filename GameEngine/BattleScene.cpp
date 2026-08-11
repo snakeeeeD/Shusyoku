@@ -106,12 +106,12 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             moveCardIds.push_back(cardId);
     }
 
-    if (!moveCardIds.empty())
+   /* if (!moveCardIds.empty())
     {
         int idx = rand() % (int)moveCardIds.size();
         std::string moveId = m_deck.DrawSpecificCard(moveCardIds[idx]);
         if (!moveId.empty()) m_hand.AddCard(moveId);
-    }
+    }*/
 
     for (int i = 0; i < HAND_SIZE - 1; i++)
     {
@@ -246,13 +246,13 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             collectMoveCards(m_deck.GetDrawPile());
             collectMoveCards(m_deck.GetDiscardPile());
 
-            // 移動カードを1枚確定で引く
-            if (!moveCardIds.empty())
-            {
-                int idx = rand() % (int)moveCardIds.size();
-                std::string moveId = m_deck.DrawSpecificCard(moveCardIds[idx]);
-                if (!moveId.empty()) m_hand.AddCard(moveId);
-            }
+            //// 移動カードを1枚確定で引く
+            //if (!moveCardIds.empty())
+            //{
+            //    int idx = rand() % (int)moveCardIds.size();
+            //    std::string moveId = m_deck.DrawSpecificCard(moveCardIds[idx]);
+            //    if (!moveId.empty()) m_hand.AddCard(moveId);
+            //}
 
             // 残りを引く
             for (int i = 0; i < HAND_SIZE - 1; i++)

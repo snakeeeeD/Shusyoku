@@ -13,7 +13,7 @@
         },
         {
           "id": "slime",
-          "col": 7,
+          "col": 2,
           "row": 3
         },
         {
@@ -190,7 +190,7 @@
         }
       ]
     },
-   
+
     {
       "layer": 1,
       "category": "boss",
@@ -205,67 +205,194 @@
     },
 
     {
-      "layer": 1, "tier": 1, "category": "normal", "weight": 25,
+      "layer": 1,
+      "tier": 1,
+      "category": "normal",
+      "weight": 25,
       "enemies": [
-        { "id": "stonebug", "col": 6, "row": 3 },
-        { "id": "slime", "col": 5, "row": 2 }
+        {
+          "id": "stonebug",
+          "col": 6,
+          "row": 3
+        },
+        {
+          "id": "slime",
+          "col": 5,
+          "row": 2
+        }
       ]
     },
     {
-      "layer": 1, "tier": 1, "category": "normal", "weight": 25,
+      "layer": 1,
+      "tier": 1,
+      "category": "normal",
+      "weight": 25,
       "enemies": [
-        { "id": "hound", "col": 5, "row": 1 },
-        { "id": "hound", "col": 5, "row": 4 }
+        {
+          "id": "hound",
+          "col": 5,
+          "row": 1
+        },
+        {
+          "id": "hound",
+          "col": 5,
+          "row": 4
+        }
       ]
     },
     {
-      "layer": 1, "tier": 1, "category": "normal", "weight": 20,
+      "layer": 1,
+      "tier": 1,
+      "category": "normal",
+      "weight": 20,
       "enemies": [
-        { "id": "hound", "col": 6, "row": 2 },
-        { "id": "goblin", "col": 4, "row": 3 }
+        {
+          "id": "hound",
+          "col": 6,
+          "row": 2
+        },
+        {
+          "id": "goblin",
+          "col": 6,
+          "row": 3
+        }
       ]
     },
     {
-      "layer": 1, "tier": 1, "category": "normal", "weight": 20,
+      "layer": 1,
+      "tier": 1,
+      "category": "normal",
+      "weight": 20,
       "enemies": [
-        { "id": "slime", "col": 4, "row": 1 },
-        { "id": "slime", "col": 5, "row": 2 },
-        { "id": "hound", "col": 6, "row": 4 }
+        {
+          "id": "slime",
+          "col": 4,
+          "row": 1
+        },
+        {
+          "id": "slime",
+          "col": 5,
+          "row": 2
+        },
+        {
+          "id": "hound",
+          "col": 6,
+          "row": 4
+        }
       ]
     },
 
     {
-      "layer": 1, "tier": 2, "category": "normal", "weight": 15,
+      "layer": 1,
+      "tier": 2,
+      "category": "normal",
+      "weight": 15,
       "enemies": [
-        { "id": "firespore", "col": 6, "row": 2 },
-        { "id": "goblin", "col": 4, "row": 4 }
+        {
+          "id": "firespore",
+          "col": 6,
+          "row": 2
+        },
+        {
+          "id": "goblin",
+          "col": 4,
+          "row": 1
+        }
       ]
     },
     {
-      "layer": 1, "tier": 2, "category": "normal", "weight": 12,
+      "layer": 1,
+      "tier": 2,
+      "category": "normal",
+      "weight": 12,
       "enemies": [
-        { "id": "mimic", "col": 5, "row": 3 }
+        {
+          "id": "mimic",
+          "col": 5,
+          "row": 3
+        }
       ]
     },
     {
-      "layer": 1, "tier": 2, "category": "normal", "weight": 12,
+      "layer": 1,
+      "tier": 2,
+      "category": "normal",
+      "weight": 12,
       "enemies": [
-        { "id": "caster", "col": 7, "row": 1 },
-        { "id": "archer", "col": 6, "row": 4 }
+        {
+          "id": "caster",
+          "col": 7,
+          "row": 1
+        },
+        {
+          "id": "archer",
+          "col": 6,
+          "row": 4
+        }
       ]
     },
     {
-      "layer": 1, "tier": 2, "category": "normal", "weight": 12,
+      "layer": 1,
+      "tier": 2,
+      "category": "normal",
+      "weight": 12,
       "enemies": [
-        { "id": "brute", "col": 5, "row": 2 },
-        { "id": "hound", "col": 6, "row": 4 }
+        {
+          "id": "brute",
+          "col": 5,
+          "row": 2
+        },
+        {
+          "id": "hound",
+          "col": 6,
+          "row": 4
+        }
       ]
     },
     {
-      "layer": 1, "tier": 2, "category": "normal", "weight": 10,
+      "layer": 1,
+      "tier": 2,
+      "category": "normal",
+      "weight": 12,
       "enemies": [
-        { "id": "stonebug", "col": 6, "row": 2 },
-        { "id": "firespore", "col": 5, "row": 4 }
+        {
+          "id": "hound",
+          "col": 2,
+          "row": 2
+        },
+        {
+          "id": "hound",
+          "col": 2,
+          "row": 6
+        },
+        {
+          "id": "hound",
+          "col": 6,
+          "row": 2
+        },
+        {
+          "id": "hound",
+          "col": 6,
+          "row": 6
+        }
+      ]
+    },
+    {
+      "layer": 1,
+      "tier": 2,
+      "category": "normal",
+      "weight": 10,
+      "enemies": [
+        {
+          "id": "stonebug",
+          "col": 6,
+          "row": 2
+        },
+        {
+          "id": "firespore",
+          "col": 5,
+          "row": 4
+        }
       ]
     }
   ]

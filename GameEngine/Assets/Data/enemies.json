@@ -876,7 +876,7 @@
 
     {
       "id": "stonebug",
-      "texture": "enemy_golem",
+      "texture": "enemy_bug",
       "hp": 30,
       "width": 1.1,
       "height": 1.1,
@@ -907,7 +907,7 @@
 
     {
       "id": "firespore",
-      "texture": "enemy_obake",
+      "texture": "enemy_spore",
       "hp": 24,
       "width": 1.0,
       "height": 1.0,
@@ -948,7 +948,7 @@
 
     {
       "id": "hound",
-      "texture": "enemy_goblin",
+      "texture": "enemy_hound",
       "hp": 18,
       "width": 1.0,
       "height": 1.0,
