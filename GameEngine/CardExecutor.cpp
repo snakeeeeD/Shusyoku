@@ -442,8 +442,15 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             else
             {
                 dmg = player->GetBuffManager().GetFinalAttack(data.mainEffect.value);
+
+                // 背水：低HPで攻撃UP（Powerのバフ値ぶん・今のHPで判定）
+                int hp = player->GetHp(), mhp = player->GetMaxHp();
+                if (hp * 2 <= mhp) dmg += player->GetBuffManager().GetBuffValue(BuffType::LastStand);  // 半分以下
+                if (hp * 4 <= mhp) dmg += player->GetBuffManager().GetBuffValue(BuffType::DeepStand);  // 1/4以下
+
                 if (std::find(data.tags.begin(), data.tags.end(), "Knife") != data.tags.end())
-                    dmg += player->GetBuffManager().GetBuffValue(BuffType::KnifePower);   // ナイフ強化
+                    dmg += player->GetBuffManager().GetBuffValue(BuffType::KnifePower);
+
                 target->TakeDamage(dmg);
             }
 
@@ -866,7 +873,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     result.pendingDiscard = pendingDiscard;      // 選択はシーン側に任せる
     result.success = true;
     if (data.selfDamage > 0)
-        player->TakeDamage(data.selfDamage);
+        player->LoseHp(data.selfDamage);
     result.cardUsed = true;
 
     if (!data.vfx.empty())

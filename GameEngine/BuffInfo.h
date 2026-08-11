@@ -48,6 +48,8 @@ struct BuffInfo
             { L"投擲術", L"ナイフが遠距離攻撃になる", {0.6f, 0.75f, 0.9f, 1.0f} },  // KnifeThrow
             { L"刃の守り", L"カードを使うたび ブロック{value}", {0.3f, 0.6f, 0.9f, 1.0f} },  // CardBlock
             { L"刃の心得", L"毎ターン ナイフを{value}枚生成", {0.7f, 0.7f, 0.8f, 1.0f} },  // KnifeGen
+            { L"火事場の力", L"HP半分以下で攻撃+{value}", {0.9f, 0.4f, 0.2f, 1.0f} },  // LastStand
+            { L"決死の覚悟", L"HP1/4以下で攻撃+{value}",  {0.9f, 0.2f, 0.2f, 1.0f} },  // DeepStand
         };
         return infos[static_cast<int>(type)];
     }

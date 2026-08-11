@@ -78,7 +78,11 @@ public:
             {
                 actualValue = player->GetBuffManager().GetFinalAttack(data->mainEffect.value);
                 if (std::find(data->tags.begin(), data->tags.end(), "Knife") != data->tags.end())
-                    actualValue += player->GetBuffManager().GetBuffValue(BuffType::KnifePower);   // Œ¤–‚Ô‚ñ‚à•\Ž¦
+                    actualValue += player->GetBuffManager().GetBuffValue(BuffType::KnifePower);
+
+                int hp = player->GetHp(), mhp = player->GetMaxHp();
+                if (hp * 2 <= mhp) actualValue += player->GetBuffManager().GetBuffValue(BuffType::LastStand);
+                if (hp * 4 <= mhp) actualValue += player->GetBuffManager().GetBuffValue(BuffType::DeepStand);
             }
             else if (data->mainEffect.type == CardEffectType::Block)
                 actualValue = player->GetBuffManager().GetFinalBlock(data->mainEffect.value);

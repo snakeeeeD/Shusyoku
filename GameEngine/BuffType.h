@@ -53,4 +53,7 @@ enum class BuffType
     KnifeThrow,     // ナイフ投げ
     CardBlock,      // カード使うたびにブロック
     KnifeGen,       // 自動ナイフ生成
+
+    LastStand,      // HP1/2で攻撃アップ
+    DeepStand,      // HP1/4で攻撃アップ
 };

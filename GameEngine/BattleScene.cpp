@@ -477,7 +477,6 @@ void BattleScene::Update(float deltaTime)
         enemy->UpdateHitFlash(deltaTime);
     }
 
-
     // カメラズーム（マウスホイール）
     int wheelDelta = m_input.GetMouseWheelDelta();
     if (wheelDelta != 0)
@@ -1151,7 +1150,46 @@ void BattleScene::Draw()
     }
 
     m_player->worldY = m_gridMap->GetCell(m_playerCol, m_playerRow).gameObject.worldY;
-    m_player->Draw3D(m_renderer3D);
+    // 背水：赤い残像（低HP＋火事場/決死 の間）
+    bool berserk = (m_player->GetHp() * 2 <= m_player->GetMaxHp())
+        && (m_player->GetBuffManager().HasBuff(BuffType::LastStand)
+            || m_player->GetBuffManager().HasBuff(BuffType::DeepStand));
+    int hp = m_player->GetHp(), mhp = m_player->GetMaxHp();
+    bool hasLast = m_player->GetBuffManager().HasBuff(BuffType::LastStand);   // 1/2パワー
+    bool hasDeep = m_player->GetBuffManager().HasBuff(BuffType::DeepStand);   // 1/4パワー
+    float pulse = 0.5f + 0.5f * sinf(m_highlightTimer * 10.0f);               // 0..1 脈動
+
+    auto ptex = TextureManager::Get("player");
+    m_renderer3D->SetDepthEnabled(false);
+
+    // 1/2以下：プレイヤーが赤く脈動（膨らむ赤オーラ）
+    if (hp * 2 <= mhp && hasLast)
+    {
+        float sc = 1.0f + 0.15f * pulse;
+        float a = 0.20f + 0.30f * pulse;
+        m_renderer3D->DrawBillboard(ptex,
+            m_player->worldX, m_player->worldY, m_player->worldZ,
+            sc, sc, 0.0f, XMFLOAT4(1.0f, 0.2f, 0.15f, a));
+    }
+
+    // 1/4以下：赤い残像（1/2パワーがあれば残像自体が膨張脈動）
+    if (hp * 4 <= mhp && hasDeep)
+    {
+        float sc = 1.0f + (hasLast ? 0.25f * pulse : 0.0f);   // 1/2パワーで膨らむ脈動
+        for (int i = 1; i <= 3; i++)
+        {
+            float ph = m_highlightTimer * 14.0f + i * 1.2f;
+            float ox = sinf(ph) * 0.10f * i;
+            float oz = -0.09f * i;
+            float a = 0.30f - (i - 1) * 0.08f;
+            m_renderer3D->DrawBillboard(ptex,
+                m_player->worldX + ox, m_player->worldY, m_player->worldZ + oz,
+                sc, sc, 0.0f, XMFLOAT4(1.0f, 0.25f, 0.15f, a));   // ← サイズscで脈動
+        }
+    }
+
+    m_renderer3D->SetDepthEnabled(true);
+    m_player->Draw3D(m_renderer3D);   // 本体は前面
     for (auto enemy : m_enemies)
         enemy->Draw3D(m_renderer3D);
 

@@ -109,6 +109,9 @@ inline BuffType StringToBuffType(const std::string& str)
     if (str == "CardBlock") return BuffType::CardBlock;
     if (str == "KnifeGen") return BuffType::KnifeGen;
 
+    if (str == "LastStand") return BuffType::LastStand;
+    if (str == "DeepStand") return BuffType::DeepStand;
+
     return BuffType::AttackUp;
 }
 

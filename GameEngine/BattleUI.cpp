@@ -284,12 +284,33 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         if (i >= (int)m_cardAnims.size()) continue;
         if (i == topIdx) continue;
 
-        XMFLOAT4 col = CardVisual::GetCardColor(cards[i]->GetData()->type, false);
+        XMFLOAT4 col = CardVisual::GetCardColor(cards[i]->GetData()->type, false);   // ← 上書きしない（元の色）
 
         m_textRenderer->End();
         m_spriteRenderer->Begin();
-
         drawPlayableGlow(i);
+
+        // 自傷で死ぬカード：赤いハローを速く点滅（色は変えず危険を示す）
+        if (cards[i]->GetData()->selfDamage > 0
+            && cards[i]->GetData()->selfDamage >= ctx.player->GetHp())
+        {
+            float blink = 0.5f + 0.5f * sinf(ctx.highlightTimer * 18.0f);   // 早い点滅
+            float rx, ry, rw, rh;
+            CardVisual::GetRect(m_cardAnims[i].currentX, m_cardAnims[i].currentY,
+                m_cardAnims[i].currentScale, rx, ry, rw, rh);
+            float mg = 8.0f;
+            m_spriteRenderer->DrawSprite(m_whiteTexture, rx - mg, ry - mg, rw + mg * 2, rh + mg * 2,
+                m_cardAnims[i].currentRot, XMFLOAT4(1.0f, 0.0f, 0.0f, 0.25f + 0.55f * blink));
+        }
+
+        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture,
+            m_cardAnims[i].currentX, m_cardAnims[i].currentY,
+            m_cardAnims[i].currentScale, m_cardAnims[i].currentRot,
+            col,                                    // ← 元の色に戻す
+            cards[i]->GetData(), ctx.highlightTimer);
+
+        m_textRenderer->End();
+        m_spriteRenderer->Begin();
 
         CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture,
             m_cardAnims[i].currentX, m_cardAnims[i].currentY,
@@ -312,11 +333,22 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         m_spriteRenderer->Begin();
         drawPlayableGlow(topIdx);
 
+        if (cards[topIdx]->GetData()->selfDamage > 0
+            && cards[topIdx]->GetData()->selfDamage >= ctx.player->GetHp())
+        {
+            float blink = 0.5f + 0.5f * sinf(ctx.highlightTimer * 18.0f);
+            float rx, ry, rw, rh;
+            CardVisual::GetRect(m_cardAnims[topIdx].currentX, m_cardAnims[topIdx].currentY,
+                m_cardAnims[topIdx].currentScale, rx, ry, rw, rh);
+            float mg = 8.0f;
+            m_spriteRenderer->DrawSprite(m_whiteTexture, rx - mg, ry - mg, rw + mg * 2, rh + mg * 2,
+                0.0f, XMFLOAT4(1.0f, 0.0f, 0.0f, 0.25f + 0.55f * blink));
+        }
+
         CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture,
             m_cardAnims[topIdx].currentX, m_cardAnims[topIdx].currentY,
             m_cardAnims[topIdx].currentScale, m_cardAnims[topIdx].currentRot,
-            CardVisual::GetCardColor(cards[topIdx]->GetData()->type, false),
-            cards[topIdx]->GetData(), ctx.highlightTimer);
+            CardVisual::GetCardColor(cards[topIdx]->GetData()->type, false), cards[topIdx]->GetData(), ctx.highlightTimer);
         m_spriteRenderer->End();
         m_textRenderer->Begin();
 

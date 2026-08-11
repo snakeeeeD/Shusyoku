@@ -168,6 +168,9 @@ private:
 
     float m_highlightTimer;
 
+    float m_berserkFxTimer = 0.0f;
+    float m_emberTimer = 0.0f;
+
     void ProcessDeadEnemies();
 
     bool m_cardSelecting = false;

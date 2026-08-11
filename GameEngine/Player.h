@@ -52,6 +52,8 @@ public:
 
     void SnapDisplayHp() { m_displayHp = (float)m_hp; }
 
+    void LoseHp(int amount) { m_hp -= amount; if (m_hp < 0) m_hp = 0; }   // 0‚Ü‚Å‹–‰ÂŽ©‚ÅŽ€‚Ê
+
 private:
 
     int m_hp;

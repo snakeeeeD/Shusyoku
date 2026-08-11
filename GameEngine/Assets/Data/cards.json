@@ -559,6 +559,26 @@
       }
     },
     {
+      "id": "ATK_lifesteal",
+      "name": "吸血斬",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "tags": [ "Berserk" ],
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "{value}ダメージ HP+{sub}回復",
+      "upgrade": { "subValue": 1 },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 6
+      },
+      "subEffect": {
+        "type": "Heal",
+        "value": 2
+      }
+    },
+    {
       "id": "ATK_piercing_beam",
       "name": "貫通ビーム",
       "type": "Attack",
@@ -1068,6 +1088,23 @@
         "value": 1
       }
     },
+    {
+      "id": "SKL_bloodward",
+      "name": "血の盾",
+      "type": "Skill",
+      "rarity": "Common",
+      "tags": [ "Berserk" ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "selfDamage": 4,
+      "description": "ブロック{value} 自傷4",
+      "upgrade": { "mainValue": 4 },
+      "mainEffect": {
+        "type": "Block",
+        "value": 10
+      }
+    },
 
     {
       "id": "MOV_move",
@@ -1359,6 +1396,42 @@
         "type": "ApplyBuff",
         "value": 1,
         "buffType": "KnifeGen",
+        "duration": -1
+      }
+    },
+    {
+      "id": "POW_laststand",
+      "name": "火事場の力",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "tags": [ "Berserk" ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "HP半分以下の間 攻撃+{value}",
+      "upgrade": { "mainValue": 1 },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 3,
+        "buffType": "LastStand",
+        "duration": -1
+      }
+    },
+    {
+      "id": "POW_deepstand",
+      "name": "決死の覚悟",
+      "type": "Power",
+      "rarity": "Rare",
+      "tags": [ "Berserk" ],
+      "cost": 2,
+      "range": 0,
+      "rangeType": "None",
+      "description": "HP1/4以下の間 攻撃+{value}",
+      "upgrade": { "mainValue": 2 },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 5,
+        "buffType": "DeepStand",
         "duration": -1
       }
     },

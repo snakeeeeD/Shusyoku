@@ -20,7 +20,9 @@ void BuffManager::AddBuff(const Buff& buff)
         buff.type == BuffType::Riposte ||
         buff.type == BuffType::KnifePower ||
         buff.type == BuffType::CardBlock || 
-        buff.type == BuffType::KnifeGen)
+        buff.type == BuffType::KnifeGen || 
+        buff.type == BuffType::LastStand || 
+        buff.type == BuffType::DeepStand)
     {
         for (auto& b : m_buffs)
             if (b.type == buff.type) { b.value += buff.value; return; }
