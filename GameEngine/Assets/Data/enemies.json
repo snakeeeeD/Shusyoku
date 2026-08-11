@@ -872,6 +872,126 @@
           }
         }
       ]
+    },
+
+    {
+      "id": "stonebug",
+      "texture": "enemy_golem",
+      "hp": 30,
+      "width": 1.1,
+      "height": 1.1,
+      "actions": [
+        {
+          "description": "守りを固める（{0}ブロック）",
+          "target": { "rangeType": "None" },
+          "effects": [
+            { "kind": "Block", "value": 10 }
+          ],
+          "select": { "chance": 40 }
+        },
+        {
+          "description": "石の一撃{0}",
+          "target": {
+            "rangeType": "Adjacent",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 1
+          },
+          "effects": [
+            { "kind": "Damage", "value": 7 }
+          ],
+          "select": { "chance": 60 }
+        }
+      ]
+    },
+
+    {
+      "id": "firespore",
+      "texture": "enemy_obake",
+      "hp": 24,
+      "width": 1.0,
+      "height": 1.0,
+      "actions": [
+        {
+          "description": "胞子爆発{0}",
+          "vfx": "explosion",
+          "target": {
+            "rangeType": "Area",
+            "range": 2,
+            "approach": "Toward",
+            "moveRange": 1
+          },
+          "effects": [
+            { "kind": "Damage", "value": 14 }
+          ],
+          "select": {
+            "condition": "turnMultiple",
+            "conditionValue": 2,
+            "chance": 100
+          }
+        },
+        {
+          "description": "火の粉{0}",
+          "target": {
+            "rangeType": "Adjacent",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 1
+          },
+          "effects": [
+            { "kind": "Damage", "value": 4 }
+          ],
+          "select": { "chance": 100 }
+        }
+      ]
+    },
+
+    {
+      "id": "hound",
+      "texture": "enemy_goblin",
+      "hp": 18,
+      "width": 1.0,
+      "height": 1.0,
+      "actions": [
+        {
+          "description": "突進{0}",
+          "target": {
+            "rangeType": "Cross",
+            "range": 1,
+            "approach": "Dash",
+            "moveRange": 3
+          },
+          "effects": [
+            { "kind": "Damage", "value": 7 }
+          ],
+          "select": { "chance": 70 }
+        },
+        {
+          "description": "噛みつき{0}",
+          "target": {
+            "rangeType": "Adjacent",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 1
+          },
+          "effects": [
+            { "kind": "Damage", "value": 6 }
+          ],
+          "select": { "chance": 30 }
+        },
+        {
+          "description": "唸る（攻撃力+{0}）",
+          "target": { "rangeType": "None" },
+          "effects": [
+            { "kind": "Buff", "buff": "AttackUp", "value": 2, "duration": -1, "applyTo": "Self" }
+          ],
+          "select": {
+            "condition": "turnMultiple",
+            "conditionValue": 3,
+            "chance": 100
+          }
+        }
+      ]
     }
   ]
 }
