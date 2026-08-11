@@ -78,7 +78,8 @@ public:
             {
                 actualValue = player->GetBuffManager().GetFinalAttack(data->mainEffect.value);
                 if (std::find(data->tags.begin(), data->tags.end(), "Knife") != data->tags.end())
-                    actualValue += player->GetBuffManager().GetBuffValue(BuffType::KnifePower);
+                    actualValue += player->GetBuffManager().GetBuffValue(BuffType::KnifePower)
+                    + RelicManager::SumValue("knifeBonus");
 
                 int hp = player->GetHp(), mhp = player->GetMaxHp();
                 if (hp * 2 <= mhp) actualValue += player->GetBuffManager().GetBuffValue(BuffType::LastStand);
@@ -112,7 +113,12 @@ public:
 
         size_t op = result.find(L"{onhit}");
         if (op != std::wstring::npos)
-            result.replace(op, 7, std::to_wstring(data->onHitEffect.value));
+        {
+            int ov = data->onHitEffect.value;
+            if (data->onHitEffect.buffType == "Poison")
+                ov += RelicManager::SumValue("poisonAdd");   // ì≈ÇÃêSìæÇ‘ÇÒÇ‡ï\é¶
+            result.replace(op, 7, std::to_wstring(ov));
+        }
 
         size_t hp = result.find(L"{hits}");
         if (hp != std::wstring::npos)

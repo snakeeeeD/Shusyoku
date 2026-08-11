@@ -165,6 +165,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
     // レリック：戦闘開始時
     if (int blk = RelicManager::SumValue("startBlock")) m_player->AddBlock(blk);
+    if (int h = RelicManager::SumValue("startHeal")) m_player->Heal(h);
     if (int atk = RelicManager::SumValue("startBuffAtk"))
     {
         Buff b; b.type = BuffType::AttackUp; b.value = atk; b.duration = 999;
@@ -205,13 +206,15 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
                 for (auto enemy : m_enemies)
                 {
                     if (enemy->GetHp() <= 0) continue;
-                    Buff pb; pb.type = BuffType::Poison; pb.value = nox; pb.duration = nox;
-                    pb.name = BuffInfo::Get(BuffType::Poison).name; pb.description = L"";
-                    enemy->GetBuffManager().AddBuff(pb);
                     float wx = (enemy->gridCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
                     float wz = (enemy->gridRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                    Buff pb; pb.type = BuffType::Poison;
+                    pb.value = nox + RelicManager::SumValue("poisonAdd");   // ← +毒の心得
+                    pb.duration = pb.value;
+                    pb.name = BuffInfo::Get(BuffType::Poison).name; pb.description = L"";
+                    enemy->GetBuffManager().AddBuff(pb);
                     EffectManager::Play("poison_apply", wx, 0.5f, wz);
-                    FloatingTextManager::Spawn(wx, 0.7f, wz, std::to_wstring(nox),
+                    FloatingTextManager::Spawn(wx, 0.7f, wz, std::to_wstring(pb.value),
                         BuffInfo::Get(BuffType::Poison).color, 32.0f);
                 }
 
@@ -269,6 +272,8 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
                 m_hand.AddCard("ATK_knife");
                 m_battleUI->StartDrawCardEffect("ATK_knife");
             }
+
+            RunTurnCycle();
     
         };
     m_turnManager.onEnemyTurnStart = [this]()
@@ -328,6 +333,10 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             enemy->ApplyDifficulty(hpMul, dmgMul, bonusActions);
     }
 
+    // 猛毒の小瓶：少し経ってから全敵に毒（Updateで発火）
+    m_startPoisonAmount = RelicManager::SumValue("startPoison");
+    m_startPoisonTimer = 0.6f;
+
     for (auto enemy : m_enemies)
     {
         int tC = (m_decoyCol >= 0) ? m_decoyCol : m_playerCol;
@@ -340,6 +349,8 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
      FloatingTextManager::Clear();
      UiNotice::Clear();
      EffectManager::Clear();
+
+     RunTurnCycle();
 
     return true;
 }
@@ -390,27 +401,46 @@ void BattleScene::Update(float deltaTime)
 
     FloatingTextManager::Update(deltaTime);
     // マルチヒットの追撃を間隔をあけて処理
-    if (m_multiHitRemain > 0 && m_multiHitTarget)
+    if (m_multiHitRemain > 0 && !m_multiHitTargets.empty())
     {
         m_multiHitTimer -= deltaTime;
         if (m_multiHitTimer <= 0.0f)
         {
-            // 対象がまだ生きているか確認（死んでいたら中断）
-            bool alive = false;
-            for (auto e : m_enemies) if (e == m_multiHitTarget && e->GetHp() > 0) alive = true;
-            if (alive)
+            bool anyAlive = false;
+            for (auto t : m_multiHitTargets)
             {
-                m_multiHitTarget->TakeDamage(m_multiHitDamage);
-                m_multiHitTarget->StartJump(0.5f, 0.2f);   // 小さく跳ねる
+                bool alive = false;
+                for (auto e : m_enemies) if (e == t && e->GetHp() > 0) alive = true;
+                if (alive) { t->TakeDamage(m_multiHitDamage); t->StartJump(0.5f, 0.2f); anyAlive = true; }
             }
             m_multiHitRemain--;
             m_multiHitTimer = MULTI_HIT_INTERVAL;
-            if (!alive || m_multiHitRemain <= 0)
+            if (!anyAlive || m_multiHitRemain <= 0)
             {
                 m_multiHitRemain = 0;
-                m_multiHitTarget = nullptr;
-                ProcessDeadEnemies();
+                m_multiHitTargets.clear();
             }
+        }
+    }
+
+    if (m_startPoisonAmount > 0)
+    {
+        m_startPoisonTimer -= deltaTime;
+        if (m_startPoisonTimer <= 0.0f)
+        {
+            for (auto enemy : m_enemies)
+            {
+                if (enemy->GetHp() <= 0) continue;
+                Buff b; b.type = BuffType::Poison;
+                b.value = m_startPoisonAmount + RelicManager::SumValue("poisonAdd");
+                b.duration = b.value;
+                b.name = BuffInfo::Get(BuffType::Poison).name; b.description = L"";
+                enemy->GetBuffManager().AddBuff(b);
+                float wx = (enemy->gridCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                float wz = (enemy->gridRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                EffectManager::Play("poison_apply", wx, 0.5f, wz);
+            }
+            m_startPoisonAmount = 0;   // 一度だけ
         }
     }
 
@@ -1978,7 +2008,7 @@ void BattleScene::HandleInput()
                     ProcessDeadEnemies();
                     if (execResult.multiHitRemain > 0)
                     {
-                        m_multiHitTarget = execResult.multiHitTarget;
+                        m_multiHitTargets = execResult.multiHitTargets;
                         m_multiHitRemain = execResult.multiHitRemain;
                         m_multiHitDamage = execResult.multiHitDamage;
                         m_multiHitTimer = MULTI_HIT_INTERVAL;
@@ -2308,7 +2338,7 @@ void BattleScene::HandleInput()
 
                     if (execResult.multiHitRemain > 0)
                     {
-                        m_multiHitTarget = execResult.multiHitTarget;
+                        m_multiHitTargets = execResult.multiHitTargets;
                         m_multiHitRemain = execResult.multiHitRemain;
                         m_multiHitDamage = execResult.multiHitDamage;
                         m_multiHitTimer = MULTI_HIT_INTERVAL;
@@ -2499,6 +2529,21 @@ void BattleScene::ApplyDiscardEffect(const CardEffectData& e)
     case CardEffectType::AddEnergy: m_player->AddEnergy(e.value); break;
     case CardEffectType::Block:     m_player->AddBlock(m_player->GetBuffManager().GetFinalBlock(e.value)); break;
     case CardEffectType::CreateCard: for (int i = 0; i < e.value; i++) { m_hand.AddCard(e.cardId); m_battleUI->StartDrawCardEffect(e.cardId); } break;
+    case CardEffectType::ApplyDebuff:   // 捨てたら全敵にデバフ（毒など）
+    {
+        BuffType bt = StringToBuffType(e.buffType);
+        for (auto enemy : m_enemies)
+        {
+            if (enemy->GetHp() <= 0) continue;
+            Buff b; b.type = bt; b.value = e.value; b.duration = e.value;
+            b.name = BuffInfo::Get(bt).name; b.description = L"";
+            enemy->GetBuffManager().AddBuff(b);
+            float wx = (enemy->gridCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+            float wz = (enemy->gridRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+            EffectManager::Play("poison_apply", wx, 0.5f, wz);
+        }
+        break;
+    }
     default: break;
     }
 }
@@ -2515,4 +2560,20 @@ void BattleScene::AutoDiscardAll()
         m_battleUI->OnCardRemoved(i);
     }
     for (auto& e : effects) ApplyDiscardEffect(e);   // 全部捨ててから発動
+}
+
+void BattleScene::RunTurnCycle()
+{
+    int n = RelicManager::SumValue("turnCycle");
+    if (n <= 0) return;
+
+    // 追加で n 枚引く（7→8枚）
+    for (int i = 0; i < n; i++)
+    {
+        std::string id = m_deck.DrawCard();
+        if (!id.empty()) { m_hand.AddCard(id); m_battleUI->StartDrawCardEffect(id); }
+    }
+
+    // n 枚を「選んで捨てる」既存UIを起動（8→7枚、選んだカードのonDiscardが発動）
+    m_discardSelectCount = min(n, (int)m_hand.GetCards().size());
 }

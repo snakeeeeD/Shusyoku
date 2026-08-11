@@ -134,7 +134,7 @@ private:
 
     int m_prevHoveredCardIndex;
 
-    Enemy* m_multiHitTarget = nullptr;
+    std::vector<Enemy*> m_multiHitTargets;
     int    m_multiHitRemain = 0;
     int    m_multiHitDamage = 0;
     float  m_multiHitTimer = 0.0f;
@@ -158,6 +158,8 @@ private:
     int m_currentEnemyIdx = 0;
     int m_poisonIdx = 0;
     int m_poisonSubTicks = 0;
+    int   m_startPoisonAmount = 0;
+    float m_startPoisonTimer = 0.0f;
     float m_enemyActionDelay = 0;
     static constexpr float ENEMY_ACTION_PAUSE = 0.05f;
     static constexpr float ENEMY_BETWEEN_PAUSE = 0.4f;
@@ -206,4 +208,6 @@ private:
     int m_selectedEnemyRange = -1;
 
     std::string m_rewardRelic;
+
+    void RunTurnCycle();   // 回転の輪：レリック値ぶん捨てて引く
 };

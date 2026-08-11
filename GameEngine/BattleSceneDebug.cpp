@@ -18,10 +18,6 @@ void BattleScene::DrawImGui()
         for (auto enemy : m_enemies)
             enemy->SetHp(0);
 
-    if (ImGui::Button("Relic: iron_heart"))    PlayerDataManager::AddRelic("iron_heart");
-    if (ImGui::Button("Relic: combo_blade"))   PlayerDataManager::AddRelic("combo_blade");
-    if (ImGui::Button("Relic: mana_furnace"))  PlayerDataManager::AddRelic("mana_furnace");
-
     // --- エンカウンター選択 ---
     ImGui::Text("Encounter");
     ImGui::SliderInt("Template", &m_debugEncounterIndex, -1, EncounterDataBase::GetCount() - 1);

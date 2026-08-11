@@ -470,9 +470,13 @@ void SceneManager::DrawImGui()
 	if (ImGui::SliderFloat("BGM", &bv, 0.0f, 1.0f)) { pd.bgmVolume = bv;    Audio::SetBgmVolume(bv);    PlayerDataManager::Save(); }
 
 	if (ImGui::CollapsingHeader("Relics"))
-		for (auto& id : RelicManager::AllIds())
+	{
+		auto ids = RelicManager::AllIds();
+		std::sort(ids.begin(), ids.end());     // アルファベット順
+		for (auto& id : ids)
 			if (ImGui::Button(id.c_str()))
 				PlayerDataManager::AddRelic(id);
+	}
 
 	ImGui::End();
 #endif

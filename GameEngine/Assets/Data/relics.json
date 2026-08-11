@@ -20,7 +20,7 @@
       "id": "healing_spring",
       "name": "治癒の泉",
       "kind": "winHeal",
-      "value": 4,
+      "value": 5,
       "rarity": "uncommon",
       "desc": "勝利後にHP+4"
     },
@@ -138,6 +138,46 @@
       "rarity": "uncommon",
       "desc": "罠のデバフ持続+1ターン"
     },
+    {
+      "id": "life_charm",
+      "name": "生命の護符",
+      "kind": "startHeal",
+      "value": 6,
+      "rarity": "uncommon",
+      "desc": "戦闘開始時 HP+6"
+    },
+    {
+      "id": "venom_vial",
+      "name": "猛毒の小瓶",
+      "kind": "startPoison",
+      "value": 3,
+      "rarity": "uncommon",
+      "desc": "戦闘開始時 全ての敵に毒3"
+    },
+    {
+      "id": "toxic_lore",
+      "name": "毒の心得",
+      "kind": "poisonAdd",
+      "value": 1,
+      "rarity": "uncommon",
+      "desc": "毒を付与する時 +1"
+    },
+    {
+      "id": "knife_whetstone",
+      "name": "研ぎ師",
+      "kind": "knifeBonus",
+      "value": 2,
+      "rarity": "uncommon",
+      "desc": "ナイフのダメージ+2"
+    },
+    {
+      "id": "cycle_wheel",
+      "name": "回転の輪",
+      "kind": "turnCycle",
+      "value": 1,
+      "rarity": "uncommon",
+      "desc": "毎ターン開始時 1枚捨てて1枚引く"
+    },
 
     {
       "id": "giant_gauntlet",
@@ -181,14 +221,6 @@
     },
 
     {
-      "id": "mana_furnace",
-      "name": "魔力の炉",
-      "kind": "turnEnergy",
-      "value": 1,
-      "rarity": "rare",
-      "desc": "毎ターン、エナジー+1"
-    },
-    {
       "id": "combo_blade",
       "name": "連撃の刃",
       "kind": "multiHit",
@@ -217,9 +249,9 @@
       "id": "boss_furnace",
       "name": "覇道の炉",
       "kind": "turnEnergy",
-      "value": 2,
+      "value": 1,
       "rarity": "boss",
-      "desc": "毎ターン、エナジー+2"
+      "desc": "毎ターン、エナジー+1"
     },
     {
       "id": "boss_titan",

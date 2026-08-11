@@ -69,8 +69,11 @@ static void PlayOnHitVfx(const CardEffectData& e, Enemy* enemy, GridMap* gridMap
     EffectManager::Play(fx, wx, 0.5f, wz);
 
     if (b == "Poison")
-        FloatingTextManager::Spawn(wx, 0.7f, wz, std::to_wstring(e.value),
+    {
+        int shown = e.value + RelicManager::SumValue("poisonAdd");   // 毒の心得ぶんも表示
+        FloatingTextManager::Spawn(wx, 0.7f, wz, std::to_wstring(shown),
             BuffInfo::Get(BuffType::Poison).color, 32.0f);
+    }
 }
 
 static void ApplyAllEnemyEffect(const CardData& data, std::vector<Enemy*>& enemies)
@@ -143,12 +146,12 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 baseVal *= traps;   // 盤面の罠数だけ倍
             }
 
+            int hits = EffectiveHits(data);
+            int dmg = player->GetBuffManager().GetFinalAttack(baseVal);
             for (auto enemy : targets)
             {
-                for (int h = 0; h < EffectiveHits(data); h++)
-                    enemy->TakeDamage(player->GetBuffManager().GetFinalAttack(baseVal));
+                enemy->TakeDamage(dmg);
 
-                // Thorns反射
                 if (enemy->GetBuffManager().HasBuff(BuffType::Thorns))
                     player->TakeDamage(enemy->GetBuffManager().GetBuffValue(BuffType::Thorns));
                 CardEffect::ApplyOnHitEffect(data.onHitEffect, enemy->GetBuffManager());
@@ -161,8 +164,14 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                     else if (data.onHitEffect.type == CardEffectType::Pull)
                         ApplyPull(enemy, playerCol, playerRow, data.onHitEffect.value, gridMap, enemies, outNewPlayerCol, outNewPlayerRow);
                 }
+            }                            
+            if (hits > 1)        
+            {
+                result.multiHitTargets = targets;
+                result.multiHitRemain = hits - 1;
+                result.multiHitDamage = dmg;
             }
-        }
+        }                            
         else
         {
             if (data.pierce)
@@ -422,12 +431,11 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             {
                 // 毒を付与 → その毒ぶんを即座にダメージ（毒は残って継続）
                 Buff b; b.type = BuffType::Poison;
-                b.value = data.mainEffect.value;
-                b.duration = data.mainEffect.value;
+                b.value = data.mainEffect.value + RelicManager::SumValue("poisonAdd");
+                b.duration = b.value;
                 b.name = BuffInfo::Get(BuffType::Poison).name; b.description = L"";
                 target->GetBuffManager().AddBuff(b);
-
-                int total = target->GetBuffManager().GetBuffValue(BuffType::Poison);
+                int total = target->GetBuffManager().GetBuffValue(BuffType::Poison);   // 即ダメも+1込み
                 target->TakeDamage(total, DamageFeel::Poison);   // 今ある毒の総量ぶん即ダメージ
 
                 float wx = (target->gridCol - gridMap->GetCols() / 2.0f) * 1.1f;
@@ -449,7 +457,8 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 if (hp * 4 <= mhp) dmg += player->GetBuffManager().GetBuffValue(BuffType::DeepStand);  // 1/4以下
 
                 if (std::find(data.tags.begin(), data.tags.end(), "Knife") != data.tags.end())
-                    dmg += player->GetBuffManager().GetBuffValue(BuffType::KnifePower);
+                    dmg += player->GetBuffManager().GetBuffValue(BuffType::KnifePower)
+                    + RelicManager::SumValue("knifeBonus");   // 研ぎ師
 
                 target->TakeDamage(dmg);
             }
@@ -457,7 +466,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             int totalHits = EffectiveHits(data);
             if (totalHits > 1)
             {
-                result.multiHitTarget = target;
+                result.multiHitTargets = { target };   // ← 1要素のリスト
                 result.multiHitRemain = totalHits - 1;
                 result.multiHitDamage = dmg;
             }

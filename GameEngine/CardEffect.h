@@ -1,5 +1,6 @@
 #pragma once
 #include "BuffManager.h"
+#include "RelicManager.h"
 #include "BuffType.h"
 #include "CardData.h"
 #include "Player.h"
@@ -54,6 +55,7 @@ namespace CardEffect
         Buff buff;
         buff.type = bt;
         buff.value = effect.value;
+        if (bt == BuffType::Poison) buff.value += RelicManager::SumValue("poisonAdd");   // ì≈ÇÃêSìæ
         buff.duration = effect.duration;
         buff.name = BuffInfo::Get(bt).name;
         buff.description = L"";

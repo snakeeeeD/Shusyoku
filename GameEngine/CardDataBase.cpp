@@ -98,6 +98,7 @@ void CardDataBase::Init()
                 data.onDiscardEffect.type = StringToCardEffectType(c["onDiscardEffect"]["type"]);
                 data.onDiscardEffect.value = c["onDiscardEffect"]["value"];
                 data.onDiscardEffect.cardId = c["onDiscardEffect"].value("cardId", "");
+                data.onDiscardEffect.buffType = c["onDiscardEffect"].value("buffType", "");
             }
             else data.onDiscardEffect.hasEffect = false;
 

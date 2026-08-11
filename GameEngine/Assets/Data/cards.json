@@ -579,6 +579,25 @@
       }
     },
     {
+      "id": "ATK_frenzy_blow",
+      "name": "狂乱撃",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "tags": [ "Berserk" ],
+      "cost": 2,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "hits": 2,
+      "selfDamage": 3,
+      "description": "{value}ダメージ×{hits}\n自傷3",
+      "自傷3\",": null,
+      "upgrade": { "mainValue": 2 },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 7
+      }
+    },
+    {
       "id": "ATK_piercing_beam",
       "name": "貫通ビーム",
       "type": "Attack",
@@ -594,6 +613,39 @@
       "mainEffect": {
         "type": "Damage",
         "value": 7
+      }
+    },
+    {
+      "id": "ATK_destruction",
+      "name": "デストラクション",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 7,
+      "range": 20,
+      "rangeType": "Area",
+      "vfx": "explosion",
+      "description": "全ての敵に{value}ダメージ",
+      "upgrade": { "cost": -1 },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 60
+      }
+    },
+    {
+      "id": "ATK_whirlwind",
+      "name": "大車輪",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 3,
+      "range": 1,
+      "rangeType": "Area",
+      "hits": 3,
+      "vfx": "hit",
+      "description": "周囲の敵に{value}ダメージ×{hits}",
+      "upgrade": { "hits": 1 },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 6
       }
     },
     {
@@ -851,6 +903,26 @@
       }
     },
     {
+      "id": "SKL_discard_guard",
+      "name": "断捨離",
+      "type": "Skill",
+      "rarity": "Common",
+      "tags": [ "Bulwark", "Discard" ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "ブロック{value} ／ 捨てられた時 ブロック{ondiscard}",
+      "upgrade": { "onDiscardValue": 2 },
+      "mainEffect": {
+        "type": "Block",
+        "value": 4
+      },
+      "onDiscardEffect": {
+        "type": "Block",
+        "value": 9
+      }
+    },
+    {
       "id": "SKL_flex",
       "name": "渾身",
       "type": "Skill",
@@ -946,6 +1018,28 @@
         "value": 6
       },
       "subEffect": {
+        "type": "CreateCard",
+        "cardId": "ATK_knife",
+        "value": 1
+      }
+    },
+    {
+      "id": "SKL_hidden_knife",
+      "name": "暗器",
+      "type": "Skill",
+      "rarity": "Common",
+      "tags": [ "Knife", "Discard" ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "ナイフ{value}枚生成 ／ 捨てられた時 ナイフ1枚生成",
+      "upgrade": { "mainValue": 1 },
+      "mainEffect": {
+        "type": "CreateCard",
+        "cardId": "ATK_knife",
+        "value": 1
+      },
+      "onDiscardEffect": {
         "type": "CreateCard",
         "cardId": "ATK_knife",
         "value": 1
@@ -1089,20 +1183,80 @@
       }
     },
     {
+      "id": "SKL_toxic_toss",
+      "name": "毒の投げ捨て",
+      "type": "Skill",
+      "rarity": "Common",
+      "tags": [ "Poison", "Discard" ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "1枚捨てる ／ 捨てられた時 全敵に毒{ondiscard}",
+      "upgrade": { "onDiscardValue": 2 },
+      "mainEffect": {
+        "type": "Discard",
+        "value": 1
+      },
+      "onDiscardEffect": {
+        "type": "ApplyDebuff",
+        "value": 3,
+        "buffType": "Poison"
+      }
+    },
+    {
       "id": "SKL_bloodward",
       "name": "血の盾",
       "type": "Skill",
       "rarity": "Common",
       "tags": [ "Berserk" ],
-      "cost": 1,
+      "cost": 2,
       "range": 0,
       "rangeType": "None",
-      "selfDamage": 4,
+      "selfDamage": 2,
       "description": "ブロック{value} 自傷4",
       "upgrade": { "mainValue": 4 },
       "mainEffect": {
         "type": "Block",
-        "value": 10
+        "value": 16
+      }
+    },
+    {
+      "id": "SKL_blood_toll",
+      "name": "血の代償",
+      "type": "Skill",
+      "rarity": "Common",
+      "tags": [ "Berserk" ],
+      "cost": 0,
+      "range": 0,
+      "rangeType": "None",
+      "selfDamage": 2,
+      "description": "{value}ドロー 自傷3",
+      "upgrade": { "mainValue": 1 },
+      "mainEffect": {
+        "type": "Draw",
+        "value": 2
+      }
+    },
+    {
+      "id": "SKL_reckless",
+      "name": "無謀",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "tags": [ "Berserk" ],
+      "cost": 0,
+      "range": 0,
+      "rangeType": "None",
+      "selfDamage": 5,
+      "description": "{value}ドロー エナジー+{sub} 自傷5",
+      "exhaust": true,
+      "upgrade": { "subValue": 1 },
+      "mainEffect": {
+        "type": "Draw",
+        "value": 3
+      },
+      "subEffect": {
+        "type": "AddEnergy",
+        "value": 1
       }
     },
 

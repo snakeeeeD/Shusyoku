@@ -19,7 +19,7 @@ public:
         std::vector<std::string> drawnCards;
         CardEffectType pendingSelection = CardEffectType::None;
         int pendingDiscard = 0;
-        Enemy* multiHitTarget = nullptr;   // 追撃対象
+        std::vector<Enemy*> multiHitTargets;  // 追撃対象
         int    multiHitRemain = 0;         // 残りヒット数
         int    multiHitDamage = 0;         // 1発の確定ダメージ
         bool startChainDetonate = false;
