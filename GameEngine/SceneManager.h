@@ -166,4 +166,13 @@ private:
     EventPending m_eventPending = EventPending::None;
     std::string  m_eventBattleParam;
     std::string  m_cardSelectMode; 
+
+    void DrawBigCard(const CardData* d, float x, float y, float scale, bool textPass);
+
+    int  m_deckHoveredPrev = -1;
+    int  m_deckPreviewIdx = -1;   // クリックで拡大中のカード（-1=なし）
+    void DrawDeckPreview();
+    bool m_deckShowUpgrade = false;   // デッキ閲覧時に強化後も表示するか
+    bool m_previewShowUpgrade = false;   // 拡大表示中に+版を見せるか
+    bool m_upgradeBtnHov = false;
 };

@@ -2,6 +2,7 @@
 #include "FieldMapConfig.h"
 #include "EventDataBase.h"
 #include "SceneType.h"
+#include "Audio.h"
 
 #include <cstdlib>
 #include <algorithm>
@@ -317,6 +318,28 @@ void FieldScene::Update(float deltaTime)
     }
 
     m_input.Update();
+
+    // 移動可能マスのホバーSE
+    POINT mp = m_input.GetMousePos();
+    int hov = -1;
+    for (int row = 0; row < GRID_ROWS; row++)
+        for (int col = 0; col < GRID_COLS; col++)
+        {
+            XMFLOAT2 p = GetNodeScreenPos(col, row);
+            if (mp.x >= p.x && mp.x <= p.x + CELL_SIZE && mp.y >= p.y && mp.y <= p.y + CELL_SIZE)
+            {
+                bool movable = m_freeMove
+                    ? (m_nodes[GetNodeIndex(col, row)].type != FieldNodeType::Empty && !(col == m_playerCol && row == m_playerRow))
+                    : CanMove(col, row);
+                if (movable) hov = GetNodeIndex(col, row);
+            }
+        }
+    if (hov != m_hoverIdxPrev)
+    {
+        if (hov >= 0) Audio::PlaySE("Assets/Sound/se/hover.mp3");
+        m_hoverIdxPrev = hov;
+    }
+
     m_highlightTimer += deltaTime * 2.0f;
     if (m_highlightTimer > 3.14159f * 2.0f)
         m_highlightTimer = 0.0f;

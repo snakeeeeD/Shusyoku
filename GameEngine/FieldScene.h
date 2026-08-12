@@ -77,6 +77,8 @@ private:
     static constexpr float CELL_SIZE = 60.0f;
     static constexpr float CELL_GAP = 20.0f;
 
+    int m_hoverIdxPrev = -1;
+
     bool m_resumeBattle = false;
     bool m_freeMove = false;
 };

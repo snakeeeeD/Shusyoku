@@ -120,37 +120,60 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 
 	TextureManager::Load("white", L"Assets/Test/White.png");
 
-	TextureManager::Load("particle", L"Assets/Particles/circle.png");
-	TextureManager::Load("particle_poison", L"Assets/Particles/circle_01.png");
-	TextureManager::Load("fire", L"Assets/Particles/fire.png");
-	TextureManager::Load("magic", L"Assets/Particles/magic.png");
-	TextureManager::Load("smoke", L"Assets/Particles/smoke.png");
-	TextureManager::Load("star", L"Assets/Particles/star.png");
-	TextureManager::Load("skull", L"Assets/Particles/skull.png");
-	TextureManager::Load("crosshair", L"Assets/Particles/crosshair.png");
+	// パーティクル
+	{
+		TextureManager::Load("particle", L"Assets/Particles/circle.png");
+		TextureManager::Load("particle_poison", L"Assets/Particles/circle_01.png");
+		TextureManager::Load("fire", L"Assets/Particles/fire.png");
+		TextureManager::Load("magic", L"Assets/Particles/magic.png");
+		TextureManager::Load("smoke", L"Assets/Particles/smoke.png");
+		TextureManager::Load("star", L"Assets/Particles/star.png");
+		TextureManager::Load("skull", L"Assets/Particles/skull.png");
+		TextureManager::Load("crosshair", L"Assets/Particles/crosshair.png");
+	}
 
-	TextureManager::Load("title", L"Assets/Test/Title.png");
-	TextureManager::Load("battle_bg", L"Assets/Field/GrassField.jpg");
-	TextureManager::Load("map_bg", L"Assets/Field/Map.jpg");
-	TextureManager::Load("cardSelect_bg", L"Assets/Field/CardSelect.jpeg");
+	// フィールド
+	{
+		TextureManager::Load("title", L"Assets/Test/Title.png");
+		TextureManager::Load("battle_bg", L"Assets/Field/GrassField.jpg");
+		TextureManager::Load("map_bg", L"Assets/Field/Map.jpg");
+		TextureManager::Load("cardSelect_bg", L"Assets/Field/CardSelect.jpeg");
+	}
 
-	TextureManager::Load("player", L"Assets/Player/yuusya_game.png");
-	TextureManager::Load("kakashi", L"Assets/Player/kakashi.png");
+	// プレイヤー
+	{
+		TextureManager::Load("player", L"Assets/Player/yuusya_game.png");
+		TextureManager::Load("kakashi", L"Assets/Player/kakashi.png");
+	}
 
-	TextureManager::Load("enemy_slime", L"Assets/Enemy/slime.png");
-	TextureManager::Load("enemy_goblin", L"Assets/Enemy/goblin.png");
-	TextureManager::Load("enemy_orc", L"Assets/Enemy/orc.png");
-	TextureManager::Load("enemy_bug", L"Assets/Enemy/bug.png");
-	TextureManager::Load("enemy_spore", L"Assets/Enemy/spore.png");
-	TextureManager::Load("enemy_hound", L"Assets/Enemy/hound.png");
-	TextureManager::Load("enemy_dragon_red", L"Assets/Enemy/dragon_red.png");
-	TextureManager::Load("enemy_archer", L"Assets/Enemy/archer.png");
-	TextureManager::Load("enemy_reaper", L"Assets/Enemy/reaper.png");
-	TextureManager::Load("enemy_tentacle", L"Assets/Enemy/cyaegha.png");
-	TextureManager::Load("enemy_bear", L"Assets/Enemy/bear.png");
-	TextureManager::Load("enemy_golem", L"Assets/Enemy/golem.png");
-	TextureManager::Load("enemy_obake", L"Assets/Enemy/obake.png");
-	TextureManager::Load("enemy_mimic", L"Assets/Enemy/mimic.png");
+	// エネミー
+	{
+		TextureManager::Load("enemy_slime", L"Assets/Enemy/slime.png");
+		TextureManager::Load("enemy_goblin", L"Assets/Enemy/goblin.png");
+		TextureManager::Load("enemy_orc", L"Assets/Enemy/orc.png");
+		TextureManager::Load("enemy_bug", L"Assets/Enemy/bug.png");
+		TextureManager::Load("enemy_spore", L"Assets/Enemy/spore.png");
+		TextureManager::Load("enemy_hound", L"Assets/Enemy/hound.png");
+		TextureManager::Load("enemy_dragon_red", L"Assets/Enemy/dragon_red.png");
+		TextureManager::Load("enemy_archer", L"Assets/Enemy/archer.png");
+		TextureManager::Load("enemy_reaper", L"Assets/Enemy/reaper.png");
+		TextureManager::Load("enemy_tentacle", L"Assets/Enemy/cyaegha.png");
+		TextureManager::Load("enemy_bear", L"Assets/Enemy/bear.png");
+		TextureManager::Load("enemy_golem", L"Assets/Enemy/golem.png");
+		TextureManager::Load("enemy_obake", L"Assets/Enemy/obake.png");
+		TextureManager::Load("enemy_mimic", L"Assets/Enemy/mimic.png");
+	}
+
+	// UI
+	{
+		TextureManager::Load("ui_map", L"Assets/UI/ui_map.png");
+		TextureManager::Load("ui_items", L"Assets/UI/ui_items.png");
+		TextureManager::Load("ui_deck", L"Assets/UI/ui_deck.png");
+		TextureManager::Load("ui_turnend", L"Assets/UI/ui_turnend.png");
+		TextureManager::Load("ui_draw", L"Assets/UI/ui_draw.png");
+		TextureManager::Load("ui_discard", L"Assets/UI/ui_discard.png");
+		TextureManager::Load("ui_exhaust", L"Assets/UI/ui_exhaust.png");
+	}
 
 	m_textRenderer = new TextRenderer();
 	if (!m_textRenderer->Init(device, context, swapChain))
@@ -356,31 +379,45 @@ void SceneManager::DrawOverlay()
 	m_uiSprite->Begin();
 	m_uiSprite->DrawSprite(white, 0.0f, 0.0f, (float)m_screenWidth, BAR_H, 0.0f,
 		XMFLOAT4(0.08f, 0.08f, 0.12f, 0.9f));                 // 帯
-	m_uiSprite->DrawSprite(white, m_screenWidth - 470.0f, 5.0f, 90.0f, 30.0f, 0.0f, XMFLOAT4(0.3f, 0.4f, 0.35f, 1.0f));
+	m_uiSprite->DrawSprite(TextureManager::Get("ui_items"), m_screenWidth - 470.0f, 5.0f, 90.0f, 30.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
 
-	m_uiSprite->DrawSprite(white, btnX, 5.0f, 100.0f, 30.0f, 0.0f,
-		XMFLOAT4(0.2f, 0.3f, 0.5f, 1.0f));                    // デッキボタン
+	m_uiSprite->DrawSprite(TextureManager::Get("ui_deck"), btnX, 5.0f, 100.0f, 30.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));             // デッキボタン
+	m_uiSprite->DrawSprite(TextureManager::Get("particle"),
+		btnX + 100.0f - 24.0f, 5.0f + 30.0f - 22.0f, 24.0f, 24.0f, 0.0f, XMFLOAT4(0.10f, 0.09f, 0.13f, 1.0f));
 
-	m_uiSprite->DrawSprite(white, m_screenWidth - 680.0f, 5.0f, 90.0f, 30.0f, 0.0f,
-		XMFLOAT4(0.3f, 0.35f, 0.5f, 1.0f));         // Mapボタン
+	m_uiSprite->DrawSprite(TextureManager::Get("ui_map"), m_screenWidth - 680.0f, 5.0f, 90.0f, 30.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));     // Mapボタン
 
 	if (m_deckOpen)
 	{
 		m_uiSprite->DrawSprite(white, 0.0f, 0.0f, (float)m_screenWidth, (float)m_screenHeight,
 			0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.8f));          // 暗幕
 		DrawDeckCards(false);
+
+		// 強化後表示トグル
+		float ubX = 20.0f, ubY = m_screenHeight - 46.0f, ubW = 190.0f, ubH = 34.0f;
+		m_uiSprite->DrawSprite(white, ubX, ubY, ubW, ubH, 0.0f,
+			m_deckShowUpgrade ? XMFLOAT4(0.30f, 0.55f, 0.30f, 1.0f)
+			: XMFLOAT4(0.30f, 0.30f, 0.35f, 1.0f));
 	}
 
 	m_uiSprite->End();
 
 	// === テキスト ===
 	m_textRenderer->Begin();
-	m_textRenderer->DrawText(L"Deck", btnX + 8.0f, 10.0f, 16.0f, D2D1::ColorF(1, 1, 1));  // 仮ラベル（後でテクスチャ）
-	wchar_t buf[32];
-	swprintf_s(buf, L"%d", deckCount);
-	m_textRenderer->DrawText(buf, btnX + 108.0f, 10.0f, 16.0f, D2D1::ColorF(1, 1, 1));    // ボタンの右横に枚数
-	if (m_deckOpen) DrawDeckCards(true);
-	m_textRenderer->DrawText(L"Map", m_screenWidth - 670.0f, 10.0f, 16.0f, D2D1::ColorF(1, 1, 1));
+	{
+		wchar_t t[16]; swprintf_s(t, L"%d", (int)PlayerDataManager::GetData().deck.size());
+		m_textRenderer->DrawOutlinedText(t, btnX + 100.0f - 18.0f, 5.0f + 30.0f - 20.0f, 17.0f,
+			D2D1::ColorF(1, 1, 1), D2D1::ColorF(0, 0, 0), 2.0f);
+	}
+
+
+	if (m_deckOpen)
+	{
+		DrawDeckCards(true);
+		m_textRenderer->DrawText(m_deckShowUpgrade ? L"強化後表示: ON" : L"強化後表示: OFF",
+			36.0f, m_screenHeight - 38.0f, 18.0f, D2D1::ColorF(1, 1, 1));
+	}
+	
 	wchar_t gbuf[32];
 	// ゴールド
 	swprintf_s(gbuf, L"G:%d", PlayerDataManager::GetData().gold);
@@ -405,9 +442,32 @@ void SceneManager::DrawOverlay()
 	wchar_t lbuf[32]; swprintf_s(lbuf, L"Layer %d/3", pd.layer);
 	m_textRenderer->DrawText(lbuf, 280.0f, 10.0f, 16.0f, D2D1::ColorF(0.75f, 0.8f, 1.0f));
 
-	m_textRenderer->DrawText(L"Items", m_screenWidth - 460.0f, 10.0f, 16.0f, D2D1::ColorF(1, 1, 1));
 	m_textRenderer->End();
+
+	{
+		POINT mp = m_uiInput.GetMousePos();
+		const wchar_t* tip = nullptr;
+		if (mp.y >= 5 && mp.y <= 35) {
+			if (mp.x >= m_screenWidth - 680 && mp.x <= m_screenWidth - 590) tip = L"マップを開く";
+			else if (mp.x >= m_screenWidth - 470 && mp.x <= m_screenWidth - 380) tip = L"アイテムを見る";
+			else if (mp.x >= btnX && mp.x <= btnX + 100)                         tip = L"デッキを見る";
+		}
+		if (tip) {
+			float tw = 150.0f, th = 30.0f, tx = (float)mp.x + 14.0f, ty = (float)mp.y + 18.0f;
+			m_uiSprite->Begin();
+			m_uiSprite->DrawSprite(TextureManager::Get("white"), tx - 2, ty - 2, tw + 4, th + 4, 0.0f, XMFLOAT4(0.4f, 0.4f, 0.5f, 1));
+			m_uiSprite->DrawSprite(TextureManager::Get("white"), tx, ty, tw, th, 0.0f, XMFLOAT4(0.08f, 0.08f, 0.14f, 0.98f));
+			m_uiSprite->End();
+			m_textRenderer->Begin();
+			m_textRenderer->DrawText(tip, tx + 10.0f, ty + 6.0f, 16.0f, D2D1::ColorF(1, 1, 1));
+			m_textRenderer->End();
+		}
+	}
+
+	if (m_deckOpen) DrawDeckPreview();   // ← 全グリッド描画の後＝最前面
 }
+
+static bool CanUpgrade(const std::string& id);   // 前方宣言（定義は下にある）
 
 void SceneManager::DrawDeckCards(bool textPass)
 {
@@ -415,31 +475,92 @@ void SceneManager::DrawDeckCards(bool textPass)
 	ID3D11ShaderResourceView* white = TextureManager::Get("white");
 	auto vis = VisibleDeckIndices();
 
-	// スクロールのクランプ
-	int perRow = 6;
-	float ch = CardVisual::CARD_H * DECK_SCALE;
-	int rows = ((int)vis.size() + perRow - 1) / perRow;
-	float maxScroll = 70.0f + rows * (ch + 20.0f) - (m_screenHeight - 20.0f);
-	if (maxScroll < 0) maxScroll = 0;
-	if (m_deckScroll < 0) m_deckScroll = 0;
-	if (m_deckScroll > maxScroll) m_deckScroll = maxScroll;
+	int hovIdx = (m_deckPreviewIdx >= 0) ? -1 : GetDeckCardAt(m_uiInput.GetMousePos()); // ホバー中のデッキindex
+
+	if (!textPass && hovIdx != m_deckHoveredPrev)           // SEは1回だけ（spriteパス）
+	{
+		if (hovIdx >= 0) Audio::PlaySE("Assets/Sound/se/hover.mp3");
+		m_deckHoveredPrev = hovIdx;
+	}
 
 	for (int slot = 0; slot < (int)vis.size(); slot++)
 	{
-		const CardData* d = CardDataBase::Get(deck[vis[slot]]);
+		std::string cid = deck[vis[slot]];
+		if (m_deckShowUpgrade && CanUpgrade(cid)) cid += "+";   // ← トグルONなら+版
+		const CardData* d = CardDataBase::Get(cid);
 		if (!d) continue;
 		float bx, by; GetDeckCardBase(slot, bx, by);
+		if (vis[slot] == hovIdx) by -= 10.0f;              // ← ホバーで浮く
 
 		if (!textPass)
 		{
-			XMFLOAT4 col = m_deckRemoveMode
-				? XMFLOAT4(0.6f, 0.15f, 0.15f, 0.9f)
+			XMFLOAT4 col = m_deckRemoveMode ? XMFLOAT4(0.6f, 0.15f, 0.15f, 0.9f)
 				: CardVisual::GetCardColor(d->type);
 			CardVisual::DrawBase(m_uiSprite, white, bx, by, DECK_SCALE, 0.0f, col, d, m_uiTime);
 		}
 		else
 			CardVisual::DrawTexts(m_textRenderer, d, nullptr, bx, by, DECK_SCALE, 0.0f, 1.0f);
 	}
+}
+
+void SceneManager::DrawDeckPreview()
+{
+	auto& deck = PlayerDataManager::GetData().deck;
+	if (m_deckPreviewIdx < 0 || m_deckPreviewIdx >= (int)deck.size()) return;
+
+	ID3D11ShaderResourceView* white = TextureManager::Get("white");
+	const float PS = 2.0f;
+	float cw = CardVisual::CARD_W * PS, chh = CardVisual::CARD_H * PS;
+	std::string baseId = deck[m_deckPreviewIdx];
+	bool canUp = CanUpgrade(baseId);
+
+	// 休憩：クリックで 現在→強化後（横並び）＋「強化する」
+	if (m_deckUpgradeMode && canUp)
+	{
+		const CardData* cur = CardDataBase::Get(baseId);
+		const CardData* upd = CardDataBase::Get(baseId + "+");
+		float gap = 150.0f, x0 = m_screenWidth / 2.0f - (cw * 2 + gap) / 2.0f, y0 = m_screenHeight / 2.0f - chh / 2.0f;
+		float bW = 200.0f, bH = 44.0f;
+		float bX = m_screenWidth / 2.0f - bW / 2.0f, bY = y0 + chh - 30.0f;
+		m_uiSprite->Begin();
+		m_uiSprite->DrawSprite(white, 0, 0, (float)m_screenWidth, (float)m_screenHeight, 0.0f, XMFLOAT4(0, 0, 0, 0.7f));
+		DrawBigCard(cur, x0, y0, PS, false); DrawBigCard(upd, x0 + cw + gap, y0, PS, false);
+		// 強化する ボタン（カード下寄り、ホバーで浮く＋SE）
+		POINT mp = m_uiInput.GetMousePos();
+		bool bHov = (mp.x >= bX && mp.x <= bX + bW && mp.y >= bY && mp.y <= bY + bH);
+		if (bHov && !m_upgradeBtnHov) Audio::PlaySE("Assets/Sound/se/hover.mp3");
+		m_upgradeBtnHov = bHov;
+		float bDy = bHov ? -4.0f : 0.0f;
+		m_uiSprite->DrawSprite(white, bX, bY + bDy, bW, bH, 0.0f,
+			bHov ? XMFLOAT4(0.70f, 0.58f, 0.28f, 1.0f) : XMFLOAT4(0.55f, 0.45f, 0.20f, 1.0f));
+		m_uiSprite->End();
+
+		m_textRenderer->Begin();
+		DrawBigCard(cur, x0, y0, PS, true); DrawBigCard(upd, x0 + cw + gap, y0, PS, true);
+		m_textRenderer->DrawOutlinedText(L"→",
+			x0 + cw + gap / 2.0f - 70.0f, y0 + chh / 2.0f - 100.0f, 56.0f,
+			D2D1::ColorF(1.0f, 0.9f, 0.4f), D2D1::ColorF(0, 0, 0), 3.0f);
+		m_textRenderer->DrawOutlinedText(L"現在", x0, y0 - 100.0f, 30.0f,
+			D2D1::ColorF(0.85f, 0.85f, 0.85f), D2D1::ColorF(0, 0, 0), 2.5f);
+		m_textRenderer->DrawOutlinedText(L"強化後", x0 + cw + gap, y0 - 100.0f, 30.0f,
+			D2D1::ColorF(1.0f, 0.9f, 0.4f), D2D1::ColorF(0, 0, 0), 2.5f);
+		m_textRenderer->DrawText(L"強化する", bX + 55.0f, bY + bDy + 11.0f, 22.0f, D2D1::ColorF(1, 0.95f, 0.7f));
+		m_textRenderer->End();
+		return;
+	}
+
+	// 通常デッキ：単体拡大（ボタンなし）
+	std::string showId = (m_previewShowUpgrade && canUp) ? baseId + "+" : baseId;
+	const CardData* d = CardDataBase::Get(showId);
+	if (!d) return;
+	float x0 = m_screenWidth / 2.0f - cw / 2.0f, y0 = m_screenHeight / 2.0f - chh / 2.0f;
+	m_uiSprite->Begin();
+	m_uiSprite->DrawSprite(white, 0, (float)BAR_H, (float)m_screenWidth, (float)m_screenHeight - (float)BAR_H, 0.0f, XMFLOAT4(0, 0, 0, 0.7f));
+	DrawBigCard(d, x0, y0, PS, false);
+	m_uiSprite->End();
+	m_textRenderer->Begin();
+	DrawBigCard(d, x0, y0, PS, true);
+	m_textRenderer->End();
 }
 
 static bool CanUpgrade(const std::string& id)
@@ -562,27 +683,47 @@ void SceneManager::HandleInput()
 			m_deckScroll -= m_uiInput.GetMouseWheelDelta() * 0.5f;
 			if (click)
 			{
+				// 強化後表示トグル（デッキ閲覧のみ・拡大中でない時）
+				float ubX = 20.0f, ubY = m_screenHeight - 46.0f, ubW = 190.0f, ubH = 34.0f;
+				if (!m_deckUpgradeMode && m_deckPreviewIdx < 0 &&
+					m.x >= ubX && m.x <= ubX + ubW && m.y >= ubY && m.y <= ubY + ubH)
+				{
+					m_deckShowUpgrade = !m_deckShowUpgrade; Audio::PlaySE("Assets/Sound/se/click.mp3"); return;
+				}
+
 				if (m_deckUpgradeMode)
 				{
-					int idx = GetDeckCardAt(m);
-					if (idx >= 0)
+					if (m_deckPreviewIdx >= 0)   // 拡大中：強化ボタン or 閉じる
 					{
-						std::string before = PlayerDataManager::GetData().deck[idx];
-						PlayerDataManager::UpgradeCard(idx);
-						const std::string& after = PlayerDataManager::GetData().deck[idx];
-						if (after != before)                 // 実際に強化された時だけ演出
+						std::string baseId = PlayerDataManager::GetData().deck[m_deckPreviewIdx];
+						if (CanUpgrade(baseId))
 						{
-							m_craftFxCard = after;
-							m_craftFxTimer = CRAFT_FX_DURATION;
-							// 休憩中ならUpdate()が演出終了時にFinishRestを呼ぶ（合成と同じ経路）
+							float cw = CardVisual::CARD_W * 2.0f, chh = CardVisual::CARD_H * 2.0f;
+							float y0 = m_screenHeight / 2.0f - chh / 2.0f, bW = 200.0f, bH = 40.0f;
+							float bX = m_screenWidth / 2.0f - bW / 2.0f, bY = y0 + chh - 30.0f;
+							if (m.x >= bX && m.x <= bX + bW && m.y >= bY && m.y <= bY + bH)
+							{
+								std::string before = baseId;
+								PlayerDataManager::UpgradeCard(m_deckPreviewIdx);
+								const std::string& after = PlayerDataManager::GetData().deck[m_deckPreviewIdx];
+								if (after != before) { m_craftFxCard = after; m_craftFxTimer = CRAFT_FX_DURATION; }
+								m_deckPreviewIdx = -1;
+								return;
+							}
 						}
-						return;
+						m_deckPreviewIdx = -1; return;   // ボタン外で閉じる
 					}
-					// 空白クリック
+					int idx = GetDeckCardAt(m);
+					if (idx >= 0) { m_deckPreviewIdx = idx; Audio::PlaySE("Assets/Sound/se/click.mp3"); return; }   // クリックで拡大
 					if (m_restActive) { m_deckOpen = false; m_deckUpgradeMode = false; m_restOpen = true; return; }
 					m_deckUpgradeMode = false; return;
 				}
-				m_deckOpen = false;                                               // 通常は空白で閉じる
+
+				// 通常デッキ：拡大中はクリックで閉じる（ボタンなし）
+				if (m_deckPreviewIdx >= 0) { m_deckPreviewIdx = -1; return; }
+				int idx = GetDeckCardAt(m);
+				if (idx >= 0) { m_deckPreviewIdx = idx; m_previewShowUpgrade = m_deckShowUpgrade; Audio::PlaySE("Assets/Sound/se/click.mp3"); return; }
+				m_deckOpen = false;
 			}
 			return;
 		}
@@ -1773,4 +1914,15 @@ void SceneManager::PlayGeneralBGM()
 		m_generalBgmLayer = layer;
 	}
 	Audio::PlayBGM(m_generalBgm);
+}
+
+void SceneManager::DrawBigCard(const CardData* d, float x, float y, float scale, bool textPass)
+{
+	if (!d) return;
+	ID3D11ShaderResourceView* white = TextureManager::Get("white");
+	if (!textPass)
+		CardVisual::DrawBase(m_uiSprite, white, x, y, scale, 0.0f,
+			CardVisual::GetCardColor(d->type), d, m_uiTime);
+	else
+		CardVisual::DrawTexts(m_textRenderer, d, nullptr, x, y, scale, 0.0f, 1.0f);
 }
