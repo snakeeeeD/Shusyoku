@@ -6,6 +6,7 @@
 #include "RelicManager.h"
 #include "RangeShape.h"
 #include "ScreenShake.h"
+#include "HitStop.h"
 #include <algorithm>
 #include <queue>
 #include <map>
@@ -921,6 +922,8 @@ void CardExecutor::TriggerTrap(Cell& cell, Enemy* enemy, int col, int row,
 
     const TerrainDef* def = TerrainDataBase::Get(cell.tileEffect.id);
     if (!def) return;
+
+    HitStop::Add(0.08f);
 
     float wx = (col - gridMap->GetCols() / 2.0f) * 1.1f;
     float wz = (row - gridMap->GetRows() / 2.0f) * 1.1f;

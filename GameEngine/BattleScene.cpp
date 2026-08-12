@@ -8,6 +8,8 @@
 #include "HighlightPalette.h"
 #include "FloatingText.h"
 #include "ScreenShake.h"
+#include "HitStop.h"
+#include "TurnBanner.h"
 #include "DamageFeedback.h"
 #include "RangeShape.h"
 #include "UiNotice.h"
@@ -113,10 +115,28 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         if (!moveId.empty()) m_hand.AddCard(moveId);
     }*/
 
-    for (int i = 0; i < HAND_SIZE - 1; i++)
+    if (!playerData.tutorialBattle)
     {
-        std::string id = m_deck.DrawCard();
-        if (!id.empty()) m_hand.AddCard(id);
+        // 初戦チュートリアル：左から 移動・アタック・ブロック で固定
+        for (const char* id : { "MOV_move", "ATK_strike", "SKL_defend" })
+        {
+            std::string c = m_deck.DrawSpecificCard(id);
+            if (!c.empty()) m_hand.AddCard(c);
+        }
+        while ((int)m_hand.GetCards().size() < HAND_SIZE)
+        {
+            std::string id = m_deck.DrawCard();
+            if (id.empty()) break;
+            m_hand.AddCard(id);
+        }
+    }
+    else
+    {
+        for (int i = 0; i < HAND_SIZE - 1; i++)
+        {
+            std::string id = m_deck.DrawCard();
+            if (!id.empty()) m_hand.AddCard(id);
+        }
     }
 
     m_renderer3D = new Renderer3D();
@@ -181,6 +201,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     // プレイヤーターン開始時にエネルギー回復
     m_turnManager.onPlayerTurnStart = [this]()
         {
+            TurnBanner::Show(TurnBannerType::Player);
             m_player->RestoreEnergy();
             m_player->AddEnergy(RelicManager::SumValue("turnEnergy"));   // レリック
             {
@@ -278,6 +299,8 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         };
     m_turnManager.onEnemyTurnStart = [this]()
         {
+            TurnBanner::Show(TurnBannerType::Enemy);
+
             for (auto enemy : m_enemies)
                 enemy->ResetBlock();
             m_battleUI->StartDiscardEffects();
@@ -333,6 +356,8 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             enemy->ApplyDifficulty(hpMul, dmgMul, bonusActions);
     }
 
+    HitStop::Clear();   // 前の戦闘の停止を持ち越さない
+
     // 猛毒の小瓶：少し経ってから全敵に毒（Updateで発火）
     m_startPoisonAmount = RelicManager::SumValue("startPoison");
     m_startPoisonTimer = 0.6f;
@@ -351,6 +376,8 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
      EffectManager::Clear();
 
      RunTurnCycle();
+
+     TurnBanner::ShowThen(TurnBannerType::BattleStart, TurnBannerType::Player);
 
     return true;
 }
@@ -398,6 +425,8 @@ void BattleScene::Update(float deltaTime)
     ImGuiIO& io = ImGui::GetIO();
     if (io.WantCaptureMouse) return;
 #endif
+
+    if (HitStop::IsActive()) { HitStop::Update(deltaTime); return; }   // ヒットストップ中はゲームを止める
 
     FloatingTextManager::Update(deltaTime);
     // マルチヒットの追撃を間隔をあけて処理
@@ -477,6 +506,7 @@ void BattleScene::Update(float deltaTime)
     if (UiNotice::ConsumeTriggered())
         m_battleUI->StartOverflowDiscardEffect();
     ScreenShake::Update(deltaTime);
+    TurnBanner::Update(deltaTime);
     EffectManager::Update(deltaTime);
 
     // HP0の敵を「塵化」させ、アニメが終わったら消す
@@ -882,6 +912,24 @@ void BattleScene::Update(float deltaTime)
                     m_decoyCol = -1; m_decoyRow = -1;
                 }
 
+                // 突進：止まるマス（罠マス＋最終マス）を先に列挙し、間は滑らかに移動
+                if (!enemy->GetDashPath().empty())
+                {
+                    const auto& path = enemy->GetDashPath();
+                    m_dashEnemy = enemy;
+                    m_dashStops.clear();
+                    for (auto& c : path)
+                        if (m_gridMap->GetCell(c.first, c.second).tileEffect.active)
+                            m_dashStops.push_back(c);
+                    if (m_dashStops.empty() || m_dashStops.back() != path.back())
+                        m_dashStops.push_back(path.back());   // 最終マスは必ず終点
+
+                    m_dashStopIdx = 0;
+                    DashGlideTo(m_dashStops[0].first, m_dashStops[0].second);
+                    m_enemyPhase = EnemyTurnPhase::DashStep;
+                    break;
+                }
+
                 auto& cell = m_gridMap->GetCell(enemy->gridCol, enemy->gridRow);
                 if (cell.tileEffect.active)
                     CardExecutor::TriggerTrap(cell, enemy, enemy->gridCol, enemy->gridRow, m_gridMap, m_enemies);
@@ -936,6 +984,39 @@ void BattleScene::Update(float deltaTime)
                     enemy->GetBuffManager().OnTurnEnd(false);  
                 m_turnManager.EndTurn();
                 break;
+            case EnemyTurnPhase::DashStep:
+            {
+                if (!m_dashEnemy) { m_enemyPhase = EnemyTurnPhase::WaitAction; m_enemyActionDelay = ENEMY_ACTION_PAUSE; break; }
+                if (m_dashEnemy->IsMoving()) break;   // グライド中は待つ
+
+                // 到着した stop の罠を発動（罠でなければ no-op）
+                if (m_dashStopIdx < (int)m_dashStops.size())
+                {
+                    auto s = m_dashStops[m_dashStopIdx];
+                    auto& cell = m_gridMap->GetCell(s.first, s.second);
+                    if (cell.tileEffect.active)
+                        CardExecutor::TriggerTrap(cell, m_dashEnemy, s.first, s.second, m_gridMap, m_enemies);
+                    m_dashStopIdx++;
+                }
+
+                // 罠で倒れたら終了
+                if (m_dashEnemy->GetHp() <= 0)
+                {
+                    m_dashEnemy = nullptr;
+                    m_enemyPhase = EnemyTurnPhase::WaitAction; m_enemyActionDelay = ENEMY_ACTION_PAUSE;
+                    break;
+                }
+
+                // 次の stop へグライド、なければ終了
+                if (m_dashStopIdx < (int)m_dashStops.size())
+                    DashGlideTo(m_dashStops[m_dashStopIdx].first, m_dashStops[m_dashStopIdx].second);
+                else
+                {
+                    m_dashEnemy = nullptr;
+                    m_enemyPhase = EnemyTurnPhase::WaitAction; m_enemyActionDelay = ENEMY_ACTION_PAUSE;
+                }
+                break;
+            }
             }
         }
 
@@ -2576,4 +2657,15 @@ void BattleScene::RunTurnCycle()
 
     // n 枚を「選んで捨てる」既存UIを起動（8→7枚、選んだカードのonDiscardが発動）
     m_discardSelectCount = min(n, (int)m_hand.GetCards().size());
+}
+
+void BattleScene::DashGlideTo(int c, int r)
+{
+    if (!m_dashEnemy) return;
+    float wx = (c - m_gridMap->GetCols() / 2.0f) * 1.1f;
+    float wz = (r - m_gridMap->GetRows() / 2.0f) * 1.1f;
+    float dist = fabsf(wx - m_dashEnemy->worldX) + fabsf(wz - m_dashEnemy->worldZ);
+    float dur = (dist / 1.1f) * 0.07f;   // 1マスあたり0.07秒＝距離で時間が伸びる＝速度一定感を避けつつ滑らか
+    if (dur < 0.06f) dur = 0.06f;
+    m_dashEnemy->StartMove(wx, wz, dur, false);   // false = smoothstep（緩急つき）
 }

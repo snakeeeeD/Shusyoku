@@ -4,6 +4,7 @@
 #include "EffectManager.h"
 #include "FloatingText.h"
 #include "ScreenShake.h"
+#include "HitStop.h"
 #include "RelicManager.h"
 #include "Audio.h"
 
@@ -59,8 +60,21 @@ void Player::TakeDamage(int damage, DamageFeel feel)
     {
         StartHitFlash();
         ScreenShake::Add(ScreenShake::PowerForDamage(damage));
+        HitStop::Add(0.05f);
     }
     DamageFeedback::Play(feel, worldX, worldY + height * 0.5f, worldZ, damage, blocked);
+}
+
+void Player::Heal(int amount)
+{
+    int before = m_hp;
+    m_hp = min(m_hp + amount, m_maxHp);
+    int healed = m_hp - before;                 // 実際に回復した量（オーバーヒール除外）
+    if (healed > 0)
+        FloatingTextManager::Spawn(
+            worldX, worldY + height * 0.5f, worldZ,
+            L"+" + std::to_wstring(healed),
+            DirectX::XMFLOAT4(0.4f, 1.0f, 0.4f, 1.0f), 40.0f);   // 緑
 }
 
 void Player::RestoreEnergy()

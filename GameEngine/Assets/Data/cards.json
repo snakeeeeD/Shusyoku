@@ -718,10 +718,10 @@
       "type": "Attack",
       "rarity": "Common",
       "tags": [ "Strike" ],
-      "cost": 1,
+      "cost": 0,
       "range": 1,
       "rangeType": "Adjacent",
-      "description": "{value}ダメージ、\n弱体{onhit}付与",
+      "description": "{value}ダメージ、\n脱力{onhit}付与",
       "upgrade": {
         "mainValue": 2,
         "onHitDuration": 1

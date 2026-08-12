@@ -8,6 +8,7 @@
 #include "RangeShape.h"
 #include "FloatingText.h"
 #include "ScreenShake.h"
+#include "HitStop.h"
 #include "Audio.h"
 
 Enemy::Enemy()
@@ -184,11 +185,9 @@ bool Enemy::MoveDash(int playerCol, int playerRow, GridMap* gridMap, int steps)
         gridMap->SetCellType(gridCol, gridRow, CellType::Empty);
         gridCol = nc; gridRow = nr;
         gridMap->SetCellType(gridCol, gridRow, CellType::Enemy);
+        m_dashPath.push_back({ gridCol, gridRow });
     }
 
-    float newX = (gridCol - gridMap->GetCols() / 2.0f) * 1.1f;
-    float newZ = (gridRow - gridMap->GetRows() / 2.0f) * 1.1f;
-    StartMove(newX, newZ);
     return hit;
 }
 
@@ -214,6 +213,8 @@ void Enemy::TakeDamage(int damage, DamageFeel feel)
     {
         StartHitFlash();
         ScreenShake::Add(ScreenShake::PowerForDamage(damage) * 0.5f);
+
+        HitStop::Add(0.05f);
     }
     DamageFeedback::Play(feel, worldX, worldY + height * 0.5f, worldZ, damage, blocked);
 }
@@ -407,6 +408,7 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
     int mtR = (moveTargetRow >= 0) ? moveTargetRow : playerRow;
 
     if (actionIdx < 0 || actionIdx >= (int)m_plannedActions.size()) return 0;
+    m_dashPath.clear();
     const EnemyAction& act = m_plannedActions[actionIdx];
     const TargetSpec& tg = act.target;
 
@@ -426,8 +428,11 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
             if (!hitTarget) MoveToward(mtC, mtR, gridMap, tg.moveRange);
             break;
         case ApproachType::Dash:
-            if (!hitTarget) hitTarget = MoveDash(mtC, mtR, gridMap, tg.moveRange);
+        {
+            bool dh = MoveDash(mtC, mtR, gridMap, tg.moveRange);
+            hitTarget = hitTarget || dh;
             break;
+        }
         default: break;
         }
     }

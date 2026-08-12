@@ -179,6 +179,7 @@
     <ClInclude Include="GridMap.h" />
     <ClInclude Include="Hand.h" />
     <ClInclude Include="HighlightPalette.h" />
+    <ClInclude Include="HitStop.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="MaterialData.h" />
     <ClInclude Include="MaterialDataBase.h" />
@@ -203,6 +204,7 @@
     <ClInclude Include="TextureLoader.h" />
     <ClInclude Include="TextureManager.h" />
     <ClInclude Include="TitleScene.h" />
+    <ClInclude Include="TurnBanner.h" />
     <ClInclude Include="TurnManager.h" />
     <ClInclude Include="UiNotice.h" />
   </ItemGroup>

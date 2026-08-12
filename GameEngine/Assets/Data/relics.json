@@ -302,6 +302,14 @@
       "value": 15,
       "rarity": "shop",
       "desc": "休憩の回復量+15"
+    },
+    {
+      "id": "travelers_charm",
+      "name": "旅人のお守り",
+      "kind": "winHeal",
+      "value": 4,
+      "rarity": "starter",
+      "desc": "戦闘に勝つと HP+4 回復"
     }
   ]
 }

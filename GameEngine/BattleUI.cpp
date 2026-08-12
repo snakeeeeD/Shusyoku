@@ -7,6 +7,7 @@
 #include "GameUtils.h"
 #include "RangeShape.h"
 #include "UiNotice.h"
+#include "TurnBanner.h"
 #include "MaterialDataBase.h"
 #include "RelicManager.h"
 #include "GameUtils.h"
@@ -392,16 +393,6 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         m_textRenderer->DrawText(eMax, ex + es - 4.0f, ey + es - 20.0f, 15.0f, D2D1::ColorF(0.35f, 0.2f, 0.0f));
     }
 
-    if (UiNotice::IsActive() && UiNotice::GetType() == NoticeType::HandFull)
-    {
-        float a = UiNotice::GetAlpha();
-        float y = m_screenHeight - 240.0f - UiNotice::GetRise();
-        m_textRenderer->DrawText(L"手札がいっぱい！", m_screenWidth / 2.0f - 90.0f, y + 2.0f, 26.0f,
-            D2D1::ColorF(0, 0, 0, a));                       // 影
-        m_textRenderer->DrawText(L"手札がいっぱい！", m_screenWidth / 2.0f - 90.0f, y, 26.0f,
-            D2D1::ColorF(1.0f, 0.5f, 0.2f, a));              // 本体
-    }
-
     if (ctx.discardSelectCount > 0)
     {
         int sel = ctx.discardSelected ? (int)ctx.discardSelected->size() : 0;
@@ -582,14 +573,6 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 buffIconX += iconSize + 20.0f;
             }
         }
-    
-
-        if (ctx.turnManager->IsPlayerTurn())
-            m_textRenderer->DrawText(L"プレイヤーターン", 500.0f, 50.0f, 24.0f,
-                D2D1::ColorF(D2D1::ColorF::White));
-        else
-            m_textRenderer->DrawText(L"敵ターン", 500.0f, 50.0f, 24.0f,
-                D2D1::ColorF(D2D1::ColorF::Red));
 
     const auto& buffs = ctx.player->GetBuffManager().GetBuffs();
     float buffY = 282.0f;
@@ -801,7 +784,39 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         m_textRenderer->Begin();
     }
 
-    DrawFloatingTexts(ctx);
+   DrawFloatingTexts(ctx);
+
+    // ターンバナー（最前面：全ステータスの後に描く）
+   if (TurnBanner::IsActive())
+   {
+       float a = TurnBanner::GetAlpha();
+       float ox = TurnBanner::GetSlideX();
+       TurnBannerType t = TurnBanner::GetType();
+
+       const wchar_t* txt; D2D1::ColorF col(1, 1, 1, a); float chars; float charW; float spacing;
+       if (t == TurnBannerType::BattleStart) { txt = L"戦闘開始";         col = D2D1::ColorF(1.0f, 0.9f, 0.4f, a); chars = 4.0f; charW = 50.0f; spacing = 14.0f; }
+       else if (t == TurnBannerType::Player) { txt = L"プレイヤーターン"; col = D2D1::ColorF(0.4f, 0.85f, 1.0f, a); chars = 8.0f; charW = 30.0f; spacing = 18.0f; }
+       else { txt = L"敵のターン";       col = D2D1::ColorF(1.0f, 0.4f, 0.35f, a); chars = 5.0f; charW = 44.0f; spacing = 18.0f; }
+
+       float fh = 64.0f;
+       float step = charW + spacing;
+       float totalW = 0.0f;
+       for (int ci = 0; ci < (int)chars; ci++)
+       {
+           totalW += (txt[ci] == L'ー') ? charW * 0.5f : charW;
+           if (ci < (int)chars - 1) totalW += spacing;
+       }
+       float startX = m_screenWidth / 2.0f - totalW / 2.0f + ox;
+       float y = m_screenHeight * 0.28f;
+       float cx = startX;
+       for (int ci = 0; ci < (int)chars; ci++)
+       {
+           wchar_t ch[2] = { txt[ci], L'\0' };
+           float w = (txt[ci] == L'ー') ? charW * 0.5f : charW;
+           m_textRenderer->DrawOutlinedText(ch, cx, y, fh, col, D2D1::ColorF(0, 0, 0, a), 2.5f);
+           cx += w + spacing;
+       }
+   }
 
     m_textRenderer->End();
 

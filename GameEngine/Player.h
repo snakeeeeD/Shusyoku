@@ -30,7 +30,7 @@ public:
     void AddBlock(int amount);
     void TakeDamage(int damage, DamageFeel feel = DamageFeel::Hit);
 
-    void Heal(int amount) { m_hp = min(m_hp + amount, m_maxHp); }
+    void Heal(int amount);
     void AddEnergy(int amount) { m_energy += amount; }
 
     void RestoreEnergy();          // ターン開始時に回復

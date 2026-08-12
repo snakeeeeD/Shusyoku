@@ -250,11 +250,17 @@
     <Filter Include="ソース ファイル\02-Scene\40-FieldScene\10-Event\02-EventDataBase">
       <UniqueIdentifier>{bbee86c9-ec26-4d9d-8d63-4d79a0e6246f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\04-Game内関連\03-Audio">
+      <UniqueIdentifier>{d4c1fc19-28df-4b44-8f3c-4caaf930cff0}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ソース ファイル\01-描画関連\07-EffectDataBase">
       <UniqueIdentifier>{9c4915d8-ea49-4584-b966-c0696d8ed7ed}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\04-Game内関連\03-Audio">
-      <UniqueIdentifier>{d4c1fc19-28df-4b44-8f3c-4caaf930cff0}</UniqueIdentifier>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\60-HitStop">
+      <UniqueIdentifier>{b2eb96a0-890c-4685-873e-7d23a431cca9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\70-TurnBanner">
+      <UniqueIdentifier>{b922d39c-45eb-48ad-b184-b0eea29f2ec8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -473,6 +479,12 @@
     </ClInclude>
     <ClInclude Include="Audio.h">
       <Filter>ソース ファイル\04-Game内関連\03-Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="HitStop.h">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\60-HitStop</Filter>
+    </ClInclude>
+    <ClInclude Include="TurnBanner.h">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\70-TurnBanner</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

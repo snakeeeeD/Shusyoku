@@ -26,7 +26,7 @@ void PlayerDataManager::Init()
 	m_data.deck = {
 		"ATK_strike", "ATK_strike", "ATK_strike", "ATK_Spin Slash",
 		"SKL_defend", "SKL_defend",
-		"MOV_move", "MOV_move", "dash",
+		"MOV_move", "MOV_move", "MOV_dash",
 		"POW_power_attack", "POW_buff_defense"
 	};
 
@@ -152,7 +152,7 @@ void PlayerDataManager::Load()
 		m_data.deck = {
 "ATK_strike", "ATK_strike", "ATK_strike", "ATK_Spin Slash",
 		"SKL_defend", "SKL_defend",
-		"MOV_move", "MOV_move", "dash",
+		"MOV_move", "MOV_move", "MOV_dash",
 		"POW_power_attack", "POW_buff_defense"
 		};
 	}
@@ -197,6 +197,7 @@ void PlayerDataManager::StartNewGame()
 	m_data.fieldNodeTypes.clear();
 	m_data.fieldNodeEnemyIds.clear();
 	m_data.fieldNodeVisited.clear();
+	m_data.relics = { "travelers_charm" };   // 初期レリック（回復＋レリック導入）
 	Save();
 }
 

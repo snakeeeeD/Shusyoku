@@ -23,13 +23,15 @@
 #include <utility>
 #include <functional>
 
-enum class EnemyTurnPhase {
-    WaitStart,
-    PoisonTick,
+enum class EnemyTurnPhase 
+{
+    WaitStart, 
+    PoisonTick, 
     ProcessEnemy,
-    WaitAction,
-    NextEnemy,
-    EndTurn
+    DashStep,
+    WaitAction, 
+    NextEnemy, 
+    EndTurn 
 };
 
 class BattleScene : public Scene
@@ -153,6 +155,11 @@ private:
     int m_discardSelectCount = 0;
     std::vector<int> m_discardSelected;   // 選択中のカードindex
     bool m_discardViewMode = false;
+
+    std::vector<std::pair<int, int>> m_dashStops;   // 止まるマス（罠マス＋最終マス）
+    int    m_dashStopIdx = 0;
+    Enemy* m_dashEnemy = nullptr;
+    void   DashGlideTo(int c, int r);   // 距離に応じた時間で緩急つき移動
 
     EnemyTurnPhase m_enemyPhase = EnemyTurnPhase::WaitStart;
     int m_currentEnemyIdx = 0;

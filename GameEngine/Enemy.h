@@ -28,6 +28,7 @@ public:
 	BuffManager& GetBuffManager() { return m_buffManager; }
 	const std::string& GetTextureName() const { return m_textureName; }
 	const std::string& GetId() const { return m_id; }
+	const std::vector<std::pair<int, int>>& GetDashPath() const { return m_dashPath; }
 
 	// セッター
 	void SetHp(int hp) { m_HP = hp; }
@@ -122,5 +123,7 @@ private:
 	BuffManager m_buffManager;
 
 	std::vector<std::pair<int, int>> m_gridShape;
+
+	std::vector<std::pair<int, int>> m_dashPath;   // 直近の突進で通過したマス
 };
 
