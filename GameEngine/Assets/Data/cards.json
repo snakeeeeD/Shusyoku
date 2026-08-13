@@ -1546,7 +1546,7 @@
       "upgrade": { "mainValue": 1 },
       "mainEffect": {
         "type": "ApplyBuff",
-        "value": 2,
+        "value": 1,
         "buffType": "NoxiousFumes",
         "duration": -1
       }
