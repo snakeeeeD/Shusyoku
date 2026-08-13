@@ -356,12 +356,6 @@ void BattleHighlighter::UpdateEnemyHighlight(
     const std::vector<Enemy*>& enemies, GridMap* gridMap, const Player* player,
     int playerCol, int playerRow, float timer, int decoyCol, int decoyRow)
 {
-    // 敵ごとの色（範囲を識別しやすく）
-    static const XMFLOAT4 kHues[] = {
-        {1.0f, 0.40f, 0.35f, 1.0f}, {0.40f, 0.65f, 1.0f, 1.0f}, {0.50f, 1.0f, 0.45f, 1.0f},
-        {1.0f, 0.55f, 1.0f, 1.0f}, {1.0f, 0.85f, 0.30f, 1.0f}, {0.50f, 0.95f, 0.95f, 1.0f},
-    };
-    const int kHueCount = 6;
 
     ClearEnemyHighlight(gridMap);
     for (auto e : enemies) e->color = HighlightPalette::EnemyNormal;
@@ -373,15 +367,43 @@ void BattleHighlighter::UpdateEnemyHighlight(
     {
         Enemy* enemy = enemies[ei];
         const EnemyAction* action = enemy->GetNextAction();
-        if (!action || !EnemyIntentVisual::IsHarmful(*action)) continue;
+        bool harmful = action && EnemyIntentVisual::IsHarmful(*action);
+
+        // 足元マス：全ての敵に自分の色（薄め）
+        XMFLOAT4 footCol = HighlightPalette::Scale(HighlightPalette::EnemyHue(ei), 0.5f);
+        for (auto& [dc, dr] : enemy->GetGridShape())
+        {
+            int ec = enemy->gridCol + dc, er = enemy->gridRow + dr;
+            if (ec >= 0 && ec < gridMap->GetCols() && er >= 0 && er < gridMap->GetRows())
+                gridMap->GetCell(ec, er).gameObject.color = footCol;
+        }
+
+        if (!harmful) continue;
+
+        // 足元マスをこの敵の色（薄め）で
+        for (auto& [dc, dr] : enemy->GetGridShape())
+        {
+            int ec = enemy->gridCol + dc, er = enemy->gridRow + dr;
+            if (ec >= 0 && ec < gridMap->GetCols() && er >= 0 && er < gridMap->GetRows())
+                gridMap->GetCell(ec, er).gameObject.color =
+                HighlightPalette::Scale(HighlightPalette::EnemyHue(ei), 0.5f);
+        }
 
         auto mark = [&](int c, int r, int dist)
             {
                 auto key = std::make_pair(c, r);
                 auto it = cellOwner.find(key);
-                if (it == cellOwner.end() || dist < it->second.first)
-                    cellOwner[key] = { dist, ei };            // 近い敵が優先
-                if (ei == m_selectedEnemy) selCells.insert(key);
+
+                if (ei == m_selectedEnemy)
+                {
+                    cellOwner[key] = { dist, ei };            // 選択中の敵は最優先で所有
+                    selCells.insert(key);
+                }
+                else if (it == cellOwner.end()
+                    || (it->second.second != m_selectedEnemy && dist < it->second.first))
+                {
+                    cellOwner[key] = { dist, ei };            // 選択敵の所有マスは奪わない／それ以外は近い敵優先
+                }
             };
 
         if (action->target.unavoidable)
@@ -409,7 +431,7 @@ void BattleHighlighter::UpdateEnemyHighlight(
         int ei = info.second;
         float w = 0.5f + 0.5f * sin(m_enemyCycleTimer - dist * 0.8f);
         float br = 0.25f + 0.45f * w;
-        const XMFLOAT4& hue = kHues[ei % kHueCount];
+        const XMFLOAT4& hue = HighlightPalette::EnemyHue(ei);
 
         XMFLOAT4 c = selCells.count(pos)
             ? HighlightPalette::Scale(hue, br * 1.5f)   // 選択中の敵は明るく

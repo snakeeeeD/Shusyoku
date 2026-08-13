@@ -2498,7 +2498,7 @@ void BattleScene::HandleInput()
         {
             POINT mp = m_input.GetMousePos();
             float panelX = m_screenWidth - 250.0f;
-            float panelY = 10.0f;
+            float panelY = 50.0f;
             float panelW = 240.0f;
             float entryH = 90.0f;
 

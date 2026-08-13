@@ -92,6 +92,10 @@ public:
 
 	void ApplyDifficulty(float hpMul, float dmgMul, int bonusActions);
 
+	std::vector<std::pair<int, int>> PlannedMovePath(int targetCol, int targetRow, class GridMap* gridMap) const;
+	std::vector<std::pair<int, int>> m_plannedMovePath;
+	void SetPlannedMovePath(std::vector<std::pair<int, int>> p) { m_plannedMovePath = std::move(p); }
+	const std::vector<std::pair<int, int>>& GetPlannedMovePath() const { return m_plannedMovePath; }
 private:
 	bool IsAdjacentTo(int playerCol, int playerRow);
 

@@ -173,6 +173,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("ui_draw", L"Assets/UI/ui_draw.png");
 		TextureManager::Load("ui_discard", L"Assets/UI/ui_discard.png");
 		TextureManager::Load("ui_exhaust", L"Assets/UI/ui_exhaust.png");
+		TextureManager::Load("ui_arrowhead", L"Assets/UI/ui_arrowhead.png");
 	}
 
 	m_textRenderer = new TextRenderer();

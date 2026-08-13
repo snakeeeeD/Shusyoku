@@ -45,4 +45,17 @@ namespace HighlightPalette
         default:               return XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
         }
     }
+
+    inline const DirectX::XMFLOAT4& EnemyHue(int i)
+    {
+        static const DirectX::XMFLOAT4 hues[] = {
+            {0.95f, 0.35f, 0.30f, 1.0f},   // 赤
+            {1.00f, 0.50f, 0.10f, 1.0f},   // 橙（赤寄りに濃く）
+            {0.95f, 0.92f, 0.30f, 1.0f},   // 黄（純黄＝橿と明確に分離）
+            {0.95f, 0.35f, 0.70f, 1.0f},   // ピンク
+            {0.70f, 0.45f, 1.00f, 1.0f},   // 紫
+            {0.30f, 0.75f, 0.95f, 1.0f},   // 水色
+        };
+        return hues[((i % 6) + 6) % 6];
+    }
 }

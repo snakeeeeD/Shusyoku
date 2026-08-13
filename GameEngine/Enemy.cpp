@@ -551,3 +551,87 @@ void Enemy::ApplyDifficulty(float hpMul, float dmgMul, int bonusActions)
     m_dmgScale = dmgMul;
     m_bonusActions = bonusActions;
 }
+
+// 目標へ1マス貪欲移動（隣接で停止）。動けなければfalse
+static bool StepToward(int& c, int& r, int tc, int tr, GridMap* g, std::vector<std::pair<int, int>>& path)
+{
+    int dc = tc - c, dr = tr - r;
+    if (abs(dc) + abs(dr) <= 1) return false;
+    std::pair<int, int> cand[2]; int n = 0;
+    if (abs(dc) >= abs(dr)) { cand[n++] = { c + (dc > 0 ? 1 : -1), r }; if (dr != 0) cand[n++] = { c, r + (dr > 0 ? 1 : -1) }; }
+    else { cand[n++] = { c, r + (dr > 0 ? 1 : -1) }; if (dc != 0) cand[n++] = { c + (dc > 0 ? 1 : -1), r }; }
+    for (int k = 0; k < n; k++)
+    {
+        int mx = cand[k].first, my = cand[k].second;
+        if (mx < 0 || mx >= g->GetCols() || my < 0 || my >= g->GetRows()) continue;
+        if (g->GetCell(mx, my).type != CellType::Empty) continue;
+        c = mx; r = my; path.push_back({ c, r }); return true;
+    }
+    return false;
+}
+
+std::vector<std::pair<int, int>> Enemy::PlannedMovePath(int targetCol, int targetRow, GridMap* gridMap) const
+{
+    std::vector<std::pair<int, int>> path;
+    const EnemyAction* a = GetNextAction();
+    if (!a || m_immovable) return path;
+    const TargetSpec& tg = a->target;
+
+    // 攻撃の接近（Dash / Toward）
+    if (!tg.unavoidable && tg.moveRange > 0)
+    {
+        if (tg.approach == ApproachType::Dash)
+        {
+            if (m_aimDx == 0 && m_aimDy == 0) return path;
+            int c = gridCol, r = gridRow;
+            for (int i = 0; i < tg.moveRange; i++)
+            {
+                int nc = c + m_aimDx, nr = r + m_aimDy;
+                if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) break;
+                if (nc == targetCol && nr == targetRow) break;
+                if (gridMap->GetCell(nc, nr).type != CellType::Empty) break;
+                c = nc; r = nr; path.push_back({ c, r });
+            }
+            return path;
+        }
+        if (tg.approach == ApproachType::Toward)
+        {
+            int c = gridCol, r = gridRow;
+            for (int s = 0; s < tg.moveRange; s++) if (!StepToward(c, r, targetCol, targetRow, gridMap, path)) break;
+            return path;
+        }
+    }
+
+    // 純移動効果（MoveToward / MoveAway）
+    for (auto& e : a->effects)
+    {
+        if (e.kind == EffectKind::MoveToward)
+        {
+            int c = gridCol, r = gridRow;
+            for (int s = 0; s < e.value; s++) if (!StepToward(c, r, targetCol, targetRow, gridMap, path)) break;
+            return path;
+        }
+        if (e.kind == EffectKind::MoveAway)
+        {
+            const int dirs[4][2] = { {0,1},{0,-1},{1,0},{-1,0} };
+            int c = gridCol, r = gridRow;
+            for (int s = 0; s < e.value; s++)
+            {
+                int curD = abs(targetCol - c) + abs(targetRow - r);
+                int bc = c, br = r, bd = curD;
+                for (auto& d : dirs)
+                {
+                    int nc = c + d[0], nr = r + d[1];
+                    if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) continue;
+                    if (gridMap->GetCell(nc, nr).type != CellType::Empty) continue;
+                    int nd = abs(targetCol - nc) + abs(targetRow - nr);
+                    if (nd > bd) { bd = nd; bc = nc; br = nr; }
+                }
+                if (bd == curD) break;
+                c = bc; r = br; path.push_back({ c, r });
+            }
+            return path;
+        }
+    }
+    return path;
+}

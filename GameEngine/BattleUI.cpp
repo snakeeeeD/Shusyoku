@@ -9,6 +9,7 @@
 #include "UiNotice.h"
 #include "TurnBanner.h"
 #include "MaterialDataBase.h"
+#include "HighlightPalette.h"
 #include "RelicManager.h"
 #include "GameUtils.h"
 #include "Audio.h"
@@ -246,6 +247,104 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
     m_spriteRenderer->Begin();
     DrawTargetIndicators(ctx);
+
+
+    // 移動経路を先に全部計算（先に決まった移動先を占有扱いにしてかぶりを避ける）
+    if (ctx.isPlayerTurn && ctx.enemies)
+    {
+        std::vector<std::pair<int, int>> claimed;
+        for (int ei = 0; ei < (int)ctx.enemies->size(); ei++)
+        {
+            Enemy* e = (*ctx.enemies)[ei];
+            if (e->GetHp() <= 0) { e->SetPlannedMovePath({}); continue; }
+
+            std::vector<CellType> saved;
+            for (auto& c : claimed) { saved.push_back(ctx.gridMap->GetCell(c.first, c.second).type); ctx.gridMap->SetCellType(c.first, c.second, CellType::Enemy); }
+            auto path = e->PlannedMovePath(ctx.playerCol, ctx.playerRow, ctx.gridMap);
+            for (int k = 0; k < (int)claimed.size(); k++) ctx.gridMap->SetCellType(claimed[k].first, claimed[k].second, saved[k]);
+
+            e->SetPlannedMovePath(path);
+            if (!path.empty()) claimed.push_back(path.back());
+        }
+    }
+
+    if (ctx.enemies)
+        for (int ei = 0; ei < (int)ctx.enemies->size(); ei++)
+        {
+            Enemy* enemy = (*ctx.enemies)[ei];
+            if (enemy->GetHp() <= 0) continue;
+
+            const auto& path = enemy->GetPlannedMovePath();
+            if (path.empty()) continue;
+
+            XMFLOAT4 hue = HighlightPalette::EnemyHue(ei);
+            auto proj = [&](float wx, float wz, float& sx, float& sy) -> bool {
+                XMVECTOR wp = XMVectorSet(wx - 0.5f, 0.15f, wz - 0.5f, 1.0f);
+                XMVECTOR cp = XMVector4Transform(wp, ctx.renderer3D->GetViewMatrix() * ctx.renderer3D->GetProjectionMatrix());
+                XMFLOAT4 clip; XMStoreFloat4(&clip, cp);
+                if (clip.w <= 0) return false;
+                sx = (clip.x / clip.w + 1) * 0.5f * m_screenWidth;
+                sy = (1 - clip.y / clip.w) * 0.5f * m_screenHeight;
+                return true;
+                };
+
+            float dwx, dwz; GridToWorld(ctx.gridMap, path.back().first, path.back().second, dwx, dwz);
+            // 敵の見た目マス（Enemy座標系 → マス番号）が移動先に着いたら消す
+            int evc = (int)lroundf(enemy->worldX / 1.1f + ctx.gridMap->GetCols() / 2.0f);
+            int evr = (int)lroundf(enemy->worldZ / 1.1f + ctx.gridMap->GetRows() / 2.0f);
+            if (evc == path.back().first && evr == path.back().second) continue;
+
+            // 始点：プレイヤーターン中はマス中心。敵ターン中は見た目位置を GridToWorld 系に変換
+            float swx, swz;
+            if (ctx.isPlayerTurn)
+                GridToWorld(ctx.gridMap, enemy->gridCol, enemy->gridRow, swx, swz);
+            else
+            {
+                // 敵のworld → 連続グリッド座標 → GridToWorld系へ
+                float fcol = enemy->worldX / 1.1f + ctx.gridMap->GetCols() / 2.0f;
+                float frow = enemy->worldZ / 1.1f + ctx.gridMap->GetRows() / 2.0f;
+                float w0x, w0z, w1x, w1z;
+                GridToWorld(ctx.gridMap, 0, 0, w0x, w0z);
+                GridToWorld(ctx.gridMap, 1, 1, w1x, w1z);
+                swx = w0x + (w1x - w0x) * fcol;     // マス→ワールドの線形変換
+                swz = w0z + (w1z - w0z) * frow;
+            }
+            float esx, esy; if (!proj(swx, swz, esx, esy)) continue;
+            float dsx, dsy; if (!proj(dwx, dwz, dsx, dsy)) continue;
+
+            float vx = dsx - esx, vy = dsy - esy;
+            float L = sqrtf(vx * vx + vy * vy);
+            float ang = atan2f(vy, vx);
+
+            // 先端の三角
+            float hw = 0.5f + 0.5f * sinf(ctx.highlightTimer * 2.5f - L * 0.035f);
+            float hs = 40.0f + 8.0f * hw;
+            m_spriteRenderer->DrawSprite(TextureManager::Get("ui_arrowhead"), dsx - hs / 2, dsy - hs / 2, hs, hs, ang,
+                XMFLOAT4(hue.x, hue.y, hue.z, 0.75f + 0.25f * hw));
+
+            // シャフト＝均等な破線（パーツが滑らかに大小して波打つ）
+            const float headLen = 26.0f, step = 26.0f, baseLen = 16.0f, baseThick = 13.0f;
+            float scroll = fmodf(ctx.highlightTimer * 50.0f, step);
+            float breath = 0.5f + 0.5f * sinf(ctx.highlightTimer * 3.0f);   // ← 全体が一緒に脈動（整数倍＝ラップも滑らか）
+            for (float d = 6.0f + scroll; d < L - headLen; d += step)
+            {
+                float cx = esx + (vx / L) * d;
+                float cy = esy + (vy / L) * d;
+
+                float dl = baseLen * (0.8f + 0.35f * breath);   // 時間で大小（全□同じ）
+                float dt = baseThick * (0.8f + 0.35f * breath);
+
+                float a = 1.0f;
+                float fromStart = d - 6.0f, toHead = (L - headLen) - d;
+                if (fromStart < step) a *= fromStart / step;
+                if (toHead < step) a *= toHead / step;
+                if (a < 0.0f) a = 0.0f;
+
+                m_spriteRenderer->DrawSprite(m_whiteTexture, cx - dl / 2, cy - dt / 2, dl, dt, ang,
+                    XMFLOAT4(hue.x, hue.y, hue.z, 0.85f * a));
+            }
+        }
+
     DrawPlayerOffScreenIndicator(ctx);
     if (ctx.discardSelectCount > 0)
     {
