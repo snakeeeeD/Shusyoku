@@ -191,6 +191,23 @@ bool Enemy::MoveDash(int playerCol, int playerRow, GridMap* gridMap, int steps)
     return hit;
 }
 
+void Enemy::MoveAlongPlanned(GridMap* gridMap)
+{
+    if (m_buffManager.HasBuff(BuffType::Root) || m_immovable) return;
+    for (auto& cell : m_plannedMovePath)
+    {
+        int nc = cell.first, nr = cell.second;
+        if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) break;
+        if (gridMap->GetCell(nc, nr).type != CellType::Empty) break;   // 途中が埋まってたら手前で止まる
+        gridMap->SetCellType(gridCol, gridRow, CellType::Empty);
+        gridCol = nc; gridRow = nr;
+        gridMap->SetCellType(gridCol, gridRow, CellType::Enemy);
+    }
+    float newX = (gridCol - gridMap->GetCols() / 2.0f) * 1.1f;
+    float newZ = (gridRow - gridMap->GetRows() / 2.0f) * 1.1f;
+    StartMove(newX, newZ);
+}
+
 void Enemy::TakeDamage(int damage, DamageFeel feel)
 {
     Audio::PlaySE("Assets/Sound/se/hit.mp3");
@@ -314,6 +331,7 @@ bool Enemy::ConditionMet(const EnemyAction& a, int playerCol, int playerRow, int
     if (a.select.condition == "turnAbove") return turn >= a.select.conditionValue;
     if (a.select.condition == "turnMultiple") return turn > 0 && a.select.conditionValue > 0 && (turn % a.select.conditionValue) == 0;
     if (a.select.condition == "turnExact")    return turn == a.select.conditionValue;
+    if (a.select.condition == "afterDodge") return m_lastAttackWhiffed;
     return true;
 }
 
@@ -425,7 +443,11 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
         switch (tg.approach)
         {
         case ApproachType::Toward:
-            if (!hitTarget) MoveToward(mtC, mtR, gridMap, tg.moveRange);
+            if (!hitTarget)
+            {
+                if (!m_plannedMovePath.empty()) MoveAlongPlanned(gridMap);          // 矢印どおりに動く
+                else                            MoveToward(mtC, mtR, gridMap, tg.moveRange);  // 保険
+            }
             break;
         case ApproachType::Dash:
         {
@@ -444,7 +466,10 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
         switch (e.kind)
         {
         case EffectKind::MoveToward: MoveToward(mtC, mtR, gridMap, e.value); break;
-        case EffectKind::MoveAway:   MoveAway(mtC, mtR, gridMap, e.value);   break;
+        case EffectKind::MoveAway:
+            MoveAway(mtC, mtR, gridMap, e.value);
+            m_plannedMovePath.clear();   // 離脱後は接近矢印が残らないよう消す
+            break;
 
         case EffectKind::Damage:
             if (hitTarget && didAttack) *didAttack = true;   // 標的が射程内＝実際に攻撃した時だけ
@@ -501,6 +526,12 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
     // 命中したらプリセットのエフェクトを命中点で再生
     if (hitPlayer && !act.vfx.empty() && player)
         EffectManager::Play(act.vfx, player->worldX, player->worldY + 0.5f, player->worldZ);
+
+    // この行動がダメージ攻撃なら、命中したか(=避けられなかったか)を記録
+    bool isAttack = false;
+    for (auto& e : act.effects)
+        if (e.kind == EffectKind::Damage) { isAttack = true; break; }
+    if (isAttack) m_lastAttackWhiffed = !hitPlayer;
 
     return damage;
 }
@@ -596,6 +627,7 @@ std::vector<std::pair<int, int>> Enemy::PlannedMovePath(int targetCol, int targe
         }
         if (tg.approach == ApproachType::Toward)
         {
+            if (IsThreateningCell(targetCol, targetRow, *a)) return path;   // 既に当たるなら接近しない（実行側と一致）
             int c = gridCol, r = gridRow;
             for (int s = 0; s < tg.moveRange; s++) if (!StepToward(c, r, targetCol, targetRow, gridMap, path)) break;
             return path;

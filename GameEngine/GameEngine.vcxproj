@@ -207,6 +207,7 @@
     <ClInclude Include="TurnBanner.h" />
     <ClInclude Include="TurnManager.h" />
     <ClInclude Include="UiNotice.h" />
+    <ClInclude Include="UIwindow.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Audio.cpp" />

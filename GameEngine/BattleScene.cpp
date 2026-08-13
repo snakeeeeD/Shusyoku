@@ -253,6 +253,8 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
                 enemy->DecideNextAction(tC, tR, m_turnCount);
             }
 
+            m_arrowRevealTimer = 0.1f;   // 敵の動作直後に次矢印が出ないよう一拍おく
+
             // 山札と捨て札から移動カードを探す
             std::vector<std::string> moveCardIds;
             auto collectMoveCards = [&](const std::vector<std::string>& pile)
@@ -675,6 +677,7 @@ void BattleScene::Update(float deltaTime)
 
         // ハイライト明滅タイマーを更新
         m_highlightTimer += deltaTime * 0.5f; // 点滅速度調整
+        if (m_arrowRevealTimer > 0.0f) m_arrowRevealTimer -= deltaTime;
         if (m_highlightTimer > 3.14159f * 2.0f)
             m_highlightTimer = 0.0f;
 
@@ -1488,6 +1491,7 @@ void BattleScene::Draw()
     ctx.screenHeight = m_screenHeight;
     ctx.cameraZoom = m_cameraZoom;
     ctx.isPlayerTurn = m_turnManager.IsPlayerTurn();
+    ctx.showMoveArrows = !m_turnManager.IsPlayerTurn() || m_arrowRevealTimer <= 0.0f;
     ctx.mousePos = m_input.GetMousePos();
     ctx.outOfRangeCells = &m_highlighter.GetOutOfRangeCells();
     ctx.travelPath = &m_movePath;

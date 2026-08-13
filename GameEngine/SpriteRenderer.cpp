@@ -220,7 +220,7 @@ void SpriteRenderer::End()
 
 void SpriteRenderer::DrawSprite(ID3D11ShaderResourceView* texture,
     float x, float y, float width, float height,
-    float rotation, const XMFLOAT4& color)
+    float rotation, const XMFLOAT4& color, const XMFLOAT4& uvRect)
 {
     if (!texture)
     {
@@ -239,6 +239,7 @@ void SpriteRenderer::DrawSprite(ID3D11ShaderResourceView* texture,
     cb.World = XMMatrixTranspose(world);
     cb.Projection = XMMatrixTranspose(m_projectionMatrix);
     cb.Color = color;
+    cb.UVRect = uvRect;
     m_context->UpdateSubresource(m_constantBuffer.Get(), 0, nullptr, &cb, 0, 0);
 
     // 定数バッファ設定

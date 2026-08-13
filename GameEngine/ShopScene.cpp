@@ -2,6 +2,7 @@
 #include "MaterialDataBase.h"
 #include "RelicManager.h"
 #include "GameUtils.h"
+#include "UiWindow.h"
 #include "Audio.h"
 
 #include <cstdlib>
@@ -146,7 +147,9 @@ void ShopScene::Draw()
                 : (m_items[i].kind == ShopKind::Core) ? XMFLOAT4(0.42f, 0.32f, 0.22f, 1.0f)
                 : (m_items[i].kind == ShopKind::Relic) ? XMFLOAT4(0.40f, 0.30f, 0.55f, 1.0f)
                 : XMFLOAT4(0.20f, 0.35f, 0.35f, 1.0f);
-            m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, w, h, 0.0f, col);
+            UiWindow::Draw(m_spriteRenderer, m_whiteTexture, x, y, w, h);
+            m_spriteRenderer->DrawSprite(m_whiteTexture, x + 6, y + 6, w - 12, h - 12, 0.0f,
+                XMFLOAT4(col.x, col.y, col.z, 0.85f));   // Ží—ÞF‚ð’†‚É
         }
     }
     POINT mp = m_input.GetMousePos();
@@ -155,22 +158,21 @@ void ShopScene::Draw()
     float rmX = 40.0f, rmY = m_screenHeight - 70.0f, rmW = 220.0f, rmH = 44.0f;
     bool rmHov = !m_removedThisShop && UiHoverS(rmX, rmY, rmW, rmH, mp, "rm");
     float rmYY = rmHov ? rmY - 6.0f : rmY;
-    m_spriteRenderer->DrawSprite(m_whiteTexture, rmX, rmYY, rmW, rmH, 0.0f,
+    UiWindow::Button(m_spriteRenderer, m_whiteTexture, rmX, rmYY, rmW, rmH,
         m_removedThisShop ? XMFLOAT4(0.25f, 0.25f, 0.25f, 0.95f) : XMFLOAT4(0.5f, 0.25f, 0.25f, 0.95f));
 
     // ”„‹p
     float slX = 280.0f, slY = m_screenHeight - 70.0f, slW = 160.0f, slH = 44.0f;
     bool slHov = UiHoverS(slX, slY, slW, slH, mp, "sell");
     float slYY = slHov ? slY - 6.0f : slY;
-    m_spriteRenderer->DrawSprite(m_whiteTexture, slX, slYY, slW, slH, 0.0f, XMFLOAT4(0.25f, 0.42f, 0.25f, 0.95f));
+    UiWindow::Button(m_spriteRenderer, m_whiteTexture, slX, slYY, slW, slH, XMFLOAT4(0.25f, 0.42f, 0.25f, 0.95f));
 
     // Leave
     float leaveW = 160.0f, leaveH = 44.0f;
     float leaveX = (m_screenWidth - leaveW) / 2.0f, leaveY = m_screenHeight - 70.0f;
     bool lvHov = UiHoverS(leaveX, leaveY, leaveW, leaveH, mp, "leave");
     float lvYY = lvHov ? leaveY - 6.0f : leaveY;
-    m_spriteRenderer->DrawSprite(m_whiteTexture, leaveX, lvYY, leaveW, leaveH, 0.0f, XMFLOAT4(0.3f, 0.3f, 0.35f, 0.95f));
-
+    UiWindow::Button(m_spriteRenderer, m_whiteTexture, leaveX, lvYY, leaveW, leaveH, XMFLOAT4(0.3f, 0.3f, 0.35f, 0.95f));
     m_spriteRenderer->End();
 
     m_textRenderer->Begin();
@@ -468,7 +470,7 @@ void ShopScene::DrawSellMode()
         bool isCore = MaterialDataBase::GetBase(ids[i]) != nullptr;
         XMFLOAT4 col = (i == hov) ? XMFLOAT4(0.55f, 0.5f, 0.2f, 1.0f)
             : isCore ? XMFLOAT4(0.42f, 0.32f, 0.22f, 1.0f) : XMFLOAT4(0.2f, 0.35f, 0.35f, 1.0f);
-        m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, 160.0f, 40.0f, 0.0f, col);
+        UiWindow::Button(m_spriteRenderer, m_whiteTexture, x, y, 160.0f, 40.0f, col);
     }
     m_spriteRenderer->End();
 

@@ -3,6 +3,7 @@ cbuffer ConstantBuffer : register(b0)
     matrix World;
     matrix Projection;
     float4 Color;
+    float4 UVRect; // xy=オフセット, zw=スケール
 };
 
 struct VS_INPUT
@@ -23,7 +24,7 @@ PS_INPUT main(VS_INPUT input)
     PS_INPUT output;
     output.Pos = mul(float4(input.Pos, 1.0f), World);
     output.Pos = mul(output.Pos, Projection);
-    output.Tex = input.Tex;
+    output.Tex = input.Tex * UVRect.zw + UVRect.xy;
     output.Color = Color;
     return output;
 }

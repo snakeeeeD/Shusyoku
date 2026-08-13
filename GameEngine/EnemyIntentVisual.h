@@ -3,6 +3,9 @@
 #include "BuffManager.h"
 #include "TextureManager.h"
 #include "SpriteRenderer.h"
+#include "BuffInfo.h"
+#include "GameUtils.h"
+
 #include <DirectXMath.h>
 
 using namespace DirectX;
@@ -66,6 +69,64 @@ public:
                 result.replace(pos, key.size(), val);
         }
         return result;
+    }
+
+    // 攻撃範囲/接近/必中を日本語に
+    static std::wstring RangeText(const TargetSpec& tg)
+    {
+        std::wstring s;
+        switch (tg.rangeType)
+        {
+        case RangeType::Adjacent:      s = L"隣接"; break;
+        case RangeType::Cross:         s = L"十字"; break;
+        case RangeType::Area:          s = L"範囲"; break;
+        case RangeType::Diamond:       s = L"ひし形"; break;
+        case RangeType::DiagonalCross: s = L"八方"; break;
+        case RangeType::Line:          s = L"直線"; break;
+        case RangeType::Cone:          s = L"扇"; break;
+        default:                       return L"";   // None
+        }
+        if (tg.range > 0) s += L" 射程" + std::to_wstring(tg.range);
+        if (tg.approach == ApproachType::Dash)        s += L" / 突進";
+        else if (tg.approach == ApproachType::Toward) s += L" / 接近";
+        if (tg.unavoidable) s += L" / 必中";
+        return s;
+    }
+
+    // アイコン1個ぶんの説明（タイトル＋本文。本文は最大2行、区切りは\n）
+    static void GetEffectDesc(const Effect& e, const EnemyAction& a, const BuffManager& buffs,
+        std::wstring& title, std::wstring& body)
+    {
+        int v = GetDisplayValue(e, buffs);
+        switch (e.kind)
+        {
+        case EffectKind::Damage:
+            title = L"攻撃";
+            body = std::to_wstring(v) + L" ダメージ";
+            { std::wstring r = RangeText(a.target); if (!r.empty()) body += L"\n範囲: " + r; }
+            break;
+        case EffectKind::Block:
+            title = L"防御"; body = L"自身に " + std::to_wstring(v) + L" ブロック"; break;
+        case EffectKind::Buff:
+        {
+            BuffType bt = StringToBuffType(e.buff);
+            title = BuffInfo::Get(bt).name;
+            body = L"自身: " + BuffInfo::GetDescription(bt, e.value);
+            break;
+        }
+        case EffectKind::Debuff:
+        {
+            BuffType bt = StringToBuffType(e.buff);
+            title = BuffInfo::Get(bt).name;
+            body = L"プレイヤーに付与\n" + BuffInfo::GetDescription(bt, e.value);
+            break;
+        }
+        case EffectKind::MoveToward:      title = L"接近"; body = std::to_wstring(e.value) + L" マス近づく"; break;
+        case EffectKind::MoveAway:        title = L"後退"; body = std::to_wstring(e.value) + L" マス離れる"; break;
+        case EffectKind::PullPlayer:      title = L"引き寄せ"; body = L"プレイヤーを " + std::to_wstring(e.value) + L" マス引き寄せる"; break;
+        case EffectKind::KnockbackPlayer: title = L"突き飛ばし"; body = L"プレイヤーを " + std::to_wstring(e.value) + L" マス突き飛ばす"; break;
+        default: title = L""; body = L""; break;
+        }
     }
 
     // この行動はプレイヤーを害するか（危険表示の対象か）

@@ -5,6 +5,7 @@
 #include "TextRenderer.h"
 #include "RelicManager.h"
 #include "TerrainDataBase.h"
+#include "TextureManager.h"
 #include "RelicManager.h"
 #include <DirectXMath.h>
 #include <string>
@@ -186,8 +187,9 @@ public:
             sr->DrawSprite(white, x, y, w, h, rot, frameCol);   // 回転時は背面に全面（不透明なので問題なし）
         }
 
-        // 本体（枠のぶん内側）
-        sr->DrawSprite(white, x + fw, y + fw, w - fw * 2, h - fw * 2, rot, color);
+        // 本体（カードテクスチャをタイプ色でtint。未ロード時は従来の単色）
+        auto cardTex = TextureManager::Get("ui_card");
+        sr->DrawSprite(cardTex ? cardTex : white, x + fw, y + fw, w - fw * 2, h - fw * 2, rot, color);
 
         // レアはキラキラ
         if (data && data->rarity == CardRarity::Rare)
@@ -201,6 +203,21 @@ public:
                 float ss = 5.0f * scale * a;
                 sr->DrawSprite(white, sx, sy, ss, ss, 0.0f, XMFLOAT4(1.0f, 0.95f, 0.6f, a));
             }
+        }
+
+        // コストのオーブ
+        if (data)
+        {
+            float px = x + w / 2.0f, py = y + h / 2.0f;
+            float os = 30.0f * scale;
+            float ocx = x + 4.0f * scale + os / 2.0f;   // 未回転時のオーブ中心
+            float ocy = y + 4.0f * scale + os / 2.0f;
+            float cs = cosf(rot), sn = sinf(rot);        // カード中心まわりに回す（回転手札対応）
+            float rx = px + (ocx - px) * cs - (ocy - py) * sn;
+            float ry = py + (ocx - px) * sn + (ocy - py) * cs;
+            auto orb = TextureManager::Get("ui_cost");
+            sr->DrawSprite(orb ? orb : white, rx - os / 2.0f, ry - os / 2.0f, os, os, rot,
+                orb ? XMFLOAT4(1, 1, 1, color.w) : XMFLOAT4(0.15f, 0.13f, 0.25f, color.w));
         }
     }
 
@@ -217,17 +234,24 @@ public:
         D2D1_COLOR_F nameCol = upgraded
             ? D2D1::ColorF(0.4f, 1.0f, 0.5f, alpha)     // 強化：緑
             : D2D1::ColorF(1, 1, 1, alpha);
-        tr->DrawText(data->name.c_str(), x + 5 * s, y + 10 * s, 16 * s, nameCol, rot, px, py);
+        // 名前はオーブの右へ
+        tr->DrawText(data->name.c_str(), x + 34 * s, y + 11 * s, 13 * s, nameCol, rot, px, py);
 
-        wchar_t cost[32];
-        swprintf_s(cost, L"Cost: %d", data->cost);
-        tr->DrawText(cost, x + 5 * s, y + 32 * s, 13 * s,
-            D2D1::ColorF(1, 1, 0, alpha), rot, px, py);
+        // コストは左上オーブの上に「数字だけ」
+        wchar_t cost[16];
+        swprintf_s(cost, L"%d", data->cost);
+        float os = 30.0f * s;
+        float ocx = x + 4.0f * s + os / 2.0f;
+        float ocy = y + 4.0f * s + os / 2.0f;
+        float fh = 20.0f * s;
+        float digitW = (data->cost >= 10 ? 10.0f : 5.0f) * s;
+        tr->DrawText(cost, ocx - digitW, ocy - fh * 0.55f, fh,
+            D2D1::ColorF(1, 1, 1, alpha), rot, px, py);
 
         D2D1_COLOR_F dc = IsCardBoosted(data, player)
             ? D2D1::ColorF(0.4f, 1.0f, 0.4f, alpha)
             : D2D1::ColorF(0.8f, 0.8f, 0.8f, alpha);
-        tr->DrawText(GetEffectText(data, player).c_str(),
-            x + 5 * s, y + 55 * s, 12 * s, dc, rot, px, py);
+        tr->DrawText(GetEffectText(data, player, 10).c_str(),
+            x + 12 * s, y + 82 * s, 10 * s, dc, rot, px, py);
     }
 };

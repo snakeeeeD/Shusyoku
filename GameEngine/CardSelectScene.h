@@ -55,4 +55,6 @@ private:
     static constexpr float SEL_SCALE = 1.4f;
 
     RewardMode m_mode = RewardMode::Normal;
+
+    bool m_skipHover = false;
 };

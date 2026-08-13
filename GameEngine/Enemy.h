@@ -65,6 +65,7 @@ public:
 	void MoveToward(int playerCol, int playerRow, class GridMap* gridMap, int steps = 1);
 	void MoveAway(int playerCol, int playerRow, class GridMap* gridMap, int steps = 1);
 	bool MoveDash(int playerCol, int playerRow, class GridMap* gridMap, int steps = 1);
+	void MoveAlongPlanned(GridMap* gridMap);   // テレグラフ経路(m_plannedMovePath)どおりに動く
 
 	void AddBlock(int amount);
 	void ResetBlock();
@@ -113,7 +114,8 @@ private:
 
 	float m_dmgScale = 1.0f;
 	int   m_bonusActions = 0;
-	int	  m_seqIndex = 0;
+	int	  m_seqIndex = 0; 
+	bool m_lastAttackWhiffed = false;   // 直前の攻撃が避けられた(空振り)か → afterDodge条件で使う
 
 	std::string m_textureName;
 	std::string m_id;

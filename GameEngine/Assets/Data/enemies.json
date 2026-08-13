@@ -84,7 +84,9 @@
           "description": "{0}ダメージ＋攻撃UP",
           "target": {
             "rangeType": "Adjacent",
-            "range": 1
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 1
           },
           "effects": [
             {
@@ -100,6 +102,30 @@
             }
           ],
           "select": { "chance": 50 }
+        },
+        {
+          "description": "怒りの薙ぎ払い{0}",
+          "vfx": "slash",
+          "target": {
+            "rangeType": "Area",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 2
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 8
+            },
+            {
+              "kind": "Buff",
+              "buff": "AttackUp",
+              "value": 3,
+              "duration": 2,
+              "applyTo": "Self"
+            }
+          ],
+          "select": { "condition": "afterDodge", "chance": 100 }
         },
         {
           "description": "{0}斬って離脱",

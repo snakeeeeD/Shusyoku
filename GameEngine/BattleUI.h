@@ -96,6 +96,7 @@ struct BattleUIContext
     bool showDiscardPile;
     bool showExhaustPile;
     bool isPlayerTurn;
+    bool showMoveArrows = true;
     bool cardSelecting = false;
     float cameraZoom;
 
@@ -200,6 +201,8 @@ private:
     void DrawPlayCardEffects();
     void DrawDiscardEffects();
     void DrawPlayerOffScreenIndicator(const BattleUIContext& ctx);
+    void DrawWindow(float x, float y, float w, float h,
+        const DirectX::XMFLOAT4& tint = DirectX::XMFLOAT4(1, 1, 1, 1));
 
     BuffType m_hoveredBuffType = BuffType::AttackUp;
     int m_hoveredBuffEnemy = -1;
@@ -222,4 +225,9 @@ private:
     bool WorldToScreen(float wx, float wy, float wz, Renderer3D* renderer3D,
         float& outX, float& outY) const;
     void DrawFloatingTexts(const BattleUIContext& ctx);
+
+    // 敵インテントアイコンのホバー説明
+    bool m_intentHover = false;
+    std::wstring m_intentTitle, m_intentBody;
+    float m_intentX = 0.0f, m_intentY = 0.0f;
 };

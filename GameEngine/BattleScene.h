@@ -176,6 +176,7 @@ private:
     std::pair<int, int> m_hoveredCell;
 
     float m_highlightTimer;
+    float m_arrowRevealTimer = 0.0f;   // プレイヤーターン開始後、次矢印を出すまでの猶予
 
     float m_berserkFxTimer = 0.0f;
     float m_emberTimer = 0.0f;

@@ -29,10 +29,10 @@ public:
 
     // スプライト描画
     void DrawSprite(ID3D11ShaderResourceView* texture,
-        float x, float y,
-        float width, float height,
+        float x, float y, float width, float height,
         float rotation = 0.0f,
-        const XMFLOAT4& color = XMFLOAT4(1, 1, 1, 1));
+        const XMFLOAT4& color = XMFLOAT4(1, 1, 1, 1),
+        const XMFLOAT4& uvRect = XMFLOAT4(0, 0, 1, 1));
 
     void Begin();
     void End();
@@ -67,4 +67,5 @@ struct ConstantBuffer
     XMMATRIX World;
     XMMATRIX Projection;
     XMFLOAT4 Color;
+    XMFLOAT4 UVRect;
 };

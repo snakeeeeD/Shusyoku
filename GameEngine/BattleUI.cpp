@@ -11,6 +11,7 @@
 #include "MaterialDataBase.h"
 #include "HighlightPalette.h"
 #include "RelicManager.h"
+#include "UiWindow.h"
 #include "GameUtils.h"
 #include "Audio.h"
 #include <algorithm>
@@ -268,7 +269,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         }
     }
 
-    if (ctx.enemies)
+    if (ctx.showMoveArrows && ctx.enemies)
         for (int ei = 0; ei < (int)ctx.enemies->size(); ei++)
         {
             Enemy* enemy = (*ctx.enemies)[ei];
@@ -509,8 +510,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         float tw = 320.0f, th = 28.0f, tx = 20.0f, ty = m_screenHeight - 100.0f;
         m_textRenderer->End();                                  
         m_spriteRenderer->Begin();
-        m_spriteRenderer->DrawSprite(m_whiteTexture, tx - 2, ty - 2, tw + 4, th + 4, 0.0f, XMFLOAT4(0.4f, 0.4f, 0.5f, 1.0f));
-        m_spriteRenderer->DrawSprite(m_whiteTexture, tx, ty, tw, th, 0.0f, XMFLOAT4(0.08f, 0.08f, 0.14f, 0.98f));
+        DrawWindow(tx - 6, ty - 6, tw + 12, th + 12);   // 枠分だけ広げてパディング確保
         m_spriteRenderer->End();
         m_textRenderer->Begin();                                 // テキスト再開（以降の描画はこのバッチで続く）
         m_textRenderer->DrawText(pileTip, tx + 10.0f, ty + 5.0f, 15.0f, D2D1::ColorF(1, 1, 1));
@@ -567,6 +567,8 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         m_textRenderer->End();
         m_spriteRenderer->Begin();
 
+        m_intentHover = false;
+
         for (auto enemy : *ctx.enemies)
         {
             float headX, headY, footX, footY;
@@ -602,14 +604,29 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 float iconX = barX;
                 float iconY = barY - iconSize - 2.0f;
 
-                    for (auto& act : enemy->GetPlannedActions())
-                        for (auto& e : act.effects)
+                for (auto& act : enemy->GetPlannedActions())
+                    for (auto& e : act.effects)
+                    {
+                        if (!EnemyIntentVisual::ShouldShow(e)) continue;
+
+                        bool hov = (ctx.mousePos.x >= iconX && ctx.mousePos.x <= iconX + iconSize
+                            && ctx.mousePos.y >= iconY && ctx.mousePos.y <= iconY + iconSize);
+                        if (hov)
                         {
-                            if (!EnemyIntentVisual::ShouldShow(e)) continue;
-                            EnemyIntentVisual::DrawIcon(m_spriteRenderer, m_whiteTexture, e,
-                                iconX, iconY, EnemyIntentVisual::ICON_SIZE);
-                            iconX += EnemyIntentVisual::STEP;
+                            float p = 3.0f + 2.0f * (0.5f + 0.5f * sinf(ctx.highlightTimer * 6.0f));
+                            m_spriteRenderer->DrawSprite(m_whiteTexture, iconX - p, iconY - p,
+                                iconSize + p * 2, iconSize + p * 2, 0.0f, XMFLOAT4(1.0f, 0.85f, 0.35f, 0.9f));
+                            m_intentHover = true;
+                            m_intentX = iconX + iconSize * 0.5f;
+                            m_intentY = iconY;
+                            EnemyIntentVisual::GetEffectDesc(e, act, enemy->GetBuffManager(),
+                                m_intentTitle, m_intentBody);
                         }
+
+                        EnemyIntentVisual::DrawIcon(m_spriteRenderer, m_whiteTexture, e,
+                            iconX, iconY, EnemyIntentVisual::ICON_SIZE);
+                        iconX += EnemyIntentVisual::STEP;
+                    }
             }
 
             {
@@ -748,8 +765,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             float dw = 300.0f, dh = 20.0f;
             m_textRenderer->End();
             m_spriteRenderer->Begin();
-            m_spriteRenderer->DrawSprite(m_whiteTexture, 38.0f, buffY, dw, dh, 0.0f,
-                XMFLOAT4(0.08f, 0.08f, 0.15f, 0.95f));
+            DrawWindow(34.0f, buffY - 4.0f, dw + 8.0f, dh + 8.0f);
             m_spriteRenderer->End();
             m_textRenderer->Begin();
 
@@ -777,7 +793,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             float tx = btnX - 40.0f, ty = btnY - 40.0f, tw = 180.0f, th = 28.0f;
             m_spriteRenderer->End();
             m_spriteRenderer->Begin();
-            m_spriteRenderer->DrawSprite(m_whiteTexture, tx, ty, tw, th, 0.0f, XMFLOAT4(0.08f, 0.08f, 0.14f, 0.98f));
+            DrawWindow(tx - 4.0f, ty - 4.0f, tw + 8.0f, th + 8.0f);
             m_textRenderer->DrawText(L"ターンを終了して敵の番へ", tx + 8.0f, ty + 5.0f, 15.0f, D2D1::ColorF(1, 1, 1));
         }
     }
@@ -866,8 +882,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
         m_textRenderer->End();
         m_spriteRenderer->Begin();
-        m_spriteRenderer->DrawSprite(m_whiteTexture, tipX, tipY, tipW, tipH, 0.0f,
-            XMFLOAT4(0.08f, 0.08f, 0.15f, 0.95f));
+        DrawWindow(tipX - 4.0f, tipY - 4.0f, tipW + 8.0f, tipH + 8.0f);
         m_spriteRenderer->End();
         m_textRenderer->Begin();
 
@@ -875,6 +890,38 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             D2D1::ColorF(1.0f, 1.0f, 0.5f));
         m_textRenderer->DrawText(desc.c_str(), tipX + 5.0f, tipY + 18.0f, 11.0f,
             D2D1::ColorF(0.8f, 0.8f, 0.8f));
+    }
+
+    // 敵インテントアイコンの説明ウィンドウ
+    if (m_intentHover)
+    {
+        bool twoLines = (m_intentBody.find(L'\n') != std::wstring::npos);
+        float tw = 220.0f, th = twoLines ? 64.0f : 46.0f;
+        float tx = m_intentX - tw * 0.5f;
+        float ty = m_intentY - th - 8.0f;
+        if (tx < 4.0f) tx = 4.0f;
+        if (tx + tw > m_screenWidth - 4.0f) tx = m_screenWidth - 4.0f - tw;
+        if (ty < 4.0f) ty = m_intentY + 24.0f;   // 上に出せない時は下へ
+
+        m_textRenderer->End();
+        m_spriteRenderer->Begin();
+        DrawWindow(tx, ty, tw, th);
+        m_spriteRenderer->End();
+        m_textRenderer->Begin();
+
+        m_textRenderer->DrawText(m_intentTitle.c_str(), tx + 10.0f, ty + 6.0f, 15.0f,
+            D2D1::ColorF(1.0f, 0.85f, 0.35f));
+        size_t nl = m_intentBody.find(L'\n');
+        if (nl == std::wstring::npos)
+            m_textRenderer->DrawText(m_intentBody.c_str(), tx + 10.0f, ty + 25.0f, 12.0f,
+                D2D1::ColorF(0.9f, 0.9f, 0.9f));
+        else
+        {
+            m_textRenderer->DrawText(m_intentBody.substr(0, nl).c_str(), tx + 10.0f, ty + 25.0f, 12.0f,
+                D2D1::ColorF(0.9f, 0.9f, 0.9f));
+            m_textRenderer->DrawText(m_intentBody.substr(nl + 1).c_str(), tx + 10.0f, ty + 42.0f, 12.0f,
+                D2D1::ColorF(0.75f, 0.85f, 1.0f));   // 範囲行は青系
+        }
     }
 
     // 罠のホバー詳細
@@ -907,8 +954,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
                 m_textRenderer->End();
                 m_spriteRenderer->Begin();
-                m_spriteRenderer->DrawSprite(m_whiteTexture, tipX, tipY, tipW, tipH, 0.0f,
-                    XMFLOAT4(0.08f, 0.08f, 0.15f, 0.95f));
+                DrawWindow(tipX - 4.0f, tipY - 4.0f, tipW + 8.0f, tipH + 8.0f);
                 m_spriteRenderer->End();
                 m_textRenderer->Begin();
 
@@ -1405,8 +1451,7 @@ void BattleUI::DrawPileViewer(const BattleUIContext& ctx)
     float bgH = 580.0f;
 
     m_spriteRenderer->Begin();
-    m_spriteRenderer->DrawSprite(m_whiteTexture, bgX, bgY, bgW, bgH,
-        0.0f, XMFLOAT4(0.1f, 0.1f, 0.1f, 0.95f));
+    DrawWindow(bgX, bgY, bgW, bgH);
     m_spriteRenderer->End();
 
     m_textRenderer->DrawText(title, bgX + 20.0f, bgY + 10.0f, 24.0f,
@@ -1636,7 +1681,7 @@ void BattleUI::UpdateCardAnimations(float deltaTime, int handSize, int hoveredIn
             targetX += (i < hoveredIndex) ? -18.0f : 18.0f;
 
         // ホバーで拡大
-        float targetScale = (i == hoveredIndex || i == selectedIndex) ? 1.18f : 1.0f;
+        float targetScale = (i == hoveredIndex || i == selectedIndex) ? 1.4f : 1.2f;
         m_cardAnims[i].currentScale += (targetScale - m_cardAnims[i].currentScale)
             * min(1.0f, 12.0f * dt);
 
@@ -1725,13 +1770,15 @@ int BattleUI::GetCardAtScreenPos(POINT p) const
     int n = (int)m_cardAnims.size();
     if (n == 0) return -1;
 
-    // 手札の上端は「持ち上がった位置」まで含める（固定・動かない）
+    // 縦は余裕を持たせる（下は画面外まで）
     float topY = m_screenHeight - CARD_HIDE_Y_OFFSET - 40.0f;
-    for (int i = 0; i < n; i++)
+    // 上に描かれている（右・ホバー中）カードを優先 → 逆順で最初のヒット
+    for (int i = n - 1; i >= 0; i--)
     {
-        float cardX = CardVisual::HandSlotX(i, n, (float)m_screenWidth);
-
-        if (p.x >= cardX && p.x <= cardX + CARD_WIDTH && p.y >= topY)
+        float x, y, w, h;
+        CardVisual::GetRect(m_cardAnims[i].currentX, m_cardAnims[i].currentY,
+            m_cardAnims[i].currentScale, x, y, w, h);   // 実際の描画位置・拡大に一致
+        if (p.x >= x && p.x <= x + w && p.y >= topY)
             return i;
     }
     return -1;
@@ -1829,12 +1876,10 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
         bool isHover = isEntryHover || isDetailHover;
 
         bool isSel = (ctx.selectedEnemy == i);
-        XMFLOAT4 bgColor = (isHover || isSel)
-            ? XMFLOAT4(0.2f, 0.5f, 0.7f, 0.9f)      // 水色＝グリッドの強調色と対応
-            : XMFLOAT4(0.45f, 0.45f, 0.25f, 0.7f);
-
-        m_spriteRenderer->DrawSprite(m_whiteTexture, panelX, entryY,
-            panelW, entryH, 0.0f, bgColor);
+        DrawWindow(panelX, entryY, panelW, entryH);
+        if (isHover || isSel)   // 選択/ホバーは水色を薄く重ねて強調
+            m_spriteRenderer->DrawSprite(m_whiteTexture, panelX + 5.0f, entryY + 5.0f,
+                panelW - 10.0f, entryH - 10.0f, 0.0f, XMFLOAT4(0.2f, 0.5f, 0.7f, 0.30f));
 
         if (isHover || isSel)
         {
@@ -1914,8 +1959,7 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
             detailH += 20.0f;
         detailH += 18.0f;
         if (detailH < entryH) detailH = entryH;
-        m_spriteRenderer->DrawSprite(m_whiteTexture, detailX, detailEntryY,
-            190.0f, detailH, 0.0f, XMFLOAT4(0.1f, 0.1f, 0.2f, 1.0f));
+        DrawWindow(detailX, detailEntryY, 190.0f, detailH);
     }
 
     m_panelHoveredEnemy = hoveredEnemy;
@@ -2037,6 +2081,11 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
         }
     }
     m_textRenderer->End();
+}
+
+void BattleUI::DrawWindow(float x, float y, float w, float h, const XMFLOAT4& tint)
+{
+    UiWindow::Draw(m_spriteRenderer, m_whiteTexture, x, y, w, h, tint);
 }
 
 void BattleUI::StartPlayCardEffect(CardType type, float fromX, float fromY)

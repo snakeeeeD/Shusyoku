@@ -262,6 +262,9 @@
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\70-TurnBanner">
       <UniqueIdentifier>{b922d39c-45eb-48ad-b184-b0eea29f2ec8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\08-UIWindow">
+      <UniqueIdentifier>{80fe8206-7937-4588-b21e-c83966cf4bdf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -485,6 +488,9 @@
     </ClInclude>
     <ClInclude Include="TurnBanner.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\70-TurnBanner</Filter>
+    </ClInclude>
+    <ClInclude Include="UIwindow.h">
+      <Filter>ソース ファイル\01-描画関連\08-UIWindow</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

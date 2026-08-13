@@ -8,6 +8,7 @@
 #include "TerrainDataBase.h"
 #include "MaterialDataBase.h"
 #include "RelicManager.h"
+#include "UiWindow.h"
 #include "Audio.h"
 
 #include <cmath>
@@ -174,6 +175,10 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("ui_discard", L"Assets/UI/ui_discard.png");
 		TextureManager::Load("ui_exhaust", L"Assets/UI/ui_exhaust.png");
 		TextureManager::Load("ui_arrowhead", L"Assets/UI/ui_arrowhead.png");
+		TextureManager::Load("ui_window", L"Assets/UI/ui_window.png");
+		TextureManager::Load("ui_banner", L"Assets/UI/ui_banner.png");
+		TextureManager::Load("ui_card", L"Assets/UI/ui_card.png");
+		TextureManager::Load("ui_cost", L"Assets/UI/ui_cost.png");
 	}
 
 	m_textRenderer = new TextRenderer();
@@ -396,7 +401,7 @@ void SceneManager::DrawOverlay()
 
 		// 強化後表示トグル
 		float ubX = 20.0f, ubY = m_screenHeight - 46.0f, ubW = 190.0f, ubH = 34.0f;
-		m_uiSprite->DrawSprite(white, ubX, ubY, ubW, ubH, 0.0f,
+		UiWindow::Button(m_uiSprite, white, ubX, ubY, ubW, ubH,
 			m_deckShowUpgrade ? XMFLOAT4(0.30f, 0.55f, 0.30f, 1.0f)
 			: XMFLOAT4(0.30f, 0.30f, 0.35f, 1.0f));
 	}
@@ -456,8 +461,7 @@ void SceneManager::DrawOverlay()
 		if (tip) {
 			float tw = 150.0f, th = 30.0f, tx = (float)mp.x + 14.0f, ty = (float)mp.y + 18.0f;
 			m_uiSprite->Begin();
-			m_uiSprite->DrawSprite(TextureManager::Get("white"), tx - 2, ty - 2, tw + 4, th + 4, 0.0f, XMFLOAT4(0.4f, 0.4f, 0.5f, 1));
-			m_uiSprite->DrawSprite(TextureManager::Get("white"), tx, ty, tw, th, 0.0f, XMFLOAT4(0.08f, 0.08f, 0.14f, 0.98f));
+			UiWindow::Draw(m_uiSprite, TextureManager::Get("white"), tx - 6, ty - 6, tw + 12, th + 12);
 			m_uiSprite->End();
 			m_textRenderer->Begin();
 			m_textRenderer->DrawText(tip, tx + 10.0f, ty + 6.0f, 16.0f, D2D1::ColorF(1, 1, 1));
@@ -532,7 +536,7 @@ void SceneManager::DrawDeckPreview()
 		if (bHov && !m_upgradeBtnHov) Audio::PlaySE("Assets/Sound/se/hover.mp3");
 		m_upgradeBtnHov = bHov;
 		float bDy = bHov ? -4.0f : 0.0f;
-		m_uiSprite->DrawSprite(white, bX, bY + bDy, bW, bH, 0.0f,
+		UiWindow::Button(m_uiSprite, white, bX, bY + bDy, bW, bH,
 			bHov ? XMFLOAT4(0.70f, 0.58f, 0.28f, 1.0f) : XMFLOAT4(0.55f, 0.45f, 0.20f, 1.0f));
 		m_uiSprite->End();
 
@@ -686,7 +690,7 @@ void SceneManager::HandleInput()
 			{
 				// 強化後表示トグル（デッキ閲覧のみ・拡大中でない時）
 				float ubX = 20.0f, ubY = m_screenHeight - 46.0f, ubW = 190.0f, ubH = 34.0f;
-				if (!m_deckUpgradeMode && m_deckPreviewIdx < 0 &&
+				if (m_deckPreviewIdx < 0 &&
 					m.x >= ubX && m.x <= ubX + ubW && m.y >= ubY && m.y <= ubY + ubH)
 				{
 					m_deckShowUpgrade = !m_deckShowUpgrade; Audio::PlaySE("Assets/Sound/se/click.mp3"); return;
@@ -887,8 +891,7 @@ void SceneManager::DrawTutorial()
 	// テキストボックス（対象が上なら下側、下なら上側に置く）
 	float bw = 560.0f, bh = 150.0f, bx = sw / 2.0f - bw / 2.0f;
 	float by = (pg.hy + pg.hh * 0.5f < sh * 0.5f) ? sh - bh - 60.0f : 80.0f;
-	m_uiSprite->DrawSprite(white, bx - 2, by - 2, bw + 4, bh + 4, 0.0f, XMFLOAT4(0.4f, 0.4f, 0.6f, 1.0f));
-	m_uiSprite->DrawSprite(white, bx, by, bw, bh, 0.0f, XMFLOAT4(0.08f, 0.08f, 0.14f, 0.98f));
+	UiWindow::Draw(m_uiSprite, white, bx - 6, by - 6, bw + 12, bh + 12);
 	m_uiSprite->End();
 
 	m_textRenderer->Begin();
@@ -933,12 +936,16 @@ void SceneManager::DrawBarTips()
 	{
 		title = L"歩数"; desc = L"0を超えて進むと敵が強くなる"; x = 140.0f;
 	}
+	else if (mp.x >= 274 && mp.x <= 380)
+	{
+		title = L"層"; desc = L"ダンジョンの階層(全3層)。深いほど敵が強い"; x = 274.0f;
+	}
 	if (!title) return;
 
 	ID3D11ShaderResourceView* white = TextureManager::Get("white");
 	float ty = BAR_H + 44.0f, w = 360.0f, h = 56.0f;   // レリック帯の下
 	m_uiSprite->Begin();
-	m_uiSprite->DrawSprite(white, x, ty, w, h, 0.0f, XMFLOAT4(0.05f, 0.05f, 0.1f, 0.97f));
+	UiWindow::Draw(m_uiSprite, white, x, ty, w, h);
 	m_uiSprite->End();
 	m_textRenderer->Begin();
 	m_textRenderer->DrawText(title, x + 10.0f, ty + 6.0f, 16.0f, D2D1::ColorF(1.0f, 0.9f, 0.6f));
@@ -1114,7 +1121,7 @@ void SceneManager::DrawCraft()
 	{
 		float x, y, w, h; GetCraftSlotRect(i, x, y, w, h);
 		bool filled = (i == 0) ? !m_craftBase.empty() : (int)m_craftMods.size() >= i;
-		m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f,
+		UiWindow::Button(m_uiSprite, white, x, y, w, h,
 			filled ? XMFLOAT4(0.25f, 0.35f, 0.5f, 1.0f) : XMFLOAT4(0.15f, 0.15f, 0.2f, 1.0f));
 	}
 	// 所持素材
@@ -1122,21 +1129,23 @@ void SceneManager::DrawCraft()
 		auto bs = CraftBases();
 		for (int i = 0; i < (int)bs.size(); i++) {
 			float x, y, w, h; GetCraftBaseRect(i, x, y, w, h);
-			m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(0.4f, 0.3f, 0.2f, 1.0f));
+			UiWindow::Button(m_uiSprite, white, x, y, w, h, XMFLOAT4(0.4f, 0.3f, 0.2f, 1.0f));
 		}
 		auto md = CraftMods();
 		for (int i = 0; i < (int)md.size(); i++) {
 			float x, y, w, h; GetCraftModRect(i, x, y, w, h);
-			m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(0.2f, 0.3f, 0.3f, 1.0f));
+			UiWindow::Button(m_uiSprite, white, x, y, w, h, XMFLOAT4(0.2f, 0.3f, 0.3f, 1.0f));
 		}
 	
-	// 作成ボタン
-	{
-		float x, y, w, h; GetCraftBtnRect(x, y, w, h);
-		bool ready = !m_craftBase.empty() && (int)m_craftMods.size() >= CraftModSlots();
-		m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f,
-			ready ? XMFLOAT4(0.3f, 0.55f, 0.3f, 1.0f) : XMFLOAT4(0.25f, 0.25f, 0.25f, 1.0f));
-	}
+		// 作成ボタン
+		{
+			float x, y, w, h; GetCraftBtnRect(x, y, w, h);
+			bool ready = !m_craftBase.empty() && (int)m_craftMods.size() >= CraftModSlots();
+			bool hov = UiHover(x, y, w, h, m_uiInput.GetMousePos(), "craftmake");   // ホバーSE＋判定
+			float dy = hov ? -4.0f : 0.0f;
+			UiWindow::Button(m_uiSprite, white, x, y + dy, w, h,
+				ready ? XMFLOAT4(0.3f, 0.55f, 0.3f, 1.0f) : XMFLOAT4(0.25f, 0.25f, 0.25f, 1.0f));
+		}
 	// プレビューカード（本体）
 	std::string rid = CraftRecipeId();
 	const CardData* prev = rid.empty() ? nullptr : CardDataBase::Get(rid);
@@ -1184,7 +1193,9 @@ void SceneManager::DrawCraft()
 	}
 	{
 		float x, y, w, h; GetCraftBtnRect(x, y, w, h);
-		m_textRenderer->DrawText(L"Make", x + 55.0f, y + 12.0f, 20.0f, D2D1::ColorF(1, 1, 1));
+		POINT mp = m_uiInput.GetMousePos();
+		float dy = (mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h) ? -4.0f : 0.0f;
+		m_textRenderer->DrawText(L"Make", x + 55.0f, y + dy + 12.0f, 20.0f, D2D1::ColorF(1, 1, 1));
 	}
 	if (prev)
 		CardVisual::DrawTexts(m_textRenderer, prev, nullptr,
@@ -1335,7 +1346,7 @@ void SceneManager::DrawItemTooltip(const std::string& id, POINT mp)
 	if (x + w > m_screenWidth) x = m_screenWidth - w - 4.0f;
 
 	m_uiSprite->Begin();
-	m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(0.05f, 0.05f, 0.1f, 0.98f));
+	UiWindow::Draw(m_uiSprite, white, x, y, w, h);
 	m_uiSprite->End();
 	m_textRenderer->Begin();
 	m_textRenderer->DrawText(info.name.c_str(), x + 10.0f, y + 8.0f, 18.0f, D2D1::ColorF(1, 0.9f, 0.6f));
@@ -1409,9 +1420,10 @@ void SceneManager::DrawRest()
 	{
 		float x, y, w, h; GetRestBtnRect(i, x, y, w, h);
 		bool hov = mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h;
+		UiWindow::Draw(m_uiSprite, white, x, y, w, h);
 		XMFLOAT4 c = base[i];
-		if (hov) { c.x += 0.1f; c.y += 0.1f; c.z += 0.1f; }
-		m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, c);
+		m_uiSprite->DrawSprite(white, x + 6, y + 6, w - 12, h - 12, 0.0f,
+			XMFLOAT4(c.x, c.y, c.z, hov ? 0.6f : 0.4f));   // 種類色を中に薄く
 	}
 	m_uiSprite->End();
 
@@ -1698,9 +1710,11 @@ void SceneManager::DrawEvent()
 			char key[16]; sprintf_s(key, "evc%d", i);
 			bool hov = en && UiHover(x, y, w, h, mp, key);   // ← ホバーSE＋判定
 			float yy = hov ? y - 6.0f : y;                   // ← 浮く
-			m_uiSprite->DrawSprite(white, x, yy, w, h, 0.0f,
-				!en ? XMFLOAT4(0.12f, 0.12f, 0.14f, 1.0f)
-				: hov ? XMFLOAT4(0.4f, 0.32f, 0.5f, 1.0f) : XMFLOAT4(0.2f, 0.17f, 0.28f, 1.0f));
+			UiWindow::Draw(m_uiSprite, white, x, yy, w, h);
+			if (!en)
+				m_uiSprite->DrawSprite(white, x + 6, yy + 6, w - 12, h - 12, 0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.45f));   // 無効=暗く
+			else if (hov)
+				m_uiSprite->DrawSprite(white, x + 6, yy + 6, w - 12, h - 12, 0.0f, XMFLOAT4(0.55f, 0.45f, 0.75f, 0.45f)); // ホバー強調
 		}
 	m_uiSprite->End();
 

@@ -1,5 +1,6 @@
 #include "CardSelectScene.h"
 #include "RelicManager.h"
+#include "UiWindow.h"
 #include "Audio.h"
 
 #include <cstdlib>
@@ -111,19 +112,29 @@ void CardSelectScene::Draw()
     POINT mp = m_input.GetMousePos();
     bool skipHover = mp.x >= skipX && mp.x <= skipX + skipW
         && mp.y >= skipY && mp.y <= skipY + skipH;
-    m_spriteRenderer->DrawSprite(m_whiteTexture, skipX, skipY, skipW, skipH, 0.0f,
+    if (skipHover && !m_skipHover) Audio::PlaySE("Assets/Sound/se/hover.mp3");
+    m_skipHover = skipHover;
+    float skipDy = skipHover ? -4.0f : 0.0f;
+    UiWindow::Button(m_spriteRenderer, m_whiteTexture, skipX, skipY + skipDy, skipW, skipH,
         skipHover ? XMFLOAT4(0.5f, 0.3f, 0.3f, 1.0f) : XMFLOAT4(0.3f, 0.2f, 0.2f, 0.9f));
+
+    // カード取得の布バナー
+    {
+        float bw = 480.0f, bh = 96.0f;
+        m_spriteRenderer->DrawSprite(TextureManager::Get("ui_banner"),
+            m_screenWidth / 2.0f - bw / 2.0f, 52.0f, bw, bh, 0.0f, XMFLOAT4(1, 1, 1, 1));
+    }
 
     m_spriteRenderer->End();
 
     m_textRenderer->Begin();
 
     // タイトル
-    m_textRenderer->DrawText(L"カードを1枚選んでください",
-        m_screenWidth / 2.0f - 150.0f, 80.0f, 28.0f,
-        D2D1::ColorF(D2D1::ColorF::White));
+    m_textRenderer->DrawOutlinedText(L"カードを1枚選んでください",
+        m_screenWidth / 2.0f - 130.0f, 84.0f, 28.0f,
+        D2D1::ColorF(1.0f, 0.95f, 0.8f), D2D1::ColorF(0.25f, 0.04f, 0.06f), 3.0f);
 
-    m_textRenderer->DrawText(L"スキップ", skipX + 30.0f, skipY + 12.0f, 20.0f,
+    m_textRenderer->DrawText(L"スキップ", skipX + 40.0f, skipY + skipDy + 8.0f, 20.0f,
         D2D1::ColorF(D2D1::ColorF::White));
 
     // カード情報
