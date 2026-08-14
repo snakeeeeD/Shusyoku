@@ -52,6 +52,8 @@ void Input::Update()
 	mouseState[0] = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
 	mouseState[1] = (GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0;
 	mouseState[2] = (GetAsyncKeyState(VK_MBUTTON) & 0x8000) != 0;
+	if (!CursorInside())                       // 窓外/非フォーカスは押されてない扱い
+		mouseState[0] = mouseState[1] = mouseState[2] = false;
 
 	// ---- 振動時間管理 ----
 	if (VibrationTime > 0)
@@ -149,15 +151,16 @@ POINT Input::GetMousePos() const
 {
 	POINT p;
 	GetCursorPos(&p);
-
-	// ウィンドウ座標に変換
 	ScreenToClient(m_hWnd, &p);
 
-	// ウィンドウの実際のサイズを取得
 	RECT rect;
 	GetClientRect(m_hWnd, &rect);
 	float windowW = (float)(rect.right - rect.left);
 	float windowH = (float)(rect.bottom - rect.top);
+
+	// クライアント矩形外は「どのUIにも当たらない」値に（窓外クリック無効・最小化時のゼロ割も回避）
+	if (p.x < 0 || p.y < 0 || p.x >= windowW || p.y >= windowH)
+		return { -1, -1 };
 
 	// 1280x720 基準に変換
 	p.x = (LONG)(p.x * 1280.0f / windowW);
@@ -167,7 +170,7 @@ POINT Input::GetMousePos() const
 
 bool Input::GetMouseButtonPress(int button)
 {
-	return (GetAsyncKeyState(button) & 0x8000) != 0;
+	return CursorInside() && (GetAsyncKeyState(button) & 0x8000) != 0;
 }
 
 bool Input::GetMouseButtonTrigger(int button)
@@ -178,4 +181,12 @@ bool Input::GetMouseButtonTrigger(int button)
 bool Input::GetMouseButtonRelease(int button)
 {
 	return !mouseState[button] && mouseState_old[button];
+}
+
+bool Input::CursorInside() const
+{
+	if (GetForegroundWindow() != m_hWnd) return false;   // 非フォーカスは無視
+	POINT p; GetCursorPos(&p); ScreenToClient(m_hWnd, &p);
+	RECT rc; GetClientRect(m_hWnd, &rc);
+	return p.x >= 0 && p.y >= 0 && p.x < rc.right && p.y < rc.bottom;
 }

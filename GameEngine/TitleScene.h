@@ -39,4 +39,10 @@ private:
     HWND m_hWnd;
 
     bool m_skipFirstFrame = true;
+
+    bool m_dispHover = false;
+    void DispBtnRect(float& x, float& y, float& w, float& h) const
+    {
+        w = 220.0f; h = 40.0f; x = 20.0f; y = (float)m_screenHeight - 60.0f;   // ç∂â∫
+    }
 };

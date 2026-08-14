@@ -15,6 +15,7 @@ static ma_sound  g_bgm;
 static bool g_inited = false, g_bgmActive = false;
 static std::string g_bgmPath;
 static float g_bgmVol = 0.5f;
+static float g_seMaster = 1.0f;
 
 bool Audio::Init()
 {
@@ -50,7 +51,7 @@ void Audio::PlaySE(const std::string& path)
     ma_sound* s = pool.voices[pool.next];
     pool.next = (pool.next + 1) % (int)pool.voices.size();
 
-    float v = g_seVol.count(path) ? g_seVol[path] : 1.0f;
+    float v = (g_seVol.count(path) ? g_seVol[path] : 1.0f) * g_seMaster;
     ma_sound_set_volume(s, v);
     ma_sound_seek_to_pcm_frame(s, 0);
     ma_sound_start(s);
@@ -85,3 +86,4 @@ void Audio::SetBgmVolume(float v)
 }
 void Audio::SetBgmTrackVolume(const std::string& path, float v) { g_bgmVolMap[path] = v; }
 void Audio::SetSeVolume(const std::string& path, float v) { g_seVol[path] = v; }
+void Audio::SetSeMasterVolume(float v) { g_seMaster = v; }

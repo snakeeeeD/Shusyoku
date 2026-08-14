@@ -265,6 +265,12 @@
     <Filter Include="ソース ファイル\01-描画関連\08-UIWindow">
       <UniqueIdentifier>{80fe8206-7937-4588-b21e-c83966cf4bdf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\04-Game内関連\04-Setting">
+      <UniqueIdentifier>{7ebfcc04-4021-4adc-ba6a-3f62015edf95}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\09-RenderConfig">
+      <UniqueIdentifier>{be36068d-b797-4727-aab3-1ec4bf083510}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -492,6 +498,12 @@
     <ClInclude Include="UIwindow.h">
       <Filter>ソース ファイル\01-描画関連\08-UIWindow</Filter>
     </ClInclude>
+    <ClInclude Include="Settings.h">
+      <Filter>ソース ファイル\04-Game内関連\04-Setting</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderConfig.h">
+      <Filter>ソース ファイル\01-描画関連\09-RenderConfig</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SpriteRenderer.cpp">
@@ -625,6 +637,9 @@
     </ClCompile>
     <ClCompile Include="Audio.cpp">
       <Filter>ソース ファイル\04-Game内関連\03-Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Settings.cpp">
+      <Filter>ソース ファイル\04-Game内関連\04-Setting</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

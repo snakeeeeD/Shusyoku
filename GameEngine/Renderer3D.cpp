@@ -2,6 +2,7 @@
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
 #include "Renderer3D.h"
+#include "RenderConfig.h"
 
 #pragma comment(lib, "d3dcompiler.lib")
 
@@ -74,8 +75,8 @@ bool Renderer3D::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
     // 深度ステンシル
     D3D11_TEXTURE2D_DESC depthDesc = {};
-    depthDesc.Width = screenWidth;
-    depthDesc.Height = screenHeight;
+    depthDesc.Width = g_renderWidth;
+    depthDesc.Height = g_renderHeight;
     depthDesc.MipLevels = 1;
     depthDesc.ArraySize = 1;
     depthDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;

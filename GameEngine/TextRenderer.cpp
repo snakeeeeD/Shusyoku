@@ -1,4 +1,5 @@
 #include "TextRenderer.h"
+#include "RenderConfig.h"
 
 TextRenderer::TextRenderer() {}
 TextRenderer::~TextRenderer() { Shutdown(); }
@@ -84,17 +85,21 @@ void TextRenderer::DrawText(const wchar_t* text,
 
     m_brush->SetColor(color);
 
+    float sx = (float)g_renderWidth / (float)LOGICAL_WIDTH;
+    float sy = (float)g_renderHeight / (float)LOGICAL_HEIGHT;
+    D2D1::Matrix3x2F base = D2D1::Matrix3x2F::Scale(sx, sy);
     if (rotation != 0.0f)
         m_d2dRenderTarget->SetTransform(
             D2D1::Matrix3x2F::Rotation(rotation * 180.0f / 3.14159f,
-                D2D1::Point2F(pivotX, pivotY)));
+                D2D1::Point2F(pivotX, pivotY)) * base);   // 論理で回転→ネイティブへ拡大
+    else
+        m_d2dRenderTarget->SetTransform(base);
 
     D2D1_RECT_F rect = D2D1::RectF(x, y, x + 500.0f, y + 200.0f);
     m_d2dRenderTarget->DrawTextW(text, (UINT32)wcslen(text),
         format.Get(), rect, m_brush.Get());
 
-    if (rotation != 0.0f)
-        m_d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+    m_d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 }
 
 void TextRenderer::DrawOutlinedText(const wchar_t* text,

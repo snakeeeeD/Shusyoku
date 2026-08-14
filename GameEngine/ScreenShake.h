@@ -1,5 +1,7 @@
 #pragma once
 #include <cmath>
+#include "Settings.h"
+
 
 // ‰æ–Ê—h‚êB‹­‚³‚ð—^‚¦‚é‚ÆŒ¸Š‚µ‚È‚ª‚ç—h‚ê‚é
 class ScreenShake
@@ -7,6 +9,7 @@ class ScreenShake
 public:
     static void Add(float power)
     {
+        if (!Settings::Get().screenShake) return;   // Ý’è‚ÅOFF‚È‚ç–³Ž‹
         if (power > m_power) m_power = power;   // ‰ÁŽZ‚¾‚Æ˜A‘±”í’e‚Å–\‚ê‚é‚Ì‚Å‹­‚¢•û‚ðÌ—p
         if (m_power > 1.0f) m_power = 1.0f;
     }

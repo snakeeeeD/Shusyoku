@@ -77,6 +77,8 @@ private:
 	bool mouseState_old[3] = {};
 
 	HWND m_hWnd = nullptr;
+
+	bool CursorInside() const;   // カーソルが自窓のクライアント内＆フォーカス時のみ true
 	
 public:
 

@@ -10,6 +10,7 @@
 #include "RelicManager.h"
 #include "UiWindow.h"
 #include "Audio.h"
+#include "Settings.h"
 
 #include <cmath>
 
@@ -108,8 +109,9 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	EventDataBase::Load("Assets/Data/events.json");
 	PlayerDataManager::Init();
 
-	Audio::SetMasterVolume(PlayerDataManager::GetData().masterVolume);
-	Audio::SetBgmVolume(PlayerDataManager::GetData().bgmVolume);
+	Audio::SetMasterVolume(1.0f);
+	Audio::SetBgmVolume(Settings::Get().bgmVolume);
+	Audio::SetSeMasterVolume(Settings::Get().seVolume);
 
 	Audio::SetBgmTrackVolume("Assets/Sound/bgm/Field1.mp3", 0.5f);
 	Audio::SetBgmTrackVolume("Assets/Sound/bgm/Field2.mp3", 0.5f);
@@ -360,6 +362,7 @@ void SceneManager::Draw()
 	if (m_restOpen && !m_mapOpen && !m_invOpen && !m_deckOpen && !m_craftOpen) DrawRest();
 	if (m_craftFxTimer > 0.0f) DrawCraftFx();  
 	if (m_currentType != SceneType::Title) { DrawRelicBar(); DrawBarTips(); }
+	if (m_settingsOpen) DrawSettings();
 
 	if (m_tutorialOpen) DrawTutorial();
 	// この後にフェードの黒幕
@@ -393,6 +396,13 @@ void SceneManager::DrawOverlay()
 
 	m_uiSprite->DrawSprite(TextureManager::Get("ui_map"), m_screenWidth - 680.0f, 5.0f, 90.0f, 30.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));     // Mapボタン
 
+	{
+		SettingsUI u = SettingsLayout();
+		bool hov = u.gear.has(m_uiInput.GetMousePos());
+		UiWindow::Button(m_uiSprite, white, u.gear.x, u.gear.y, u.gear.w, u.gear.h,
+			hov ? XMFLOAT4(0.4f, 0.4f, 0.5f, 1) : XMFLOAT4(0.22f, 0.22f, 0.3f, 1));
+	}
+
 	if (m_deckOpen)
 	{
 		m_uiSprite->DrawSprite(white, 0.0f, 0.0f, (float)m_screenWidth, (float)m_screenHeight,
@@ -415,6 +425,8 @@ void SceneManager::DrawOverlay()
 		m_textRenderer->DrawOutlinedText(t, btnX + 100.0f - 18.0f, 5.0f + 30.0f - 20.0f, 17.0f,
 			D2D1::ColorF(1, 1, 1), D2D1::ColorF(0, 0, 0), 2.0f);
 	}
+
+	{ SettingsUI u = SettingsLayout(); m_textRenderer->DrawText(L"設定", u.gear.x + 6.0f, u.gear.y + 7.0f, 16.0f, D2D1::ColorF(1, 1, 1)); }
 
 
 	if (m_deckOpen)
@@ -643,6 +655,39 @@ void SceneManager::HandleInput()
 		float btnX = m_screenWidth - 220.0f, btnY = 5.0f, btnW = 100.0f, btnH = 30.0f;
 		bool onDeckBtn = click && m.x >= btnX && m.x <= btnX + btnW
 			&& m.y >= btnY && m.y <= btnY + btnH;
+
+		SettingsUI su = SettingsLayout();
+		// ギアで開閉
+		if (click && su.gear.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); m_settingsOpen = !m_settingsOpen; return; }
+		if (m_settingsOpen)
+		{
+			auto& s = Settings::Get();
+			if (m_uiInput.GetMouseButtonTrigger(0))
+			{
+				URect bt = su.bgmTrack; bt.y -= 8; bt.h += 16;   // 掴みやすく
+				URect st = su.seTrack;  st.y -= 8; st.h += 16;
+				if (bt.has(m)) m_dragSlider = 0; else if (st.has(m)) m_dragSlider = 1;
+			}
+			if (m_uiInput.GetMouseButtonRelease(0)) { if (m_dragSlider != -1) Settings::Save(); m_dragSlider = -1; }
+			if (m_dragSlider == 0 || m_dragSlider == 1)
+			{
+				const URect& t = (m_dragSlider == 0) ? su.bgmTrack : su.seTrack;
+				float v = (m.x - t.x) / t.w; if (v < 0) v = 0; if (v > 1) v = 1;
+				if (m_dragSlider == 0) { s.bgmVolume = v; Audio::SetBgmVolume(v); }
+				else { s.seVolume = v;  Audio::SetSeMasterVolume(v); }
+			}
+			if (click)
+			{
+				if (su.disp.has(m))
+				{
+					DisplayMode nx = (s.displayMode == DisplayMode::Borderless) ? DisplayMode::Windowed : DisplayMode::Borderless;
+					SetDisplayMode(nx); Audio::PlaySE("Assets/Sound/se/click.mp3");
+				}
+				else if (su.shake.has(m)) { s.screenShake = !s.screenShake; Settings::Save(); Audio::PlaySE("Assets/Sound/se/click.mp3"); }
+				else if (su.close.has(m) || !su.panel.has(m)) { m_settingsOpen = false; m_dragSlider = -1; Settings::Save(); Audio::PlaySE("Assets/Sound/se/click.mp3"); }
+			}
+			return;   // 設定中は他のバー操作を止める
+		}
 
 		// Map（全シーンで開ける・クリックで閉じる）
 		if (m_mapOpen) { if (click) m_mapOpen = false; return; }
@@ -914,6 +959,49 @@ void SceneManager::DrawTutorial()
 		m_textRenderer->DrawText(L"0を超えて進むと敵が強くなる", tx + 10.0f, ty + 30.0f, 13.0f, D2D1::ColorF(0.9f, 0.9f, 0.9f));
 		m_textRenderer->End();
 	}
+}
+
+void SceneManager::DrawSettings()
+{
+	ID3D11ShaderResourceView* white = TextureManager::Get("white");
+	SettingsUI u = SettingsLayout();
+	POINT mp = m_uiInput.GetMousePos();
+	auto& s = Settings::Get();
+
+	m_uiSprite->Begin();
+	m_uiSprite->DrawSprite(white, 0, 0, (float)m_screenWidth, (float)m_screenHeight, 0.0f, XMFLOAT4(0, 0, 0, 0.6f)); // 暗幕
+	UiWindow::Draw(m_uiSprite, white, u.panel.x, u.panel.y, u.panel.w, u.panel.h);
+
+	UiWindow::Button(m_uiSprite, white, u.disp.x, u.disp.y, u.disp.w, u.disp.h,
+		u.disp.has(mp) ? XMFLOAT4(0.35f, 0.5f, 0.7f, 1) : XMFLOAT4(0.25f, 0.28f, 0.4f, 1));
+
+	auto slider = [&](const URect& t, float val) {
+		m_uiSprite->DrawSprite(white, t.x, t.y, t.w, t.h, 0.0f, XMFLOAT4(0.15f, 0.15f, 0.2f, 1));      // 溝
+		m_uiSprite->DrawSprite(white, t.x, t.y, t.w * val, t.h, 0.0f, XMFLOAT4(0.3f, 0.6f, 0.9f, 1));  // 塗り
+		m_uiSprite->DrawSprite(white, t.x + t.w * val - 5.0f, t.y - 5.0f, 10.0f, t.h + 10.0f, 0.0f, XMFLOAT4(0.9f, 0.9f, 1.0f, 1)); // つまみ
+		};
+	slider(u.bgmTrack, s.bgmVolume);
+	slider(u.seTrack, s.seVolume);
+
+	UiWindow::Button(m_uiSprite, white, u.shake.x, u.shake.y, u.shake.w, u.shake.h,
+		s.screenShake ? XMFLOAT4(0.3f, 0.55f, 0.3f, 1) : XMFLOAT4(0.45f, 0.3f, 0.3f, 1));
+	UiWindow::Button(m_uiSprite, white, u.close.x, u.close.y, u.close.w, u.close.h,
+		u.close.has(mp) ? XMFLOAT4(0.5f, 0.35f, 0.35f, 1) : XMFLOAT4(0.35f, 0.25f, 0.25f, 1));
+	m_uiSprite->End();
+
+	m_textRenderer->Begin();
+	m_textRenderer->DrawText(L"設定", u.panel.x + u.panel.w / 2 - 30, u.panel.y + 14, 26, D2D1::ColorF(1, 0.9f, 0.6f));
+	m_textRenderer->DrawText(L"表示", u.panel.x + 40, u.disp.y + 6, 20, D2D1::ColorF(1, 1, 1));
+	m_textRenderer->DrawText(s.displayMode == DisplayMode::Borderless ? L"全画面" : L"ウィンドウ", u.disp.x + 55, u.disp.y + 6, 20, D2D1::ColorF(1, 1, 1));
+	m_textRenderer->DrawText(L"BGM", u.panel.x + 40, u.bgmTrack.y - 6, 20, D2D1::ColorF(1, 1, 1));
+	m_textRenderer->DrawText(L"SE", u.panel.x + 40, u.seTrack.y - 6, 20, D2D1::ColorF(1, 1, 1));
+	m_textRenderer->DrawText(L"画面シェイク", u.panel.x + 40, u.shake.y + 6, 18, D2D1::ColorF(1, 1, 1));
+	m_textRenderer->DrawText(s.screenShake ? L"ON" : L"OFF", u.shake.x + 46, u.shake.y + 6, 20, D2D1::ColorF(1, 1, 1));
+	m_textRenderer->DrawText(L"閉じる", u.close.x + 42, u.close.y + 8, 20, D2D1::ColorF(1, 1, 1));
+	wchar_t b[16];
+	swprintf_s(b, L"%d%%", (int)(s.bgmVolume * 100 + 0.5f)); m_textRenderer->DrawText(b, u.bgmTrack.x + u.bgmTrack.w + 14, u.bgmTrack.y - 6, 16, D2D1::ColorF(0.8f, 0.9f, 1));
+	swprintf_s(b, L"%d%%", (int)(s.seVolume * 100 + 0.5f));  m_textRenderer->DrawText(b, u.seTrack.x + u.seTrack.w + 14, u.seTrack.y - 6, 16, D2D1::ColorF(0.8f, 0.9f, 1));
+	m_textRenderer->End();
 }
 
 void SceneManager::ShowTutorialDelayed(const std::vector<TutorialPage>& pages, float delay)

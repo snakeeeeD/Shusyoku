@@ -189,6 +189,7 @@
     <ClInclude Include="RangeShape.h" />
     <ClInclude Include="RelicData.h" />
     <ClInclude Include="RelicManager.h" />
+    <ClInclude Include="RenderConfig.h" />
     <ClInclude Include="Renderer3D.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="ResultScene.h" />
@@ -196,6 +197,7 @@
     <ClInclude Include="SceneManager.h" />
     <ClInclude Include="Scenetype.h" />
     <ClInclude Include="ScreenShake.h" />
+    <ClInclude Include="Settings.h" />
     <ClInclude Include="ShopScene.h" />
     <ClInclude Include="SpriteRenderer.h" />
     <ClInclude Include="targetver.h" />
@@ -246,6 +248,7 @@
     <ClCompile Include="Renderer3D.cpp" />
     <ClCompile Include="ResultScene.cpp" />
     <ClCompile Include="SceneManager.cpp" />
+    <ClCompile Include="Settings.cpp" />
     <ClCompile Include="ShopScene.cpp" />
     <ClCompile Include="SpriteRenderer.cpp" />
     <ClCompile Include="TerrainDataBase.cpp" />

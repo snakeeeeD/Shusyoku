@@ -12,4 +12,5 @@ public:
     static void SetBgmVolume(float v);      // BGMのみ（相対）
     static void SetBgmTrackVolume(const std::string& path, float v);
     static void SetSeVolume(const std::string& path, float v);
+    static void SetSeMasterVolume(float v);   // SE全体（相対）
 };

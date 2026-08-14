@@ -1,5 +1,8 @@
 #include "TitleScene.h"
 #include "TextureLoader.h"
+#include "UiWindow.h"
+#include "Settings.h"
+#include "Audio.h"
 
 TitleScene::TitleScene()
     : m_spriteRenderer(nullptr)
@@ -46,9 +49,12 @@ void TitleScene::Update(float deltaTime)
 
 void TitleScene::Draw()
 {
+    POINT mp = m_input.GetMousePos();
+    float bx, by, bw, bh; DispBtnRect(bx, by, bw, bh);
+    bool hov = (mp.x >= bx && mp.x <= bx + bw && mp.y >= by && mp.y <= by + bh);
+    float dy = hov ? -4.0f : 0.0f;
+
     m_spriteRenderer->Begin();
-
-
 
     // タイトル画像（画面中央に表示）
     if (m_titleTexture)
@@ -60,6 +66,9 @@ void TitleScene::Draw()
         m_spriteRenderer->DrawSprite(m_titleTexture, x, y, imgW, imgH,
             0.0f, XMFLOAT4(1, 1, 1, 1));
     }
+
+    UiWindow::Button(m_spriteRenderer, TextureManager::Get("white"), bx, by + dy, bw, bh,
+        hov ? XMFLOAT4(0.35f, 0.5f, 0.7f, 1.0f) : XMFLOAT4(0.25f, 0.28f, 0.4f, 1.0f));
 
     m_spriteRenderer->End();
 
@@ -75,6 +84,10 @@ void TitleScene::Draw()
         m_screenHeight / 2.0f + 90.0f,
         28.0f, D2D1::ColorF(D2D1::ColorF::Black));
 
+    const wchar_t* label = (Settings::Get().displayMode == DisplayMode::Borderless)
+        ? L"表示: 全画面" : L"表示: ウィンドウ";
+    m_textRenderer->DrawText(label, bx + 16.0f, by + dy + 9.0f, 20.0f, D2D1::ColorF(1, 1, 1));
+
     m_textRenderer->End();
 }
 
@@ -88,8 +101,24 @@ void TitleScene::HandleInput()
     }
 
     // ニューゲーム開始時
+    // 表示モードのトグル
+    POINT mp = m_input.GetMousePos();
+    float bx, by, bw, bh; DispBtnRect(bx, by, bw, bh);
+    bool hov = (mp.x >= bx && mp.x <= bx + bw && mp.y >= by && mp.y <= by + bh);
+    if (hov && !m_dispHover) Audio::PlaySE("Assets/Sound/se/hover.mp3");
+    m_dispHover = hov;
+
+    // ニューゲーム開始判定
     if (m_input.GetMouseButtonTrigger(0))
     {
+        if (hov)   // ボタン上：モード切替（ニューゲームにしない）
+        {
+            DisplayMode next = (Settings::Get().displayMode == DisplayMode::Borderless)
+                ? DisplayMode::Windowed : DisplayMode::Borderless;
+            SetDisplayMode(next);
+            Audio::PlaySE("Assets/Sound/se/click.mp3");
+            return;
+        }
         PlayerDataManager::StartNewGame();
         if (onChangeScene)
             onChangeScene(SceneType::Field);

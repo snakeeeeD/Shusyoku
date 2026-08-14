@@ -1,7 +1,10 @@
 #include <windows.h>
 #include <d3d11.h>
+#include <dxgi.h>
 #include "Game.h"
 #include "input.h"
+#include "Settings.h"
+#include "RenderConfig.h"
 #ifdef _DEBUG
 #include "External/imgui/imgui.h"
 #include "External/imgui/backends/imgui_impl_win32.h"
@@ -18,6 +21,9 @@ ID3D11Device* g_pd3dDevice = nullptr;
 ID3D11DeviceContext* g_pImmediateContext = nullptr;
 IDXGISwapChain* g_pSwapChain = nullptr;
 ID3D11RenderTargetView* g_pRenderTargetView = nullptr;
+
+int g_renderWidth = LOGICAL_WIDTH;
+int g_renderHeight = LOGICAL_HEIGHT;
 
 Game* g_game = nullptr;
 
@@ -36,6 +42,10 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
+
+    SetProcessDPIAware();
+
+    Settings::Load();
 
     if (!InitWindow(hInstance, nCmdShow))
         return 0;
@@ -106,6 +116,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
+static void ApplyDisplayMode(HWND hWnd, DisplayMode mode)
+{
+    if (mode == DisplayMode::Borderless)
+    {
+        MONITORINFO mi = { sizeof(mi) };
+        GetMonitorInfo(MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST), &mi);
+        SetWindowLongPtr(hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+        SetWindowPos(hWnd, HWND_TOP,
+            mi.rcMonitor.left, mi.rcMonitor.top,
+            mi.rcMonitor.right - mi.rcMonitor.left,
+            mi.rcMonitor.bottom - mi.rcMonitor.top,
+            SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+    }
+    else // Windowed（1280x720固定・中央）
+    {
+        DWORD style = WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME & ~WS_MAXIMIZEBOX;
+        RECT rc = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+        AdjustWindowRect(&rc, style, FALSE);
+        int w = rc.right - rc.left, h = rc.bottom - rc.top;
+        int sw = GetSystemMetrics(SM_CXSCREEN), sh = GetSystemMetrics(SM_CYSCREEN);
+        SetWindowLongPtr(hWnd, GWL_STYLE, style | WS_VISIBLE);
+        SetWindowPos(hWnd, HWND_TOP, (sw - w) / 2, (sh - h) / 2, w, h,
+            SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+    }
+}
+
+// シーンから呼ぶ実行時切替（swapchainはそのまま＝再起動不要で切り替わる）
+void SetDisplayMode(DisplayMode mode)
+{
+    Settings::Get().displayMode = mode;
+    Settings::Save();
+    ApplyDisplayMode(g_hWnd, mode);
+}
+
 bool InitWindow(HINSTANCE hInstance, int nCmdShow)
 {
     WNDCLASSEX wcex = { 0 };
@@ -135,7 +179,7 @@ bool InitWindow(HINSTANCE hInstance, int nCmdShow)
     if (!g_hWnd)
         return false;
 
-    ShowWindow(g_hWnd, nCmdShow);
+    ApplyDisplayMode(g_hWnd, Settings::Get().displayMode);   // 窓 or ボーダーレス
     UpdateWindow(g_hWnd);
 
     return true;
@@ -145,10 +189,13 @@ bool InitD3D()
 {
     HRESULT hr = S_OK;
 
+    g_renderWidth = GetSystemMetrics(SM_CXSCREEN);
+    g_renderHeight = GetSystemMetrics(SM_CYSCREEN);
+
     DXGI_SWAP_CHAIN_DESC sd = { 0 };
     sd.BufferCount = 1;
-    sd.BufferDesc.Width = SCREEN_WIDTH;
-    sd.BufferDesc.Height = SCREEN_HEIGHT;
+    sd.BufferDesc.Width = g_renderWidth;
+    sd.BufferDesc.Height = g_renderHeight;
     sd.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
     sd.BufferDesc.RefreshRate.Numerator = 60;
     sd.BufferDesc.RefreshRate.Denominator = 1;
@@ -184,13 +231,31 @@ bool InitD3D()
     g_pImmediateContext->OMSetRenderTargets(1, &g_pRenderTargetView, nullptr);
 
     D3D11_VIEWPORT vp;  
-    vp.Width = (FLOAT)SCREEN_WIDTH;
-    vp.Height = (FLOAT)SCREEN_HEIGHT;
+    vp.Width = (FLOAT)g_renderWidth;
+    vp.Height = (FLOAT)g_renderHeight;
     vp.MinDepth = 0.0f;
     vp.MaxDepth = 1.0f;
     vp.TopLeftX = 0;
     vp.TopLeftY = 0;
     g_pImmediateContext->RSSetViewports(1, &vp);
+
+    // 自前モード管理と競合するDXGIのAlt+Enterフルスクリーンを無効化
+    IDXGIDevice* dxgiDev = nullptr;
+    if (SUCCEEDED(g_pd3dDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&dxgiDev)))
+    {
+        IDXGIAdapter* ad = nullptr;
+        if (SUCCEEDED(dxgiDev->GetAdapter(&ad)))
+        {
+            IDXGIFactory* fac = nullptr;
+            if (SUCCEEDED(ad->GetParent(__uuidof(IDXGIFactory), (void**)&fac)))
+            {
+                fac->MakeWindowAssociation(g_hWnd, DXGI_MWA_NO_ALT_ENTER);
+                fac->Release();
+            }
+            ad->Release();
+        }
+        dxgiDev->Release();
+    }
 
     // �Q�[��������
     g_game = new Game();
