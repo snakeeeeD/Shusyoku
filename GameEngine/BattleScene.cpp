@@ -745,8 +745,7 @@ void BattleScene::Update(float deltaTime)
             pd.gold += 10 + rand() % 16;
             if (m_category == EncCategory::Elite)
             {
-                pd.gold += 40;
-                pd.fieldSteps += 8;
+                pd.gold += 25;
                 pd.rewardRare = true;
                 int em = RelicManager::SumValue("eliteMaterial");
                 // エリート報酬：レリック

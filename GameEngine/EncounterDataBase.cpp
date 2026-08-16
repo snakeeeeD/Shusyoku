@@ -90,12 +90,20 @@ const EncounterData* EncounterDataBase::GetEncounter(int layer, EncCategory cat,
             if (enc.layer == 1 && enc.category == cat) cand.push_back(&enc);
     if (cand.empty()) return nullptr;
 
+    // 直前と同じエンカウントは避ける（候補が2つ以上あれば除外）
+    static const EncounterData* s_last = nullptr;
+    std::vector<EncounterData*> pool;
+    for (auto* e : cand) if (e != s_last) pool.push_back(e);
+    if (pool.empty()) pool = cand;   // 実質候補が1つなら仕方なく許可
+
     unsigned int h = (unsigned int)seed;
     h ^= h >> 16; h *= 0x7feb352du; h ^= h >> 15; h *= 0x846ca68bu; h ^= h >> 16;
-    int total = 0; for (auto* e : cand) total += (e->weight > 0 ? e->weight : 1);
+    int total = 0; for (auto* e : pool) total += (e->weight > 0 ? e->weight : 1);
     int roll = (int)(h % (unsigned)total), acc = 0;
-    for (auto* e : cand) { acc += (e->weight > 0 ? e->weight : 1); if (roll < acc) return e; }
-    return cand.back();
+    const EncounterData* picked = pool.back();
+    for (auto* e : pool) { acc += (e->weight > 0 ? e->weight : 1); if (roll < acc) { picked = e; break; } }
+    s_last = picked;
+    return picked;
 }
 
 const EncounterData* EncounterDataBase::GetById(const std::string& id)

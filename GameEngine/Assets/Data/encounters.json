@@ -66,7 +66,7 @@
     },
     {
       "layer": 1,
-      "tier": 2,
+      "tier": 1,
       "category": "normal",
       "weight": 15,
       "enemies": [
@@ -393,6 +393,16 @@
           "col": 5,
           "row": 4
         }
+      ]
+    },
+    {
+      "layer": 1,
+      "tier": 2,
+      "category": "normal",
+      "weight": 12,
+      "enemies": [
+        { "id": "emberwalker", "col": 6, "row": 2 },
+        { "id": "goblin", "col": 3, "row": 2 }
       ]
     }
   ]

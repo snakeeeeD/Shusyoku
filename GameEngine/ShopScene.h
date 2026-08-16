@@ -84,4 +84,8 @@ private:
     int  SellItemAt(POINT p) const;
 
     int m_prevHovered = -1;
+
+    int   m_removeAnimIdx = -1;
+    float m_removeAnimTimer = 0.0f;
+    static constexpr float REMOVE_ANIM_DUR = 1.4f;
 };

@@ -117,6 +117,9 @@ private:
 	int	  m_seqIndex = 0; 
 	bool m_lastAttackWhiffed = false;   // 直前の攻撃が避けられた(空振り)か → afterDodge条件で使う
 
+	int m_idleTurns = 0;
+	int m_lastDecideCol = -999, m_lastDecideRow = -999;
+
 	std::string m_textureName;
 	std::string m_id;
 	std::vector<EnemyAction> m_plannedActions;   // このターンの実行プラン（メイン＋サブ）
@@ -131,5 +134,7 @@ private:
 	std::vector<std::pair<int, int>> m_gridShape;
 
 	std::vector<std::pair<int, int>> m_dashPath;   // 直近の突進で通過したマス
+
+	void DropTrail(GridMap* gridMap, int col, int row);   // EmberTrail中は通ったマスに炎
 };
 

@@ -161,7 +161,7 @@ private:
     int m_eventPickAnimIdx = -1;
     float m_eventPickAnimTimer = 0.0f;
     std::string m_eventPickAnimTo;   // •Ï‰»/‹­‰»æi‹ó=íœ‚Ìo‰»j
-    static constexpr float EVENT_PICK_ANIM_DUR = 0.7f;
+    static constexpr float EVENT_PICK_ANIM_DUR = 2.0f;
     bool ChoiceEnabled(const EventChoice& c) const;
 
     enum class EventPending { None, Battle, Shop, Treasure, CardSelect };

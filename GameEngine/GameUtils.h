@@ -111,6 +111,7 @@ inline BuffType StringToBuffType(const std::string& str)
 
     if (str == "LastStand") return BuffType::LastStand;
     if (str == "DeepStand") return BuffType::DeepStand;
+    if (str == "EmberTrail")  return BuffType::EmberTrail;
 
     return BuffType::AttackUp;
 }

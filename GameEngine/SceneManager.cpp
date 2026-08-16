@@ -152,8 +152,10 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	// エネミー
 	{
 		TextureManager::Load("enemy_slime", L"Assets/Enemy/slime.png");
+		TextureManager::Load("enemy_zako", L"Assets/Enemy/zako.png");
 		TextureManager::Load("enemy_goblin", L"Assets/Enemy/goblin.png");
 		TextureManager::Load("enemy_orc", L"Assets/Enemy/orc.png");
+		TextureManager::Load("enemy_fire", L"Assets/Enemy/fireEnemy.png");
 		TextureManager::Load("enemy_bug", L"Assets/Enemy/bug.png");
 		TextureManager::Load("enemy_spore", L"Assets/Enemy/spore.png");
 		TextureManager::Load("enemy_hound", L"Assets/Enemy/hound.png");
@@ -511,7 +513,8 @@ void SceneManager::DrawDeckCards(bool textPass)
 
 		if (!textPass)
 		{
-			XMFLOAT4 col = m_deckRemoveMode ? XMFLOAT4(0.6f, 0.15f, 0.15f, 0.9f)
+			XMFLOAT4 col = (m_deckRemoveMode && vis[slot] == hovIdx)
+				? XMFLOAT4(0.6f, 0.15f, 0.15f, 0.9f)   // 削除モードはホバー中のカードだけ赤
 				: CardVisual::GetCardColor(d->type);
 			CardVisual::DrawBase(m_uiSprite, white, bx, by, DECK_SCALE, 0.0f, col, d, m_uiTime);
 		}
@@ -1880,13 +1883,54 @@ void SceneManager::DrawEventPicker()
 	float t = anim ? (1.0f - m_eventPickAnimTimer / EVENT_PICK_ANIM_DUR) : 0.0f;
 	bool morph = anim && !m_eventPickAnimTo.empty();
 
-	const CardData* animCard = nullptr; float animScale = 0.85f, animAlpha = 1.0f, animYoff = 0.0f, animBX = 0, animBY = 0;
+	const CardData* animCard = nullptr;
+	float animScale = 0.85f, animAlpha = 1.0f, animYoff = 0.0f, animBX = 0, animBY = 0;
+	float fxT = 0.0f; bool presenting = false;   // fxT=エフェクト段階の進行 / presenting=前に見せてる段階
 	if (anim)
 	{
-		GetEventCardSlot(m_eventPickAnimIdx, animBX, animBY);
-		if (!morph) { if (m_eventPickAnimIdx < (int)deck.size()) animCard = CardDataBase::Get(deck[m_eventPickAnimIdx]); animScale = 0.85f * (1.0f - t * 0.7f); animAlpha = 1.0f - t; animYoff = -t * 40.0f; }
-		else if (t < 0.5f) { if (m_eventPickAnimIdx < (int)deck.size()) animCard = CardDataBase::Get(deck[m_eventPickAnimIdx]); animAlpha = 1.0f - t * 2.0f; }
-		else { animCard = CardDataBase::Get(m_eventPickAnimTo); animAlpha = (t - 0.5f) * 2.0f; }
+		float sbx, sby; GetEventCardSlot(m_eventPickAnimIdx, sbx, sby);
+		float pbx = m_screenWidth / 2.0f - CardVisual::CARD_W / 2.0f;
+		float pby = m_screenHeight / 2.0f - CardVisual::CARD_H / 2.0f;
+		const float P1 = 0.18f, P2 = 0.40f;   // 旧カードを見せる時間を短く
+		if (t < P1)
+		{
+			presenting = true;
+			float u = t / P1, e = u * u * (3.0f - 2.0f * u);
+			animBX = sbx + (pbx - sbx) * e; animBY = sby + (pby - sby) * e;
+			animScale = 0.85f + (1.3f - 0.85f) * e; animAlpha = 1.0f;
+			if (m_eventPickAnimIdx < (int)deck.size()) animCard = CardDataBase::Get(deck[m_eventPickAnimIdx]);
+		}
+		else if (t < P2)   // ← ホールド（中央で拡大したまま見せる）
+		{
+			presenting = true;
+			animBX = pbx; animBY = pby; animScale = 1.3f; animAlpha = 1.0f;
+			if (m_eventPickAnimIdx < (int)deck.size()) animCard = CardDataBase::Get(deck[m_eventPickAnimIdx]);
+		}
+		else
+		{
+			fxT = (t - P2) / (1.0f - P2);
+			animBX = pbx; animBY = pby; animScale = 1.3f;
+			if (!morph)
+			{
+				if (m_eventPickAnimIdx < (int)deck.size()) animCard = CardDataBase::Get(deck[m_eventPickAnimIdx]);
+				animScale = 1.3f * (1.0f - fxT * 0.4f); animAlpha = 1.0f - fxT; animYoff = -fxT * 40.0f;
+			}
+			else if (fxT < 0.2f)   // 旧カードが消える
+			{
+				if (m_eventPickAnimIdx < (int)deck.size()) animCard = CardDataBase::Get(deck[m_eventPickAnimIdx]);
+				animAlpha = 1.0f - fxT / 0.2f;
+			}
+			else if (fxT < 0.32f)   // 新カードが現れる
+			{
+				animCard = CardDataBase::Get(m_eventPickAnimTo);
+				animAlpha = (fxT - 0.2f) / 0.12f;
+			}
+			else                    // 変化後
+			{
+				animCard = CardDataBase::Get(m_eventPickAnimTo);
+				animAlpha = 1.0f;
+			}
+		}
 	}
 
 	m_uiSprite->Begin();
@@ -1904,10 +1948,15 @@ void SceneManager::DrawEventPicker()
 	{
 		XMFLOAT4 col = CardVisual::GetCardColor(animCard->type); col.w = animAlpha;
 		CardVisual::DrawBase(m_uiSprite, white, animBX, animBY + animYoff, animScale, 0.0f, col, animCard, m_uiTime);
-		if (morph)
+		if (!presenting && morph)   // 変化：白フラッシュ
 		{
-			float flash = 1.0f - fabsf(t - 0.5f) * 4.0f;
-			if (flash > 0.0f) { float x, y, w, h; CardVisual::GetRect(animBX, animBY, 0.85f, x, y, w, h); m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(1, 1, 1, flash * 0.8f)); }
+			float flash = 1.0f - fabsf(fxT - 0.5f) * 4.0f;
+			if (flash > 0.0f) { float x, y, w, h; CardVisual::GetRect(animBX, animBY, animScale, x, y, w, h); m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(1, 1, 1, flash * 0.8f)); }
+		}
+		else if (!presenting)       // 削除：赤フラッシュ
+		{
+			float x, y, w, h; CardVisual::GetRect(animBX, animBY + animYoff, animScale, x, y, w, h);
+			m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(0.95f, 0.2f, 0.2f, animAlpha * 0.6f));
 		}
 	}
 	m_uiSprite->End();

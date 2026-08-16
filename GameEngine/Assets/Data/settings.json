@@ -1,6 +1,6 @@
 {
   "bgmVolume": 0.4699999988079071,
-  "displayMode": "windowed",
+  "displayMode": "borderless",
   "screenShake": true,
   "seVolume": 0.4449999928474426
 }

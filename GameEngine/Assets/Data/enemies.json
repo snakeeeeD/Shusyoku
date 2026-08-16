@@ -10,7 +10,7 @@
         {
           "description": "{0}ダメージ",
           "target": {
-            "rangeType": "Adjacent",
+            "rangeType": "Area",
             "range": 1,
             "approach": "Toward",
             "moveRange": 1
@@ -26,7 +26,7 @@
         {
           "description": "{0}ダメージ+毒{1}",
           "target": {
-            "rangeType": "Adjacent",
+            "rangeType": "Area",
             "range": 1,
             "approach": "Toward",
             "moveRange": 1
@@ -83,7 +83,7 @@
         {
           "description": "{0}ダメージ＋攻撃UP",
           "target": {
-            "rangeType": "Adjacent",
+            "rangeType": "Area",
             "range": 1,
             "approach": "Toward",
             "moveRange": 1
@@ -130,7 +130,7 @@
         {
           "description": "{0}斬って離脱",
           "target": {
-            "rangeType": "Adjacent",
+            "rangeType": "Area",
             "range": 1,
             "approach": "Toward",
             "moveRange": 1
@@ -213,6 +213,41 @@
     },
 
     {
+      "id": "emberwalker",
+      "texture": "enemy_fire",
+      "hp": 34,
+      "width": 1.0,
+      "height": 1.0,
+      "sequential": true,
+      "actions": [
+        {
+          "description": "燃え上がる",
+          "vfx": "fire",
+          "target": { "rangeType": "None" },
+          "effects": [
+            {
+              "kind": "Buff",
+              "buff": "EmberTrail",
+              "value": 1,
+              "duration": 2,
+              "applyTo": "Self"
+            }
+          ]
+        },
+        {
+          "description": "徘徊",
+          "target": { "rangeType": "None" },
+          "effects": [
+            {
+              "kind": "MoveToward",
+              "value": 4
+            }
+          ]
+        }
+      ]
+    },
+
+    {
       "id": "orc",
       "texture": "enemy_orc",
       "hp": 78,
@@ -222,7 +257,7 @@
         {
           "description": "{0}ダメージ",
           "target": {
-            "rangeType": "Adjacent",
+            "rangeType": "Area",
             "range": 1,
             "approach": "Toward",
             "moveRange": 1
@@ -319,7 +354,7 @@
         {
           "description": "{0}ダメージ",
           "target": {
-            "rangeType": "Adjacent",
+            "rangeType": "Area",
             "range": 1
           },
           "effects": [
@@ -363,7 +398,7 @@
 
     {
       "id": "brute",
-      "texture": "enemy_orc",
+      "texture": "enemy_zako",
       "hp": 58,
       "width": 1.2,
       "height": 1.2,
@@ -371,7 +406,7 @@
         {
           "description": "強打{0}",
           "target": {
-            "rangeType": "Adjacent",
+            "rangeType": "Area",
             "range": 1,
             "approach": "Toward",
             "moveRange": 2
@@ -581,7 +616,7 @@
         {
           "description": "追撃{0}",
           "target": {
-            "rangeType": "Adjacent",
+            "rangeType": "Area",
             "range": 1,
             "approach": "Toward",
             "moveRange": 2
@@ -675,7 +710,7 @@
         {
           "description": "石塊{0}",
           "target": {
-            "rangeType": "Adjacent",
+            "rangeType": "Area",
             "range": 1,
             "approach": "Toward",
             "moveRange": 1
@@ -748,7 +783,7 @@
         {
           "description": "喰らいつき{0}",
           "target": {
-            "rangeType": "Adjacent",
+            "rangeType": "Area",
             "range": 1,
             "approach": "Toward",
             "moveRange": 1
@@ -918,7 +953,7 @@
         {
           "description": "石の一撃{0}",
           "target": {
-            "rangeType": "Adjacent",
+            "rangeType": "Area",
             "range": 1,
             "approach": "Toward",
             "moveRange": 1
@@ -959,7 +994,7 @@
         {
           "description": "火の粉{0}",
           "target": {
-            "rangeType": "Adjacent",
+            "rangeType": "Area",
             "range": 1,
             "approach": "Toward",
             "moveRange": 1
@@ -995,7 +1030,7 @@
         {
           "description": "噛みつき{0}",
           "target": {
-            "rangeType": "Adjacent",
+            "rangeType": "Area",
             "range": 1,
             "approach": "Toward",
             "moveRange": 1

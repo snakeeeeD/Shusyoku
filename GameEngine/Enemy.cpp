@@ -1,7 +1,8 @@
-#include "Enemy.h"
+ï»¿#include "Enemy.h"
 #include "Renderer3D.h"
 #include "TextureManager.h"
 #include "EffectManager.h"
+#include "TerrainDataBase.h"
 #include "Player.h"
 #include "BuffInfo.h"
 #include "GameUtils.h"
@@ -68,7 +69,7 @@ bool Enemy::IsAdjacentTo(int playerCol, int playerRow)
 {
     int dc = abs(gridCol - playerCol);
     int dr = abs(gridRow - playerRow);
-    return (dc + dr) == 1; // ã‰º¶‰E1ƒ}ƒX
+    return (dc + dr) == 1; // ä¸Šä¸‹å·¦å³1ãƒã‚¹
 }
 
 bool Enemy::IsInRange(int targetCol, int targetRow, int range, RangeType rangeType, int minRange) const
@@ -82,14 +83,13 @@ void Enemy::MoveToward(int playerCol, int playerRow, GridMap* gridMap, int steps
 {
     if (m_buffManager.HasBuff(BuffType::Root))
         return;
-    if (m_immovable) return;                       // “®‚¯‚È‚¢“G‚Í’Ç‚í‚È‚¢
 
     for (int step = 0; step < steps; step++)
     {
         int dc = playerCol - gridCol;
         int dr = playerRow - gridRow;
 
-        if (abs(dc) + abs(dr) <= 1) break;         // —×Ú‚µ‚½‚ç‹l‚ßI‚í‚è
+        if (abs(dc) + abs(dr) <= 1) break;         // éš£æ¥ã—ãŸã‚‰è©°ã‚çµ‚ã‚ã‚Š
 
         std::vector<std::pair<int, int>> candidates;
         if (abs(dc) >= abs(dr))
@@ -113,24 +113,37 @@ void Enemy::MoveToward(int playerCol, int playerRow, GridMap* gridMap, int steps
             if (gridMap->GetCell(newCol, newRow).type != CellType::Empty) continue;
 
             gridMap->SetCellType(gridCol, gridRow, CellType::Empty);
+            DropTrail(gridMap, gridCol, gridRow);      // â† é€šã£ãŸãƒã‚¹ã«ç‚
             gridCol = newCol;
             gridRow = newRow;
             gridMap->SetCellType(gridCol, gridRow, CellType::Enemy);
             moved = true;
             break;
         }
-        if (!moved) break;                         // ‹l‚Ü‚Á‚½‚çI—¹
+        if (!moved) break;                         // è©°ã¾ã£ãŸã‚‰çµ‚äº†
     }
 
-    // ÅIˆÊ’u‚ÖƒXƒ‰ƒCƒhƒAƒjƒi•¡”•à‚Å‚à1‰ñ‚ÌŠŠ‚ç‚©‚ÈˆÚ“®j
+    // æœ€çµ‚ä½ç½®ã¸ã‚¹ãƒ©ã‚¤ãƒ‰ã‚¢ãƒ‹ãƒ¡ï¼ˆè¤‡æ•°æ­©ã§ã‚‚1å›ã®æ»‘ã‚‰ã‹ãªç§»å‹•ï¼‰
     float newX = (gridCol - gridMap->GetCols() / 2.0f) * 1.1f;
     float newZ = (gridRow - gridMap->GetRows() / 2.0f) * 1.1f;
     StartMove(newX, newZ);
 }
 
+void Enemy::DropTrail(GridMap* gridMap, int col, int row)
+{
+    if (!m_buffManager.HasBuff(BuffType::EmberTrail)) return;
+    auto& cell = gridMap->GetCell(col, row);
+    if (cell.tileEffect.active) return;          // æ—¢å­˜ã®åºŠã¯ä¸Šæ›¸ãã—ãªã„
+    cell.tileEffect.active = true;
+    cell.tileEffect.id = "fire";
+    cell.tileEffect.value = 2;
+    cell.tileEffect.duration = 3;
+    const TerrainDef* t = TerrainDataBase::Get("fire");
+    if (t) cell.tileEffect.persistent = t->persistent;
+}
+
 void Enemy::MoveAway(int playerCol, int playerRow, GridMap* gridMap, int steps)
 {
-    if (m_immovable) return;
     if (m_buffManager.HasBuff(BuffType::Root)) return;
 
     const int dirs[4][2] = { {0,1},{0,-1},{1,0},{-1,0} };
@@ -150,16 +163,16 @@ void Enemy::MoveAway(int playerCol, int playerRow, GridMap* gridMap, int steps)
             if (gridMap->GetCell(nc, nr).type != CellType::Empty) continue;
 
             int nd = abs(playerCol - nc) + abs(playerRow - nr);
-            if (nd > bestDist) { bestDist = nd; bestCol = nc; bestRow = nr; }   // ˆê”Ô—£‚ê‚ç‚ê‚éŠ‚Ö
+            if (nd > bestDist) { bestDist = nd; bestCol = nc; bestRow = nr; }   // ä¸€ç•ªé›¢ã‚Œã‚‰ã‚Œã‚‹æ‰€ã¸
         }
 
-        if (bestDist == curDist) break;   // ‚Ç‚±‚Ö“®‚¢‚Ä‚à—£‚ê‚ç‚ê‚È‚¢s‚«~‚Ü‚è
+        if (bestDist == curDist) break;   // ã©ã“ã¸å‹•ã„ã¦ã‚‚é›¢ã‚Œã‚‰ã‚Œãªã„ï¼è¡Œãæ­¢ã¾ã‚Š
         gridMap->SetCellType(gridCol, gridRow, CellType::Empty);
         gridCol = bestCol; gridRow = bestRow;
         gridMap->SetCellType(gridCol, gridRow, CellType::Enemy);
 
         pts.push_back({ (gridCol - gridMap->GetCols() / 2.0f) * 1.1f,
-                        (gridRow - gridMap->GetRows() / 2.0f) * 1.1f });   // © ’Ê‰ßƒ}ƒX‚ğ‹L˜^
+                        (gridRow - gridMap->GetRows() / 2.0f) * 1.1f });   // â† é€šéãƒã‚¹ã‚’è¨˜éŒ²
     }
 
 
@@ -170,7 +183,6 @@ void Enemy::MoveAway(int playerCol, int playerRow, GridMap* gridMap, int steps)
 
 bool Enemy::MoveDash(int playerCol, int playerRow, GridMap* gridMap, int steps)
 {
-    if (m_immovable) return false;
     if (m_buffManager.HasBuff(BuffType::Root)) return false;
     if (m_aimDx == 0 && m_aimDy == 0) return false;
 
@@ -179,8 +191,8 @@ bool Enemy::MoveDash(int playerCol, int playerRow, GridMap* gridMap, int steps)
     {
         int nc = gridCol + m_aimDx, nr = gridRow + m_aimDy;
         if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) break;
-        if (nc == playerCol && nr == playerRow) { hit = true; break; }      // ‚Ô‚Â‚©‚Á‚½ƒqƒbƒg
-        if (gridMap->GetCell(nc, nr).type != CellType::Empty) break;        // áŠQ•¨‚Å’â~
+        if (nc == playerCol && nr == playerRow) { hit = true; break; }      // ã¶ã¤ã‹ã£ãŸï¼ãƒ’ãƒƒãƒˆ
+        if (gridMap->GetCell(nc, nr).type != CellType::Empty) break;        // éšœå®³ç‰©ã§åœæ­¢
 
         gridMap->SetCellType(gridCol, gridRow, CellType::Empty);
         gridCol = nc; gridRow = nr;
@@ -193,12 +205,12 @@ bool Enemy::MoveDash(int playerCol, int playerRow, GridMap* gridMap, int steps)
 
 void Enemy::MoveAlongPlanned(GridMap* gridMap)
 {
-    if (m_buffManager.HasBuff(BuffType::Root) || m_immovable) return;
+    if (m_buffManager.HasBuff(BuffType::Root)) return;
     for (auto& cell : m_plannedMovePath)
     {
         int nc = cell.first, nr = cell.second;
         if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) break;
-        if (gridMap->GetCell(nc, nr).type != CellType::Empty) break;   // “r’†‚ª–„‚Ü‚Á‚Ä‚½‚çè‘O‚Å~‚Ü‚é
+        if (gridMap->GetCell(nc, nr).type != CellType::Empty) break;   // é€”ä¸­ãŒåŸ‹ã¾ã£ã¦ãŸã‚‰æ‰‹å‰ã§æ­¢ã¾ã‚‹
         gridMap->SetCellType(gridCol, gridRow, CellType::Empty);
         gridCol = nc; gridRow = nr;
         gridMap->SetCellType(gridCol, gridRow, CellType::Enemy);
@@ -212,7 +224,7 @@ void Enemy::TakeDamage(int damage, DamageFeel feel)
 {
     Audio::PlaySE("Assets/Sound/se/hit.mp3");
 
-    // Vulnerable: 50%‘
+    // Vulnerable: 50%å¢—
     if (m_buffManager.HasBuff(BuffType::Vulnerable))
         damage = damage * 150 / 100;
 
@@ -254,9 +266,9 @@ void Enemy::PullPlayer(int playerCol, int playerRow, GridMap* gridMap, Player* p
 
     for (int step = 0; step < steps; step++)
     {
-        int dc = gridCol - pc;      // “G‚Ì•ûŒü‚Ö
+        int dc = gridCol - pc;      // æ•µã®æ–¹å‘ã¸
         int dr = gridRow - pr;
-        if (abs(dc) + abs(dr) <= 1) break;   // “G‚É—×Ú‚µ‚½‚ç~‚ß‚é
+        if (abs(dc) + abs(dr) <= 1) break;   // æ•µã«éš£æ¥ã—ãŸã‚‰æ­¢ã‚ã‚‹
 
         std::vector<std::pair<int, int>> candidates;
         if (abs(dc) >= abs(dr))
@@ -274,7 +286,7 @@ void Enemy::PullPlayer(int playerCol, int playerRow, GridMap* gridMap, Player* p
         for (auto& [nc, nr] : candidates)
         {
             if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) continue;
-            if (gridMap->GetCell(nc, nr).type != CellType::Empty) continue;   // •ÇE“G‚Å~‚Ü‚é
+            if (gridMap->GetCell(nc, nr).type != CellType::Empty) continue;   // å£ãƒ»æ•µã§æ­¢ã¾ã‚‹
             gridMap->SetCellType(pc, pr, CellType::Empty);
             pc = nc; pr = nr;
             gridMap->SetCellType(pc, pr, CellType::Player);
@@ -296,7 +308,7 @@ void Enemy::KnockbackPlayer(int playerCol, int playerRow, GridMap* gridMap, Play
     if (!player) return;
     int pc = playerCol, pr = playerRow;
 
-    // “G‚©‚ç—£‚ê‚éå•ûŒü‚ğ1²‚ÉŒÅ’èi‚Ü‚Á‚·‚®‚«”ò‚Î‚·j
+    // æ•µã‹ã‚‰é›¢ã‚Œã‚‹ä¸»æ–¹å‘ã‚’1è»¸ã«å›ºå®šï¼ˆã¾ã£ã™ãå¹ãé£›ã°ã™ï¼‰
     int dc = pc - gridCol, dr = pr - gridRow;
     if (dc == 0 && dr == 0) return;
     int stepCol = 0, stepRow = 0;
@@ -308,7 +320,7 @@ void Enemy::KnockbackPlayer(int playerCol, int playerRow, GridMap* gridMap, Play
     {
         int nc = pc + stepCol, nr = pr + stepRow;
         if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) break;
-        if (gridMap->GetCell(nc, nr).type != CellType::Empty) break;   // •ÇE“G‚Å~‚Ü‚é
+        if (gridMap->GetCell(nc, nr).type != CellType::Empty) break;   // å£ãƒ»æ•µã§æ­¢ã¾ã‚‹
         gridMap->SetCellType(pc, pr, CellType::Empty);
         pc = nc; pr = nr;
         gridMap->SetCellType(pc, pr, CellType::Player);
@@ -318,7 +330,7 @@ void Enemy::KnockbackPlayer(int playerCol, int playerRow, GridMap* gridMap, Play
 
     player->gridCol = pc;
     player->gridRow = pr;
-    if (!pts.empty()) player->StartWalk(pts, 0.08f);   // ‘¬‚ß‚Å‚«”ò‚Î‚·Š´
+    if (!pts.empty()) player->StartWalk(pts, 0.08f);   // é€Ÿã‚ã§å¹ãé£›ã°ã™æ„Ÿ
 }
 
 bool Enemy::ConditionMet(const EnemyAction& a, int playerCol, int playerRow, int turn) const
@@ -343,10 +355,15 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
        return;
     }
 
-    // ‡”Ôƒ‚[ƒhFs“®‚ğ’è‹`‡‚É1‚Â‚¸‚Â‰ñ‚·
+    // å‰å›ã®æ±ºå®šæ™‚ã‹ã‚‰å‹•ã„ãŸã‹ï¼ˆæ£’ç«‹ã¡æ¤œçŸ¥ï¼‰
+    if (gridCol == m_lastDecideCol && gridRow == m_lastDecideRow) m_idleTurns++;
+    else m_idleTurns = 0;
+    m_lastDecideCol = gridCol; m_lastDecideRow = gridRow;
+
+    // é †ç•ªãƒ¢ãƒ¼ãƒ‰ï¼šè¡Œå‹•ã‚’å®šç¾©é †ã«1ã¤ãšã¤å›ã™
     if (data->sequential)
     {
-        // ğŒ•t‚«s“®‚ª–‚½‚³‚ê‚Ä‚¢‚ê‚ÎÅ—Dæ
+        // æ¡ä»¶ä»˜ãè¡Œå‹•ãŒæº€ãŸã•ã‚Œã¦ã„ã‚Œã°æœ€å„ªå…ˆ
         const EnemyAction* picked = nullptr;
         for (auto& a : data->actions)
             if (!a.select.condition.empty() && ConditionMet(a, playerCol, playerRow, turn))
@@ -356,7 +373,7 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
 
         if (!picked)
         {
-            // –³ğŒs“®‚¾‚¯‚ğ’è‹`‡‚É‰ñ‚·
+            // ç„¡æ¡ä»¶è¡Œå‹•ã ã‘ã‚’å®šç¾©é †ã«å›ã™
             std::vector<const EnemyAction*> seq;
             for (auto& a : data->actions)
                 if (a.select.condition.empty()) seq.push_back(&a);
@@ -375,6 +392,25 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
         int dcA = playerCol - gridCol, drA = playerRow - gridRow;
         if (abs(dcA) >= abs(drA)) { m_aimDx = (dcA > 0) ? 1 : (dcA < 0) ? -1 : 0; m_aimDy = 0; }
         else { m_aimDx = 0; m_aimDy = (drA > 0) ? 1 : (drA < 0) ? -1 : 0; }
+
+        // 2ã‚¿ãƒ¼ãƒ³å‹•ã„ã¦ãªã‘ã‚Œã°ã€Œç§»å‹•ã€ã‚’è¶³ã™ã€‚
+      // åˆ¥è¡Œå‹•ã«ã™ã‚‹ã¨äºˆå‘Š(èª¬æ˜â†”ã‚¢ã‚¤ã‚³ãƒ³)ãŒã¡ãã¯ãã«ãªã‚‹ã®ã§ã€æ—¢å­˜ã®è¡Œå‹•ã«åŠ¹æœã¨ã—ã¦è¶³ã™
+        if (m_idleTurns >= 2 && !m_plannedActions.empty())
+        {
+            auto& act = m_plannedActions[0];
+            bool alreadyMoves = (act.target.approach != ApproachType::None);
+            for (auto& e : act.effects)
+                if (e.kind == EffectKind::MoveToward || e.kind == EffectKind::MoveAway) alreadyMoves = true;
+
+            if (!alreadyMoves)
+            {
+                Effect e; e.kind = EffectKind::MoveToward; e.value = 2;
+                act.effects.push_back(e);   // å…ƒã®è¡Œå‹•ã«ç§»å‹•ã‚’è¿½åŠ ï¼ˆèª¬æ˜ã¯ãã®ã¾ã¾ï¼‹ç§»å‹•ã‚¢ã‚¤ã‚³ãƒ³ãŒä¸¦ã¶ï¼‰
+                act.description += L"ï¼‹ç§»å‹•";
+            }
+            m_idleTurns = 0;
+        }
+
         return;
     }
 
@@ -430,10 +466,10 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
     const EnemyAction& act = m_plannedActions[actionIdx];
     const TargetSpec& tg = act.target;
 
-    // ˆÚ“®‚æ‚è‘O‚Éu“–‚½‚é‚©v‚ğŠm’è‚³‚¹‚éi—\‚Æˆê’v‚³‚¹‚éj
+    // ç§»å‹•ã‚ˆã‚Šå‰ã«ã€Œå½“ãŸã‚‹ã‹ã€ã‚’ç¢ºå®šã•ã›ã‚‹ï¼ˆï¼äºˆå‘Šã¨ä¸€è‡´ã•ã›ã‚‹ï¼‰
     bool aimingDecoy = (moveTargetCol >= 0 && (mtC != playerCol || mtR != playerRow));
     bool hitPlayer = tg.unavoidable
-        ? !aimingDecoy                                   // •K’†FƒfƒRƒC‚ğ‘_‚Á‚Ä‚È‚¯‚ê‚ÎƒvƒŒƒCƒ„[‚Ö
+        ? !aimingDecoy                                   // å¿…ä¸­ï¼šãƒ‡ã‚³ã‚¤ã‚’ç‹™ã£ã¦ãªã‘ã‚Œã°ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã¸
         : IsThreateningCell(playerCol, playerRow, act);
 
     bool hitTarget = IsThreateningCell(mtC, mtR, act);
@@ -445,8 +481,8 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
         case ApproachType::Toward:
             if (!hitTarget)
             {
-                if (!m_plannedMovePath.empty()) MoveAlongPlanned(gridMap);          // –îˆó‚Ç‚¨‚è‚É“®‚­
-                else                            MoveToward(mtC, mtR, gridMap, tg.moveRange);  // •ÛŒ¯
+                if (!m_plannedMovePath.empty()) MoveAlongPlanned(gridMap);          // çŸ¢å°ã©ãŠã‚Šã«å‹•ã
+                else                            MoveToward(mtC, mtR, gridMap, tg.moveRange);  // ä¿é™º
             }
             break;
         case ApproachType::Dash:
@@ -459,7 +495,7 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
         }
     }
 
-    // Œø‰Ê‚ğ‡‚É“K—p
+    // åŠ¹æœã‚’é †ã«é©ç”¨
     int damage = 0;
     for (auto& e : act.effects)
     {
@@ -468,18 +504,18 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
         case EffectKind::MoveToward: MoveToward(mtC, mtR, gridMap, e.value); break;
         case EffectKind::MoveAway:
             MoveAway(mtC, mtR, gridMap, e.value);
-            m_plannedMovePath.clear();   // —£’EŒã‚ÍÚ‹ß–îˆó‚ªc‚ç‚È‚¢‚æ‚¤Á‚·
+            m_plannedMovePath.clear();   // é›¢è„±å¾Œã¯æ¥è¿‘çŸ¢å°ãŒæ®‹ã‚‰ãªã„ã‚ˆã†æ¶ˆã™
             break;
 
         case EffectKind::Damage:
-            if (hitTarget && didAttack) *didAttack = true;   // •W“I‚ªË’ö“àÀÛ‚ÉUŒ‚‚µ‚½‚¾‚¯
+            if (hitTarget && didAttack) *didAttack = true;   // æ¨™çš„ãŒå°„ç¨‹å†…ï¼å®Ÿéš›ã«æ”»æ’ƒã—ãŸæ™‚ã ã‘
             if (tg.approach != ApproachType::Dash && !tg.unavoidable)
             {
                 if (tg.rangeType == RangeType::Area) StartJump(1.5f, 0.4f);
                 else                                 StartJump(0.5f, 0.25f);
             }
             if (hitPlayer)
-                damage += m_buffManager.GetFinalAttack(e.value);   // Àƒ_ƒ[ƒW‚Í–{•¨‚ÌƒvƒŒƒCƒ„[
+                damage += m_buffManager.GetFinalAttack(e.value);   // å®Ÿãƒ€ãƒ¡ãƒ¼ã‚¸ã¯æœ¬ç‰©ã®ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼
             break;
 
         case EffectKind::Block:
@@ -502,7 +538,7 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
             {
                 if (hitPlayer && player) player->GetBuffManager().AddBuff(b);
             }
-            else // AlliesF”ÍˆÍ“à‚Ì‘¼‚Ì“G
+            else // Alliesï¼šç¯„å›²å†…ã®ä»–ã®æ•µ
             {
                 for (auto other : enemies)
                 {
@@ -523,11 +559,11 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
 
     }
 
-    // –½’†‚µ‚½‚çƒvƒŠƒZƒbƒg‚ÌƒGƒtƒFƒNƒg‚ğ–½’†“_‚ÅÄ¶
+    // å‘½ä¸­ã—ãŸã‚‰ãƒ—ãƒªã‚»ãƒƒãƒˆã®ã‚¨ãƒ•ã‚§ã‚¯ãƒˆã‚’å‘½ä¸­ç‚¹ã§å†ç”Ÿ
     if (hitPlayer && !act.vfx.empty() && player)
         EffectManager::Play(act.vfx, player->worldX, player->worldY + 0.5f, player->worldZ);
 
-    // ‚±‚Ìs“®‚ªƒ_ƒ[ƒWUŒ‚‚È‚çA–½’†‚µ‚½‚©(=”ğ‚¯‚ç‚ê‚È‚©‚Á‚½‚©)‚ğ‹L˜^
+    // ã“ã®è¡Œå‹•ãŒãƒ€ãƒ¡ãƒ¼ã‚¸æ”»æ’ƒãªã‚‰ã€å‘½ä¸­ã—ãŸã‹(=é¿ã‘ã‚‰ã‚Œãªã‹ã£ãŸã‹)ã‚’è¨˜éŒ²
     bool isAttack = false;
     for (auto& e : act.effects)
         if (e.kind == EffectKind::Damage) { isAttack = true; break; }
@@ -539,7 +575,7 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
 bool Enemy::IsThreateningCell(int col, int row, const EnemyAction& a) const
 {
     const TargetSpec& tg = a.target;
-    if (tg.unavoidable) return true;          // ‚Ç‚±‚É‚¢‚Ä‚à“–‚½‚é
+    if (tg.unavoidable) return true;          // ã©ã“ã«ã„ã¦ã‚‚å½“ãŸã‚‹
     if (tg.approach == ApproachType::Dash)
     {
         for (int i = 1; i <= tg.moveRange; i++)
@@ -564,7 +600,7 @@ void Enemy::StartDeath()
     m_dying = true;
     m_deathTimer = 0.0f;
 
-    // ƒ`ƒŠ‚É‚È‚éFŠDF‚Ì—±‚ğ‹…ó‚É‚Ü‚­
+    // ãƒãƒªã«ãªã‚‹ï¼šç°è‰²ã®ç²’ã‚’çƒçŠ¶ã«ã¾ã
     EffectManager::Play("death", worldX, worldY + height * 0.5f, worldZ);
 }
 
@@ -583,7 +619,7 @@ void Enemy::ApplyDifficulty(float hpMul, float dmgMul, int bonusActions)
     m_bonusActions = bonusActions;
 }
 
-// –Ú•W‚Ö1ƒ}ƒXæÃ—~ˆÚ“®i—×Ú‚Å’â~jB“®‚¯‚È‚¯‚ê‚Îfalse
+// ç›®æ¨™ã¸1ãƒã‚¹è²ªæ¬²ç§»å‹•ï¼ˆéš£æ¥ã§åœæ­¢ï¼‰ã€‚å‹•ã‘ãªã‘ã‚Œã°false
 static bool StepToward(int& c, int& r, int tc, int tr, GridMap* g, std::vector<std::pair<int, int>>& path)
 {
     int dc = tc - c, dr = tr - r;
@@ -605,10 +641,10 @@ std::vector<std::pair<int, int>> Enemy::PlannedMovePath(int targetCol, int targe
 {
     std::vector<std::pair<int, int>> path;
     const EnemyAction* a = GetNextAction();
-    if (!a || m_immovable) return path;
+    if (!a) return path;
     const TargetSpec& tg = a->target;
 
-    // UŒ‚‚ÌÚ‹ßiDash / Towardj
+    // æ”»æ’ƒã®æ¥è¿‘ï¼ˆDash / Towardï¼‰
     if (!tg.unavoidable && tg.moveRange > 0)
     {
         if (tg.approach == ApproachType::Dash)
@@ -627,14 +663,14 @@ std::vector<std::pair<int, int>> Enemy::PlannedMovePath(int targetCol, int targe
         }
         if (tg.approach == ApproachType::Toward)
         {
-            if (IsThreateningCell(targetCol, targetRow, *a)) return path;   // Šù‚É“–‚½‚é‚È‚çÚ‹ß‚µ‚È‚¢iÀs‘¤‚Æˆê’vj
+            if (IsThreateningCell(targetCol, targetRow, *a)) return path;   // æ—¢ã«å½“ãŸã‚‹ãªã‚‰æ¥è¿‘ã—ãªã„ï¼ˆå®Ÿè¡Œå´ã¨ä¸€è‡´ï¼‰
             int c = gridCol, r = gridRow;
             for (int s = 0; s < tg.moveRange; s++) if (!StepToward(c, r, targetCol, targetRow, gridMap, path)) break;
             return path;
         }
     }
 
-    // ƒˆÚ“®Œø‰ÊiMoveToward / MoveAwayj
+    // ç´”ç§»å‹•åŠ¹æœï¼ˆMoveToward / MoveAwayï¼‰
     for (auto& e : a->effects)
     {
         if (e.kind == EffectKind::MoveToward)

@@ -93,10 +93,27 @@ void ShopScene::GenerateStock()
             it.price = it.price * (100 - disc) / 100;
 }
 
-void ShopScene::Update(float deltaTime) 
+void ShopScene::Update(float deltaTime)
 {
-    m_time += deltaTime; 
-    m_input.Update(); 
+    m_time += deltaTime;
+    m_input.Update();
+
+    if (m_removeAnimIdx >= 0)
+    {
+        m_removeAnimTimer -= deltaTime;
+        if (m_removeAnimTimer <= 0.0f)
+        {
+            if (PlayerDataManager::SpendGold(RemovePrice()))
+            {
+                PlayerDataManager::RemoveCard(m_removeAnimIdx);
+                PlayerDataManager::GetData().removeCount++;
+                PlayerDataManager::Save();
+                m_removedThisShop = true;
+            }
+            m_removeAnimIdx = -1;
+            m_removeMode = false;
+        }
+    }
 }
 
 void ShopScene::GetSlotBase(int i, float& cardX, float& baseY) const
@@ -263,19 +280,19 @@ void ShopScene::HandleInput()
     // 削除モード中
     if (m_removeMode)
     {
-        if (m_input.GetMouseButtonTrigger(0))
+        if (m_removeAnimIdx < 0 && m_input.GetMouseButtonTrigger(0))   // 演出中はクリック無効
         {
-            Audio::PlaySE("Assets/Sound/se/click.mp3");
-
             int idx = DeckCardAt(mousePos);
-            if (idx >= 0 && PlayerDataManager::SpendGold(RemovePrice()))
+            if (idx >= 0 && PlayerDataManager::GetData().gold >= RemovePrice())
             {
-                PlayerDataManager::RemoveCard(idx);
-                PlayerDataManager::GetData().removeCount++;   // 次回から値上げ
-                PlayerDataManager::Save();
-                m_removedThisShop = true;                     // このショップは終了
+                Audio::PlaySE("Assets/Sound/se/click.mp3");
+                m_removeAnimIdx = idx;                 // 演出開始（実削除はUpdateの末尾）
+                m_removeAnimTimer = REMOVE_ANIM_DUR;
             }
-            m_removeMode = false;
+            else
+            {
+                m_removeMode = false;   // カード以外/金欠クリックで閉じる
+            }
         }
         return;
     }
@@ -397,18 +414,57 @@ void ShopScene::DrawDeckRemoval()
     auto& deck = PlayerDataManager::GetData().deck;
     int hov = DeckCardAt(m_input.GetMousePos());
 
+    bool animOn = (m_removeAnimIdx >= 0 && m_removeAnimIdx < (int)deck.size());
+    float aBx = 0, aBy = 0, aSc = 0.9f, aAlpha = 1.0f; bool aFlash = false;
+    if (animOn)
+    {
+        float tt = 1.0f - m_removeAnimTimer / REMOVE_ANIM_DUR;
+        float sbx, sby; GetDeckSlot(m_removeAnimIdx, sbx, sby);
+        float pbx = m_screenWidth / 2.0f - CardVisual::CARD_W / 2.0f;
+        float pby = m_screenHeight / 2.0f - CardVisual::CARD_H / 2.0f;
+        const float P1 = 0.28f, P2 = 0.58f;
+        if (tt < P1) { float u = tt / P1, e = u * u * (3 - 2 * u); aBx = sbx + (pbx - sbx) * e; aBy = sby + (pby - sby) * e; aSc = 0.9f + (1.3f - 0.9f) * e; }
+        else if (tt < P2) { aBx = pbx; aBy = pby; aSc = 1.3f; }
+        else { float u = (tt - P2) / (1 - P2); aBx = pbx; aBy = pby - 40.0f * u; aSc = 1.3f * (1.0f - 0.35f * u); aAlpha = 1.0f - u; aFlash = true; }
+    }
+
     m_spriteRenderer->Begin();
     m_spriteRenderer->DrawSprite(m_whiteTexture, 0, 0, (float)m_screenWidth, (float)m_screenHeight, 0.0f,
         XMFLOAT4(0.0f, 0.0f, 0.05f, 0.92f));
     for (int i = 0; i < (int)deck.size(); i++)
     {
+        if (i == m_removeAnimIdx) continue;
+
         const CardData* d = CardDataBase::Get(deck[i]);
         if (!d) continue;
         float bx, by; GetDeckSlot(i, bx, by);
         if (i == hov) by -= 12.0f;
         CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, bx, by, 0.9f, 0.0f,
-            i == hov ? XMFLOAT4(0.7f, 0.2f, 0.2f, 1.0f) : CardVisual::GetCardColor(d->type), d, m_time);
+            CardVisual::GetCardColor(d->type), d, m_time);   // 常に通常色（中身が見える）
+        if (i == hov)
+        {
+            float rx, ry, rw, rh; CardVisual::GetRect(bx, by, 0.9f, rx, ry, rw, rh);
+            XMFLOAT4 rc(0.95f, 0.15f, 0.15f, 1.0f);
+            float t = 5.0f;
+            m_spriteRenderer->DrawSprite(m_whiteTexture, rx - t, ry - t, rw + 2 * t, t, 0.0f, rc); // 上
+            m_spriteRenderer->DrawSprite(m_whiteTexture, rx - t, ry + rh, rw + 2 * t, t, 0.0f, rc); // 下
+            m_spriteRenderer->DrawSprite(m_whiteTexture, rx - t, ry, t, rh, 0.0f, rc);              // 左
+            m_spriteRenderer->DrawSprite(m_whiteTexture, rx + rw, ry, t, rh, 0.0f, rc);             // 右
+        }
     }
+
+    // 削除演出：赤く光って上昇＋フェード＋縮小
+    if (animOn)
+    {
+        const CardData* d = CardDataBase::Get(deck[m_removeAnimIdx]);
+        if (d)
+        {
+            XMFLOAT4 col = CardVisual::GetCardColor(d->type); col.w = aAlpha;
+            CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, aBx, aBy, aSc, 0.0f, col, d, m_time);
+            if (aFlash) { float rx, ry, rw, rh; CardVisual::GetRect(aBx, aBy, aSc, rx, ry, rw, rh); m_spriteRenderer->DrawSprite(m_whiteTexture, rx, ry, rw, rh, 0.0f, XMFLOAT4(0.95f, 0.2f, 0.2f, aAlpha * 0.6f)); }
+        }
+    }
+
     m_spriteRenderer->End();
 
     m_textRenderer->Begin();
@@ -416,11 +472,18 @@ void ShopScene::DrawDeckRemoval()
     m_textRenderer->DrawText(t, m_screenWidth / 2.0f - 150.0f, 80.0f, 26.0f, D2D1::ColorF(1.0f, 0.6f, 0.6f));
     for (int i = 0; i < (int)deck.size(); i++)
     {
+        if (i == m_removeAnimIdx) continue;
+
         const CardData* d = CardDataBase::Get(deck[i]);
         if (!d) continue;
         float bx, by; GetDeckSlot(i, bx, by);
         if (i == hov) by -= 12.0f;
         CardVisual::DrawTexts(m_textRenderer, d, nullptr, bx, by, 0.9f, 0.0f, 1.0f);
+    }
+    if (animOn)
+    {
+        const CardData* d = CardDataBase::Get(deck[m_removeAnimIdx]);
+        if (d) CardVisual::DrawTexts(m_textRenderer, d, nullptr, aBx, aBy, aSc, 0.0f, aAlpha);
     }
     m_textRenderer->DrawText(L"カードをクリックで削除 / 余白で戻る", m_screenWidth / 2.0f - 170.0f, m_screenHeight - 55.0f, 20.0f, D2D1::ColorF(0.8f, 0.8f, 0.8f));
     m_textRenderer->End();

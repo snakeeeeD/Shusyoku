@@ -56,4 +56,5 @@ enum class BuffType
 
     LastStand,      // HP1/2で攻撃アップ
     DeepStand,      // HP1/4で攻撃アップ
+    EmberTrail,     // 移動した通り道に炎ハザードを残す
 };
