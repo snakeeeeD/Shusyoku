@@ -3,6 +3,7 @@
 #include "EnemyDataBase.h"
 #include "CardDataBase.h"
 #include "CardVisual.h"
+#include "CardTooltip.h"
 #include "PlayerDataManager.h"
 #include "EncounterDataBase.h"
 #include "TerrainDataBase.h"
@@ -185,6 +186,8 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("ui_cost", L"Assets/UI/ui_cost.png");
 		TextureManager::Load("ui_hazard", L"Assets/UI/ui_hazard.png");
 		TextureManager::Load("ui_threat", L"Assets/UI/ui_threat.png");
+		TextureManager::Load("mat_core", L"Assets/UI/mat_core.png");
+		TextureManager::Load("mat_material", L"Assets/UI/mat_material.png");
 	}
 
 	m_textRenderer = new TextRenderer();
@@ -369,7 +372,9 @@ void SceneManager::Draw()
 	if (m_settingsOpen) DrawSettings();
 
 	if (m_tutorialOpen) DrawTutorial();
-	// この後にフェードの黒幕
+
+	// ドロップ説明ウィンドウは暗幕の上に出す（勝利画面のホバー）
+	if (auto b = dynamic_cast<BattleScene*>(m_currentScene)) b->DrawDropTooltipTop();
 
 	if (m_fadeAlpha > 0.0f)
 	{
@@ -486,6 +491,23 @@ void SceneManager::DrawOverlay()
 	}
 
 	if (m_deckOpen) DrawDeckPreview();   // ← 全グリッド描画の後＝最前面
+
+	// デッキのキーワード解説（パス外で描く）
+	if (m_deckOpen && m_deckPreviewIdx < 0)
+	{
+		int hk = GetDeckCardAt(m_uiInput.GetMousePos());
+		auto vis = VisibleDeckIndices();
+		for (int slot = 0; hk >= 0 && slot < (int)vis.size(); slot++)
+			if (vis[slot] == hk)
+			{
+				const CardData* d = CardDataBase::Get(PlayerDataManager::GetData().deck[hk]);
+				float bx, by; GetDeckCardBase(slot, bx, by);
+				float rx, ry, rw, rh; CardVisual::GetRect(bx, by - 10.0f, DECK_SCALE, rx, ry, rw, rh);
+				CardTooltip::Draw(m_uiSprite, m_textRenderer, TextureManager::Get("white"), d,
+					rx + rw / 2.0f, ry, rw, rh, m_screenWidth, m_screenHeight);
+				break;
+			}
+	}
 }
 
 static bool CanUpgrade(const std::string& id);   // 前方宣言（定義は下にある）
@@ -1053,6 +1075,25 @@ void SceneManager::Update(float deltaTime)
 		m_fadeAlpha += FADE_SPEED * deltaTime;
 		if (m_fadeAlpha >= 1.0f) { m_fadeAlpha = 1.0f; DoChangeScene(m_pendingScene); m_fadeState = Fade::In; }
 		return;   // 暗転中はシーンを止める
+	}
+
+	// 初勝利で初コアを得た"瞬間"にクラフト説明
+	//（VICTORYを少し見せてから／コア・素材を個別にスポットライト）
+	{
+		auto& pd = PlayerDataManager::GetData();
+		if (!pd.tutorialCraft && !m_tutorialOpen
+			&& pd.materials.count("core_slash") && pd.materials["core_slash"] > 0)
+		{
+			pd.tutorialCraft = true; PlayerDataManager::Save();
+			// スポットライトは勝利画面のドロップ行に一致（cx640 / rx490 / 行0=y270・行1=y322 / 300x42）
+			ShowTutorialDelayed({
+				{ L"【コア】カードの土台。何を作るかを決める部品（例：斬核＝近接ダメージ）。",
+				  482, 262, 316, 54 },   // ← コア行だけを明るく
+				{ L"【素材】コアに組み込んで強化する部品（例：剣の破片＝ダメージ+5）。",
+				  486, 318, 308, 50 },   // ← 素材行だけを明るく
+				{ L"休憩マスの「クラフト」で コア＋素材 を組み合わせ、新しいカードが作れる！" },
+				}, 1.0f);   // ← VICTORYを1秒見せてから開始
+		}
 	}
 
 	if (m_tutorialDelay > 0.0f)
@@ -1989,6 +2030,15 @@ void SceneManager::DrawEventPicker()
 		m_textRenderer->Begin();
 		CardVisual::DrawTexts(m_textRenderer, animCard, nullptr, animBX, animBY + animYoff, animScale, 0.0f, animAlpha);
 		m_textRenderer->End();
+	}
+
+	if (!anim && hov >= 0 && hov < (int)deck.size())
+	{
+		const CardData* d = CardDataBase::Get(deck[hov]);
+		float bx, by; GetEventCardSlot(hov, bx, by);
+		float rx, ry, rw, rh; CardVisual::GetRect(bx, by - 12.0f, 0.85f, rx, ry, rw, rh);
+		CardTooltip::Draw(m_uiSprite, m_textRenderer, TextureManager::Get("white"), d,
+			rx + rw / 2.0f, ry, rw, rh, m_screenWidth, m_screenHeight);
 	}
 }
 

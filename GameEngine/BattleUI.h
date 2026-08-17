@@ -10,6 +10,7 @@
 #include "GridMap.h"
 #include "CardDataBase.h"
 #include "CardVisual.h"
+#include "ItemTooltip.h"
 #include "BattleHighlighter.h"
 #include "TextureManager.h"
 #include "FloatingText.h"
@@ -168,6 +169,8 @@ public:
     void DrawUnitStatusText(float footX, float footY, float scale, bool isBoss,
         const HPBarInfo& bar, BuffManager& bm);
 
+    void DrawDropTooltipTop();
+
 private:
     SpriteRenderer* m_spriteRenderer = nullptr;
     TextRenderer* m_textRenderer = nullptr;
@@ -203,6 +206,8 @@ private:
     void DrawPlayerOffScreenIndicator(const BattleUIContext& ctx);
     void DrawWindow(float x, float y, float w, float h,
         const DirectX::XMFLOAT4& tint = DirectX::XMFLOAT4(1, 1, 1, 1));
+    void DrawCardKeywords(const BattleUIContext& ctx, int idx);
+
 
     BuffType m_hoveredBuffType = BuffType::AttackUp;
     int m_hoveredBuffEnemy = -1;
@@ -230,4 +235,7 @@ private:
     bool m_intentHover = false;
     std::wstring m_intentTitle, m_intentBody;
     float m_intentX = 0.0f, m_intentY = 0.0f;
+
+    std::string m_hoverDropId;
+    float m_hoverDropX = 0.0f, m_hoverDropY = 0.0f;
 };

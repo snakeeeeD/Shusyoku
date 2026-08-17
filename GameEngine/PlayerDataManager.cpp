@@ -64,6 +64,7 @@ void PlayerDataManager::Save()
 
 	j["tutorialField"] = m_data.tutorialField; 
 	j["tutorialBattle"] = m_data.tutorialBattle;
+	j["tutorialCraft"] = m_data.tutorialCraft;
 
 	j["gold"] = m_data.gold;
 	j["materials"] = m_data.materials;
@@ -119,6 +120,7 @@ void PlayerDataManager::Load()
 		m_data.fieldSteps = j.value("fieldSteps", 20);
 		m_data.tutorialField = j.value("tutorialField", false);
 		m_data.tutorialBattle = j.value("tutorialBattle", false);
+		m_data.tutorialCraft = j.value("tutorialCraft", false);
 		m_data.removeCount = j.value("removeCount", 0);
 		m_data.layer = j.value("layer", 1);
 

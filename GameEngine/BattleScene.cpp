@@ -723,6 +723,15 @@ void BattleScene::Update(float deltaTime)
                 if (!br.empty()) { PlayerDataManager::AddRelic(br); m_rewardRelic = br; }
             }
 
+            // 初勝利：クラフト導入（コア＋素材を確定ドロップ。
+            // 勝利画面で行0=コア/行1=素材に固定し、チュートリアルのスポットライトを合わせる）
+            if (!pd.tutorialCraft)
+            {
+                pd.materials["core_slash"] += 1;      m_dropResult.push_back({ "core_slash", 1, true });
+                pd.materials["sword_fragment"] += 1;  m_dropResult.push_back({ "sword_fragment", 1, false });
+            }
+
+
             // 素材ドロップ判定
             for (auto& eid : m_defeatedEnemyIds)
             {
@@ -763,6 +772,7 @@ void BattleScene::Update(float deltaTime)
                     }
                 }
             }
+
             PlayerDataManager::Save();
             return;
         }

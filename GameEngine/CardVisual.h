@@ -7,8 +7,12 @@
 #include "TerrainDataBase.h"
 #include "TextureManager.h"
 #include "RelicManager.h"
+#include "BuffInfo.h"
+#include "GameUtils.h" 
+
 #include <DirectXMath.h>
 #include <string>
+#include <set>
 
 using namespace DirectX;
 
@@ -253,5 +257,22 @@ public:
             : D2D1::ColorF(0.8f, 0.8f, 0.8f, alpha);
         tr->DrawText(GetEffectText(data, player, 10).c_str(),
             x + 12 * s, y + 82 * s, 10 * s, dc, rot, px, py);
+    }
+
+    // カードが参照するバフ/デバフのキーワード（名前, 説明）を重複なしで
+    static std::vector<std::pair<std::wstring, std::wstring>> GetKeywords(const CardData* d)
+    {
+        std::vector<std::pair<std::wstring, std::wstring>> out;
+        if (!d) return out;
+        std::set<std::string> seen;
+        auto add = [&](const CardEffectData& e) {
+            if (e.buffType.empty() || seen.count(e.buffType)) return;
+            seen.insert(e.buffType);
+            BuffType bt = StringToBuffType(e.buffType);
+            out.push_back({ BuffInfo::Get(bt).name, BuffInfo::GetDescription(bt, e.value) });
+            };
+        add(d->mainEffect); add(d->onHitEffect); add(d->onHitEffect2);
+        add(d->onDiscardEffect); add(d->subEffect); add(d->allEnemyEffect);
+        return out;
     }
 };

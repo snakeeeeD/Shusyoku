@@ -57,6 +57,8 @@ public:
         return m_battleUI ? m_battleUI->GetCardRect(i, x, y, w, h) : false;
     }
 
+    void DrawDropTooltipTop() { if (m_battleUI) m_battleUI->DrawDropTooltipTop(); }
+
     void GridToWorld(int col, int row, float& outX, float& outZ)
     {
         outX = (col - m_gridMap->GetCols() / 2.0f + 0.5f) * 1.1f;

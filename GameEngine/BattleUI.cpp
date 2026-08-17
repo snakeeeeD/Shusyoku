@@ -2,6 +2,7 @@
 #include "BuffInfo.h"
 #include "CardExecutor.h"
 #include "CardVisual.h"
+#include "CardTooltip.h"
 #include "EnemyIntentVisual.h"
 #include "TerrainDataBase.h"
 #include "GameUtils.h"
@@ -800,75 +801,112 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
     if (ctx.battleResult == BattleResult::Win)
     {
-        m_textRenderer->DrawText(L"Victory!",
-            m_screenWidth / 2.0f - 80.0f, m_screenHeight / 2.0f - 30.0f,
-            60.0f, D2D1::ColorF(D2D1::ColorF::Gold));
-        if (ctx.battleResult == BattleResult::Win && ctx.drops)
+        const float cx = m_screenWidth / 2.0f;
+
+        // ===== VICTORY バナー（布バナー＋アウトライン文字）=====
+        m_spriteRenderer->End(); m_spriteRenderer->Begin();
+        m_spriteRenderer->DrawSprite(TextureManager::Get("ui_banner"),
+            cx - 175.0f, m_screenHeight / 2.0f - 230.0f, 350.0f, 78.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
+        m_textRenderer->DrawOutlinedText(L"VICTORY!",
+            cx - 120.0f, m_screenHeight / 2.0f - 214.0f, 46.0f,
+            D2D1::ColorF(1.0f, 0.92f, 0.45f), D2D1::ColorF(0.35f, 0.16f, 0.0f), 3.0f);
+
+        // ===== ドロップ一覧（アイコン＋窓＋アウトライン文字）=====
+        m_hoverDropId.clear();
+        if (ctx.drops)
         {
-            float y = m_screenHeight / 2.0f + 90.0f;
-            float cx = m_screenWidth / 2.0f;
-            if (ctx.drops)
+            const float rowW = 300.0f, rowH = 42.0f, gap = 10.0f, icon = 34.0f;
+            float y = m_screenHeight / 2.0f - 90.0f;
+
+            for (auto& d : *ctx.drops)
             {
-                for (auto& d : *ctx.drops)
+                std::wstring nm; bool isCore = false;
+                if (auto mm = MaterialDataBase::GetMaterial(d.id)) nm = ToWString(mm->name);
+                else if (auto bb = MaterialDataBase::GetBase(d.id)) { nm = ToWString(bb->name); isCore = true; }
+                else nm = ToWString(d.id);
+
+                const float rx = cx - rowW / 2.0f;
+
+                // rare: 窓の後ろで光る帯＋回るきらめき
+                if (d.rare)
                 {
-                    std::wstring nm;
-                    if (auto mm = MaterialDataBase::GetMaterial(d.id)) nm = ToWString(mm->name);
-                    else if (auto bb = MaterialDataBase::GetBase(d.id)) nm = ToWString(bb->name);
-                    else nm = ToWString(d.id);
-
-                    if (d.rare)
+                    float pulse = 0.5f + 0.5f * sinf(ctx.highlightTimer * 4.0f);
+                    m_spriteRenderer->DrawSprite(m_whiteTexture, rx - 8.0f, y - 6.0f, rowW + 16.0f, rowH + 12.0f, 0.0f,
+                        XMFLOAT4(1.0f, 0.85f, 0.2f, 0.14f + 0.24f * pulse));
+                    for (int k = 0; k < 6; k++)
                     {
-                        float pulse = 0.5f + 0.5f * sinf(ctx.highlightTimer * 4.0f);   // 0..1
-                        // 光る帯
-                        float bw = 340.0f, bh = 28.0f;
-                        m_spriteRenderer->DrawSprite(m_whiteTexture, cx - bw / 2.0f, y - 3.0f, bw, bh, 0.0f,
-                            XMFLOAT4(1.0f, 0.85f, 0.2f, 0.12f + 0.22f * pulse));
-                        // きらめき粒（帯の周りを回る）
-                        for (int k = 0; k < 6; k++)
-                        {
-                            float a = ctx.highlightTimer * 2.0f + k * 1.0472f;             // 60度刻み
-                            float px = cx + cosf(a) * (170.0f + 8.0f * sinf(ctx.highlightTimer * 3.0f + k));
-                            float py = y + 11.0f + sinf(a) * 9.0f;
-                            float sz = 4.0f + 3.0f * pulse;
-                            m_spriteRenderer->DrawSprite(m_whiteTexture, px - sz / 2, py - sz / 2, sz, sz, 0.0f,
-                                XMFLOAT4(1.0f, 0.95f, 0.5f, 0.35f + 0.55f * pulse));
-                        }
+                        float a = ctx.highlightTimer * 2.0f + k * 1.0472f;
+                        float px = cx + cosf(a) * (rowW / 2.0f + 18.0f);
+                        float py = y + rowH / 2.0f + sinf(a) * (rowH / 2.0f + 6.0f);
+                        float sz = 4.0f + 3.0f * pulse;
+                        m_spriteRenderer->DrawSprite(m_whiteTexture, px - sz / 2, py - sz / 2, sz, sz, 0.0f,
+                            XMFLOAT4(1.0f, 0.95f, 0.5f, 0.35f + 0.55f * pulse));
                     }
-
-                    wchar_t buf[96];
-                    if (d.rare)
-                        swprintf_s(buf, L"\u2605 %s x%d  (RARE!)", nm.c_str(), d.count);
-                    else
-                        swprintf_s(buf, L"%s x%d", nm.c_str(), d.count);
-
-                    D2D1_COLOR_F col = d.rare
-                        ? D2D1::ColorF(1.0f, 0.75f + 0.25f * (0.5f + 0.5f * sinf(ctx.highlightTimer * 4.0f)), 0.25f)
-                        : D2D1::ColorF(D2D1::ColorF::White);
-                    m_textRenderer->DrawText(buf, cx - 100.0f, y, 20.0f, col);
-                    y += d.rare ? 34.0f : 26.0f;
                 }
+                m_spriteRenderer->End(); m_spriteRenderer->Begin();   // 光をフラッシュ
+                DrawWindow(rx, y, rowW, rowH);
+                m_spriteRenderer->End(); m_spriteRenderer->Begin();   // 窓をフラッシュ→アイコンを上へ
+
+                const char* tex = isCore ? "mat_core" : "mat_material";
+                m_spriteRenderer->DrawSprite(TextureManager::Get(tex),
+                    rx + 8.0f, y + (rowH - icon) / 2.0f, icon, icon, 0.0f, XMFLOAT4(1, 1, 1, 1));
+
+                wchar_t buf[96];
+                if (d.count > 1) swprintf_s(buf, L"%s  x%d", nm.c_str(), d.count);
+                else             swprintf_s(buf, L"%s", nm.c_str());
+                D2D1_COLOR_F col = d.rare ? D2D1::ColorF(1.0f, 0.86f, 0.38f)
+                    : D2D1::ColorF(0.96f, 0.96f, 0.96f);
+                m_textRenderer->DrawOutlinedText(buf, rx + icon + 18.0f, y + 10.0f, 20.0f,
+                    col, D2D1::ColorF(0.10f, 0.06f, 0.02f), 2.5f);
+                if (d.rare)
+                    m_textRenderer->DrawOutlinedText(L"RARE!", rx + rowW - 66.0f, y + 13.0f, 15.0f,
+                        D2D1::ColorF(1.0f, 0.95f, 0.5f), D2D1::ColorF(0.35f, 0.16f, 0.0f), 2.0f);
+
+                if (ctx.mousePos.x >= rx && ctx.mousePos.x <= rx + rowW
+                    && ctx.mousePos.y >= y && ctx.mousePos.y <= y + rowH)
+                {
+                    m_hoverDropId = d.id; m_hoverDropX = rx; m_hoverDropY = y;
+                }
+                y += rowH + gap;
             }
+
+            // レリック
             if (ctx.rewardRelic && !ctx.rewardRelic->empty())
             {
-                std::wstring rn;
-                if (auto r = RelicManager::Get(*ctx.rewardRelic)) rn = ToWString(r->name);
-                m_textRenderer->DrawText((L"レリック獲得: " + rn).c_str(),
-                    cx - 120.0f, y, 24.0f, D2D1::ColorF(0.9f, 0.7f, 1.0f));
-                y += 32.0f;
+                std::wstring rn, rd;
+                if (auto r = RelicManager::Get(*ctx.rewardRelic)) { rn = ToWString(r->name); rd = ToWString(r->desc); }
+                const float rw = 340.0f, rh = rd.empty() ? 40.0f : 66.0f, rrx = cx - rw / 2.0f;
+                m_spriteRenderer->End(); m_spriteRenderer->Begin();
+                DrawWindow(rrx, y, rw, rh);
+                m_textRenderer->DrawOutlinedText((L"レリック獲得: " + rn).c_str(), rrx + 14.0f, y + 8.0f, 19.0f,
+                    D2D1::ColorF(0.95f, 0.8f, 1.0f), D2D1::ColorF(0.2f, 0.1f, 0.25f), 2.5f);
+                if (!rd.empty())
+                    m_textRenderer->DrawText(rd.c_str(), rrx + 14.0f, y + 36.0f, 14.0f, D2D1::ColorF(0.86f, 0.86f, 0.92f));
             }
         }
-        m_textRenderer->DrawText(L"クリックで次へ",
-            m_screenWidth / 2.0f - 80.0f, m_screenHeight / 2.0f + 40.0f,
-            24.0f, D2D1::ColorF(D2D1::ColorF::White));
+
+        // ===== クリックで次へ（窓ピル）=====
+        {
+            const float pw = 210.0f, ph = 36.0f, px = cx - pw / 2.0f, py = m_screenHeight / 2.0f + 110.0f;
+            DrawWindow(px, py, pw, ph);
+            m_textRenderer->DrawOutlinedText(L"クリックで次へ", px + 34.0f, py + 8.0f, 20.0f,
+                D2D1::ColorF(1, 1, 1), D2D1::ColorF(0.1f, 0.1f, 0.1f), 2.0f);
+        }
     }
     else if (ctx.battleResult == BattleResult::Lose)
     {
-        m_textRenderer->DrawText(L"Game Over...",
-            m_screenWidth / 2.0f - 100.0f, m_screenHeight / 2.0f - 30.0f,
-            60.0f, D2D1::ColorF(D2D1::ColorF::Red));
-        m_textRenderer->DrawText(L"クリックでタイトルへ",
-            m_screenWidth / 2.0f - 100.0f, m_screenHeight / 2.0f + 40.0f,
-            24.0f, D2D1::ColorF(D2D1::ColorF::White));
+        const float cx = m_screenWidth / 2.0f;
+        m_spriteRenderer->End(); m_spriteRenderer->Begin();
+        m_spriteRenderer->DrawSprite(TextureManager::Get("ui_banner"),
+            cx - 190.0f, m_screenHeight / 2.0f - 40.0f, 380.0f, 78.0f, 0.0f, XMFLOAT4(0.75f, 0.5f, 0.5f, 1));
+        m_textRenderer->DrawOutlinedText(L"GAME OVER",
+            cx - 140.0f, m_screenHeight / 2.0f - 24.0f, 44.0f,
+            D2D1::ColorF(1.0f, 0.42f, 0.42f), D2D1::ColorF(0.2f, 0.0f, 0.0f), 3.0f);
+        const float pw = 250.0f, ph = 36.0f, px = cx - pw / 2.0f, py = m_screenHeight - 74.0f;
+        m_spriteRenderer->End(); m_spriteRenderer->Begin();
+        DrawWindow(px, py, pw, ph);
+        m_textRenderer->DrawOutlinedText(L"クリックでタイトルへ", px + 26.0f, py + 8.0f, 20.0f,
+            D2D1::ColorF(1, 1, 1), D2D1::ColorF(0.1f, 0.1f, 0.1f), 2.0f);
     }
 
     if (m_hasHoveredBuff)
@@ -1011,6 +1049,14 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
     m_spriteRenderer->Begin();
     DrawEnemyInfoPanel(ctx);
+
+    if (ctx.hoveredCardIndex >= 0)
+    {
+        float cx, cy, cw, ch; GetCardRect(ctx.hoveredCardIndex, cx, cy, cw, ch);
+        CardTooltip::Draw(m_spriteRenderer, m_textRenderer, m_whiteTexture,
+            ctx.hand->GetCards()[ctx.hoveredCardIndex]->GetData(),
+            cx + cw / 2.0f, cy, cw, ch, m_screenWidth, m_screenHeight);
+    }
 }
 
 void BattleUI::DrawTargetIndicators(const BattleUIContext& ctx)
@@ -2086,6 +2132,45 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
 void BattleUI::DrawWindow(float x, float y, float w, float h, const XMFLOAT4& tint)
 {
     UiWindow::Draw(m_spriteRenderer, m_whiteTexture, x, y, w, h, tint);
+}
+
+void BattleUI::DrawCardKeywords(const BattleUIContext& ctx, int idx)
+{
+    if (idx < 0) return;
+    auto& cards = ctx.hand->GetCards();
+    if (idx >= (int)cards.size()) return;
+    auto kws = CardVisual::GetKeywords(cards[idx]->GetData());
+    if (kws.empty()) return;
+
+    const float pw = 320.0f, rowH = 44.0f;
+    float ph = 12.0f + kws.size() * rowH;
+    float cx, cy, cw, ch; GetCardRect(idx, cx, cy, cw, ch);
+    float px = cx + cw / 2.0f - pw / 2.0f;
+    float py = cy - ph - 12.0f;                         // カードの上
+    if (px < 6.0f) px = 6.0f;
+    if (px + pw > m_screenWidth - 6.0f) px = m_screenWidth - 6.0f - pw;
+    if (py < 44.0f) py = 44.0f;
+
+    m_textRenderer->End();
+    m_spriteRenderer->Begin();
+    DrawWindow(px, py, pw, ph);
+    m_spriteRenderer->End();
+    m_textRenderer->Begin();
+
+    float y = py + 10.0f;
+    for (auto& [name, desc] : kws)
+    {
+        m_textRenderer->DrawText(name.c_str(), px + 12.0f, y, 16.0f, D2D1::ColorF(1.0f, 0.85f, 0.4f));
+        m_textRenderer->DrawText(desc.c_str(), px + 12.0f, y + 20.0f, 12.0f, D2D1::ColorF(0.9f, 0.9f, 0.9f));
+        y += rowH;
+    }
+}
+
+void BattleUI::DrawDropTooltipTop()
+{
+    if (m_hoverDropId.empty()) return;
+    ItemTooltip::Draw(m_spriteRenderer, m_textRenderer, m_whiteTexture,
+        m_hoverDropId, m_hoverDropX, m_hoverDropY, m_screenWidth, m_screenHeight, true);
 }
 
 void BattleUI::StartPlayCardEffect(CardType type, float fromX, float fromY)

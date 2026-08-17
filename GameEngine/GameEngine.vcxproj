@@ -147,6 +147,7 @@
     <ClInclude Include="CardEffect.h" />
     <ClInclude Include="CardExecutor.h" />
     <ClInclude Include="CardSelectScene.h" />
+    <ClInclude Include="CardTooltip.h" />
     <ClInclude Include="CardType.h" />
     <ClInclude Include="CardVisual.h" />
     <ClInclude Include="DamageFeedBack.h" />
@@ -181,6 +182,7 @@
     <ClInclude Include="HighlightPalette.h" />
     <ClInclude Include="HitStop.h" />
     <ClInclude Include="input.h" />
+    <ClInclude Include="ItemTooltip.h" />
     <ClInclude Include="MaterialData.h" />
     <ClInclude Include="MaterialDataBase.h" />
     <ClInclude Include="Player.h" />

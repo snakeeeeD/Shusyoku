@@ -1,4 +1,6 @@
 #include "ShopScene.h"
+#include "CardTooltip.h"
+#include "ItemTooltip.h"
 #include "MaterialDataBase.h"
 #include "RelicManager.h"
 #include "GameUtils.h"
@@ -190,10 +192,30 @@ void ShopScene::Draw()
     bool lvHov = UiHoverS(leaveX, leaveY, leaveW, leaveH, mp, "leave");
     float lvYY = lvHov ? leaveY - 6.0f : leaveY;
     UiWindow::Button(m_spriteRenderer, m_whiteTexture, leaveX, lvYY, leaveW, leaveH, XMFLOAT4(0.3f, 0.3f, 0.35f, 0.95f));
+
+    // ラベルの背景バナー
+    {
+        auto banner = TextureManager::Get("ui_banner");
+        float cx = m_screenWidth / 2.0f;
+        const float fw2 = (CardVisual::CARD_H * SHOP_SCALE - CardVisual::CARD_H) / 2.0f;
+        int cardN2 = 0; for (auto& it : m_items) if (it.kind == ShopKind::Card) cardN2++;
+        m_spriteRenderer->DrawSprite(banner, cx - 100.0f, 48.0f, 200.0f, 46.0f, 0.0f, XMFLOAT4(1, 1, 1, 1)); // SHOP
+        if (cardN2 > 0)
+        {
+            float ccx, by; GetSlotBase(0, ccx, by);      m_spriteRenderer->DrawSprite(banner, cx - 75.0f, by - fw2 - 30.0f, 150.0f, 34.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
+        } // CARDS
+        if (cardN2 < (int)m_items.size())
+        {
+            float ccx, by; GetSlotBase(cardN2, ccx, by); m_spriteRenderer->DrawSprite(banner, cx - 75.0f, by - fw2 - 30.0f, 150.0f, 34.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
+        } // ITEMS
+    }
+    m_spriteRenderer->End();
+
     m_spriteRenderer->End();
 
     m_textRenderer->Begin();
-    m_textRenderer->DrawText(L"SHOP", m_screenWidth / 2.0f - 40.0f, 55.0f, 26.0f, D2D1::ColorF(D2D1::ColorF::White));
+    m_textRenderer->DrawOutlinedText(L"SHOP", m_screenWidth / 2.0f - 30.0f, 55.0f, 26.0f,
+        D2D1::ColorF(1.0f, 0.95f, 0.8f), D2D1::ColorF(0.2f, 0.08f, 0.04f), 2.5f);
 
     // 見出し（拡大で上にはみ出す分 fw を引いて、カード上端の少し上に置く）
     const float fw = (CardVisual::CARD_H * SHOP_SCALE - CardVisual::CARD_H) / 2.0f;
@@ -201,12 +223,14 @@ void ShopScene::Draw()
     if (cardN > 0)
     {
         float cx, by; GetSlotBase(0, cx, by);
-        m_textRenderer->DrawText(L"CARDS", m_screenWidth / 2.0f - 40.0f, by - fw - 24.0f, 16.0f, D2D1::ColorF(0.8f, 0.85f, 1.0f));
+        m_textRenderer->DrawOutlinedText(L"CARDS", m_screenWidth / 2.0f - 24.0f, by - fw - 24.0f, 16.0f,
+            D2D1::ColorF(0.8f, 0.85f, 1.0f), D2D1::ColorF(0.1f, 0.1f, 0.2f), 2.0f);
     }
     if (cardN < (int)m_items.size())
     {
         float cx, by; GetSlotBase(cardN, cx, by);
-        m_textRenderer->DrawText(L"ITEMS", m_screenWidth / 2.0f - 40.0f, by - fw - 24.0f, 16.0f, D2D1::ColorF(1.0f, 0.85f, 0.6f));
+        m_textRenderer->DrawOutlinedText(L"ITEMS", m_screenWidth / 2.0f - 24.0f, by - fw - 24.0f, 16.0f,
+            D2D1::ColorF(1.0f, 0.85f, 0.6f), D2D1::ColorF(0.25f, 0.12f, 0.05f), 2.0f);
     }
 
     for (int i = 0; i < (int)m_items.size(); i++)
@@ -266,6 +290,43 @@ void ShopScene::Draw()
     m_textRenderer->DrawText(L"売却", slX + 55.0f, slYY + 12.0f, 20.0f, D2D1::ColorF(1, 1, 1));
     m_textRenderer->DrawText(L"Leave", leaveX + 50.0f, lvYY + 12.0f, 20.0f, D2D1::ColorF(1, 1, 1));
     m_textRenderer->End();
+
+    // カード削除/売却ボタンの説明
+    if (!m_removeMode && !m_sellMode)
+    {
+        const wchar_t* bt = nullptr; const wchar_t* bd = nullptr; float tbx = 0.0f, tby = 0.0f;
+        if (rmHov) { bt = L"カード削除"; bd = L"デッキからカードを1枚除去する（使うほど高くなる）"; tbx = rmX; tby = rmY; }
+        else if (slHov) { bt = L"売却";       bd = L"手持ちのコア/素材を売ってゴールドにする"; tbx = slX; tby = slY; }
+        if (bt)
+        {
+            float tw = 320.0f, th = 56.0f, tx = tbx, ty = tby - th - 8.0f;
+            if (tx + tw > m_screenWidth - 6.0f) tx = m_screenWidth - 6.0f - tw;
+            m_spriteRenderer->Begin();
+            UiWindow::Draw(m_spriteRenderer, m_whiteTexture, tx, ty, tw, th);
+            m_spriteRenderer->End();
+            m_textRenderer->Begin();
+            m_textRenderer->DrawText(bt, tx + 12.0f, ty + 8.0f, 16.0f, D2D1::ColorF(1.0f, 0.9f, 0.6f));
+            m_textRenderer->DrawText(bd, tx + 12.0f, ty + 30.0f, 12.0f, D2D1::ColorF(0.9f, 0.9f, 0.9f));
+            m_textRenderer->End();
+        }
+    }
+
+    if (!m_removeMode && !m_sellMode && m_hoveredIndex >= 0 && m_hoveredIndex < (int)m_items.size())
+    {
+        float cardX, by; GetSlotBase(m_hoveredIndex, cardX, by);
+        float rx, ry, rw, rh; CardVisual::GetRect(cardX, by - 20.0f, SHOP_SCALE, rx, ry, rw, rh);
+        if (m_items[m_hoveredIndex].kind == ShopKind::Card)
+        {
+            const CardData* d = CardDataBase::Get(m_items[m_hoveredIndex].id);
+            CardTooltip::Draw(m_spriteRenderer, m_textRenderer, m_whiteTexture, d,
+                rx + rw / 2.0f, ry, rw, rh, m_screenWidth, m_screenHeight);
+        }
+        else   // コア/素材/レリック
+        {
+            ItemTooltip::Draw(m_spriteRenderer, m_textRenderer, m_whiteTexture,
+                m_items[m_hoveredIndex].id, rx + rw + 10.0f, ry, m_screenWidth, m_screenHeight);
+        }
+    }
 
     if (m_removeMode) DrawDeckRemoval();
     if (m_sellMode) DrawSellMode();
@@ -484,6 +545,15 @@ void ShopScene::DrawDeckRemoval()
             CardVisual::DrawTexts(m_textRenderer, d, nullptr, aBx, aBy, aSc, 0.0f, aAlpha);
             m_textRenderer->End();
         }
+    }
+
+    if (m_removeAnimIdx < 0 && hov >= 0 && hov < (int)deck.size())
+    {
+        const CardData* d = CardDataBase::Get(deck[hov]);
+        float bx, by; GetDeckSlot(hov, bx, by);
+        float rx, ry, rw, rh; CardVisual::GetRect(bx, by - 12.0f, 0.9f, rx, ry, rw, rh);
+        CardTooltip::Draw(m_spriteRenderer, m_textRenderer, m_whiteTexture, d,
+            rx + rw / 2.0f, ry, rw, rh,m_screenWidth, m_screenHeight);
     }
 }
 

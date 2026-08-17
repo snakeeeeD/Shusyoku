@@ -1,4 +1,5 @@
 #include "CardSelectScene.h"
+#include "CardTooltip.h"
 #include "RelicManager.h"
 #include "UiWindow.h"
 #include "Audio.h"
@@ -150,6 +151,15 @@ void CardSelectScene::Draw()
     }
 
     m_textRenderer->End();
+
+    if (m_hoveredIndex >= 0 && m_hoveredIndex < (int)m_choices.size())
+    {
+        const CardData* d = CardDataBase::Get(m_choices[m_hoveredIndex]);
+        float cardX = startX + m_hoveredIndex * (cw + 30.0f);
+        float rx, ry, rw, rh; CardVisual::GetRect(cardX, cardY - 20.0f, SEL_SCALE, rx, ry, rw, rh);
+        CardTooltip::Draw(m_spriteRenderer, m_textRenderer, m_whiteTexture, d,
+            rx + rw / 2.0f, ry, rw, rh, m_screenWidth, m_screenHeight);
+    }
 }
 
 void CardSelectScene::HandleInput()

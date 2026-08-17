@@ -271,6 +271,12 @@
     <Filter Include="ソース ファイル\01-描画関連\09-RenderConfig">
       <UniqueIdentifier>{be36068d-b797-4727-aab3-1ec4bf083510}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\07-CardTooltip">
+      <UniqueIdentifier>{f62c356f-4236-4ef0-8477-9f25c480a845}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\50-ItemTooltip">
+      <UniqueIdentifier>{b6a8586e-0264-41cc-9043-63dcd893d56d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -503,6 +509,12 @@
     </ClInclude>
     <ClInclude Include="RenderConfig.h">
       <Filter>ソース ファイル\01-描画関連\09-RenderConfig</Filter>
+    </ClInclude>
+    <ClInclude Include="CardTooltip.h">
+      <Filter>ソース ファイル\03-Object関連\30-Card\07-CardTooltip</Filter>
+    </ClInclude>
+    <ClInclude Include="ItemTooltip.h">
+      <Filter>ソース ファイル\03-Object関連\30-Card\50-ItemTooltip</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

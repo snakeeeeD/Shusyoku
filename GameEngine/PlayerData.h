@@ -33,4 +33,6 @@ struct PlayerData
 
     float masterVolume = 1.0f;
     float bgmVolume = 0.5f;
+
+    bool tutorialCraft = false;   // ‰Ÿ—˜‚ÌƒNƒ‰ƒtƒg“±“ü‚ğÏ‚Ü‚¹‚½‚©
 };
