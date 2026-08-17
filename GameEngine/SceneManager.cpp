@@ -183,6 +183,8 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("ui_banner", L"Assets/UI/ui_banner.png");
 		TextureManager::Load("ui_card", L"Assets/UI/ui_card.png");
 		TextureManager::Load("ui_cost", L"Assets/UI/ui_cost.png");
+		TextureManager::Load("ui_hazard", L"Assets/UI/ui_hazard.png");
+		TextureManager::Load("ui_threat", L"Assets/UI/ui_threat.png");
 	}
 
 	m_textRenderer = new TextRenderer();

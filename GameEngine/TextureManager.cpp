@@ -42,7 +42,7 @@ ID3D11ShaderResourceView* TextureManager::Get(const std::string& name)
     auto it = m_textures.find(name);
     if (it == m_textures.end())
     {
-        OutputDebugStringA(("TextureManager: Œ©‚Â‚©‚è‚Ü‚¹‚ñ " + name + "\n").c_str());
+        //OutputDebugStringA(("TextureManager: Œ©‚Â‚©‚è‚Ü‚¹‚ñ " + name + "\n").c_str());
         return nullptr;
     }
     return it->second;

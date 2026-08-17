@@ -45,6 +45,10 @@ public:
 
     void SetSelectedEnemy(int i) { m_selectedEnemy = i; }
 
+    struct ThreatMark { int col, row; DirectX::XMFLOAT4 color; };
+    std::vector<ThreatMark> m_enemyThreatMarks;
+    const std::vector<ThreatMark>& GetThreatMarks() const { return m_enemyThreatMarks; }
+
 private:
     std::vector<std::pair<int, int>> m_playerHighlightCells;
     std::vector<std::pair<int, int>> m_enemyHighlightCells;

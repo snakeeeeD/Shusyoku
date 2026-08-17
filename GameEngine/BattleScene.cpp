@@ -1175,8 +1175,17 @@ void BattleScene::Draw()
             auto& cell = m_gridMap->GetCell(col, row);
             float t = cell.gameObject.worldY / 0.10f;              // 0=通常, 1=浮ききった状態
             float size = 1.0f + 0.02f * t;                          // 少しだけ拡大
-            m_renderer3D->DrawTile(m_whiteTexture, x, z, size, cell.gameObject.color, cell.gameObject.worldY);
+            m_renderer3D->DrawTile(cell.gameObject.texture, x, z, size, cell.gameObject.color, cell.gameObject.worldY);
         }
+    }
+
+    // 敵の攻撃範囲マーカー（半透明の四角＋四隅ブラケット）をマスの上に重ねる
+    for (auto& mk : m_highlighter.GetThreatMarks())
+    {
+        float x = (mk.col - m_gridMap->GetCols() / 2.0f) * 1.1f;
+        float z = (mk.row - m_gridMap->GetRows() / 2.0f) * 1.1f;
+        float wy = m_gridMap->GetCell(mk.col, mk.row).gameObject.worldY + 0.02f;
+        m_renderer3D->DrawTile(TextureManager::Get("ui_threat"), x, z, 0.98f, mk.color, wy);
     }
 
     // 罠の表示

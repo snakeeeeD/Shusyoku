@@ -1,4 +1,5 @@
-﻿#include "BattleHighlighter.h"
+﻿#include "TextureManager.h"
+#include "BattleHighlighter.h"
 #include "HighlightPalette.h"
 #include "EnemyActionType.h"
 #include "EnemyIntentVisual.h"
@@ -41,13 +42,14 @@ void BattleHighlighter::ClearEnemyHighlight(GridMap* gridMap)
         bool isPlayerHighlight = false;
         for (auto& [pc, pr] : m_playerHighlightCells)
             if (pc == col && pr == row) { isPlayerHighlight = true; break; }
-
         if (!isPlayerHighlight)
         {
             auto& cell = gridMap->GetCell(col, row);
             gridMap->SetCellType(col, row, cell.type);
         }
     }
+    m_enemyHighlightCells.clear();
+    m_enemyThreatMarks.clear();
     m_enemyHighlightCells.clear();
 }
 
@@ -430,14 +432,9 @@ void BattleHighlighter::UpdateEnemyHighlight(
         int dist = info.first;
         int ei = info.second;
         float w = 0.5f + 0.5f * sin(m_enemyCycleTimer - dist * 0.8f);
-        float br = 0.25f + 0.45f * w;
         const XMFLOAT4& hue = HighlightPalette::EnemyHue(ei);
-
-        XMFLOAT4 c = selCells.count(pos)
-            ? HighlightPalette::Scale(hue, br * 1.5f)   // 選択中の敵は明るく
-            : HighlightPalette::Scale(hue, br * 0.7f);
-
-        gridMap->GetCell(pos.first, pos.second).gameObject.color = c;
-        m_enemyHighlightCells.push_back(pos);
+        float br = selCells.count(pos) ? (0.7f + 0.3f * w) : (0.5f + 0.3f * w);   // マーカーは見やすく明るめ
+        m_enemyThreatMarks.push_back({ pos.first, pos.second, HighlightPalette::Scale(hue, br) });
+        m_enemyHighlightCells.push_back(pos);   // クリア対象に残す（色は塗らない）
     }
 }
