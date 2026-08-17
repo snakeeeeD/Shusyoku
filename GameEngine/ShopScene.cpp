@@ -434,37 +434,23 @@ void ShopScene::DrawDeckRemoval()
     for (int i = 0; i < (int)deck.size(); i++)
     {
         if (i == m_removeAnimIdx) continue;
-
         const CardData* d = CardDataBase::Get(deck[i]);
         if (!d) continue;
         float bx, by; GetDeckSlot(i, bx, by);
         if (i == hov) by -= 12.0f;
         CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, bx, by, 0.9f, 0.0f,
-            CardVisual::GetCardColor(d->type), d, m_time);   // 常に通常色（中身が見える）
+            CardVisual::GetCardColor(d->type), d, m_time);
         if (i == hov)
         {
             float rx, ry, rw, rh; CardVisual::GetRect(bx, by, 0.9f, rx, ry, rw, rh);
             XMFLOAT4 rc(0.95f, 0.15f, 0.15f, 1.0f);
             float t = 5.0f;
-            m_spriteRenderer->DrawSprite(m_whiteTexture, rx - t, ry - t, rw + 2 * t, t, 0.0f, rc); // 上
-            m_spriteRenderer->DrawSprite(m_whiteTexture, rx - t, ry + rh, rw + 2 * t, t, 0.0f, rc); // 下
-            m_spriteRenderer->DrawSprite(m_whiteTexture, rx - t, ry, t, rh, 0.0f, rc);              // 左
-            m_spriteRenderer->DrawSprite(m_whiteTexture, rx + rw, ry, t, rh, 0.0f, rc);             // 右
+            m_spriteRenderer->DrawSprite(m_whiteTexture, rx - t, ry - t, rw + 2 * t, t, 0.0f, rc);
+            m_spriteRenderer->DrawSprite(m_whiteTexture, rx - t, ry + rh, rw + 2 * t, t, 0.0f, rc);
+            m_spriteRenderer->DrawSprite(m_whiteTexture, rx - t, ry, t, rh, 0.0f, rc);
+            m_spriteRenderer->DrawSprite(m_whiteTexture, rx + rw, ry, t, rh, 0.0f, rc);
         }
     }
-
-    // 削除演出：赤く光って上昇＋フェード＋縮小
-    if (animOn)
-    {
-        const CardData* d = CardDataBase::Get(deck[m_removeAnimIdx]);
-        if (d)
-        {
-            XMFLOAT4 col = CardVisual::GetCardColor(d->type); col.w = aAlpha;
-            CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, aBx, aBy, aSc, 0.0f, col, d, m_time);
-            if (aFlash) { float rx, ry, rw, rh; CardVisual::GetRect(aBx, aBy, aSc, rx, ry, rw, rh); m_spriteRenderer->DrawSprite(m_whiteTexture, rx, ry, rw, rh, 0.0f, XMFLOAT4(0.95f, 0.2f, 0.2f, aAlpha * 0.6f)); }
-        }
-    }
-
     m_spriteRenderer->End();
 
     m_textRenderer->Begin();
@@ -473,20 +459,32 @@ void ShopScene::DrawDeckRemoval()
     for (int i = 0; i < (int)deck.size(); i++)
     {
         if (i == m_removeAnimIdx) continue;
-
         const CardData* d = CardDataBase::Get(deck[i]);
         if (!d) continue;
         float bx, by; GetDeckSlot(i, bx, by);
         if (i == hov) by -= 12.0f;
         CardVisual::DrawTexts(m_textRenderer, d, nullptr, bx, by, 0.9f, 0.0f, 1.0f);
     }
+    m_textRenderer->DrawText(L"カードをクリックで削除 / 余白で戻る", m_screenWidth / 2.0f - 170.0f, m_screenHeight - 55.0f, 20.0f, D2D1::ColorF(0.8f, 0.8f, 0.8f));
+    m_textRenderer->End();
+
+    // 削除演出：提示カードを最後に「本体→文字」まとめて（背後の文字より後＝被った所だけ隠れる）
     if (animOn)
     {
         const CardData* d = CardDataBase::Get(deck[m_removeAnimIdx]);
-        if (d) CardVisual::DrawTexts(m_textRenderer, d, nullptr, aBx, aBy, aSc, 0.0f, aAlpha);
+        if (d)
+        {
+            m_spriteRenderer->Begin();
+            XMFLOAT4 col = CardVisual::GetCardColor(d->type); col.w = aAlpha;
+            CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, aBx, aBy, aSc, 0.0f, col, d, m_time);
+            if (aFlash) { float rx, ry, rw, rh; CardVisual::GetRect(aBx, aBy, aSc, rx, ry, rw, rh); m_spriteRenderer->DrawSprite(m_whiteTexture, rx, ry, rw, rh, 0.0f, XMFLOAT4(0.95f, 0.2f, 0.2f, aAlpha * 0.6f)); }
+            m_spriteRenderer->End();
+
+            m_textRenderer->Begin();
+            CardVisual::DrawTexts(m_textRenderer, d, nullptr, aBx, aBy, aSc, 0.0f, aAlpha);
+            m_textRenderer->End();
+        }
     }
-    m_textRenderer->DrawText(L"カードをクリックで削除 / 余白で戻る", m_screenWidth / 2.0f - 170.0f, m_screenHeight - 55.0f, 20.0f, D2D1::ColorF(0.8f, 0.8f, 0.8f));
-    m_textRenderer->End();
 }
 
 int ShopScene::RemovePrice() const

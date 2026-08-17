@@ -1946,21 +1946,6 @@ void SceneManager::DrawEventPicker()
 		if (i == hov) by -= 12.0f;
 		CardVisual::DrawBase(m_uiSprite, white, bx, by, 0.85f, 0.0f, i == hov ? XMFLOAT4(0.6f, 0.4f, 0.7f, 1.0f) : CardVisual::GetCardColor(d->type), d, m_uiTime);
 	}
-	if (anim && animCard)
-	{
-		XMFLOAT4 col = CardVisual::GetCardColor(animCard->type); col.w = animAlpha;
-		CardVisual::DrawBase(m_uiSprite, white, animBX, animBY + animYoff, animScale, 0.0f, col, animCard, m_uiTime);
-		if (!presenting && morph)   // 変化：白フラッシュ
-		{
-			float flash = 1.0f - fabsf(fxT - 0.5f) * 4.0f;
-			if (flash > 0.0f) { float x, y, w, h; CardVisual::GetRect(animBX, animBY, animScale, x, y, w, h); m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(1, 1, 1, flash * 0.8f)); }
-		}
-		else if (!presenting)       // 削除：赤フラッシュ
-		{
-			float x, y, w, h; CardVisual::GetRect(animBX, animBY + animYoff, animScale, x, y, w, h);
-			m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(0.95f, 0.2f, 0.2f, animAlpha * 0.6f));
-		}
-	}
 	m_uiSprite->End();
 
 	m_textRenderer->Begin();
@@ -1981,9 +1966,30 @@ void SceneManager::DrawEventPicker()
 		if (i == hov) by -= 12.0f;
 		CardVisual::DrawTexts(m_textRenderer, d, nullptr, bx, by, 0.85f, 0.0f, 1.0f);
 	}
-	if (anim && animCard)
-		CardVisual::DrawTexts(m_textRenderer, animCard, nullptr, animBX, animBY + animYoff, animScale, 0.0f, animAlpha);
 	m_textRenderer->End();
+
+	// 提示カードは最後に「本体→文字」まとめて描く（背後の文字より後＝被った所だけ隠れる）
+	if (anim && animCard)
+	{
+		m_uiSprite->Begin();
+		XMFLOAT4 col = CardVisual::GetCardColor(animCard->type); col.w = animAlpha;
+		CardVisual::DrawBase(m_uiSprite, white, animBX, animBY + animYoff, animScale, 0.0f, col, animCard, m_uiTime);
+		if (!presenting && morph)
+		{
+			float flash = 1.0f - fabsf(fxT - 0.5f) * 4.0f;
+			if (flash > 0.0f) { float x, y, w, h; CardVisual::GetRect(animBX, animBY, animScale, x, y, w, h); m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(1, 1, 1, flash * 0.8f)); }
+		}
+		else if (!presenting)
+		{
+			float x, y, w, h; CardVisual::GetRect(animBX, animBY + animYoff, animScale, x, y, w, h);
+			m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(0.95f, 0.2f, 0.2f, animAlpha * 0.6f));
+		}
+		m_uiSprite->End();
+
+		m_textRenderer->Begin();
+		CardVisual::DrawTexts(m_textRenderer, animCard, nullptr, animBX, animBY + animYoff, animScale, 0.0f, animAlpha);
+		m_textRenderer->End();
+	}
 }
 
 bool SceneManager::ChoiceEnabled(const EventChoice& c) const
