@@ -499,9 +499,9 @@
           "select": { "chance": 60 }
         },
         {
-          "description": "至近{0}ダメージ",
+          "description": "{0}ダメージ",
           "target": {
-            "rangeType": "Cross",
+            "rangeType": "Area",
             "range": 1,
             "approach": "Toward",
             "moveRange": 1
@@ -946,7 +946,7 @@
           "description": "守りを固める（{0}ブロック）",
           "target": { "rangeType": "None" },
           "effects": [
-            { "kind": "Block", "value": 10 }
+            { "kind": "Block", "value": 7 }
           ],
           "select": { "chance": 40 }
         },
