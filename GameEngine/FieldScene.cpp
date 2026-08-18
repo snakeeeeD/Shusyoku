@@ -3,6 +3,7 @@
 #include "EventDataBase.h"
 #include "SceneType.h"
 #include "Audio.h"
+#include "UiWindow.h"
 
 #include <cstdlib>
 #include <algorithm>
@@ -494,52 +495,73 @@ void FieldScene::Draw()
                 && mp.x >= pos.x && mp.x <= pos.x + CELL_SIZE
                 && mp.y >= pos.y && mp.y <= pos.y + CELL_SIZE;
             float ny = hovMove ? pos.y - 8.0f : pos.y;   // ホバーで浮く
-            m_spriteRenderer->DrawSprite(m_whiteTexture, pos.x, ny, CELL_SIZE, CELL_SIZE, 0.0f, color);
+            m_spriteRenderer->DrawSprite(TextureManager::Get("ui_node"), pos.x, ny, CELL_SIZE, CELL_SIZE, 0.0f, color);
+
+            // 種類アイコン（現在地はプレイヤー駒）
+            const char* icon = (col == m_playerCol && row == m_playerRow)
+                ? "node_player" : NodeIconName(node.type);
+            if (icon[0])
+            {
+                float isz = 36.0f;
+                float ix = pos.x + (CELL_SIZE - isz) / 2.0f;
+                float iy = ny + (CELL_SIZE - isz) / 2.0f;
+                m_spriteRenderer->DrawSprite(TextureManager::Get(icon), ix, iy, isz, isz, 0.0f, XMFLOAT4(1, 1, 1, 1));
+            }
         }
     }
 
     m_spriteRenderer->End();
 
-    m_textRenderer->Begin();
-
-    // マスのラベル
-    for (int row = 0; row < GRID_ROWS; row++)
+    // ===== 凡例（左端）：アイコン＋名前、ホバーで説明ウィンドウ =====
     {
-        for (int col = 0; col < GRID_COLS; col++)
+        struct Key { FieldNodeType type; const wchar_t* name; const wchar_t* desc; };
+        static const Key keys[] = {
+            { FieldNodeType::Battle,   L"バトル",   L"敵と戦闘。勝つとカード報酬。" },
+            { FieldNodeType::Elite,    L"エリート", L"強敵。倒すとより多くの報酬がもらえる" },
+            { FieldNodeType::Boss,     L"ボス",     L"層の主。倒すと次の層へ進む。" },
+            { FieldNodeType::Rest,     L"休憩",     L"回復／カード強化／クラフトから1つ。" },
+            { FieldNodeType::Shop,     L"ショップ", L"ゴールドで購入・カード削除・素材売却。" },
+            { FieldNodeType::Event,    L"イベント", L"選択で結果が変わる出来事。" },
+            { FieldNodeType::Treasure, L"財宝",     L"レリックや素材が手に入る。" },
+        };
+        const int N = (int)(sizeof(keys) / sizeof(keys[0]));
+        const float px = 12.0f, py = 96.0f, pw = 150.0f, rowH = 40.0f, isz = 26.0f;
+        const float ph = 34.0f + N * rowH;
+        int hover = -1;
+
+        m_spriteRenderer->Begin();
+        UiWindow::Draw(m_spriteRenderer, m_whiteTexture, px, py, pw, ph);
+        for (int i = 0; i < N; i++)
         {
-            int idx = GetNodeIndex(col, row);
-            auto& node = m_nodes[idx];
-            if (node.type == FieldNodeType::Empty) continue;
+            float ry = py + 30.0f + i * rowH;
+            if (mp.x >= px && mp.x <= px + pw && mp.y >= ry && mp.y <= ry + rowH) hover = i;
+            m_spriteRenderer->DrawSprite(TextureManager::Get(NodeIconName(keys[i].type)),
+                px + 10.0f, ry + (rowH - isz) / 2.0f, isz, isz, 0.0f, XMFLOAT4(1, 1, 1, 1));
+        }
+        m_spriteRenderer->End();
 
-            XMFLOAT2 pos = GetNodeScreenPos(col, row);
+        m_textRenderer->Begin();
+        m_textRenderer->DrawText(L"マップの記号", px + 12.0f, py + 6.0f, 16.0f, D2D1::ColorF(1, 0.9f, 0.6f));
+        for (int i = 0; i < N; i++)
+        {
+            float ry = py + 30.0f + i * rowH;
+            m_textRenderer->DrawText(keys[i].name, px + 46.0f, ry + rowH / 2.0f - 10.0f, 16.0f, D2D1::ColorF(D2D1::ColorF::White));
+        }
+        m_textRenderer->End();
 
-            const wchar_t* label = L"";
-            if (col == m_playerCol && row == m_playerRow)
-                label = L"YOU";
-            else switch (node.type)
-            {
-            case FieldNodeType::Start:  label = L"START";  break;
-            case FieldNodeType::Battle: label = L"BATTLE"; break;
-            case FieldNodeType::Rest:   label = L"REST";   break;
-            case FieldNodeType::Event:  label = L"EVENT";  break;   
-            case FieldNodeType::Boss:   label = L"BOSS";   break;
-            case FieldNodeType::Shop:   label = L"SHOP";   break;
-            case FieldNodeType::Elite:  label = L"ELITE";  break;
-            case FieldNodeType::Treasure: label = L"LOOT"; break;
-            default: break;
-            }
-
-            bool hovMove = CanMove(col, row)
-                && mp.x >= pos.x && mp.x <= pos.x + CELL_SIZE
-                && mp.y >= pos.y && mp.y <= pos.y + CELL_SIZE;
-            float ny = hovMove ? pos.y - 8.0f : pos.y;
-            m_textRenderer->DrawText(label, pos.x + 5.0f, ny + CELL_SIZE / 2.0f - 10.0f, 14.0f,
-                D2D1::ColorF(D2D1::ColorF::White));
+        if (hover >= 0)   // ホバー説明ウィンドウ（右側）
+        {
+            float tw = 300.0f, th = 40.0f;
+            float tx = px + pw + 8.0f;
+            float ty = py + 30.0f + hover * rowH + (rowH - th) / 2.0f;
+            m_spriteRenderer->Begin();
+            UiWindow::Draw(m_spriteRenderer, m_whiteTexture, tx, ty, tw, th);
+            m_spriteRenderer->End();
+            m_textRenderer->Begin();
+            m_textRenderer->DrawText(keys[hover].desc, tx + 12.0f, ty + 11.0f, 14.0f, D2D1::ColorF(0.95f, 0.95f, 0.95f));
+            m_textRenderer->End();
         }
     }
-
-
-    m_textRenderer->End();
 
 }
 

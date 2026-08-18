@@ -191,6 +191,17 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("ui_reach", L"Assets/UI/ui_reach.png");
 		TextureManager::Load("ui_hitmark", L"Assets/UI/ui_hitmark.png");
 		TextureManager::Load("ui_hitring", L"Assets/UI/ui_hitring.png");
+
+		TextureManager::Load("node_battle", L"Assets/UI/node_battle.png");
+		TextureManager::Load("node_rest", L"Assets/UI/node_rest.png");
+		TextureManager::Load("node_shop", L"Assets/UI/node_shop.png");
+		TextureManager::Load("node_elite", L"Assets/UI/node_elite.png");
+		TextureManager::Load("node_boss", L"Assets/UI/node_boss.png");
+		TextureManager::Load("node_event", L"Assets/UI/node_event.png");
+		TextureManager::Load("node_treasure", L"Assets/UI/node_treasure.png");
+		TextureManager::Load("node_start", L"Assets/UI/node_start.png");
+		TextureManager::Load("node_player", L"Assets/UI/node_player.png");
+		TextureManager::Load("ui_node", L"Assets/UI/ui_node.png");
 	}
 
 	m_textRenderer = new TextRenderer();
@@ -439,7 +450,8 @@ void SceneManager::DrawOverlay()
 	m_uiSprite->DrawSprite(TextureManager::Get("particle"),
 		btnX + 100.0f - 24.0f, 5.0f + 30.0f - 22.0f, 24.0f, 24.0f, 0.0f, XMFLOAT4(0.10f, 0.09f, 0.13f, 1.0f));
 
-	m_uiSprite->DrawSprite(TextureManager::Get("ui_map"), m_screenWidth - 680.0f, 5.0f, 90.0f, 30.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));     // Mapボタン
+	if (m_currentType != SceneType::Field)
+		m_uiSprite->DrawSprite(TextureManager::Get("ui_map"), m_screenWidth - 680.0f, 5.0f, 90.0f, 30.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));   // Mapボタン（フィールドは自身がマップなので非表示）
 
 	{
 		SettingsUI u = SettingsLayout();
@@ -511,7 +523,7 @@ void SceneManager::DrawOverlay()
 		POINT mp = m_uiInput.GetMousePos();
 		const wchar_t* tip = nullptr;
 		if (mp.y >= 5 && mp.y <= 35) {
-			if (mp.x >= m_screenWidth - 680 && mp.x <= m_screenWidth - 590) tip = L"マップを開く";
+			if (m_currentType != SceneType::Field && mp.x >= m_screenWidth - 680 && mp.x <= m_screenWidth - 590) tip = L"マップを開く";
 			else if (mp.x >= m_screenWidth - 470 && mp.x <= m_screenWidth - 380) tip = L"アイテムを見る";
 			else if (mp.x >= btnX && mp.x <= btnX + 100)                         tip = L"デッキを見る";
 		}
@@ -709,6 +721,8 @@ void SceneManager::HandleInput()
 		return;
 	}
 
+	if (m_tutorialDelay > 0.0f) return;   // チュートリアル表示待ち中は入力を止める（勝利連打で飛ぶのを防ぐ）
+
 	if (m_craftFxTimer > 0.0f) return;           // 演出中は入力停止
 
 	if (m_currentType != SceneType::Title)
@@ -752,11 +766,11 @@ void SceneManager::HandleInput()
 			return;   // 設定中は他のバー操作を止める
 		}
 
-		// Map（全シーンで開ける・クリックで閉じる）
+		// Map（フィールド以外で開ける・クリックで閉じる）
 		if (m_mapOpen) { if (click) m_mapOpen = false; return; }
 		{
 			float mapX = m_screenWidth - 680.0f;
-			if (click && !m_deckOpen && !m_craftOpen && !m_invOpen
+			if (click && m_currentType != SceneType::Field && !m_deckOpen && !m_craftOpen && !m_invOpen
 				&& m.x >= mapX && m.x <= mapX + 90.0f && m.y >= 5.0f && m.y <= 35.0f)
 			{
 				Audio::PlaySE("Assets/Sound/se/click.mp3");
@@ -1737,7 +1751,7 @@ void SceneManager::DrawMap()
 	const int ROWS = 7, COLS = 12;                  // FieldSceneのグリッドと一致
 	bool haveMap = (int)pd.fieldNodeTypes.size() >= ROWS * COLS;
 
-	const float CELL = 48.0f, GAP = 12.0f;
+	const float CELL = 64.0f, GAP = 16.0f;
 	float totalW = COLS * (CELL + GAP) - GAP;
 	float totalH = ROWS * (CELL + GAP) - GAP;
 	float offX = (m_screenWidth - totalW) / 2.0f;
@@ -1746,6 +1760,10 @@ void SceneManager::DrawMap()
 	auto idxOf = [&](int c, int r) { return c * ROWS + r; };
 	auto typeOf = [&](int c, int r) { return (FieldNodeType)pd.fieldNodeTypes[idxOf(c, r)]; };
 	auto posOf = [&](int c, int r, float& x, float& y) { x = offX + c * (CELL + GAP); y = offY + r * (CELL + GAP); };
+
+	POINT mp = m_uiInput.GetMousePos();
+	FieldNodeType hoverType = FieldNodeType::Empty;
+	float hoverX = 0.0f, hoverY = 0.0f;
 
 	m_uiSprite->Begin();
 	m_uiSprite->DrawSprite(white, 0, 0, (float)m_screenWidth, (float)m_screenHeight, 0.0f,
@@ -1773,8 +1791,19 @@ void SceneManager::DrawMap()
 				if (t == FieldNodeType::Empty) continue;
 				float x, y; posOf(c, r, x, y);
 				bool isPlayer = (c == pd.fieldPlayerCol && r == pd.fieldPlayerRow);
-				m_uiSprite->DrawSprite(white, x, y, CELL, CELL, 0.0f,
+				if (mp.x >= x && mp.x <= x + CELL && mp.y >= y && mp.y <= y + CELL)
+				{
+					hoverType = t; hoverX = x + CELL + 8.0f; hoverY = y;
+				}
+				m_uiSprite->DrawSprite(TextureManager::Get("ui_node"), x, y, CELL, CELL, 0.0f,
 					MapNodeColor(t, pd.fieldNodeVisited[idxOf(c, r)], isPlayer));
+				const char* icon = isPlayer ? "node_player" : NodeIconName(t);
+				if (icon[0])
+				{
+					float isz = CELL * 0.60f;
+					m_uiSprite->DrawSprite(TextureManager::Get(icon),
+						x + (CELL - isz) / 2.0f, y + (CELL - isz) / 2.0f, isz, isz, 0.0f, XMFLOAT4(1, 1, 1, 1));
+				}
 			}
 	}
 	m_uiSprite->End();
@@ -1783,20 +1812,24 @@ void SceneManager::DrawMap()
 	m_textRenderer->DrawText(L"MAP", m_screenWidth / 2.0f - 30.0f, offY - 44.0f, 26.0f, D2D1::ColorF(1, 1, 1));
 	if (!haveMap)
 		m_textRenderer->DrawText(L"No map yet", m_screenWidth / 2.0f - 60.0f, m_screenHeight / 2.0f, 22.0f, D2D1::ColorF(0.7f, 0.7f, 0.7f));
-	else
-	{
-		for (int r = 0; r < ROWS; r++)
-			for (int c = 0; c < COLS; c++)
-			{
-				FieldNodeType t = typeOf(c, r);
-				if (t == FieldNodeType::Empty) continue;
-				float x, y; posOf(c, r, x, y);
-				bool isPlayer = (c == pd.fieldPlayerCol && r == pd.fieldPlayerRow);
-				m_textRenderer->DrawText(MapNodeLabel(t, isPlayer), x + 4.0f, y + CELL / 2 - 8.0f, 12.0f, D2D1::ColorF(1, 1, 1));
-			}
-	}
 	m_textRenderer->DrawText(L"click to close", m_screenWidth / 2.0f - 55.0f, offY + totalH + 16.0f, 16.0f, D2D1::ColorF(0.7f, 0.7f, 0.7f));
 	m_textRenderer->End();
+
+	// ホバーでマスの説明（フィールドの凡例と同じ内容）
+	if (haveMap && hoverType != FieldNodeType::Empty)
+	{
+		const float tw = 320.0f, th = 56.0f;
+		float tx = hoverX, ty = hoverY;
+		if (tx + tw > m_screenWidth - 8.0f) tx = m_screenWidth - 8.0f - tw;   // 右端で左に寄せる
+		if (ty + th > m_screenHeight - 8.0f) ty = m_screenHeight - 8.0f - th;
+		m_uiSprite->Begin();
+		UiWindow::Draw(m_uiSprite, white, tx, ty, tw, th);
+		m_uiSprite->End();
+		m_textRenderer->Begin();
+		m_textRenderer->DrawText(NodeDisplayName(hoverType), tx + 12.0f, ty + 8.0f, 18.0f, D2D1::ColorF(1, 0.9f, 0.6f));
+		m_textRenderer->DrawText(NodeDesc(hoverType), tx + 12.0f, ty + 32.0f, 14.0f, D2D1::ColorF(0.95f, 0.95f, 0.95f));
+		m_textRenderer->End();
+	}
 }
 
 void SceneManager::GetRelicRect(int i, float& x, float& y, float& w, float& h) const
