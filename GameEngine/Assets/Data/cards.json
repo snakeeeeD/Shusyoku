@@ -1191,7 +1191,7 @@
       "cost": 1,
       "range": 0,
       "rangeType": "None",
-      "description": "1枚捨てる ／ 捨てられた時 全敵に毒{ondiscard}",
+      "description": "1枚捨てる \n このカードが捨てられた時 全敵に毒{ondiscard}",
       "upgrade": { "onDiscardValue": 2 },
       "mainEffect": {
         "type": "Discard",
@@ -1199,7 +1199,7 @@
       },
       "onDiscardEffect": {
         "type": "ApplyDebuff",
-        "value": 3,
+        "value": 5,
         "buffType": "Poison"
       }
     },

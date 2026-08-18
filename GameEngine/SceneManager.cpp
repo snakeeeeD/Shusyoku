@@ -278,8 +278,21 @@ void SceneManager::DoChangeScene(SceneType type)
 		{
 			auto scene = new FieldScene();
 			scene->onChangeScene = [this](SceneType type) { ChangeScene(type); };
-			scene->onRest = [this]() { m_restOpen = true; 
-			m_restActive = true; Audio::PlayBGM("Assets/Sound/bgm/Rest.mp3"); };
+			scene->onRest = [this]() {
+				m_restOpen = true; m_restActive = true;
+				Audio::PlayBGM("Assets/Sound/bgm/Rest.mp3");
+				auto& pd = PlayerDataManager::GetData();
+				if (!pd.tutorialRest)
+				{
+					pd.tutorialRest = true; PlayerDataManager::Save();
+					ShowTutorial({
+						{ L"休憩マス。3つのうち1つを選べる",          510, 240, 260, 244 },  // ← 3ボタン全体
+						{ L"Heal … HPを回復する",                     510, 250, 260,  60 },  // ← ボタン0
+						{ L"Upgrade … 手持ちカード1枚を強化する",     510, 330, 260,  60 },  // ← ボタン1
+						{ L"Craft … コア＋素材で新しいカードを作る",   510, 410, 260,  60 },  // ← ボタン2
+						});
+				}
+				};
 			scene->onEvent = [this](const std::string& id) { m_eventOpen = true; m_eventId = id; m_eventResult = -1; m_eventPickType.clear(); };
 			m_currentScene = scene;
 			break;
@@ -350,6 +363,26 @@ void SceneManager::DoChangeScene(SceneType type)
 			  (float)m_screenWidth - 168.0f, (float)m_screenHeight - 66.0f, 156.0f, 52.0f },
 			{ L"HPが0になると敗北",                                   20,  85, 220,  90 },
 			}, 1.2f);
+	}
+
+	if (type == SceneType::CardSelect && !pd.tutorialCardSelect)
+	{
+		pd.tutorialCardSelect = true; PlayerDataManager::Save();
+		ShowTutorial({
+					{ L"戦闘の報酬カード。1枚選ぶとデッキに加わる", 376, 224, 490, 224 }, // ← カード3枚を明るく
+			{ L"欲しいカードが無ければスキップもできる",     566, 596, 148,  52 },  // ← スキップボタン
+			});
+	}
+	if (type == SceneType::Shop && !pd.tutorialShop)
+	{
+		pd.tutorialShop = true; PlayerDataManager::Save();
+		ShowTutorial({
+			{ L"ショップ。カード・素材・レリックをクリックで購入", 180, 120, 920, 470 },
+			{ L"購入にはゴールド（G）が必要",                     704,   4,  82,  30 },
+			{ L"左下：カードをデッキから削除できる（有料・1回）",  36, 646, 228,  52 },
+			{ L"SELL：いらない素材を売ってゴールドにできる",      276, 646, 168,  52 },  // ← 追加（売却ボタン）
+			{ L"終わったら LEAVE でフィールドへ戻る",            556, 646, 168,  52 },
+			});
 	}
 }
 
@@ -1571,6 +1604,32 @@ void SceneManager::DrawRest()
 		m_textRenderer->DrawText(labels[i], x + 20.0f, y + 18.0f, 22.0f, D2D1::ColorF(1, 1, 1));
 	}
 	m_textRenderer->End();
+
+	// ホバーで各行動の説明ウィンドウ（チュートリアル中は出さない）
+	if (!m_tutorialOpen)
+	{
+		const wchar_t* descs[3] = {
+			L"HPを20回復する",
+			L"手持ちカード1枚を選んで強化する",
+			L"コア＋素材を組み合わせて新しいカードを作る",
+		};
+		for (int i = 0; i < 3; i++)
+		{
+			float x, y, w, h; GetRestBtnRect(i, x, y, w, h);
+			if (mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h)
+			{
+				float tw = 300.0f, th = 34.0f, tx = x + w + 12.0f, ty = y + (h - th) / 2.0f;
+				if (tx + tw > m_screenWidth - 6.0f) tx = x - tw - 12.0f;   // 右に出ないなら左へ
+				m_uiSprite->Begin();
+				UiWindow::Draw(m_uiSprite, white, tx, ty, tw, th);
+				m_uiSprite->End();
+				m_textRenderer->Begin();
+				m_textRenderer->DrawText(descs[i], tx + 12.0f, ty + 8.0f, 15.0f, D2D1::ColorF(0.95f, 0.95f, 0.95f));
+				m_textRenderer->End();
+				break;
+			}
+		}
+	}
 }
 
 void SceneManager::HandleRestClick(POINT m)

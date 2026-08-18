@@ -35,4 +35,8 @@ struct PlayerData
     float bgmVolume = 0.5f;
 
     bool tutorialCraft = false;   // ‰Ÿ—˜‚ÌƒNƒ‰ƒtƒg“±“ü‚ğÏ‚Ü‚¹‚½‚©
+
+    bool tutorialCardSelect = false;
+    bool tutorialShop = false;
+    bool tutorialRest = false;
 };
