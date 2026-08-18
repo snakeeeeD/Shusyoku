@@ -49,6 +49,9 @@ public:
     std::vector<ThreatMark> m_enemyThreatMarks;
     const std::vector<ThreatMark>& GetThreatMarks() const { return m_enemyThreatMarks; }
 
+    std::vector<std::pair<int, int>> m_playerReachCells;   // 攻撃カードの射程（オーバーレイ用）
+    const std::vector<std::pair<int, int>>& GetReachCells() const { return m_playerReachCells; }
+
 private:
     std::vector<std::pair<int, int>> m_playerHighlightCells;
     std::vector<std::pair<int, int>> m_enemyHighlightCells;

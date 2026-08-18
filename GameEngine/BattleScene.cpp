@@ -1198,6 +1198,15 @@ void BattleScene::Draw()
         m_renderer3D->DrawTile(TextureManager::Get("ui_threat"), x, z, 0.98f, mk.color, wy);
     }
 
+    // プレイヤーの攻撃範囲マーカー（水色ブラケット＋クロスヘア）
+    for (auto& pc : m_highlighter.GetReachCells())
+    {
+        float x = (pc.first - m_gridMap->GetCols() / 2.0f) * 1.1f;
+        float z = (pc.second - m_gridMap->GetRows() / 2.0f) * 1.1f;
+        float wy = m_gridMap->GetCell(pc.first, pc.second).gameObject.worldY + 0.03f;
+        m_renderer3D->DrawTile(TextureManager::Get("ui_reach"), x, z, 0.98f, XMFLOAT4(1, 1, 1, 1), wy);
+    }
+
     // 罠の表示
     for (int row = 0; row < m_gridMap->GetRows(); row++)
     {
@@ -2479,12 +2488,29 @@ void BattleScene::HandleInput()
 
     POINT mousePos = m_input.GetMousePos();
     
-    if (!cardJustUsed)
+    int cardUnder = m_battleUI->GetCardAtScreenPos(mousePos);
+    if (cardUnder >= 0 && m_input.GetMouseButtonTrigger(0))
     {
-        int cardUnder = m_battleUI->GetCardAtScreenPos(mousePos);
-        if (cardUnder >= 0 && m_input.GetMouseButtonTrigger(0))
+        if (m_selectedCardIndex == cardUnder)
         {
-            m_selectedCardIndex = (m_selectedCardIndex == cardUnder) ? -1 : cardUnder;
+            m_selectedCardIndex = -1;                       // 同じカード再クリック→解除
+        }
+        else
+        {
+            int cost = m_hand.GetCards()[cardUnder]->GetData()->cost;
+            if (m_player->GetEnergy() < cost)
+            {
+                // エナジー不足：アウトライン付き浮遊テキストで通知し、自動で選択解除
+                float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                FloatingTextManager::Spawn(px, 1.3f, pz, L"エナジーがたりない",
+                    XMFLOAT4(1.0f, 0.45f, 0.2f, 1.0f), 30.0f);
+                m_selectedCardIndex = -1;
+            }
+            else
+            {
+                m_selectedCardIndex = cardUnder;
+            }
         }
     }
     

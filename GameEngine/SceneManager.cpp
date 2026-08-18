@@ -188,6 +188,9 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("ui_threat", L"Assets/UI/ui_threat.png");
 		TextureManager::Load("mat_core", L"Assets/UI/mat_core.png");
 		TextureManager::Load("mat_material", L"Assets/UI/mat_material.png");
+		TextureManager::Load("ui_reach", L"Assets/UI/ui_reach.png");
+		TextureManager::Load("ui_hitmark", L"Assets/UI/ui_hitmark.png");
+		TextureManager::Load("ui_hitring", L"Assets/UI/ui_hitring.png");
 	}
 
 	m_textRenderer = new TextRenderer();

@@ -33,6 +33,7 @@ void BattleHighlighter::ClearPlayerHighlight(GridMap* gridMap)
     }
     m_playerHighlightCells.clear();
     m_outOfRangeCells.clear();
+    m_playerReachCells.clear();
 }
 
 void BattleHighlighter::ClearEnemyHighlight(GridMap* gridMap)
@@ -134,6 +135,7 @@ void BattleHighlighter::UpdatePlayerHighlight(
                 continue;                                    // 緑ハイライトはしない
             }
             auto& cell = gridMap->GetCell(col, row);
+            m_playerReachCells.push_back({ col, row });
 
             bool isHovered = (col == hoveredCell.first && row == hoveredCell.second);
 
@@ -254,6 +256,8 @@ void BattleHighlighter::UpdatePlayerHighlight(
 
         m_playerHighlightCells.push_back({ col, row });
 
+        m_playerReachCells.push_back({ col, row });
+
         // マウスが乗っているマスかどうか
         bool isHovered = (col == hoveredCell.first && row == hoveredCell.second);
         bool isOnHoveredLine = false;
@@ -360,7 +364,7 @@ void BattleHighlighter::UpdateEnemyHighlight(
 {
 
     ClearEnemyHighlight(gridMap);
-    for (auto e : enemies) e->color = HighlightPalette::EnemyNormal;
+    for (auto e : enemies) { e->color = HighlightPalette::EnemyNormal; e->hitsPlayer = false; }
 
     std::map<std::pair<int, int>, std::pair<int, int>> cellOwner;  // マス -> (距離, 敵index)
     std::set<std::pair<int, int>> selCells;
@@ -373,6 +377,7 @@ void BattleHighlighter::UpdateEnemyHighlight(
 
         // 足元マス：全ての敵に自分の色（薄め）
         XMFLOAT4 footCol = HighlightPalette::Scale(HighlightPalette::EnemyHue(ei), 0.5f);
+        enemy->hueColor = HighlightPalette::EnemyHue(ei);
         for (auto& [dc, dr] : enemy->GetGridShape())
         {
             int ec = enemy->gridCol + dc, er = enemy->gridRow + dr;
@@ -414,6 +419,7 @@ void BattleHighlighter::UpdateEnemyHighlight(
             int tc = (decoyCol >= 0) ? decoyCol : playerCol;
             int tr = (decoyCol >= 0) ? decoyRow : playerRow;
             mark(tc, tr, 1);
+            if (tc == playerCol && tr == playerRow) enemy->hitsPlayer = true;
             continue;
         }
 
@@ -421,6 +427,7 @@ void BattleHighlighter::UpdateEnemyHighlight(
         {
             auto& cell = gridMap->GetCell(c, r);
             if (cell.type == CellType::Enemy || cell.type == CellType::Boss) continue;
+            if (c == playerCol && r == playerRow) enemy->hitsPlayer = true;
             int dist = abs(c - enemy->gridCol) + abs(r - enemy->gridRow);
             mark(c, r, dist);
         }

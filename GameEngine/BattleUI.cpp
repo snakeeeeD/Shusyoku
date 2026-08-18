@@ -585,6 +585,20 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             float barX = footX - barWidth / 2.0f;
             float barY = footY - 30.0f;
 
+            // この敵の攻撃が今あなたに当たる → キャラの頭上に大きめの赤警告（敵の識別色フチ）
+            if (enemy->hitsPlayer && ctx.isPlayerTurn)
+            {
+                float mk = 34.0f;                 // ← 大きく（小さければ 40〜46 まで）
+                float mx = headX - mk / 2.0f;
+                float my = headY - mk - 14.0f;     // ← 頭上に余白。もっと離すなら -14 を大きく
+                float pulse = 0.75f + 0.25f * sinf(ctx.highlightTimer * 6.0f);
+                const XMFLOAT4& hue = enemy->hueColor;
+                m_spriteRenderer->DrawSprite(TextureManager::Get("ui_hitring"),
+                    mx, my, mk, mk, 0.0f, XMFLOAT4(hue.x, hue.y, hue.z, pulse));   // 敵色フチ
+                m_spriteRenderer->DrawSprite(TextureManager::Get("ui_hitmark"),
+                    mx, my, mk, mk, 0.0f, XMFLOAT4(1.0f, 1.0f, 1.0f, pulse));       // 赤バッジ
+            }
+
             float footX2, footY2;
 
             int trE = 1 + ctx.player->GetBuffManager().GetBuffValue(BuffType::ToxicRhythm);

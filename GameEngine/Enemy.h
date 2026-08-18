@@ -97,6 +97,10 @@ public:
 	std::vector<std::pair<int, int>> m_plannedMovePath;
 	void SetPlannedMovePath(std::vector<std::pair<int, int>> p) { m_plannedMovePath = std::move(p); }
 	const std::vector<std::pair<int, int>>& GetPlannedMovePath() const { return m_plannedMovePath; }
+
+	bool hitsPlayer = false;   // 現在のプレイヤー位置を攻撃範囲に含む＝避けられていない
+	DirectX::XMFLOAT4 hueColor{ 1, 1, 1, 1 };   // 敵ごとの識別色（マーカーのフチ用）
+
 private:
 	bool IsAdjacentTo(int playerCol, int playerRow);
 
