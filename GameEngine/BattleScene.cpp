@@ -307,6 +307,20 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         };
     m_turnManager.onEnemyTurnStart = [this]()
         {
+
+            // 時限床（ボスのやけど床など）の寿命：敵ターン開始時に1減らし、0で消滅
+            for (int r = 0; r < m_gridMap->GetRows(); r++)
+                for (int c = 0; c < m_gridMap->GetCols(); c++)
+                {
+                    auto& cell = m_gridMap->GetCell(c, r);
+                    if (cell.tileEffect.active && cell.tileEffect.hazardTurns > 0)
+                    {
+                        cell.tileEffect.hazardTurns--;
+                        if (cell.tileEffect.hazardTurns <= 0)
+                            cell.tileEffect = TileEffect();
+                    }
+                }
+
             TurnBanner::Show(TurnBannerType::Enemy);
 
             for (auto enemy : m_enemies)
@@ -514,22 +528,39 @@ void BattleScene::Update(float deltaTime)
             for (auto& [c, r] : wave)
             {
                 auto& cell = m_gridMap->GetCell(c, r);
-                if (!cell.tileEffect.active) continue;
+                if (!cell.tileEffect.active || cell.tileEffect.enemyOwned) continue;   // 敵床は除外
                 CardExecutor::DetonateTrap(cell, c, r, m_gridMap, m_enemies, m_chainFull, false);
-                // 隣接の罠を次の波へ
                 for (int dr = -1; dr <= 1; dr++)
                     for (int dc = -1; dc <= 1; dc++)
                     {
                         if (dc == 0 && dr == 0) continue;
                         int nc = c + dc, nr = r + dr;
                         if (nc < 0 || nc >= m_gridMap->GetCols() || nr < 0 || nr >= m_gridMap->GetRows()) continue;
-                        if (m_gridMap->GetCell(nc, nr).tileEffect.active)
+                        auto& ncell = m_gridMap->GetCell(nc, nr);
+                        if (ncell.tileEffect.active && !ncell.tileEffect.enemyOwned)   // 敵床に連鎖しない
                             m_chainQueue.push_back({ nc, nr });
                     }
             }
             ScreenShake::Add(0.3f);
             ProcessDeadEnemies();
             m_chainTimer = 0.12f;   // 波の間隔（大きいほどゆっくり連鎖）
+        }
+    }
+    if (!m_detonateQueue.empty())
+    {
+        m_detonateTimer -= deltaTime;
+        if (m_detonateTimer <= 0.0f)
+        {
+            auto [c, r] = m_detonateQueue.front();
+            m_detonateQueue.erase(m_detonateQueue.begin());
+            auto& cell = m_gridMap->GetCell(c, r);
+            if (cell.tileEffect.active)
+            {
+                CardExecutor::DetonateTrap(cell, c, r, m_gridMap, m_enemies, m_detonateFull, false);
+                ScreenShake::Add(0.2f);
+                ProcessDeadEnemies();
+            }
+            m_detonateTimer = 0.08f;   // 1個ずつの間隔（大きいほどゆっくり）
         }
     }
 
@@ -777,6 +808,16 @@ void BattleScene::Update(float deltaTime)
                 }
             }
 
+            // カード報酬のレア出現をプール/カテゴリ別に抽選
+            {
+                int rareChance = 0;
+                if (m_category == EncCategory::Elite)
+                    rareChance = 30;                 // エリート
+                else if (m_category == EncCategory::Normal)
+                    rareChance = (m_battleTier <= 1) ? 0 : (m_battleTier == 2) ? 2 : 5;  // 弱/中/強
+                pd.rewardRare = (rand() % 100 < rareChance);
+            }
+
             int nodeIdx = pd.fieldPlayerCol * 7 + pd.fieldPlayerRow;
             if (nodeIdx >= 0 && nodeIdx < (int)pd.fieldNodeVisited.size())
                 pd.fieldNodeVisited[nodeIdx] = true;
@@ -784,7 +825,6 @@ void BattleScene::Update(float deltaTime)
             if (m_category == EncCategory::Elite)
             {
                 pd.gold += 25;
-                pd.rewardRare = true;
                 int em = RelicManager::SumValue("eliteMaterial");
                 // エリート報酬：レリック
                 std::string rr = RelicManager::RandomDrop();
@@ -957,9 +997,9 @@ void BattleScene::Update(float deltaTime)
                 }
 
                 // 突進：止まるマス（罠マス＋最終マス）を先に列挙し、間は滑らかに移動
-                if (!enemy->GetDashPath().empty())
+                if (enemy->DidDash() && !enemy->GetMovePath().empty())
                 {
-                    const auto& path = enemy->GetDashPath();
+                    const auto& path = enemy->GetMovePath();
                     m_dashEnemy = enemy;
                     m_dashStops.clear();
                     for (auto& c : path)
@@ -974,8 +1014,16 @@ void BattleScene::Update(float deltaTime)
                     break;
                 }
 
+                // 通過した各マスの罠を発火（複数マス移動で飛び越えないように）
+                for (auto& mp : enemy->GetMovePath())
+                {
+                    auto& pcell = m_gridMap->GetCell(mp.first, mp.second);
+                    if (pcell.tileEffect.active)
+                        CardExecutor::TriggerTrap(pcell, enemy, mp.first, mp.second, m_gridMap, m_enemies);
+                    if (enemy->GetHp() <= 0) break;
+                }
                 auto& cell = m_gridMap->GetCell(enemy->gridCol, enemy->gridRow);
-                if (cell.tileEffect.active)
+                if (enemy->GetHp() > 0 && cell.tileEffect.active)
                     CardExecutor::TriggerTrap(cell, enemy, enemy->gridCol, enemy->gridRow, m_gridMap, m_enemies);
 
                 m_enemyPhase = EnemyTurnPhase::WaitAction;
@@ -1145,10 +1193,27 @@ void BattleScene::Draw()
             {
                 for (auto& cc : BattleHighlighter::GetCandidates(
                     m_playerCol, m_playerRow, d->rangeType, d->range))
-                    raised.insert(cc);
+                {
+                    if (cc.first < 0 || cc.first >= m_gridMap->GetCols() ||
+                        cc.second < 0 || cc.second >= m_gridMap->GetRows()) continue;
+                    auto& hc = m_gridMap->GetCell(cc.first, cc.second);
+                    if (hc.tileEffect.active && !hc.tileEffect.enemyOwned)   // 敵床は光らせない
+                        raised.insert(cc);
+                }
             }
             else if (d->mainEffect.type == CardEffectType::DetonateAt)
             {
+                // 置いてある罠（範囲内）をハイライト
+                for (auto& cc : BattleHighlighter::GetCandidates(
+                    m_playerCol, m_playerRow, d->rangeType, d->range))
+                {
+                    if (cc.first < 0 || cc.first >= m_gridMap->GetCols() ||
+                        cc.second < 0 || cc.second >= m_gridMap->GetRows()) continue;
+                    auto& hc = m_gridMap->GetCell(cc.first, cc.second);
+                    if (hc.tileEffect.active && !hc.tileEffect.enemyOwned)   // 敵床は光らせない
+                        raised.insert(cc);
+                }
+
                 // 3x3プレビュー
                 if (m_hoveredCell.first >= 0 &&
                     RangeShape::Contains(m_playerCol, m_playerRow,
@@ -1162,7 +1227,18 @@ void BattleScene::Draw()
             }
             else if (d->mainEffect.type == CardEffectType::DetonateChain)
             {
-                // 連鎖は起点の1マスだけ（連鎖は動的に広がる）
+                // 置いてある罠（範囲内）をハイライト
+                for (auto& cc : BattleHighlighter::GetCandidates(
+                    m_playerCol, m_playerRow, d->rangeType, d->range))
+                {
+                    if (cc.first < 0 || cc.first >= m_gridMap->GetCols() ||
+                        cc.second < 0 || cc.second >= m_gridMap->GetRows()) continue;
+                    auto& hc = m_gridMap->GetCell(cc.first, cc.second);
+                    if (hc.tileEffect.active && !hc.tileEffect.enemyOwned)   // 敵床は光らせない
+                        raised.insert(cc);
+                }
+
+                // 連鎖の起点プレビュー（既存のまま）
                 if (m_hoveredCell.first >= 0 &&
                     RangeShape::Contains(m_playerCol, m_playerRow,
                         m_hoveredCell.first, m_hoveredCell.second, d->rangeType, d->range) &&
@@ -1252,13 +1328,33 @@ void BattleScene::Draw()
 
                 float t = cell.gameObject.worldY / 0.10f;
 
+                // ハイライト中（起爆カード選択で浮いている）の罠を脈動させる
+                float pulseScale = 1.0f, bright = 1.0f;
+                if (cell.gameObject.worldY > 0.05f)
+                {
+                    float s = 0.5f + 0.5f * sinf(m_highlightTimer * 8.0f);   // 0..1
+                    pulseScale = 1.0f + 0.18f * s;                           // サイズ 1.0..1.18
+                    bright = 1.0f + 0.5f * s;                           // 明るさ 1.0..1.5
+                }
+
                 const TerrainDef* def = TerrainDataBase::Get(cell.tileEffect.id);
                 XMFLOAT4 terrainColor = def ? def->color : XMFLOAT4(1, 1, 1, 0.5f);
+                float sz = (0.8f + 0.064f * t) * pulseScale;
+
+                // 設置者を示す下地（自分=水色 / 敵=赤）。罠の少し下・少し大きめでフチのように出す
+                XMFLOAT4 ownerCol = cell.tileEffect.enemyOwned
+                    ? XMFLOAT4(1.0f, 0.30f, 0.20f, 0.55f)    // 敵＝赤
+                    : XMFLOAT4(0.30f, 0.75f, 1.0f, 0.55f);   // 自分＝水色
+                m_renderer3D->DrawTile(m_whiteTexture, x, z, sz * 1.14f, ownerCol,
+                    cell.gameObject.worldY + 0.035f);
 
                 if (def && !def->texture.empty())
-                    m_renderer3D->DrawTile(TextureManager::Get(def->texture), x, z, 0.8f + 0.064f * t, XMFLOAT4(1, 1, 1, 1), cell.gameObject.worldY + 0.01f);
+                    m_renderer3D->DrawTile(TextureManager::Get(def->texture), x, z, sz,
+                        XMFLOAT4(bright, bright, bright, 1.0f), cell.gameObject.worldY + 0.04f);
                 else
-                    m_renderer3D->DrawTile(m_whiteTexture, x, z, 0.8f + 0.064f * t, terrainColor, cell.gameObject.worldY + 0.01f);
+                    m_renderer3D->DrawTile(m_whiteTexture, x, z, sz,
+                        XMFLOAT4(terrainColor.x * bright, terrainColor.y * bright, terrainColor.z * bright, terrainColor.w),
+                        cell.gameObject.worldY + 0.04f);
             }
         }
     }
@@ -2036,6 +2132,12 @@ void BattleScene::HandleInput()
                     m_chainTimer = 0.0f;
                     m_chainFull = execResult.chainFull;
                 }
+                if (execResult.startSeqDetonate)
+                {
+                    m_detonateQueue = execResult.seqDetonateCells;
+                    m_detonateFull = execResult.seqFull;
+                    m_detonateTimer = 0.0f;   // すぐ1個目
+                }
 
                 if (execResult.placeDecoy)
                 {
@@ -2374,6 +2476,12 @@ void BattleScene::HandleInput()
                     m_chainQueue.push_back({ execResult.chainCol, execResult.chainRow });
                     m_chainTimer = 0.0f;
                     m_chainFull = execResult.chainFull;
+                }
+                if (execResult.startSeqDetonate)
+                {
+                    m_detonateQueue = execResult.seqDetonateCells;
+                    m_detonateFull = execResult.seqFull;
+                    m_detonateTimer = 0.0f;   // すぐ1個目
                 }
                 if (execResult.placeDecoy)        
                 {

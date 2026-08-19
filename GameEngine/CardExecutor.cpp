@@ -777,15 +777,16 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
         }
         case CardEffectType::Detonate:
         {
-            bool full = (data.mainEffect.value > 0);   // 強化で value>0 → 全開
+            result.seqFull = (data.mainEffect.value > 0);   // value>0＝全開
             for (int r = 0; r < gridMap->GetRows(); r++)
                 for (int c = 0; c < gridMap->GetCols(); c++)
                 {
                     Cell& cell = gridMap->GetCell(c, r);
-                    if (!cell.tileEffect.active) continue;
+                    if (!cell.tileEffect.active || cell.tileEffect.enemyOwned) continue;   // 敵床は集めない
                     if (RangeShape::Contains(playerCol, playerRow, c, r, data.rangeType, data.range))
-                        CardExecutor::DetonateTrap(cell, c, r, gridMap, enemies, full);
+                        result.seqDetonateCells.push_back({ c, r });
                 }
+            if (!result.seqDetonateCells.empty()) result.startSeqDetonate = true;
             break;
         }
         case CardEffectType::RecallTraps:
@@ -1005,6 +1006,7 @@ bool CardExecutor::DetonateTrap(Cell& cell, int col, int row,
     GridMap* gridMap, std::vector<Enemy*>& enemies, bool fullPower, bool chain)
 {
     if (!cell.tileEffect.active) return false;
+    if (cell.tileEffect.enemyOwned) return false;   // 敵設置の床は起爆しない
     const TerrainDef* def = TerrainDataBase::Get(cell.tileEffect.id);
     if (!def) return false;
 

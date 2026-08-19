@@ -24,6 +24,8 @@ struct TileEffect {
 	int duration = 0;
 	bool persistent = false;
 	bool active = false;
+	int hazardTurns = 0;
+	bool enemyOwned = false;
 };
 
 struct Cell

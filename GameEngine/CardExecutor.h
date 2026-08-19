@@ -25,6 +25,9 @@ public:
         bool startChainDetonate = false;
         int  chainCol = 0, chainRow = 0;
         bool chainFull = false;
+        bool startSeqDetonate = false;
+        std::vector<std::pair<int, int>> seqDetonateCells;
+        bool seqFull = false;
         bool placeDecoy = false;
         int  decoyCol = 0, decoyRow = 0;
     };

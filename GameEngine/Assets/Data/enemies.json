@@ -222,17 +222,17 @@
         },
         {
           "id": "core_slash",
-          "chance": 3,
+          "chance": 1,
           "rare": true
         },
         {
           "id": "core_reach",
-          "chance": 3,
+          "chance": 1,
           "rare": true
         },
         {
           "id": "core_sweep",
-          "chance": 3,
+          "chance": 1,
           "rare": true
         }
       ]
@@ -389,7 +389,7 @@
       "isBoss": true,
       "actions": [
         {
-          "description": "{0}ダメージ",
+          "description": "噛みつき{0}ダメージ",
           "target": {
             "rangeType": "Area",
             "range": 1
@@ -397,27 +397,34 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 20
+              "value": 18
+            }
+          ],
+          "select": { "chance": 30 }
+        },
+        {
+          "description": "炎ブレス{0}ダメージ",
+          "target": {
+            "rangeType": "Cone",
+            "range": 4
+          },
+          "vfx": "burn",
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 13
+            },
+            {
+              "kind": "Debuff",
+              "buff": "Burn",
+              "value": 2,
+              "duration": 2
             }
           ],
           "select": { "chance": 40 }
         },
         {
-          "description": "炎ブレス{0}ダメージ",
-          "target": {
-            "rangeType": "Cross",
-            "range": 3
-          },
-          "effects": [
-            {
-              "kind": "Damage",
-              "value": 15
-            }
-          ],
-          "select": { "chance": 35 }
-        },
-        {
-          "description": "範囲攻撃{0}ダメージ",
+          "description": "尾なぎ払い{0}ダメージ",
           "target": {
             "rangeType": "Area",
             "range": 2
@@ -425,10 +432,75 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 8
+              "value": 10
+            },
+            {
+              "kind": "KnockbackPlayer",
+              "value": 1
             }
           ],
-          "select": { "chance": 25 }
+          "select": { "chance": 30 }
+        },
+        {
+          "description": "灼熱のブレス{0}ダメージ",
+          "target": {
+            "rangeType": "Cone",
+            "range": 4
+          },
+          "vfx": "burn",
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 11
+            },
+            {
+              "kind": "Debuff",
+              "buff": "Burn",
+              "value": 1,
+              "duration": 2
+            },
+            {
+              "kind": "Hazard",
+              "value": 1,
+              "duration": 1
+            }
+          ],
+          "select": { "condition": "hpBelow", "conditionValue": 50, "chance": 60 }
+        },
+        {
+          "description": "噛み砕き{0}ダメージ",
+          "target": {
+            "rangeType": "Area",
+            "range": 1
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 22
+            }
+          ],
+          "select": { "condition": "hpBelow", "conditionValue": 50, "chance": 40 }
+        },
+        {
+          "description": "滅びの息吹{0}ダメージ",
+          "target": {
+            "rangeType": "Area",
+            "range": 3
+          },
+          "vfx": "explosion",
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 22
+            },
+            {
+              "kind": "Debuff",
+              "buff": "Vulnerable",
+              "value": 2,
+              "duration": 2
+            }
+          ],
+          "select": { "condition": "hpBelow", "conditionValue": 30, "chance": 100 }
         }
       ]
     },
@@ -644,12 +716,12 @@
         },
         {
           "id": "core_slash_h",
-          "chance": 20,
+          "chance": 10,
           "rare": true
         },
         {
           "id": "core_shield",
-          "chance": 20,
+          "chance": 10,
           "rare": true
         }
       ]
@@ -657,38 +729,7 @@
 
     {
       "id": "elite_slimeking",
-      "texture": "enemy_slimeboss",
-      "hp": 140,
-      "width": 1.3,
-      "height": 1.3,
-      "actions": [
-        {
-          "description": "分裂召喚",
-          "target": { "rangeType": "None" },
-          "effects": [
-            { "kind": "Summon", "summonId": "slime", "value": 2 }
-          ],
-          "select": { "condition": "allyBelow", "conditionValue": 2 }
-        },
-        {
-          "description": "のしかかり{0}",
-          "target": { "rangeType": "Area", "range": 1, "approach": "Toward", "moveRange": 2 },
-          "effects": [
-            { "kind": "Damage", "value": 11 }
-          ]
-        }
-      ],
-      "drops": [
-        { "id": "life_shard", "chance": 100 },
-        { "id": "iron_shard", "chance": 60 },
-        { "id": "core_slash_h", "chance": 20, "rare": true },
-        { "id": "core_shield", "chance": 20, "rare": true }
-      ]
-    },
-
-    {
-      "id": "elite_bear",
-      "texture": "enemy_bear",
+      "texture": "enemy_slimeking",
       "hp": 117,
       "width": 1.3,
       "height": 1.3,
@@ -758,12 +799,12 @@
         },
         {
           "id": "core_slash_h",
-          "chance": 20,
+          "chance": 10,
           "rare": true
         },
         {
           "id": "core_shield",
-          "chance": 20,
+          "chance": 10,
           "rare": true
         }
       ]
@@ -863,12 +904,12 @@
         },
         {
           "id": "core_slash_h",
-          "chance": 20,
+          "chance": 10,
           "rare": true
         },
         {
           "id": "core_shield",
-          "chance": 20,
+          "chance": 10,
           "rare": true
         }
       ]

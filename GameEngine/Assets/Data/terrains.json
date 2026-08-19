@@ -3,7 +3,7 @@
     {
       "id": "explosion",
       "name": "爆発罠",
-      "texture": "",
+      "texture": "trap_explosion",
       "color": [ 1.0, 0.5, 0.0, 0.5 ],
       "effect": "Damage",
       "value": 8,
@@ -14,7 +14,7 @@
     {
       "id": "root",
       "name": "拘束罠",
-      "texture": "",
+      "texture": "trap_root",
       "color": [ 0.2, 0.8, 0.2, 0.5 ],
       "effect": "ApplyDebuff",
       "value": 1,
@@ -27,7 +27,7 @@
     {
       "id": "poison",
       "name": "毒罠",
-      "texture": "",
+      "texture": "trap_poison",
       "color": [ 0.5, 0.0, 0.8, 0.5 ],
       "effect": "ApplyDebuff",
       "value": 2,
@@ -40,7 +40,7 @@
     {
       "id": "expose",
       "name": "脆弱罠",
-      "texture": "",
+      "texture": "trap_expose",
       "color": [ 0.9, 0.4, 0.5, 0.5 ],
       "effect": "ApplyDebuff",
       "value": 1,
@@ -53,7 +53,7 @@
     {
       "id": "weaken",
       "name": "弱体罠",
-      "texture": "",
+      "texture": "trap_weaken",
       "color": [ 0.6, 0.35, 0.35, 0.5 ],
       "effect": "ApplyDebuff",
       "value": 1,
@@ -66,7 +66,7 @@
     {
       "id": "landmine",
       "name": "大地雷",
-      "texture": "",
+      "texture": "trap_landmine",
       "color": [ 1.0, 0.75, 0.1, 0.5 ],
       "effect": "Damage",
       "value": 14,
@@ -78,7 +78,7 @@
     {
       "id": "fire",
       "name": "炎",
-      "texture": "",
+      "texture": "trap_fire",
       "color": [ 1.0, 0.3, 0.0, 0.5 ],
       "effect": "ApplyDebuff",
       "value": 2,
@@ -92,7 +92,7 @@
     {
       "id": "thorn",
       "name": "棘",
-      "texture": "",
+      "texture": "trap_thorn",
       "color": [ 0.4, 0.7, 0.2, 0.5 ],
       "effect": "Damage",
       "value": 2,
@@ -104,7 +104,7 @@
     {
       "id": "swamp",
       "name": "沼",
-      "texture": "",
+      "texture": "trap_swamp",
       "color": [ 0.3, 0.2, 0.1, 0.5 ],
       "effect": "ApplyDebuff",
       "value": 1,
@@ -118,7 +118,7 @@
     {
       "id": "ice",
       "name": "氷",
-      "texture": "",
+      "texture": "trap_ice",
       "color": [ 0.3, 0.7, 1.0, 0.5 ],
       "effect": "Slide",
       "value": 0,

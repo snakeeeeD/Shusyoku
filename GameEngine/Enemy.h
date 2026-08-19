@@ -28,7 +28,8 @@ public:
 	BuffManager& GetBuffManager() { return m_buffManager; }
 	const std::string& GetTextureName() const { return m_textureName; }
 	const std::string& GetId() const { return m_id; }
-	const std::vector<std::pair<int, int>>& GetDashPath() const { return m_dashPath; }
+	const std::vector<std::pair<int, int>>& GetMovePath() const { return m_movePath; }
+	bool DidDash() const { return m_didDash; }
 
 	// セッター
 	void SetHp(int hp) { m_HP = hp; }
@@ -128,6 +129,7 @@ private:
 	int   m_bonusActions = 0;
 	int	  m_seqIndex = 0; 
 	bool m_lastAttackWhiffed = false;   // 直前の攻撃が避けられた(空振り)か → afterDodge条件で使う
+	int m_missStreak = 0;   // 連続で攻撃を外した回数（ブロックのみのターンは変化しない）
 
 	int m_idleTurns = 0;
 	int m_lastDecideCol = -999, m_lastDecideRow = -999;
@@ -145,12 +147,17 @@ private:
 
 	std::vector<std::pair<int, int>> m_gridShape;
 
-	std::vector<std::pair<int, int>> m_dashPath;   // 直近の突進で通過したマス
+	std::vector<std::pair<int, int>> m_movePath;   // このアクションで通過したマス（罠判定＋ダッシュのグライド用）
+	bool m_didDash = false;                        // 直近の移動がダッシュか（グライド演出の判別）
 
 	void DropTrail(GridMap* gridMap, int col, int row);   // EmberTrail中は通ったマスに炎
 
 	int  m_allyCount = 0;
 	bool m_justSummoned = false;
 	std::vector<std::pair<std::string, int>> m_pendingSummons;
+
+	void ClearFootprint(GridMap* gridMap);
+	void MarkFootprint(GridMap* gridMap);
+	bool CanOccupy(GridMap* gridMap, int newCol, int newRow) const;
 };
 

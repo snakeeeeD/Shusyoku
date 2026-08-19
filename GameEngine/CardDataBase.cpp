@@ -317,7 +317,7 @@ static int RarityBaseWeight(CardRarity r, bool rareBias)
 {
     if (rareBias)
         return (r == CardRarity::Rare) ? 12 : (r == CardRarity::Uncommon) ? 6 : 1;
-    return (r == CardRarity::Rare) ? 2 : (r == CardRarity::Uncommon) ? 5 : 10;
+    return (r == CardRarity::Rare) ? 0 : (r == CardRarity::Uncommon) ? 3 : 10;
 }
 
 std::vector<std::string> CardDataBase::PickRewardCards(int count, bool rareBias,

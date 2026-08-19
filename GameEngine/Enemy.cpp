@@ -75,14 +75,46 @@ bool Enemy::IsAdjacentTo(int playerCol, int playerRow)
 bool Enemy::IsInRange(int targetCol, int targetRow, int range, RangeType rangeType, int minRange) const
 {
     range += m_buffManager.GetBuffValue(BuffType::RangeUp);
-    return RangeShape::Contains(gridCol, gridRow, targetCol, targetRow,
-        rangeType, range, minRange, m_aimDx, m_aimDy);
+    // 多マス敵は占有マスすべてから判定（十字/直線などが敵の幅に広がる）
+    for (auto& [dc, dr] : GetGridShape())
+        if (RangeShape::Contains(gridCol + dc, gridRow + dr, targetCol, targetRow,
+            rangeType, range, minRange, m_aimDx, m_aimDy))
+            return true;
+    return false;
+}
+
+void Enemy::ClearFootprint(GridMap* gridMap)
+{
+    for (auto& [dc, dr] : GetGridShape())
+        gridMap->SetCellType(gridCol + dc, gridRow + dr, CellType::Empty);
+}
+void Enemy::MarkFootprint(GridMap* gridMap)
+{
+    CellType t = m_isBoss ? CellType::Boss : CellType::Enemy;
+    for (auto& [dc, dr] : GetGridShape())
+        gridMap->SetCellType(gridCol + dc, gridRow + dr, t);
+}
+bool Enemy::CanOccupy(GridMap* gridMap, int nc, int nr) const
+{
+    for (auto& [dc, dr] : GetGridShape())
+    {
+        int c = nc + dc, r = nr + dr;
+        if (c < 0 || c >= gridMap->GetCols() || r < 0 || r >= gridMap->GetRows()) return false;
+        if (gridMap->GetCell(c, r).type == CellType::Empty) continue;
+        bool own = false;                              // 自分の現footprintは重なってOK
+        for (auto& [odc, odr] : GetGridShape())
+            if (c == gridCol + odc && r == gridRow + odr) { own = true; break; }
+        if (!own) return false;                        // プレイヤー/他敵/壁はNG
+    }
+    return true;
 }
 
 void Enemy::MoveToward(int playerCol, int playerRow, GridMap* gridMap, int steps)
 {
     if (m_buffManager.HasBuff(BuffType::Root))
         return;
+
+    size_t pathStart = m_movePath.size();
 
     for (int step = 0; step < steps; step++)
     {
@@ -110,23 +142,24 @@ void Enemy::MoveToward(int playerCol, int playerRow, GridMap* gridMap, int steps
         {
             if (newCol < 0 || newCol >= gridMap->GetCols()) continue;
             if (newRow < 0 || newRow >= gridMap->GetRows()) continue;
-            if (gridMap->GetCell(newCol, newRow).type != CellType::Empty) continue;
+            if (!CanOccupy(gridMap, newCol, newRow)) continue;
 
-            gridMap->SetCellType(gridCol, gridRow, CellType::Empty);
+            ClearFootprint(gridMap);
             DropTrail(gridMap, gridCol, gridRow);      // ← 通ったマスに炎
             gridCol = newCol;
             gridRow = newRow;
-            gridMap->SetCellType(gridCol, gridRow, CellType::Enemy);
+            MarkFootprint(gridMap);
+            m_movePath.push_back({ gridCol, gridRow });
             moved = true;
             break;
         }
         if (!moved) break;                         // 詰まったら終了
     }
 
-    // 最終位置へスライドアニメ（複数歩でも1回の滑らかな移動）
-    float newX = (gridCol - gridMap->GetCols() / 2.0f) * 1.1f;
-    float newZ = (gridRow - gridMap->GetRows() / 2.0f) * 1.1f;
-    StartMove(newX, newZ);
+    // 実際に動いた時だけスライド（0マス移動でStartMoveすると無反応な待ちが出るため）
+    if (m_movePath.size() != pathStart)
+        StartMove((gridCol - gridMap->GetCols() / 2.0f) * 1.1f,
+            (gridRow - gridMap->GetRows() / 2.0f) * 1.1f);
 }
 
 void Enemy::DropTrail(GridMap* gridMap, int col, int row)
@@ -136,6 +169,7 @@ void Enemy::DropTrail(GridMap* gridMap, int col, int row)
     if (cell.tileEffect.active) return;          // 既存の床は上書きしない
     cell.tileEffect.active = true;
     cell.tileEffect.id = "fire";
+    cell.tileEffect.enemyOwned = true;
     cell.tileEffect.value = 2;
     cell.tileEffect.duration = 3;
     const TerrainDef* t = TerrainDataBase::Get("fire");
@@ -160,7 +194,12 @@ void Enemy::MoveAway(int playerCol, int playerRow, GridMap* gridMap, int steps)
             int nc = gridCol + dirs[d][0];
             int nr = gridRow + dirs[d][1];
             if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) continue;
-            if (gridMap->GetCell(nc, nr).type != CellType::Empty) continue;
+            if (!CanOccupy(gridMap, nc, nr)) continue;
+
+            // 移動確定部：
+            ClearFootprint(gridMap);
+            gridCol = bestCol; gridRow = bestRow;
+            MarkFootprint(gridMap);
 
             int nd = abs(playerCol - nc) + abs(playerRow - nr);
             if (nd > bestDist) { bestDist = nd; bestCol = nc; bestRow = nr; }   // 一番離れられる所へ
@@ -170,6 +209,7 @@ void Enemy::MoveAway(int playerCol, int playerRow, GridMap* gridMap, int steps)
         gridMap->SetCellType(gridCol, gridRow, CellType::Empty);
         gridCol = bestCol; gridRow = bestRow;
         gridMap->SetCellType(gridCol, gridRow, CellType::Enemy);
+        m_movePath.push_back({ gridCol, gridRow });
 
         pts.push_back({ (gridCol - gridMap->GetCols() / 2.0f) * 1.1f,
                         (gridRow - gridMap->GetRows() / 2.0f) * 1.1f });   // ← 通過マスを記録
@@ -192,12 +232,13 @@ bool Enemy::MoveDash(int playerCol, int playerRow, GridMap* gridMap, int steps)
         int nc = gridCol + m_aimDx, nr = gridRow + m_aimDy;
         if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) break;
         if (nc == playerCol && nr == playerRow) { hit = true; break; }      // ぶつかった＝ヒット
-        if (gridMap->GetCell(nc, nr).type != CellType::Empty) break;        // 障害物で停止
+        if (!CanOccupy(gridMap, nc, nr)) break;
 
-        gridMap->SetCellType(gridCol, gridRow, CellType::Empty);
+        ClearFootprint(gridMap);
         gridCol = nc; gridRow = nr;
-        gridMap->SetCellType(gridCol, gridRow, CellType::Enemy);
-        m_dashPath.push_back({ gridCol, gridRow });
+        MarkFootprint(gridMap);
+        m_movePath.push_back({ gridCol, gridRow });
+        m_didDash = true;                        // ダッシュで実際に進んだ
     }
 
     return hit;
@@ -206,18 +247,22 @@ bool Enemy::MoveDash(int playerCol, int playerRow, GridMap* gridMap, int steps)
 void Enemy::MoveAlongPlanned(GridMap* gridMap)
 {
     if (m_buffManager.HasBuff(BuffType::Root)) return;
+
+    size_t pathStart = m_movePath.size();
+
     for (auto& cell : m_plannedMovePath)
     {
         int nc = cell.first, nr = cell.second;
         if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) break;
-        if (gridMap->GetCell(nc, nr).type != CellType::Empty) break;   // 途中が埋まってたら手前で止まる
-        gridMap->SetCellType(gridCol, gridRow, CellType::Empty);
+        if (!CanOccupy(gridMap, nc, nr)) break;  // 途中が埋まってたら手前で止まる
+        ClearFootprint(gridMap);
         gridCol = nc; gridRow = nr;
-        gridMap->SetCellType(gridCol, gridRow, CellType::Enemy);
+        MarkFootprint(gridMap);
+        m_movePath.push_back({ gridCol, gridRow });
     }
-    float newX = (gridCol - gridMap->GetCols() / 2.0f) * 1.1f;
-    float newZ = (gridRow - gridMap->GetRows() / 2.0f) * 1.1f;
-    StartMove(newX, newZ);
+    if (m_movePath.size() != pathStart)
+        StartMove((gridCol - gridMap->GetCols() / 2.0f) * 1.1f,
+            (gridRow - gridMap->GetRows() / 2.0f) * 1.1f);
 }
 
 void Enemy::TakeDamage(int damage, DamageFeel feel)
@@ -452,7 +497,22 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
         else { m_aimDx = 0; m_aimDy = (drA > 0) ? 1 : (drA < 0) ? -1 : 0; }
     }
 
-    m_actionIndex = 0;
+    // ボスが2ターン攻撃を外し続けたら「移動」を足して近づく（ブロックのみのターンは維持）
+    if (m_isBoss && m_missStreak >= 2 && !m_plannedActions.empty())
+    {
+        auto& act = m_plannedActions[0];
+        bool alreadyMoves = (act.target.approach != ApproachType::None);
+        for (auto& e : act.effects)
+            if (e.kind == EffectKind::MoveToward || e.kind == EffectKind::MoveAway) alreadyMoves = true;
+
+        if (!alreadyMoves)
+        {
+            Effect e; e.kind = EffectKind::MoveToward; e.value = 2;
+            act.effects.push_back(e);
+            act.description += L"＋移動";
+        }
+        m_missStreak = 0;   // 移動したのでリセット
+    }
 }
 
 int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
@@ -463,7 +523,8 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
     int mtR = (moveTargetRow >= 0) ? moveTargetRow : playerRow;
 
     if (actionIdx < 0 || actionIdx >= (int)m_plannedActions.size()) return 0;
-    m_dashPath.clear();
+    m_movePath.clear();
+    m_didDash = false;
     const EnemyAction& act = m_plannedActions[actionIdx];
     const TargetSpec& tg = act.target;
 
@@ -559,6 +620,27 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
         case EffectKind::Summon:
             m_pendingSummons.push_back({ e.summonId, e.value });
             break;
+        case EffectKind::Hazard:
+        {
+            const int rows = gridMap->GetRows();
+            const int cols = gridMap->GetCols();
+            for (int r = 0; r < rows; r++)
+                for (int c = 0; c < cols; c++)
+                {
+                    if (!IsInRange(c, r, tg.range, tg.rangeType, tg.minRange)) continue;
+                    Cell& cell = gridMap->GetCell(c, r);
+                    if (cell.type == CellType::Enemy || cell.type == CellType::Boss) continue; // 敵の足元は除外
+                    if (cell.tileEffect.active) continue;                                       // 既存の床は上書きしない
+                    cell.tileEffect.active = true;
+                    cell.tileEffect.id = "fire";              // 既存のfire地形を流用（踏むとBurn）
+                    cell.tileEffect.enemyOwned = true;        // 敵が置いたか
+                    cell.tileEffect.value = e.value;          // 踏んだ時のやけし強さ
+                    cell.tileEffect.duration = e.duration;    // 踏み処理用
+                    cell.tileEffect.persistent = true;        // 踏んでも即消えない
+                    cell.tileEffect.hazardTurns = e.duration; // Nターンで自動消滅
+                }
+            break;
+        }
         }
 
 
@@ -572,7 +654,31 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
     bool isAttack = false;
     for (auto& e : act.effects)
         if (e.kind == EffectKind::Damage) { isAttack = true; break; }
-    if (isAttack) m_lastAttackWhiffed = !hitPlayer;
+
+    if (isAttack)
+    {
+        m_lastAttackWhiffed = !hitPlayer;
+        if (hitPlayer) m_missStreak = 0;   // 当たったらリセット
+        else           m_missStreak++;     // 外したら加算（ブロックのみは攻撃でないので不変）
+    }
+
+    // 移動しようとしたのに0マスだった行動でも「行動した」のが分かるよう小さくにじり寄る
+    bool movedThisAction = !m_movePath.empty() || m_didDash;
+    bool wantsToward = (tg.approach == ApproachType::Toward || tg.approach == ApproachType::Dash);
+    bool wantsAway = false;
+    for (auto& e : act.effects)
+    {
+        if (e.kind == EffectKind::MoveToward) wantsToward = true;
+        if (e.kind == EffectKind::MoveAway)   wantsAway = true;
+    }
+    if ((wantsToward || wantsAway) && !movedThisAction && !isAttack
+        && !IsJumping() && !IsLunging() && !IsMoving())
+    {
+        float px = (playerCol - gridMap->GetCols() / 2.0f) * 1.1f;
+        float pz = (playerRow - gridMap->GetRows() / 2.0f) * 1.1f;
+        if (wantsAway) { px = worldX - (px - worldX); pz = worldZ - (pz - worldZ); }  // 逃げ行動は反対側へ
+        StartLunge(px, pz, 0.28f);
+    }
 
     return damage;
 }

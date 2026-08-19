@@ -165,7 +165,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("enemy_reaper", L"Assets/Enemy/reaper.png");
 		TextureManager::Load("enemy_tentacle", L"Assets/Enemy/cyaegha.png");
 		TextureManager::Load("enemy_bear", L"Assets/Enemy/bear.png");
-		TextureManager::Load("enemy_slimeboss", L"Assets/Enemy/shoggoth.png");
+		TextureManager::Load("enemy_slimeking", L"Assets/Enemy/shoggoth.png");
 		TextureManager::Load("enemy_golem", L"Assets/Enemy/golem.png");
 		TextureManager::Load("enemy_obake", L"Assets/Enemy/obake.png");
 		TextureManager::Load("enemy_mimic", L"Assets/Enemy/mimic.png");
@@ -173,36 +173,52 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 
 	// UI
 	{
-		TextureManager::Load("ui_map", L"Assets/UI/ui_map.png");
-		TextureManager::Load("ui_items", L"Assets/UI/ui_items.png");
-		TextureManager::Load("ui_deck", L"Assets/UI/ui_deck.png");
-		TextureManager::Load("ui_turnend", L"Assets/UI/ui_turnend.png");
-		TextureManager::Load("ui_draw", L"Assets/UI/ui_draw.png");
-		TextureManager::Load("ui_discard", L"Assets/UI/ui_discard.png");
-		TextureManager::Load("ui_exhaust", L"Assets/UI/ui_exhaust.png");
-		TextureManager::Load("ui_arrowhead", L"Assets/UI/ui_arrowhead.png");
-		TextureManager::Load("ui_window", L"Assets/UI/ui_window.png");
-		TextureManager::Load("ui_banner", L"Assets/UI/ui_banner.png");
-		TextureManager::Load("ui_card", L"Assets/UI/ui_card.png");
-		TextureManager::Load("ui_cost", L"Assets/UI/ui_cost.png");
-		TextureManager::Load("ui_hazard", L"Assets/UI/ui_hazard.png");
-		TextureManager::Load("ui_threat", L"Assets/UI/ui_threat.png");
-		TextureManager::Load("mat_core", L"Assets/UI/mat_core.png");
-		TextureManager::Load("mat_material", L"Assets/UI/mat_material.png");
-		TextureManager::Load("ui_reach", L"Assets/UI/ui_reach.png");
-		TextureManager::Load("ui_hitmark", L"Assets/UI/ui_hitmark.png");
-		TextureManager::Load("ui_hitring", L"Assets/UI/ui_hitring.png");
+		{
+			TextureManager::Load("ui_map", L"Assets/UI/ui_map.png");
+			TextureManager::Load("ui_items", L"Assets/UI/ui_items.png");
+			TextureManager::Load("ui_deck", L"Assets/UI/ui_deck.png");
+			TextureManager::Load("ui_turnend", L"Assets/UI/ui_turnend.png");
+			TextureManager::Load("ui_draw", L"Assets/UI/ui_draw.png");
+			TextureManager::Load("ui_discard", L"Assets/UI/ui_discard.png");
+			TextureManager::Load("ui_exhaust", L"Assets/UI/ui_exhaust.png");
+			TextureManager::Load("ui_arrowhead", L"Assets/UI/ui_arrowhead.png");
+			TextureManager::Load("ui_window", L"Assets/UI/ui_window.png");
+			TextureManager::Load("ui_banner", L"Assets/UI/ui_banner.png");
+			TextureManager::Load("ui_card", L"Assets/UI/ui_card.png");
+			TextureManager::Load("ui_cost", L"Assets/UI/ui_cost.png");
+			TextureManager::Load("ui_hazard", L"Assets/UI/ui_hazard.png");
+			TextureManager::Load("ui_threat", L"Assets/UI/ui_threat.png");
+			TextureManager::Load("mat_core", L"Assets/UI/mat_core.png");
+			TextureManager::Load("mat_material", L"Assets/UI/mat_material.png");
+			TextureManager::Load("ui_reach", L"Assets/UI/ui_reach.png");
+			TextureManager::Load("ui_hitmark", L"Assets/UI/ui_hitmark.png");
+			TextureManager::Load("ui_hitring", L"Assets/UI/ui_hitring.png");
 
-		TextureManager::Load("node_battle", L"Assets/UI/node_battle.png");
-		TextureManager::Load("node_rest", L"Assets/UI/node_rest.png");
-		TextureManager::Load("node_shop", L"Assets/UI/node_shop.png");
-		TextureManager::Load("node_elite", L"Assets/UI/node_elite.png");
-		TextureManager::Load("node_boss", L"Assets/UI/node_boss.png");
-		TextureManager::Load("node_event", L"Assets/UI/node_event.png");
-		TextureManager::Load("node_treasure", L"Assets/UI/node_treasure.png");
-		TextureManager::Load("node_start", L"Assets/UI/node_start.png");
-		TextureManager::Load("node_player", L"Assets/UI/node_player.png");
-		TextureManager::Load("ui_node", L"Assets/UI/ui_node.png");
+			TextureManager::Load("node_battle", L"Assets/UI/node_battle.png");
+			TextureManager::Load("node_rest", L"Assets/UI/node_rest.png");
+			TextureManager::Load("node_shop", L"Assets/UI/node_shop.png");
+			TextureManager::Load("node_elite", L"Assets/UI/node_elite.png");
+			TextureManager::Load("node_boss", L"Assets/UI/node_boss.png");
+			TextureManager::Load("node_event", L"Assets/UI/node_event.png");
+			TextureManager::Load("node_treasure", L"Assets/UI/node_treasure.png");
+			TextureManager::Load("node_start", L"Assets/UI/node_start.png");
+			TextureManager::Load("node_player", L"Assets/UI/node_player.png");
+			TextureManager::Load("ui_node", L"Assets/UI/ui_node.png");
+		}
+
+		// 罠
+		{
+			TextureManager::Load("trap_fire", L"Assets/UI/trap_fire.png");
+			TextureManager::Load("trap_poison", L"Assets/UI/trap_poison.png");
+			TextureManager::Load("trap_landmine", L"Assets/UI/trap_landmine.png");
+			TextureManager::Load("trap_thorn", L"Assets/UI/trap_thorn.png");
+			TextureManager::Load("trap_swamp", L"Assets/UI/trap_swamp.png");
+			TextureManager::Load("trap_ice", L"Assets/UI/trap_ice.png");
+			TextureManager::Load("trap_root", L"Assets/UI/trap_root.png");
+			TextureManager::Load("trap_explosion", L"Assets/UI/trap_explosion.png");
+			TextureManager::Load("trap_expose", L"Assets/UI/trap_expose.png");
+			TextureManager::Load("trap_weaken", L"Assets/UI/trap_weaken.png");
+		}
 
 		// バフデバフアイコン
 		{

@@ -59,9 +59,14 @@ bool FieldScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
     auto& playerData = PlayerDataManager::GetData();
 
+
+
     // ノード情報が保存されていれば復元
-    if ((int)playerData.fieldNodeTypes.size() == GRID_COLS * GRID_ROWS)
+    if ((int)playerData.fieldNodeTypes.size() == GRID_COLS * GRID_ROWS
+        && (int)playerData.fieldNodeVisited.size() == GRID_COLS * GRID_ROWS
+        && (int)playerData.fieldNodeEnemyIds.size() == GRID_COLS * GRID_ROWS)
     {
+        // 既存の読み込み（m_nodes[i] = ...）
         for (int i = 0; i < GRID_COLS * GRID_ROWS; i++)
         {
             m_nodes[i].type = (FieldNodeType)playerData.fieldNodeTypes[i];
@@ -90,6 +95,8 @@ bool FieldScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         if (m_currentBattleTier > 3) m_currentBattleTier = 3;
         m_resumeBattle = true;
     }
+
+    PlayerDataManager::GetData().fieldSteps = m_steps;
 
     return true;
 }

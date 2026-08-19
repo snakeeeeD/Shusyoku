@@ -73,7 +73,7 @@
       { "id": "elite_tentacle", "col": 4, "row": 0 }
     ] },
     { "id": "enc18", "layer": 1, "category": "elite", "weight": 80, "enemies": [
-      { "id": "elite_slimeking", "col": 4, "row": 3 }
+      { "id": "elite_slimeking", "col": 4, "row": 1 }
     ] },
 
     { "id": "enc19", "layer": 1, "tier": 1, "category": "event", "weight": 1, "enemies": [
@@ -91,7 +91,7 @@
     ] },
 
     { "id": "dragon", "layer": 1, "category": "boss", "weight": 100, "enemies": [
-      { "id": "dragon", "col": 4, "row": 2 }
+      { "id": "dragon", "col": 4, "row": 0 }
     ] }
   ]
 }
