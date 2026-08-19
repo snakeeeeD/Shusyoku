@@ -236,4 +236,7 @@ private:
     std::vector<std::pair<int, int>> m_detonateQueue;
     float m_detonateTimer = 0.0f;
     bool  m_detonateFull = false;
+
+    struct Deco { float x, z, scale; int type; };   // type: 0=–Ø 1=–Î‚Ý 2=Šâ
+    std::vector<Deco> m_decos;
 };

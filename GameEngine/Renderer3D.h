@@ -55,6 +55,10 @@ public:
         float rotation,
         const XMFLOAT4& color = XMFLOAT4(1, 1, 1, 1));
 
+    void DrawShadow(ID3D11ShaderResourceView* texture,
+        float baseX, float baseZ, float width, float lenX, float lenZ,
+        const XMFLOAT4& color = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.3f));
+
     // HPバー用
     static constexpr float BILLBOARD_PITCH = -60.0f;        // ビルボードの傾き角度
     static float GetBillboardPitch() { return BILLBOARD_PITCH; }

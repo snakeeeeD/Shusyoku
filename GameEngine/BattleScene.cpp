@@ -402,6 +402,26 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
      RunTurnCycle();
 
      TurnBanner::ShowThen(TurnBannerType::BattleStart, TurnBannerType::Player);
+     // 背景装飾（盤面の外側・後方と左右だけに少数。手前には置かずグリッドに被らせない）
+     m_decos.clear();
+     unsigned s = 20240820u;
+     auto rnd = [&s]() { s = s * 1103515245u + 12345u; return (int)((s >> 16) & 0x7fff); };
+     float gw = m_gridMap->GetCols() * 1.1f * 0.5f;   // 盤面半幅 ~6.6
+     float gh = m_gridMap->GetRows() * 1.1f * 0.5f;   // 盤面半奥 ~3.85
+     int placed = 0;
+     for (int i = 0; i < 200 && placed < 22; i++)     // 最大22個まで
+     {
+         float ang = ((rnd() % 1000) / 1000.0f) * 6.2832f;
+         float m = 2.0f + ((rnd() % 1000) / 1000.0f) * 4.0f;   // フチから 2..6 外側
+         float x = cosf(ang) * (gw + m);
+         float z = sinf(ang) * (gh + m);
+         if (z > gh - 0.5f) continue;                 // ★手前(カメラ側)には置かない＝グリッドに被らない
+         Deco d; d.x = x; d.z = z;
+         int r = rnd() % 100;
+         d.type = (r < 45) ? 0 : (r < 75) ? 1 : 2;
+         d.scale = 0.8f + (rnd() % 100) / 100.0f * 0.6f;
+         m_decos.push_back(d); placed++;
+     }
 
     return true;
 }
@@ -1283,6 +1303,42 @@ void BattleScene::Draw()
                 cell.gameObject.worldY += (target - cell.gameObject.worldY) * 0.2f;   // 補間
             }
     }
+
+    // === 接地用の地面（見下ろし草地をタイル状に敷く） ===
+    {
+        const float TILE = 6.0f;   // 1枚のワールドサイズ（テクスチャ1回分）
+        const int   N = 6;         // 中心から±N枚（(2N+1)^2枚）
+        for (int gz = -N; gz <= N; gz++)
+            for (int gx = -N; gx <= N; gx++)
+                m_renderer3D->DrawTile(TextureManager::Get("ground_grass"),
+                    gx* TILE, gz* TILE, TILE * 1.02f,     // 少し重ねて継ぎ目防止
+                    XMFLOAT4(1, 1, 1, 1), -0.06f);
+    }
+
+    // 背景装飾（透明quadがdepthを書いて四角化するのを防ぐため depth-write OFF）
+    m_renderer3D->SetDepthWrite(false);
+    for (auto& dc : m_decos)
+    {
+        const char* tex = (dc.type == 0) ? "deco_tree" : (dc.type == 1) ? "deco_bush" : "deco_rock";
+        float w, h;
+        if (dc.type == 0) { w = 3.0f; h = 3.8f; }        // 木
+        else if (dc.type == 1) { w = 2.4f; h = 1.8f; }   // 茂み
+        else { w = 2.6f; h = 2.1f; }                     // 岩
+        w *= dc.scale; h *= dc.scale;
+        // 光を浴びて斜めに伸びる影（本体シルエットをシアー投影。足元固定・頭が倒れる）
+        float lenX = -h * 0.45f, lenZ = -h * 0.7f;  // 斜めの向き×長さ
+        float dl = sqrtf(lenX * lenX + lenZ * lenZ);
+        float tuck = -0.1f;                          // 固定の食い込み量（全種共通・ワールド単位）
+        float bx = dc.x ;
+        float bz = dc.z - (lenZ / dl) * tuck;
+        m_renderer3D->DrawShadow(TextureManager::Get(tex),
+            bx, bz, w, lenX, lenZ, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.30f));
+
+        // 本体
+        m_renderer3D->DrawBillboard(TextureManager::Get(tex),
+            dc.x, -0.10f, dc.z, w, h, 0.0f, XMFLOAT4(1, 1, 1, 1));  // y=中心ではなく足元(地面)
+    }
+    m_renderer3D->SetDepthWrite(true);
 
     for (int row = 0; row < m_gridMap->GetRows(); row++)
     {

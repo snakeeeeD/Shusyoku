@@ -357,3 +357,38 @@ void Renderer3D::DrawBillboard(ID3D11ShaderResourceView* texture,
     m_context->DrawIndexed(6, 0, 0);
     m_context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
 }
+
+void Renderer3D::DrawShadow(ID3D11ShaderResourceView* texture,
+    float baseX, float baseZ, float width, float lenX, float lenZ,
+    const XMFLOAT4& color)
+{
+    // 影の伸び方向(lenX,lenZ)。幅はその垂直方向へ
+    float pl = sqrtf(lenX * lenX + lenZ * lenZ);
+    float perpX = (pl > 1e-4f) ? -lenZ / pl : 1.0f;
+    float perpZ = (pl > 1e-4f) ? lenX / pl : 0.0f;
+
+    // 立てquad(ローカルy:-0.5=足元, +0.5=頭)を地面へシアー投影
+    // 底辺はワールドX固定(斜め補正なし)、上端(頭)だけ(lenX,lenZ)へ倒す
+    XMMATRIX world(
+        width, 0.0f, 0.0f, 0.0f,     // ローカルx → 幅(ワールドX固定＝底は補正なし)
+        lenX, 0.0f, lenZ, 0.0f,     // ローカルy(0=足元..1=頭) → 影の伸び(斜め)
+        0.0f, 1.0f, 0.0f, 0.0f,     // ローカルz(未使用)
+        baseX, -0.04f, baseZ, 1.0f);  // 足元(ローカルy=0)を基点
+
+    ConstantBuffer3D cb;
+    cb.World = XMMatrixTranspose(world);
+    cb.View = XMMatrixTranspose(m_viewMatrix);
+    cb.Projection = XMMatrixTranspose(m_projectionMatrix);
+    cb.Color = color;
+
+    m_context->UpdateSubresource(m_constantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+    m_context->VSSetConstantBuffers(0, 1, m_constantBuffer.GetAddressOf());
+    m_context->PSSetConstantBuffers(0, 1, m_constantBuffer.GetAddressOf());
+    m_context->PSSetShaderResources(0, 1, &texture);
+
+    UINT stride = sizeof(Vertex3D);
+    UINT offset = 0;
+    m_context->IASetVertexBuffers(0, 1, m_billboardVertexBuffer.GetAddressOf(), &stride, &offset);
+    m_context->DrawIndexed(6, 0, 0);
+    m_context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
+}

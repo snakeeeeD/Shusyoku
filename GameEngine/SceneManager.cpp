@@ -140,6 +140,11 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	{
 		TextureManager::Load("title", L"Assets/Test/Title.png");
 		TextureManager::Load("battle_bg", L"Assets/Field/GrassField.jpg");
+		TextureManager::Load("ground_grass", L"Assets/Field/ground_grass.png");
+		TextureManager::Load("deco_tree", L"Assets/Field/deco_tree.png");
+		TextureManager::Load("deco_rock", L"Assets/Field/deco_rock.png");
+		TextureManager::Load("deco_bush", L"Assets/Field/deco_bush.png");
+		TextureManager::Load("deco_shadow", L"Assets/Field/deco_shadow.png");
 		TextureManager::Load("map_bg", L"Assets/Field/Map.jpg");
 		TextureManager::Load("cardSelect_bg", L"Assets/Field/CardSelect.jpeg");
 	}
