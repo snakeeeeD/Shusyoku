@@ -199,9 +199,6 @@
     <Filter Include="ソース ファイル\03-Object関連\20-Enemy\03-EnemyAction">
       <UniqueIdentifier>{c215bf98-a6ef-4960-96d3-e482707daa7e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\03-EnemyIntentVisual">
-      <UniqueIdentifier>{724baa5e-0e10-4733-a462-84a71c43a7f7}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\40-FloatingText">
       <UniqueIdentifier>{135a41b4-3bf9-47bb-b902-7da2b15f5dba}</UniqueIdentifier>
     </Filter>
@@ -276,6 +273,9 @@
     </Filter>
     <Filter Include="ソース ファイル\03-Object関連\30-Card\50-ItemTooltip">
       <UniqueIdentifier>{b6a8586e-0264-41cc-9043-63dcd893d56d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\04-EnemyIntentVisual">
+      <UniqueIdentifier>{724baa5e-0e10-4733-a462-84a71c43a7f7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -445,7 +445,7 @@
       <Filter>ソース ファイル\04-Game内関連\30-RangeShape</Filter>
     </ClInclude>
     <ClInclude Include="EnemyIntentVisual.h">
-      <Filter>ソース ファイル\03-Object関連\20-Enemy\03-EnemyIntentVisual</Filter>
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\04-EnemyIntentVisual</Filter>
     </ClInclude>
     <ClInclude Include="HighlightPalette.h">
       <Filter>ヘッダー ファイル</Filter>

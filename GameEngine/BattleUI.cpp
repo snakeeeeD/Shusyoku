@@ -388,87 +388,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             m_spriteRenderer->DrawSprite(m_whiteTexture, gx - pad, gy - pad,
                 gw + pad * 2, gh + pad * 2, m_cardAnims[i].currentRot, glow);
         }
-        };
-
-    // 手札：本体→文字 を1枚ずつ交互に描く
-    for (int i = 0; i < (int)cards.size(); i++)
-    {
-        if (i >= (int)m_cardAnims.size()) continue;
-        if (i == topIdx) continue;
-
-        XMFLOAT4 col = CardVisual::GetCardColor(cards[i]->GetData()->type, false);   // ← 上書きしない（元の色）
-
-        m_textRenderer->End();
-        m_spriteRenderer->Begin();
-        drawPlayableGlow(i);
-
-        // 自傷で死ぬカード：赤いハローを速く点滅（色は変えず危険を示す）
-        if (cards[i]->GetData()->selfDamage > 0
-            && cards[i]->GetData()->selfDamage >= ctx.player->GetHp())
-        {
-            float blink = 0.5f + 0.5f * sinf(ctx.highlightTimer * 18.0f);   // 早い点滅
-            float rx, ry, rw, rh;
-            CardVisual::GetRect(m_cardAnims[i].currentX, m_cardAnims[i].currentY,
-                m_cardAnims[i].currentScale, rx, ry, rw, rh);
-            float mg = 8.0f;
-            m_spriteRenderer->DrawSprite(m_whiteTexture, rx - mg, ry - mg, rw + mg * 2, rh + mg * 2,
-                m_cardAnims[i].currentRot, XMFLOAT4(1.0f, 0.0f, 0.0f, 0.25f + 0.55f * blink));
-        }
-
-        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture,
-            m_cardAnims[i].currentX, m_cardAnims[i].currentY,
-            m_cardAnims[i].currentScale, m_cardAnims[i].currentRot,
-            col,                                    // ← 元の色に戻す
-            cards[i]->GetData(), ctx.highlightTimer);
-
-        m_textRenderer->End();
-        m_spriteRenderer->Begin();
-
-        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture,
-            m_cardAnims[i].currentX, m_cardAnims[i].currentY,
-            m_cardAnims[i].currentScale, m_cardAnims[i].currentRot,
-            col,
-            cards[i]->GetData(), ctx.highlightTimer);
-        m_spriteRenderer->End();
-        m_textRenderer->Begin();
-
-        CardVisual::DrawTexts(m_textRenderer, cards[i]->GetData(), ctx.player,
-            m_cardAnims[i].currentX, m_cardAnims[i].currentY,
-            m_cardAnims[i].currentScale, m_cardAnims[i].currentRot);
-    }
-
-
-    // 上に来るカードは、本体 → 文字 の順で最後に描く（下の文字を覆う）
-    if (topIdx >= 0 && topIdx < (int)cards.size() && topIdx < (int)m_cardAnims.size())
-    {
-        m_textRenderer->End();
-        m_spriteRenderer->Begin();
-        drawPlayableGlow(topIdx);
-
-        if (cards[topIdx]->GetData()->selfDamage > 0
-            && cards[topIdx]->GetData()->selfDamage >= ctx.player->GetHp())
-        {
-            float blink = 0.5f + 0.5f * sinf(ctx.highlightTimer * 18.0f);
-            float rx, ry, rw, rh;
-            CardVisual::GetRect(m_cardAnims[topIdx].currentX, m_cardAnims[topIdx].currentY,
-                m_cardAnims[topIdx].currentScale, rx, ry, rw, rh);
-            float mg = 8.0f;
-            m_spriteRenderer->DrawSprite(m_whiteTexture, rx - mg, ry - mg, rw + mg * 2, rh + mg * 2,
-                0.0f, XMFLOAT4(1.0f, 0.0f, 0.0f, 0.25f + 0.55f * blink));
-        }
-
-        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture,
-            m_cardAnims[topIdx].currentX, m_cardAnims[topIdx].currentY,
-            m_cardAnims[topIdx].currentScale, m_cardAnims[topIdx].currentRot,
-            CardVisual::GetCardColor(cards[topIdx]->GetData()->type, false), cards[topIdx]->GetData(), ctx.highlightTimer);
-        m_spriteRenderer->End();
-        m_textRenderer->Begin();
-
-        CardVisual::DrawTexts(m_textRenderer, cards[topIdx]->GetData(), ctx.player,
-            m_cardAnims[topIdx].currentX, m_cardAnims[topIdx].currentY,
-            m_cardAnims[topIdx].currentScale, m_cardAnims[topIdx].currentRot);
-    }
-
+    };
 
     wchar_t drawText[32];
     // 山札枚数（バッジ上・アウトライン）
@@ -588,15 +508,25 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             // この敵の攻撃が今あなたに当たる → キャラの頭上に大きめの赤警告（敵の識別色フチ）
             if (enemy->hitsPlayer && ctx.isPlayerTurn)
             {
-                float mk = 34.0f;                 // ← 大きく（小さければ 40〜46 まで）
+                float mk = 34.0f;   
                 float mx = headX - mk / 2.0f;
-                float my = headY - mk - 14.0f;     // ← 頭上に余白。もっと離すなら -14 を大きく
+                float my = headY - mk - 14.0f;
                 float pulse = 0.75f + 0.25f * sinf(ctx.highlightTimer * 6.0f);
                 const XMFLOAT4& hue = enemy->hueColor;
                 m_spriteRenderer->DrawSprite(TextureManager::Get("ui_hitring"),
                     mx, my, mk, mk, 0.0f, XMFLOAT4(hue.x, hue.y, hue.z, pulse));   // 敵色フチ
                 m_spriteRenderer->DrawSprite(TextureManager::Get("ui_hitmark"),
                     mx, my, mk, mk, 0.0f, XMFLOAT4(1.0f, 1.0f, 1.0f, pulse));       // 赤バッジ
+
+                if (ctx.mousePos.x >= mx && ctx.mousePos.x <= mx + mk
+                    && ctx.mousePos.y >= my && ctx.mousePos.y <= my + mk)
+                {
+                    m_intentHover = true;
+                    m_intentX = mx + mk * 0.5f;
+                    m_intentY = my;
+                    m_intentTitle = L"攻撃が当たる！";
+                    m_intentBody = L"今の位置はこの敵の攻撃範囲内\n移動して避けよう";
+                }
             }
 
             float footX2, footY2;
@@ -739,6 +669,85 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                     11.0f, D2D1::ColorF(D2D1::ColorF::White));
                 buffIconX += iconSize + 20.0f;
             }
+        }
+
+        // 手札：本体→文字 を1枚ずつ交互に描く
+        for (int i = 0; i < (int)cards.size(); i++)
+        {
+            if (i >= (int)m_cardAnims.size()) continue;
+            if (i == topIdx) continue;
+
+            XMFLOAT4 col = CardVisual::GetCardColor(cards[i]->GetData()->type, false);   // ← 上書きしない（元の色）
+
+            m_textRenderer->End();
+            m_spriteRenderer->Begin();
+            drawPlayableGlow(i);
+
+            // 自傷で死ぬカード：赤いハローを速く点滅（色は変えず危険を示す）
+            if (cards[i]->GetData()->selfDamage > 0
+                && cards[i]->GetData()->selfDamage >= ctx.player->GetHp())
+            {
+                float blink = 0.5f + 0.5f * sinf(ctx.highlightTimer * 18.0f);   // 早い点滅
+                float rx, ry, rw, rh;
+                CardVisual::GetRect(m_cardAnims[i].currentX, m_cardAnims[i].currentY,
+                    m_cardAnims[i].currentScale, rx, ry, rw, rh);
+                float mg = 8.0f;
+                m_spriteRenderer->DrawSprite(m_whiteTexture, rx - mg, ry - mg, rw + mg * 2, rh + mg * 2,
+                    m_cardAnims[i].currentRot, XMFLOAT4(1.0f, 0.0f, 0.0f, 0.25f + 0.55f * blink));
+            }
+
+            CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture,
+                m_cardAnims[i].currentX, m_cardAnims[i].currentY,
+                m_cardAnims[i].currentScale, m_cardAnims[i].currentRot,
+                col,                                    // ← 元の色に戻す
+                cards[i]->GetData(), ctx.highlightTimer);
+
+            m_textRenderer->End();
+            m_spriteRenderer->Begin();
+
+            CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture,
+                m_cardAnims[i].currentX, m_cardAnims[i].currentY,
+                m_cardAnims[i].currentScale, m_cardAnims[i].currentRot,
+                col,
+                cards[i]->GetData(), ctx.highlightTimer);
+            m_spriteRenderer->End();
+            m_textRenderer->Begin();
+
+            CardVisual::DrawTexts(m_textRenderer, cards[i]->GetData(), ctx.player,
+                m_cardAnims[i].currentX, m_cardAnims[i].currentY,
+                m_cardAnims[i].currentScale, m_cardAnims[i].currentRot);
+        }
+
+
+        // 上に来るカードは、本体 → 文字 の順で最後に描く（下の文字を覆う）
+        if (topIdx >= 0 && topIdx < (int)cards.size() && topIdx < (int)m_cardAnims.size())
+        {
+            m_textRenderer->End();
+            m_spriteRenderer->Begin();
+            drawPlayableGlow(topIdx);
+
+            if (cards[topIdx]->GetData()->selfDamage > 0
+                && cards[topIdx]->GetData()->selfDamage >= ctx.player->GetHp())
+            {
+                float blink = 0.5f + 0.5f * sinf(ctx.highlightTimer * 18.0f);
+                float rx, ry, rw, rh;
+                CardVisual::GetRect(m_cardAnims[topIdx].currentX, m_cardAnims[topIdx].currentY,
+                    m_cardAnims[topIdx].currentScale, rx, ry, rw, rh);
+                float mg = 8.0f;
+                m_spriteRenderer->DrawSprite(m_whiteTexture, rx - mg, ry - mg, rw + mg * 2, rh + mg * 2,
+                    0.0f, XMFLOAT4(1.0f, 0.0f, 0.0f, 0.25f + 0.55f * blink));
+            }
+
+            CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture,
+                m_cardAnims[topIdx].currentX, m_cardAnims[topIdx].currentY,
+                m_cardAnims[topIdx].currentScale, m_cardAnims[topIdx].currentRot,
+                CardVisual::GetCardColor(cards[topIdx]->GetData()->type, false), cards[topIdx]->GetData(), ctx.highlightTimer);
+            m_spriteRenderer->End();
+            m_textRenderer->Begin();
+
+            CardVisual::DrawTexts(m_textRenderer, cards[topIdx]->GetData(), ctx.player,
+                m_cardAnims[topIdx].currentX, m_cardAnims[topIdx].currentY,
+                m_cardAnims[topIdx].currentScale, m_cardAnims[topIdx].currentRot);
         }
 
     const auto& buffs = ctx.player->GetBuffManager().GetBuffs();
@@ -2451,4 +2460,15 @@ void BattleUI::DrawUnitStatusText(float footX, float footY, float scale, bool is
         m_textRenderer->DrawText(bv, vX + iconSize + 2.0f, vY + 1.0f, 11.0f, D2D1::ColorF(D2D1::ColorF::White));
         vX += iconSize + 20.0f;
     }
+}
+
+bool BattleUI::GetHitmarkRect(Enemy* enemy, Renderer3D* r3d, float& x, float& y, float& w, float& h) const
+{
+    float hx, hy;
+    if (!GetEnemyScreenPos(enemy, r3d, hx, hy)) return false;
+    const float mk = 34.0f;                       // 当たりマーカーと同じレイアウト
+    x = hx - mk / 2.0f - 8.0f;
+    y = hy - mk - 14.0f - 8.0f;
+    w = mk + 16.0f; h = mk + 16.0f;
+    return true;
 }

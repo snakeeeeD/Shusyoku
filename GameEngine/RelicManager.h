@@ -1,6 +1,7 @@
 #pragma once
 #include "RelicData.h"
 #include <string>
+#include <vector>
 #include <unordered_map>
 
 class RelicManager {
@@ -14,6 +15,7 @@ public:
     static std::string RandomDrop();
     static std::vector<std::string> ShopPool();
     static std::vector<std::string> AllIds();
+    static std::vector<const RelicDef*> OwnedByKind(const std::string& kind);
 private:
     static std::unordered_map<std::string, RelicDef> s_defs;
 };

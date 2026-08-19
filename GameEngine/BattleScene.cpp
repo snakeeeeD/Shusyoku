@@ -201,6 +201,10 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     // プレイヤーターン開始時にエネルギー回復
     m_turnManager.onPlayerTurnStart = [this]()
         {
+            for (auto& id : PlayerDataManager::GetData().relics)
+                if (auto def = RelicManager::Get(id); def && def->perTurn)
+                    PlayerDataManager::GetData().relicCounters[id] = 0;
+
             TurnBanner::Show(TurnBannerType::Player);
             m_player->RestoreEnergy();
             m_player->AddEnergy(RelicManager::SumValue("turnEnergy"));   // レリック
@@ -250,6 +254,8 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             {
                 int tC = (m_decoyCol >= 0) ? m_decoyCol : m_playerCol;
                 int tR = (m_decoyCol >= 0) ? m_decoyRow : m_playerRow;
+                int allies = 0; for (auto o : m_enemies) if (o != enemy && o->GetHp() > 0) allies++;
+                enemy->SetAllyCount(allies);
                 enemy->DecideNextAction(tC, tR, m_turnCount);
             }
 
@@ -368,6 +374,8 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     {
         int tC = (m_decoyCol >= 0) ? m_decoyCol : m_playerCol;
         int tR = (m_decoyCol >= 0) ? m_decoyRow : m_playerRow;
+        int allies = 0; for (auto o : m_enemies) if (o != enemy && o->GetHp() > 0) allies++;
+        enemy->SetAllyCount(allies);
         enemy->DecideNextAction(tC, tR, m_turnCount);
     }
 
@@ -411,6 +419,26 @@ void BattleScene::AddEnemy(int col, int row, const std::string& id)
     m_enemies.push_back(enemy);
 }
 
+void BattleScene::SummonNear(Enemy* src, const std::string& id, int count)
+{
+    int placed = 0;
+    // 召喚主の周囲を近い順（外周リング）に探索。敵/ボス/障害のマスは飛ばして隣の空きへ
+    for (int r = 1; r <= 5 && placed < count; r++)
+        for (int dr = -r; dr <= r && placed < count; dr++)
+            for (int dc = -r; dc <= r && placed < count; dc++)
+            {
+                if (abs(dc) != r && abs(dr) != r) continue;   // 外周リングだけ
+                int c = src->gridCol + dc, rr = src->gridRow + dr;
+                if (c < 0 || c >= m_gridMap->GetCols() || rr < 0 || rr >= m_gridMap->GetRows()) continue;
+                if (m_gridMap->GetCell(c, rr).type != CellType::Empty) continue;   // 敵がいるマス等は飛ばす
+                if (c == m_player->gridCol && rr == m_player->gridRow) continue;    // プレイヤーの現在地も避ける
+                AddEnemy(c, rr, id);
+                m_enemies.back()->MarkJustSummoned();                              // 同ターンは動かない
+                EffectManager::Play("summon", m_enemies.back()->worldX, 0.4f, m_enemies.back()->worldZ);  // 召喚エフェクト
+                placed++;
+            }
+}
+
 void BattleScene::OnPlayerMoved()
 {
     m_player->AddBlock(RelicManager::SumValue("moveBlock"));
@@ -422,6 +450,7 @@ void BattleScene::OnPlayerMoved()
 void BattleScene::Update(float deltaTime)
 {
     m_input.Update();
+    if (m_freeLook) return;
 
 #ifdef _DEBUG
     ImGuiIO& io = ImGui::GetIO();
@@ -859,7 +888,8 @@ void BattleScene::Update(float deltaTime)
             case EnemyTurnPhase::ProcessEnemy:
             {
                 while (m_currentEnemyIdx < (int)m_enemies.size()
-                    && m_enemies[m_currentEnemyIdx]->GetHp() <= 0)
+                    && (m_enemies[m_currentEnemyIdx]->GetHp() <= 0
+                        || m_enemies[m_currentEnemyIdx]->TakeJustSummoned()))
                     m_currentEnemyIdx++;
 
                 if (m_currentEnemyIdx >= (int)m_enemies.size())
@@ -890,6 +920,8 @@ void BattleScene::Update(float deltaTime)
                 bool targetedDecoy = (m_decoyCol >= 0 && tC == m_decoyCol && tR == m_decoyRow);
                 bool atk = false;
                 int damage = enemy->ExecuteAction(ai, m_playerCol, m_playerRow, m_gridMap, m_player, m_enemies, tC, tR, &atk);
+                for (auto& sm : enemy->TakePendingSummons())
+                    SummonNear(enemy, sm.first, sm.second);
 
                 m_playerCol = m_player->gridCol;
                 m_playerRow = m_player->gridRow;
@@ -1331,8 +1363,17 @@ void BattleScene::Draw()
 
     m_renderer3D->SetDepthEnabled(true);
     m_player->Draw3D(m_renderer3D);   // 本体は前面
-    for (auto enemy : m_enemies)
+
+    // 敵：透明な四角が互いを隠さないよう、深度書き込みOFF＋奥→手前で描く
+    m_renderer3D->SetDepthWrite(false);
+    std::vector<Enemy*> drawOrder(m_enemies.begin(), m_enemies.end());
+    std::sort(drawOrder.begin(), drawOrder.end(),
+        [](Enemy* a, Enemy* b) { return a->worldZ < b->worldZ; });   // 奥(小Z)を先に、手前(大Z)を後に
+    for (auto enemy : drawOrder)
         enemy->Draw3D(m_renderer3D);
+    m_renderer3D->SetDepthWrite(true);
+
+    m_renderer3D->SetDepthEnabled(false);
 
     m_renderer3D->SetDepthEnabled(false);
     EffectManager::Draw(m_renderer3D, TextureManager::Get("particle"));
@@ -2138,6 +2179,7 @@ void BattleScene::HandleInput()
                     m_battleUI->OnCardRemoved(m_selectedCardIndex);
                     m_selectedCardIndex = -1;
                     cardJustUsed = true;
+                    OnCardPlayed(dataPtr);
 
                     if (execResult.pendingDiscard > 0)
                     {
@@ -2476,6 +2518,7 @@ void BattleScene::HandleInput()
                     m_battleUI->OnCardRemoved(m_selectedCardIndex);
                     m_selectedCardIndex = -1;
                     cardJustUsed = true;
+                    OnCardPlayed(dataPtr);
                 }
             }
         }
@@ -2716,4 +2759,106 @@ void BattleScene::DashGlideTo(int c, int r)
     float dur = (dist / 1.1f) * 0.07f;   // 1マスあたり0.07秒＝距離で時間が伸びる＝速度一定感を避けつつ滑らか
     if (dur < 0.06f) dur = 0.06f;
     m_dashEnemy->StartMove(wx, wz, dur, false);   // false = smoothstep（緩急つき）
+}
+
+void BattleScene::FreeLookStep(Input& in, float deltaTime)
+{
+    // ズーム
+    int wd = in.GetMouseWheelDelta();
+    if (wd != 0) { m_cameraZoom -= wd > 0 ? ZOOM_SPEED : -ZOOM_SPEED; m_cameraZoom = max(ZOOM_MIN, min(ZOOM_MAX, m_cameraZoom)); }
+
+    // パン（中ボタンドラッグ）
+    if (in.GetMouseButtonPress(2)) {
+        POINT mp = in.GetMousePos();
+        if (!m_isDraggingCamera) { m_isDraggingCamera = true; m_dragStartPos = mp; }
+        else {
+            float dx = (float)(mp.x - m_dragStartPos.x), dy = (float)(mp.y - m_dragStartPos.y);
+            m_cameraOffsetX += dx * 0.02f * m_cameraZoom;
+            m_cameraOffsetZ -= dy * 0.02f * m_cameraZoom;
+            float gW = (m_gridMap->GetCols() / 2.0f) * 1.1f, gH = (m_gridMap->GetRows() / 2.0f) * 1.1f;
+            float zf = (m_cameraZoom > 1.0f) ? 1.0f / m_cameraZoom : 1.0f;
+            m_cameraOffsetX = max((-gW + 2.0f) * zf, min((gW - 3.0f) * zf, m_cameraOffsetX));
+            m_cameraOffsetZ = max((-gH + 1.0f) * zf, min((gH - 2.0f) * zf, m_cameraOffsetZ));
+            m_dragStartPos = mp;
+        }
+    }
+    else m_isDraggingCamera = false;
+
+    // リセット（中クリック）
+    if (in.GetMouseButtonTrigger(2)) { m_cameraZoom = ZOOM_MAX; m_cameraOffsetX = m_player->worldX; m_cameraOffsetZ = m_player->worldZ; }
+
+    // 敵クリック（グリッド）→ 範囲選択
+    if (in.GetMouseButtonTrigger(0)
+        && in.GetMousePos().x < m_screenWidth - 250.0f
+        && in.GetMousePos().y < m_screenHeight - 150.0f) {
+        auto rc = m_gridMap->GetClickedCell3D(in.GetMousePos(),
+            m_renderer3D->GetViewMatrix(), m_renderer3D->GetProjectionMatrix(), m_screenWidth, m_screenHeight);
+        int found = -1;
+        if (rc.cell)
+            for (int i = 0; i < (int)m_enemies.size(); i++)
+                for (auto& [dc, dr] : m_enemies[i]->GetGridShape())
+                    if (m_enemies[i]->gridCol + dc == rc.col && m_enemies[i]->gridRow + dr == rc.row) found = i;
+        m_selectedEnemyRange = (found >= 0 && found != m_selectedEnemyRange) ? found : -1;
+    }
+    // 敵パネルクリック → 範囲選択＋その敵へカメラ
+    if (in.GetMouseButtonTrigger(0)) {
+        POINT mp = in.GetMousePos();
+        float px = m_screenWidth - 250.0f, py = 50.0f, pw = 240.0f, eh = 90.0f;
+        for (int i = 0; i < (int)m_enemies.size(); i++) {
+            float ey = py + i * (eh + 5.0f);
+            if (mp.x >= px && mp.x <= px + pw && mp.y >= ey && mp.y <= ey + eh) {
+                m_selectedEnemyRange = (m_selectedEnemyRange == i) ? -1 : i;
+                m_cameraOffsetX = m_enemies[i]->worldX; m_cameraOffsetZ = m_enemies[i]->worldZ; break;
+            }
+        }
+    }
+
+    // カメラ適用
+    {
+        float sx, sz; ScreenShake::GetOffset(sx, sz);
+        XMFLOAT3 tgt(m_cameraOffsetX + sx, -2.0f, m_cameraOffsetZ + sz);
+        XMFLOAT3 pos(m_cameraOffsetX + sx, tgt.y + 17.0f * m_cameraZoom, m_cameraOffsetZ + sz + 6.0f * m_cameraZoom);
+        m_renderer3D->SetCamera(pos, tgt, XMFLOAT3(0, 1, 0));
+    }
+
+    // ハイライト（脅威範囲＋当たりマーカー）
+    int hi = m_battleUI->GetPanelHoveredEnemy();
+    m_highlighter.SetSelectedEnemy(hi >= 0 ? hi : m_selectedEnemyRange);
+    m_highlighter.ClearPlayerHighlight(m_gridMap);
+    m_highlightTimer += deltaTime * 0.5f;
+    if (m_highlightTimer > 3.14159f * 2.0f) m_highlightTimer = 0.0f;
+    m_highlighter.UpdateEnemyHighlight(m_enemies, m_gridMap, m_player,
+        m_playerCol, m_playerRow, m_highlightTimer, m_decoyCol, m_decoyRow);
+    if (m_forceHitmark && !m_enemies.empty()) m_enemies[0]->hitsPlayer = true;   // 学習用に強制表示
+}
+
+bool BattleScene::GetHitmarkRect(float& x, float& y, float& w, float& h) const
+{
+    if (m_enemies.empty() || !m_battleUI) return false;
+    return m_battleUI->GetHitmarkRect(m_enemies[0], m_renderer3D, x, y, w, h);
+}
+
+void BattleScene::OnCardPlayed(const CardData* d)
+{
+    if (!d) return;
+    auto& pd = PlayerDataManager::GetData();
+    auto tick = [&](const char* kind)
+        {
+            for (auto* r : RelicManager::OwnedByKind(kind))
+            {
+                if (r->count <= 0) continue;
+                int& c = pd.relicCounters[r->id];
+                if (++c >= r->count)                 // 進んで、しきい値に達したら
+                {
+                    c = 0;                           // 0に戻す
+                    if (r->effect == "energy") m_player->AddEnergy(r->value);
+                    else                       m_player->AddBlock(r->value);   // 既定=ブロック
+                }
+            }
+        };
+    const char* k = (d->type == CardType::Attack) ? "attack" :
+        (d->type == CardType::Skill) ? "skill" :
+        (d->type == CardType::Move) ? "move" : "";
+    if (k[0]) tick(k);   // その種別
+    tick("card");        // 全カード共通
 }

@@ -77,6 +77,7 @@ void PlayerDataManager::Save()
 
 	j["masterVolume"] = m_data.masterVolume;
 	j["bgmVolume"] = m_data.bgmVolume;
+	j["relicCounters"] = m_data.relicCounters;
 
 	// ← 全部追加してからファイルに書き込む
 	std::ofstream file(SAVE_PATH);
@@ -132,6 +133,9 @@ void PlayerDataManager::Load()
 
 		m_data.masterVolume = j.value("masterVolume", 1.0f); 
 		m_data.bgmVolume = j.value("bgmVolume", 0.5f);
+
+		if (j.contains("relicCounters"))
+			m_data.relicCounters = j["relicCounters"].get<std::map<std::string, int>>();
 
 		if (j.contains("fieldNodeTypes"))
 			m_data.fieldNodeTypes = j["fieldNodeTypes"].get<std::vector<int>>();
@@ -199,6 +203,7 @@ void PlayerDataManager::StartNewGame()
 	m_data.relics.clear();
 	m_data.removeCount = 0;
 	m_data.layer = 1;
+	m_data.relicCounters.clear();
 
 	m_data.currentNodeIndex = 0;
 	m_data.clearedNodes.clear();

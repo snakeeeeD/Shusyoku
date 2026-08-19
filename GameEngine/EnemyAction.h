@@ -7,8 +7,8 @@
 enum class ApproachType { None, Toward, Dash };
 
 // 何が起きるか
-enum class EffectKind { Damage, Block, Buff, Debuff, 
-                        MoveToward, MoveAway, PullPlayer, KnockbackPlayer };
+enum class EffectKind { Damage, Block, Buff, Debuff, MoveToward, 
+    MoveAway, PullPlayer, KnockbackPlayer, Summon };
 
 // 誰に効くか
 enum class ApplyTo { Self, Player, Allies };
@@ -31,6 +31,7 @@ struct Effect
     std::string buff;                         // Buff/Debuff で使う
     int         duration = 0;
     ApplyTo     applyTo = ApplyTo::Player;    // パース時に kind ごとの既定を入れる
+    std::string summonId;   // Summonで召喚する敵ID（valueが体数）
 };
 
 // いつ選ばれるか（行動の中身とは別レイヤー）

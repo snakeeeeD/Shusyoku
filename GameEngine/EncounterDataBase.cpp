@@ -79,22 +79,27 @@ void EncounterDataBase::Reload()
     Init();
 }
 
+static const EncounterData* s_last = nullptr;
+static const EncounterData* s_lastElite = nullptr;
+
+void EncounterDataBase::ResetLastPick() { s_last = nullptr; s_lastElite = nullptr; }
+
 const EncounterData* EncounterDataBase::GetEncounter(int layer, EncCategory cat, int tier, int seed)
 {
     std::vector<EncounterData*> cand;
-    for (int tt = tier; tt >= 1 && cand.empty(); tt--)      // 要求tier→無ければ下位へ。見つかった最高tierだけ採用
+    for (int tt = tier; tt >= 1 && cand.empty(); tt--)
         for (auto& enc : m_data)
             if (enc.layer == layer && enc.category == cat && enc.tier == tt) cand.push_back(&enc);
-    if (cand.empty())   // その層に無ければ層1へ
+    if (cand.empty())
         for (auto& enc : m_data)
             if (enc.layer == 1 && enc.category == cat) cand.push_back(&enc);
     if (cand.empty()) return nullptr;
 
-    // 直前と同じエンカウントは避ける（候補が2つ以上あれば除外）
-    static const EncounterData* s_last = nullptr;
+    // 直前と同じは避ける（エリートは専用記憶で連続同一を防ぐ）
+    const EncounterData* avoid = (cat == EncCategory::Elite) ? s_lastElite : s_last;
     std::vector<EncounterData*> pool;
-    for (auto* e : cand) if (e != s_last) pool.push_back(e);
-    if (pool.empty()) pool = cand;   // 実質候補が1つなら仕方なく許可
+    for (auto* e : cand) if (e != avoid) pool.push_back(e);
+    if (pool.empty()) pool = cand;
 
     unsigned int h = (unsigned int)seed;
     h ^= h >> 16; h *= 0x7feb352du; h ^= h >> 15; h *= 0x846ca68bu; h ^= h >> 16;
@@ -102,7 +107,7 @@ const EncounterData* EncounterDataBase::GetEncounter(int layer, EncCategory cat,
     int roll = (int)(h % (unsigned)total), acc = 0;
     const EncounterData* picked = pool.back();
     for (auto* e : pool) { acc += (e->weight > 0 ? e->weight : 1); if (roll < acc) { picked = e; break; } }
-    s_last = picked;
+    if (cat == EncCategory::Elite) s_lastElite = picked; else s_last = picked;
     return picked;
 }
 

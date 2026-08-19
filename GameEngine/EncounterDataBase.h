@@ -16,6 +16,8 @@ public:
     static const EncounterData* GetById(const std::string& id);
     static const std::vector<EscalationTier>& DefaultEscalation();
 
+    static void ResetLastPick();
+
 private:
     static std::vector<EncounterData> m_data;
 };

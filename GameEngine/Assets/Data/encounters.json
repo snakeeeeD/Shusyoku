@@ -1,93 +1,96 @@
-{
+﻿{
   "encounters": [
 
-    { "layer": 1, "tier": 1, "category": "normal", "weight": 25, "enemies": [
+    { "id": "enc0", "layer": 1, "tier": 1, "category": "normal", "weight": 25, "enemies": [
       { "id": "slime", "col": 5, "row": 2 },
       { "id": "slime", "col": 6, "row": 3 },
       { "id": "slime", "col": 5, "row": 4 }
     ] },
-    { "layer": 1, "tier": 1, "category": "normal", "weight": 22, "enemies": [
+    { "id": "enc1", "layer": 1, "tier": 1, "category": "normal", "weight": 22, "enemies": [
       { "id": "slime", "col": 6, "row": 2 },
       { "id": "slime", "col": 6, "row": 4 },
       { "id": "hound", "col": 5, "row": 3 }
     ] },
-    { "layer": 1, "tier": 1, "category": "normal", "weight": 20, "enemies": [
+    { "id": "enc2", "layer": 1, "tier": 1, "category": "normal", "weight": 20, "enemies": [
       { "id": "hound", "col": 6, "row": 2 },
       { "id": "hound", "col": 6, "row": 4 }
     ] },
-    { "layer": 1, "tier": 1, "category": "normal", "weight": 12, "enemies": [
+    { "id": "enc3", "layer": 1, "tier": 1, "category": "normal", "weight": 12, "enemies": [
       { "id": "brute", "col": 6, "row": 3 }
     ] },
-    { "layer": 1, "tier": 1, "category": "normal", "weight": 15, "enemies": [
+    { "id": "enc4", "layer": 1, "tier": 1, "category": "normal", "weight": 15, "enemies": [
       { "id": "stonebug", "col": 6, "row": 3 }
     ] },
 
-    { "layer": 1, "tier": 2, "category": "normal", "weight": 20, "enemies": [
+    { "id": "enc5", "layer": 1, "tier": 2, "category": "normal", "weight": 20, "enemies": [
       { "id": "goblin", "col": 6, "row": 3 }
     ] },
-    { "layer": 1, "tier": 2, "category": "normal", "weight": 18, "enemies": [
+    { "id": "enc6", "layer": 1, "tier": 2, "category": "normal", "weight": 18, "enemies": [
       { "id": "goblin", "col": 6, "row": 3 },
       { "id": "hound", "col": 6, "row": 1 }
     ] },
-    { "layer": 1, "tier": 2, "category": "normal", "weight": 15, "enemies": [
+    { "id": "enc7", "layer": 1, "tier": 2, "category": "normal", "weight": 15, "enemies": [
       { "id": "caster", "col": 7, "row": 3 },
       { "id": "hound", "col": 5, "row": 3 }
     ] },
-    { "layer": 1, "tier": 2, "category": "normal", "weight": 15, "enemies": [
+    { "id": "enc8", "layer": 1, "tier": 2, "category": "normal", "weight": 15, "enemies": [
       { "id": "archer", "col": 7, "row": 2 },
       { "id": "hound", "col": 5, "row": 4 }
     ] },
-    { "layer": 1, "tier": 2, "category": "normal", "weight": 15, "enemies": [
+    { "id": "enc9", "layer": 1, "tier": 2, "category": "normal", "weight": 15, "enemies": [
       { "id": "emberwalker", "col": 7, "row": 1 },
       { "id": "brute", "col": 5, "row": 4 }
     ] },
-    { "layer": 1, "tier": 2, "category": "normal", "weight": 15, "enemies": [
+    { "id": "enc10", "layer": 1, "tier": 2, "category": "normal", "weight": 15, "enemies": [
       { "id": "firespore", "col": 7, "row": 3 },
       { "id": "slime", "col": 5, "row": 3 }
     ] },
 
-    { "layer": 1, "tier": 3, "category": "normal", "weight": 20, "enemies": [
+    { "id": "enc11", "layer": 1, "tier": 3, "category": "normal", "weight": 20, "enemies": [
       { "id": "orc", "col": 6, "row": 3 }
     ] },
-    { "layer": 1, "tier": 3, "category": "normal", "weight": 12, "enemies": [
+    { "id": "enc12", "layer": 1, "tier": 3, "category": "normal", "weight": 12, "enemies": [
       { "id": "warden", "col": 6, "row": 3 },
       { "id": "emberwalker", "col": 7, "row": 1 }
     ] },
-    { "layer": 1, "tier": 3, "category": "normal", "weight": 12, "enemies": [
+    { "id": "enc13", "layer": 1, "tier": 3, "category": "normal", "weight": 12, "enemies": [
       { "id": "warden", "col": 5, "row": 3 },
       { "id": "caster", "col": 7, "row": 3 }
     ] },
-    { "layer": 1, "tier": 3, "category": "normal", "weight": 15, "enemies": [
+    { "id": "enc14", "layer": 1, "tier": 3, "category": "normal", "weight": 15, "enemies": [
       { "id": "goblin", "col": 6, "row": 2 },
       { "id": "goblin", "col": 6, "row": 4 }
     ] },
-    { "layer": 1, "tier": 3, "category": "normal", "weight": 12, "enemies": [
+    { "id": "enc15", "layer": 1, "tier": 3, "category": "normal", "weight": 12, "enemies": [
       { "id": "wraith", "col": 7, "row": 1 },
       { "id": "orc", "col": 5, "row": 4 }
     ] },
 
-    { "layer": 1, "category": "elite", "weight": 150, "enemies": [
+    { "id": "enc16", "layer": 1, "category": "elite", "weight": 150, "enemies": [
       { "id": "elite_bear", "col": 4, "row": 1 }
     ] },
-    { "layer": 1, "category": "elite", "weight": 50, "enemies": [
+    { "id": "enc17", "layer": 1, "category": "elite", "weight": 50, "enemies": [
       { "id": "elite_tentacle", "col": 4, "row": 0 }
     ] },
+    { "id": "enc18", "layer": 1, "category": "elite", "weight": 80, "enemies": [
+      { "id": "elite_slimeking", "col": 4, "row": 1 }
+    ] },
 
-    { "layer": 1, "tier": 1, "category": "event", "weight": 1, "enemies": [
+    { "id": "enc19", "layer": 1, "tier": 1, "category": "event", "weight": 1, "enemies": [
       { "id": "warden", "col": 6, "row": 2 }
     ] },
-    { "layer": 1, "tier": 2, "category": "event", "weight": 1, "enemies": [
+    { "id": "enc20", "layer": 1, "tier": 2, "category": "event", "weight": 1, "enemies": [
       { "id": "wraith", "col": 7, "row": 3 }
     ] },
     { "id": "altar_guardian", "layer": 1, "tier": 1, "category": "event", "weight": 1, "enemies": [
       { "id": "warden", "col": 4, "row": 2 },
       { "id": "wraith", "col": 4, "row": 0 }
     ] },
-    { "layer": 1, "tier": 2, "category": "event", "weight": 1, "enemies": [
+    { "id": "enc21", "layer": 1, "tier": 2, "category": "event", "weight": 1, "enemies": [
       { "id": "mimic", "col": 5, "row": 3 }
     ] },
 
-    { "layer": 1, "category": "boss", "weight": 100, "enemies": [
+    { "id": "dragon", "layer": 1, "category": "boss", "weight": 100, "enemies": [
       { "id": "dragon", "col": 4, "row": 2 }
     ] }
   ]

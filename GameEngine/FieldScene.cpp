@@ -1,6 +1,7 @@
 ﻿#include "FieldScene.h"
 #include "FieldMapConfig.h"
 #include "EventDataBase.h"
+#include "EncounterDataBase.h"
 #include "SceneType.h"
 #include "Audio.h"
 #include "UiWindow.h"
@@ -108,9 +109,9 @@ void FieldScene::GenerateMap()
     config.typeLimits = {
         { FieldNodeType::Battle, -1, 7 },
         { FieldNodeType::Event,   12,  4 },
-        { FieldNodeType::Rest,    4,  3 },
-        { FieldNodeType::Shop, 2, 3 },
-        { FieldNodeType::Elite, 2, 3 },
+        { FieldNodeType::Rest,    5,  4 },
+        { FieldNodeType::Shop, 3, 4 },
+        { FieldNodeType::Elite, 4, 5 },
         { FieldNodeType::Treasure, 2, 2 },
     };
 
@@ -213,8 +214,6 @@ void FieldScene::GenerateMap()
         m_nodes[idx].type = chosen;
         typeCounts[chosen]++;
 
-        if (chosen == FieldNodeType::Battle)
-            m_nodes[idx].enemyId = enemyIds[rand() % enemyIds.size()];
     }
 
     // スタートから到達できないマスを空白化
@@ -272,6 +271,26 @@ void FieldScene::GenerateMap()
         if (m_nodes[idx].type != FieldNodeType::Empty)
             m_nodes[idx].type = FieldNodeType::Battle;
     }
+
+    // エンカウントを生成時に確定→ノードに保存（＝コンティニューで不変、かつ連続同一を回避）
+    EncounterDataBase::ResetLastPick();
+    int encLayer = PlayerDataManager::GetData().layer;
+    for (int c = 0; c < GRID_COLS; c++)
+        for (int r = 0; r < GRID_ROWS; r++)
+        {
+            int idx = GetNodeIndex(c, r);
+            EncCategory cat;
+            switch (m_nodes[idx].type)
+            {
+            case FieldNodeType::Battle: cat = EncCategory::Normal; break;
+            case FieldNodeType::Elite:  cat = EncCategory::Elite;  break;
+            case FieldNodeType::Boss:   cat = EncCategory::Boss;   break;
+            default: continue;
+            }
+            int tier = 1 + c * 3 / GRID_COLS; if (tier > 3) tier = 3;
+            const EncounterData* enc = EncounterDataBase::GetEncounter(encLayer, cat, tier, idx);
+            if (enc) m_nodes[idx].enemyId = enc->id;
+        }
 }
 int FieldScene::GetNodeIndex(int col, int row) const
 {

@@ -2,6 +2,7 @@
 #include "MaterialDataBase.h" 
 #include "GameUtils.h"
 #include "RelicManager.h"
+#include "BuffInfo.h"
 
 #include <nlohmann/json.hpp>
 #include <fstream>
@@ -253,17 +254,39 @@ CardData CardDataBase::BuildCrafted(const std::string& id)
     if (c.cost < 0) c.cost = 0;
     c.name = nm;
 
-    // 仮の説明文
+    // 効果を具体的な文言にするヘルパー
+    auto fxText = [](const CardEffectData& e) -> std::wstring
+        {
+            switch (e.type)
+            {
+            case CardEffectType::Damage:     return std::to_wstring(e.value) + L"ダメージ";
+            case CardEffectType::Block:      return L"ブロック+" + std::to_wstring(e.value);
+            case CardEffectType::Draw:       return L"ドロー" + std::to_wstring(e.value);
+            case CardEffectType::AddEnergy:  return L"エナジー+" + std::to_wstring(e.value);
+            case CardEffectType::Heal:       return L"回復" + std::to_wstring(e.value);
+            case CardEffectType::Knockback:  return L"ノックバック";
+            case CardEffectType::Pull:       return L"引き寄せ";
+            case CardEffectType::ApplyBuff:
+            case CardEffectType::ApplyDebuff:
+            {
+                std::wstring nm = BuffInfo::Get(StringToBuffType(e.buffType)).name;
+                return (e.value > 0) ? nm + std::to_wstring(e.value) : nm;
+            }
+            default: return L"効果";
+            }
+        };
+
+    // 説明生成
     std::wstring hitSuffix = (c.hits > 1) ? (L"×" + std::to_wstring(c.hits)) : L"";
     switch (c.mainEffect.type)
     {
     case CardEffectType::Damage:    c.description = L"{value}ダメージ" + hitSuffix; break;
     case CardEffectType::Block:     c.description = L"{value}ブロック"; break;
     case CardEffectType::ApplyBuff: c.description = L"攻撃力+{value}"; break;
-    default:                        c.description = L"合成カード"; break;
+    default:                        c.description = L"特殊カード"; break;
     }
-    if (c.subEffect.hasEffect)   c.description += L" / 自身強化";
-    if (c.onHitEffect.hasEffect) c.description += L" / 命中時効果";
+    if (c.subEffect.hasEffect)   c.description += L" / " + fxText(c.subEffect);
+    if (c.onHitEffect.hasEffect) c.description += L" / 命中時" + fxText(c.onHitEffect);
     return c;
 }
 

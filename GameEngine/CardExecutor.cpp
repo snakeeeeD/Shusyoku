@@ -47,8 +47,9 @@ std::vector<Enemy*> CardExecutor::GetEnemiesInRange(
 static int EffectiveHits(const CardData& data)
 {
     int h = data.hits;
-    if (data.type == CardType::Attack) h += RelicManager::SumValue("multiHit");
-    return h < 1 ? 1 : h;
+    if (data.type == CardType::Attack && data.hits > 1)   // ← 元々「複数回攻撃」のカードだけ
+        h += RelicManager::SumValue("multiHit");
+    return h;
 }
 
 // onHitデバフ付与時のVFX（buffType → effects.jsonのID）

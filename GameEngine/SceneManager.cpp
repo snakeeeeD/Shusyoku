@@ -165,6 +165,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("enemy_reaper", L"Assets/Enemy/reaper.png");
 		TextureManager::Load("enemy_tentacle", L"Assets/Enemy/cyaegha.png");
 		TextureManager::Load("enemy_bear", L"Assets/Enemy/bear.png");
+		TextureManager::Load("enemy_slimeboss", L"Assets/Enemy/shoggoth.png");
 		TextureManager::Load("enemy_golem", L"Assets/Enemy/golem.png");
 		TextureManager::Load("enemy_obake", L"Assets/Enemy/obake.png");
 		TextureManager::Load("enemy_mimic", L"Assets/Enemy/mimic.png");
@@ -202,6 +203,55 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("node_start", L"Assets/UI/node_start.png");
 		TextureManager::Load("node_player", L"Assets/UI/node_player.png");
 		TextureManager::Load("ui_node", L"Assets/UI/ui_node.png");
+
+		// バフデバフアイコン
+		{
+			TextureManager::Load("icon_attack", L"Assets/UI/icon_attack.png");
+			TextureManager::Load("icon_block", L"Assets/UI/icon_block.png");
+			TextureManager::Load("icon_buff", L"Assets/UI/icon_buff.png");
+			TextureManager::Load("icon_debuff", L"Assets/UI/icon_debuff.png");
+			TextureManager::Load("icon_move", L"Assets/UI/icon_move.png");
+			TextureManager::Load("icon_summon", L"Assets/UI/icon_summon.png");
+			TextureManager::Load("buff_attackup", L"Assets/UI/buff_attackup.png");
+			TextureManager::Load("buff_defenseup", L"Assets/UI/buff_defenseup.png");
+			TextureManager::Load("buff_weak", L"Assets/UI/buff_weak.png");
+			TextureManager::Load("buff_vulnerable", L"Assets/UI/buff_vulnerable.png");
+			TextureManager::Load("buff_poison", L"Assets/UI/buff_poison.png");
+			TextureManager::Load("buff_burn", L"Assets/UI/buff_burn.png");
+			TextureManager::Load("buff_attackup", L"Assets/UI/buff_attackup.png");
+			TextureManager::Load("buff_rangeup", L"Assets/UI/buff_rangeup.png");
+			TextureManager::Load("buff_defenseup", L"Assets/UI/buff_defenseup.png");
+			TextureManager::Load("buff_barricade", L"Assets/UI/buff_barricade.png");
+			TextureManager::Load("buff_thorns", L"Assets/UI/buff_thorns.png");
+			TextureManager::Load("buff_momentum", L"Assets/UI/buff_momentum.png");
+			TextureManager::Load("buff_moveup", L"Assets/UI/buff_moveup.png");
+			TextureManager::Load("buff_charge", L"Assets/UI/buff_charge.png");
+			TextureManager::Load("buff_hitandrun", L"Assets/UI/buff_hitandrun.png");
+			TextureManager::Load("buff_reposition", L"Assets/UI/buff_reposition.png");
+			TextureManager::Load("buff_attackdown", L"Assets/UI/buff_attackdown.png");
+			TextureManager::Load("buff_weak", L"Assets/UI/buff_weak.png");
+			TextureManager::Load("buff_defensedown", L"Assets/UI/buff_defensedown.png");
+			TextureManager::Load("buff_frail", L"Assets/UI/buff_frail.png");
+			TextureManager::Load("buff_vulnerable", L"Assets/UI/buff_vulnerable.png");
+			TextureManager::Load("buff_root", L"Assets/UI/buff_root.png");
+			TextureManager::Load("buff_slow", L"Assets/UI/buff_slow.png");
+			TextureManager::Load("buff_burn", L"Assets/UI/buff_burn.png");
+			TextureManager::Load("buff_poison", L"Assets/UI/buff_poison.png");
+			TextureManager::Load("buff_attackupturn", L"Assets/UI/buff_attackupturn.png");
+			TextureManager::Load("buff_attackgrowth", L"Assets/UI/buff_attackgrowth.png");
+			TextureManager::Load("buff_frenzy", L"Assets/UI/buff_frenzy.png");
+			TextureManager::Load("buff_noxiousfumes", L"Assets/UI/buff_noxiousfumes.png");
+			TextureManager::Load("buff_toxicrhythm", L"Assets/UI/buff_toxicrhythm.png");
+			TextureManager::Load("buff_movelock", L"Assets/UI/buff_movelock.png");
+			TextureManager::Load("buff_riposte", L"Assets/UI/buff_riposte.png");
+			TextureManager::Load("buff_knifepower", L"Assets/UI/buff_knifepower.png");
+			TextureManager::Load("buff_knifethrow", L"Assets/UI/buff_knifethrow.png");
+			TextureManager::Load("buff_cardblock", L"Assets/UI/buff_cardblock.png");
+			TextureManager::Load("buff_knifegen", L"Assets/UI/buff_knifegen.png");
+			TextureManager::Load("buff_laststand", L"Assets/UI/buff_laststand.png");
+			TextureManager::Load("buff_deepstand", L"Assets/UI/buff_deepstand.png");
+			TextureManager::Load("buff_embertrail", L"Assets/UI/buff_embertrail.png");
+		}
 	}
 
 	m_textRenderer = new TextRenderer();
@@ -376,6 +426,9 @@ void SceneManager::DoChangeScene(SceneType type)
 					{ L"ターンエンドで相手の番\nここを押して自分の番を終える",
 			  (float)m_screenWidth - 168.0f, (float)m_screenHeight - 66.0f, 156.0f, 52.0f },
 			{ L"HPが0になると敗北",                                   20,  85, 220,  90 },
+			{ L"カメラ操作\nマウスホイール：ズーム / 右クリックドラッグ：カメラ移動\nホイールをクリック：自分中心にリセット", 170, 130, 940, 540 },
+			{ L"敵をクリック（右上の敵ウィンドウでもOK）で\nその敵の攻撃範囲が表示される", 1028, 46, 246, 200 },
+						{ L"頭上に赤い警告が出ている敵は\n今の位置に攻撃が当たる。移動して避けよう", 170, 130, 940, 540, -1, false, true },
 			}, 1.2f);
 	}
 
@@ -990,6 +1043,12 @@ void SceneManager::DrawTutorial()
 			float x, y, w, h;
 			if (battle->GetCardRect(pg.hoverCard, x, y, w, h)) { hx = x; hy = y; hw = w; hh = h; }
 		}
+	if (pg.showHitmark)
+		if (auto battle = dynamic_cast<BattleScene*>(m_currentScene))
+		{
+			float x, y, w, h;
+			if (battle->GetHitmarkRect(x, y, w, h)) { hx = x; hy = y; hw = w; hh = h; }
+		}
 	ID3D11ShaderResourceView* white = TextureManager::Get("white");
 	float sw = (float)m_screenWidth, sh = (float)m_screenHeight;
 	XMFLOAT4 dim(0, 0, 0, 0.7f);
@@ -1139,7 +1198,7 @@ void SceneManager::Update(float deltaTime)
 			ShowTutorialDelayed({
 				{ L"【コア】カードの土台。何を作るかを決める部品（例：斬核＝近接ダメージ）。",
 				  482, 262, 316, 54 },   // ← コア行だけを明るく
-				{ L"【素材】コアに組み込んで強化する部品（例：剣の破片＝ダメージ+5）。",
+				{ L"【素材】コアに組み込んで強化する部品（例：剣の破片＝ダメージ+2）。",
 				  486, 318, 308, 50 },   // ← 素材行だけを明るく
 				{ L"休憩マスの「クラフト」で コア＋素材 を組み合わせ、新しいカードが作れる！" },
 				}, 1.0f);   // ← VICTORYを1秒見せてから開始
@@ -1203,12 +1262,24 @@ void SceneManager::Update(float deltaTime)
 
 	if (m_deckOpen || m_craftOpen || m_invOpen || m_restOpen || m_mapOpen || m_eventOpen || m_craftFxTimer > 0.0f) return;
 
-	// チュートリアルのカード強制ホバー
+	// チュートリアル中：カード強制ホバー＋戦闘はフリールックで駆動
 	if (m_tutorialOpen)
+	{
 		if (auto battle = dynamic_cast<BattleScene*>(m_currentScene))
+		{
 			battle->SetHoveredCard(m_tutorialPages[m_tutorialPage].hoverCard);
+			battle->SetFreeLook(true);
+			battle->SetForceHitmark(m_tutorialPages[m_tutorialPage].showHitmark);
+			battle->FreeLookStep(m_uiInput, deltaTime);
+		}
+	}
+	else if (auto battle = dynamic_cast<BattleScene*>(m_currentScene))
+	{
+		battle->SetFreeLook(false);
+		battle->SetForceHitmark(false);
+	}
 
-	if (m_currentScene) m_currentScene->Update(deltaTime);
+	if (m_currentScene) m_currentScene->Update(deltaTime);   // 戦闘はfreeLook中は早期return
 }
 
 bool SceneManager::GetDeckCardBase(int i, float& baseX, float& baseY) const
@@ -1284,6 +1355,26 @@ void SceneManager::GetCraftBtnRect(float& x, float& y, float& w, float& h) const
 	x = m_screenWidth / 2.0f - 80.0f; y = m_screenHeight - 100.0f;
 }
 
+static const char* CoreTypeIcon(const std::string& type)
+{
+	if (type == "Attack") return "icon_attack";   // 剣
+	if (type == "Skill")  return "icon_block";    // 盾
+	if (type == "Power")  return "icon_buff";     // ↑
+	return "";
+}
+// 素材が付けられるコア型のアイコン一覧
+static std::vector<const char*> MatFitIcons(const std::string& id)
+{
+	std::vector<const char*> v;
+	auto m = MaterialDataBase::GetMaterial(id);
+	if (!m) return v;
+	bool all = m->entries.count("all") > 0;
+	if (all || m->entries.count("Attack")) v.push_back("icon_attack");
+	if (all || m->entries.count("Skill"))  v.push_back("icon_block");
+	if (all || m->entries.count("Power"))  v.push_back("icon_buff");
+	return v;
+}
+
 void SceneManager::DrawCraft()
 {
 	ID3D11ShaderResourceView* white = TextureManager::Get("white");
@@ -1310,16 +1401,25 @@ void SceneManager::DrawCraft()
 	}
 	// 所持素材
 	
-		auto bs = CraftBases();
-		for (int i = 0; i < (int)bs.size(); i++) {
-			float x, y, w, h; GetCraftBaseRect(i, x, y, w, h);
-			UiWindow::Button(m_uiSprite, white, x, y, w, h, XMFLOAT4(0.4f, 0.3f, 0.2f, 1.0f));
+	auto bs = CraftBases();
+	for (int i = 0; i < (int)bs.size(); i++) {
+		float x, y, w, h; GetCraftBaseRect(i, x, y, w, h);
+		UiWindow::Button(m_uiSprite, white, x, y, w, h, XMFLOAT4(0.4f, 0.3f, 0.2f, 1.0f));
+		if (auto b = MaterialDataBase::GetBase(bs[i].first)) {
+			const char* ic = CoreTypeIcon(b->type);
+			if (ic[0]) m_uiSprite->DrawSprite(TextureManager::Get(ic),
+				x + w - 24.0f, y + (h - 18.0f) / 2.0f, 18.0f, 18.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
 		}
-		auto md = CraftMods();
-		for (int i = 0; i < (int)md.size(); i++) {
-			float x, y, w, h; GetCraftModRect(i, x, y, w, h);
-			UiWindow::Button(m_uiSprite, white, x, y, w, h, XMFLOAT4(0.2f, 0.3f, 0.3f, 1.0f));
-		}
+	}
+	auto md = CraftMods();
+	for (int i = 0; i < (int)md.size(); i++) {
+		float x, y, w, h; GetCraftModRect(i, x, y, w, h);
+		UiWindow::Button(m_uiSprite, white, x, y, w, h, XMFLOAT4(0.2f, 0.3f, 0.3f, 1.0f));
+		auto icons = MatFitIcons(md[i].first);
+		for (int k = 0; k < (int)icons.size(); k++)
+			m_uiSprite->DrawSprite(TextureManager::Get(icons[k]),
+				x + w - 22.0f - k * 20.0f, y + (h - 18.0f) / 2.0f, 18.0f, 18.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
+	}
 	
 		// 作成ボタン
 		{
@@ -1547,11 +1647,20 @@ void SceneManager::DrawInventory()
 	for (int i = 0; i < (int)bases.size(); i++) {
 		float x, y, w, h; GetCraftBaseRect(i, x, y, w, h);
 		m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(0.4f, 0.3f, 0.2f, 0.85f));
+		if (auto b = MaterialDataBase::GetBase(bases[i].first)) {
+			const char* ic = CoreTypeIcon(b->type);
+			if (ic[0]) m_uiSprite->DrawSprite(TextureManager::Get(ic),
+				x + w - 24.0f, y + (h - 18.0f) / 2.0f, 18.0f, 18.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
+		}
 	}
 	auto mods = CraftMods();
 	for (int i = 0; i < (int)mods.size(); i++) {
 		float x, y, w, h; GetCraftModRect(i, x, y, w, h);
 		m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(0.2f, 0.3f, 0.3f, 0.85f));
+		auto icons = MatFitIcons(mods[i].first);
+		for (int k = 0; k < (int)icons.size(); k++)
+			m_uiSprite->DrawSprite(TextureManager::Get(icons[k]),
+				x + w - 22.0f - k * 20.0f, y + (h - 18.0f) / 2.0f, 18.0f, 18.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
 	}
 	m_uiSprite->End();
 
@@ -1883,6 +1992,15 @@ void SceneManager::DrawRelicBar()
 		auto d = RelicManager::Get(relics[i]);
 		std::wstring lb = d ? ToWString(d->name).substr(0, 2) : L"?";
 		m_textRenderer->DrawText(lb.c_str(), x + 6.0f, y + 8.0f, 18.0f, D2D1::ColorF(1, 1, 1));
+		if (d && d->count > 0)
+		{
+			auto& rc = PlayerDataManager::GetData().relicCounters;
+			auto it = rc.find(relics[i]);
+			int cur = (it != rc.end()) ? it->second : 0;
+			wchar_t cnt[16]; swprintf_s(cnt, L"%d/%d", cur, d->count);
+			m_textRenderer->DrawOutlinedText(cnt, x, y + h + 2.0f, 15.0f,
+				D2D1::ColorF(1.0f, 0.9f, 0.4f), D2D1::ColorF(0, 0, 0), 1.0f);   // 幅2.0→1.0
+		}
 	}
 	m_textRenderer->End();
 

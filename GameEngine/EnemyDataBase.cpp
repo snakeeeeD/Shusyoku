@@ -29,6 +29,7 @@ static Effect ParseEffect(const json& j)
     e.value = j.value("value", 0);
     e.buff = j.value("buff", "");
     e.duration = j.value("duration", 0);
+    e.summonId = j.value("summonId", "");
 
     // 既定の適用先（kind ごと）
     ApplyTo def = (e.kind == EffectKind::Block || e.kind == EffectKind::Buff)

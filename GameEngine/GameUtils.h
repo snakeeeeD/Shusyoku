@@ -132,6 +132,7 @@ inline EffectKind StringToEffectKind(const std::string& s)
     if (s == "MoveAway")   return EffectKind::MoveAway;
     if (s == "PullPlayer") return EffectKind::PullPlayer;
     if (s == "KnockbackPlayer") return EffectKind::KnockbackPlayer;
+    if (s == "Summon")     return EffectKind::Summon;
     return EffectKind::Damage;
 }
 

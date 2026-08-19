@@ -44,6 +44,7 @@ public:
         case EffectKind::MoveAway:        return XMFLOAT4(0.2f, 0.8f, 0.3f, 1.0f);
         case EffectKind::PullPlayer:      return XMFLOAT4(0.2f, 0.8f, 0.3f, 1.0f);
         case EffectKind::KnockbackPlayer: return XMFLOAT4(0.2f, 0.8f, 0.3f, 1.0f);
+        case EffectKind::Summon:          return XMFLOAT4(0.4f, 0.85f, 0.4f, 1.0f);
         default:                          return XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
         }
     }
@@ -125,6 +126,7 @@ public:
         case EffectKind::MoveAway:        title = L"後退"; body = std::to_wstring(e.value) + L" マス離れる"; break;
         case EffectKind::PullPlayer:      title = L"引き寄せ"; body = L"プレイヤーを " + std::to_wstring(e.value) + L" マス引き寄せる"; break;
         case EffectKind::KnockbackPlayer: title = L"突き飛ばし"; body = L"プレイヤーを " + std::to_wstring(e.value) + L" マス突き飛ばす"; break;
+        case EffectKind::Summon:          title = L"召喚"; body = L"仲間を " + std::to_wstring(e.value) + L" 体呼ぶ"; break;
         default: title = L""; body = L""; break;
         }
     }
@@ -166,6 +168,7 @@ public:
         case EffectKind::MoveAway:          return "icon_move";
         case EffectKind::PullPlayer:        return "icon_attack";
         case EffectKind::KnockbackPlayer :  return "icon_attack";
+        case EffectKind::Summon:            return "icon_summon";
         default:                            return "";
         }
     }

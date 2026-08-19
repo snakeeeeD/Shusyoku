@@ -39,4 +39,6 @@ struct PlayerData
     bool tutorialCardSelect = false;
     bool tutorialShop = false;
     bool tutorialRest = false;
+
+    std::map<std::string, int> relicCounters;   // レリックid → 現在カウント
 };

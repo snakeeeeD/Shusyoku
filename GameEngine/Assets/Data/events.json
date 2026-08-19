@@ -300,33 +300,38 @@
     {
       "id": "treasure",
       "title": "財宝",
-      "desc": "宝が眠っている。一つだけ持ち出せそうだ。",
+      "desc": "宝が眠っている。ただ、タダでは持ち出せなさそうだ…",
       "random": false,
       "choices": [
         {
-          "label": "レアカード（3枚から1枚）",
-          "result": "カードを手に入れた。",
+          "label": "遺物を奪う（レリック獲得 / -14HP）",
+          "result": "痛みと引き換えに遺物を得た。",
           "outcomes": [
-            {
-              "type": "pickCard",
-              "param": "rare"
-            }
+            { "type": "relic" },
+            { "type": "hp", "value": -14 }
           ]
         },
         {
-          "label": "遺物を得る",
-          "result": "遺物を手に入れた。",
-          "outcomes": [ { "type": "relic" } ]
+          "label": "呪物を持ち出す（レアカード / 最大HP-5）",
+          "result": "力を得たが、体が少し蝕まれた。",
+          "outcomes": [
+            { "type": "pickCard", "param": "rare" },
+            { "type": "maxHp", "value": -5 }
+          ]
         },
         {
-          "label": "強化カード（3枚から1枚）",
-          "result": "カードを手に入れた。",
+          "label": "全部かっさらう（レリック＋150G / その場で戦闘）",
+          "result": "宝を抱えた瞬間、番人が現れた！",
           "outcomes": [
-            {
-              "type": "pickCard",
-              "param": "upgraded"
-            }
+            { "type": "relic" },
+            { "type": "gold", "value": 150 },
+            { "type": "battle", "param": "event" }
           ]
+        },
+        {
+          "label": "手を出さない",
+          "result": "君は宝に触れず先へ進んだ。",
+          "outcomes": []
         }
       ]
     }

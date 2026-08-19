@@ -101,6 +101,14 @@ public:
 	bool hitsPlayer = false;   // 現在のプレイヤー位置を攻撃範囲に含む＝避けられていない
 	DirectX::XMFLOAT4 hueColor{ 1, 1, 1, 1 };   // 敵ごとの識別色（マーカーのフチ用）
 
+	void SetAllyCount(int n) { m_allyCount = n; }
+	void MarkJustSummoned() { m_justSummoned = true; }
+	bool TakeJustSummoned() { bool v = m_justSummoned; m_justSummoned = false; return v; }
+	std::vector<std::pair<std::string, int>> TakePendingSummons()
+	{
+		auto s = m_pendingSummons; m_pendingSummons.clear(); return s;
+	}
+
 private:
 	bool IsAdjacentTo(int playerCol, int playerRow);
 
@@ -140,5 +148,9 @@ private:
 	std::vector<std::pair<int, int>> m_dashPath;   // 直近の突進で通過したマス
 
 	void DropTrail(GridMap* gridMap, int col, int row);   // EmberTrail中は通ったマスに炎
+
+	int  m_allyCount = 0;
+	bool m_justSummoned = false;
+	std::vector<std::pair<std::string, int>> m_pendingSummons;
 };
 

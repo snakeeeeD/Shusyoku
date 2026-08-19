@@ -302,6 +302,72 @@
       "value": 4,
       "rarity": "starter",
       "desc": "戦闘に勝つと HP+4 回復"
+    },
+    {
+      "id": "onslaught_ring",
+      "name": "猛攻の指輪",
+      "kind": "attack",
+      "perTurn": false,
+      "effect": "block",
+      "count": 7,
+      "value": 5,
+      "rarity": "rare",
+      "desc": "攻撃カードを累計7回使うごとにブロック+5"
+    },
+    {
+      "id": "guard_rhythm",
+      "name": "守勢の律動",
+      "kind": "skill",
+      "perTurn": false,
+      "effect": "block",
+      "count": 7,
+      "value": 5,
+      "rarity": "uncommon",
+      "desc": "スキルを累計7回使うごとにブロック+5"
+    },
+    {
+      "id": "nomad_step",
+      "name": "遊牧の歩",
+      "kind": "move",
+      "perTurn": false,
+      "effect": "block",
+      "count": 7,
+      "value": 5,
+      "rarity": "uncommon",
+      "desc": "移動を累計7回使うごとにブロック+5"
+    },
+    {
+      "id": "gale_flurry",
+      "name": "疾風連撃",
+      "kind": "attack",
+      "perTurn": true,
+      "effect": "block",
+      "count": 3,
+      "value": 4,
+      "rarity": "uncommon",
+      "desc": "1ターンに攻撃を3回使うとブロック+4"
+    },
+    {
+      "id": "spell_edge",
+      "name": "術式の冴え",
+      "kind": "skill",
+      "perTurn": true,
+      "effect": "energy",
+      "count": 3,
+      "value": 1,
+      "rarity": "rare",
+      "desc": "1ターンにスキルを3回使うとエナジー+1"
+    },
+    {
+      "id": "quick_hands",
+      "name": "早業の指輪",
+      "kind": "card",
+      "perTurn": true,
+      "effect": "energy",
+      "count": 5,
+      "value": 1,
+      "rarity": "uncommon",
+      "desc": "1ターンにカードを5枚使うとエナジー+1"
     }
   ]
 }

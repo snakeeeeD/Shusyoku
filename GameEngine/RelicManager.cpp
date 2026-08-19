@@ -22,6 +22,7 @@ void RelicManager::Load(const std::string& path) {
             d.id = r["id"]; d.name = r.value("name", "");
             d.desc = r.value("desc", ""); d.kind = r.value("kind", "");
             d.value = r.value("value", 0);
+            d.count = r.value("count", 0);
             d.rarity = r.value("rarity", "common");
             s_defs[d.id] = d;
         }
@@ -47,6 +48,15 @@ int RelicManager::SumValue(const std::string& kind) {
     for (auto& id : PlayerDataManager::GetData().relics)
         if (auto d = Get(id)) if (d->kind == kind) sum += d->value;
     return sum;
+}
+
+std::vector<const RelicDef*> RelicManager::OwnedByKind(const std::string& kind) {
+    std::vector<const RelicDef*> out;
+    for (auto& id : PlayerDataManager::GetData().relics) {
+        auto it = s_defs.find(id);
+        if (it != s_defs.end() && it->second.kind == kind) out.push_back(&it->second);
+    }
+    return out;
 }
 
 bool RelicManager::HasKind(const std::string& kind) {

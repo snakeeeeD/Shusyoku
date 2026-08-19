@@ -344,6 +344,7 @@ bool Enemy::ConditionMet(const EnemyAction& a, int playerCol, int playerRow, int
     if (a.select.condition == "turnMultiple") return turn > 0 && a.select.conditionValue > 0 && (turn % a.select.conditionValue) == 0;
     if (a.select.condition == "turnExact")    return turn == a.select.conditionValue;
     if (a.select.condition == "afterDodge") return m_lastAttackWhiffed;
+    if (a.select.condition == "allyBelow") return m_allyCount < a.select.conditionValue;
     return true;
 }
 
@@ -555,7 +556,11 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
 
         case EffectKind::KnockbackPlayer: 
             KnockbackPlayer(playerCol, playerRow, gridMap, player, e.value); break;
+        case EffectKind::Summon:
+            m_pendingSummons.push_back({ e.summonId, e.value });
+            break;
         }
+
 
     }
 

@@ -190,6 +190,33 @@
           "colorEnd": [ 0.5, 0.35, 0.15, 0.0 ]
         }
       ]
+    },
+    {
+      "id": "summon",
+      "bursts": [
+        {
+          "count": 18,
+          "speed": 1.5,
+          "life": 0.7,
+          "scale": 0.3,
+          "gravity": -1.6,
+          "drag": 0.02,
+          "colorStart": [ 0.5, 1.0, 0.55, 1.0 ],
+          "colorEnd": [ 0.3, 0.7, 0.35, 0.0 ],
+          "texture": "magic"
+        },
+        {
+          "count": 10,
+          "speed": 0.6,
+          "life": 1.0,
+          "scale": 0.5,
+          "gravity": -0.5,
+          "drag": 0.04,
+          "colorStart": [ 0.7, 1.0, 0.6, 0.6 ],
+          "colorEnd": [ 0.4, 0.8, 0.4, 0.0 ],
+          "texture": "smoke"
+        }
+      ]
     }
 
   ]

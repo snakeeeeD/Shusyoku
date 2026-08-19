@@ -46,7 +46,8 @@ public:
     void DrawImGui();
     void HandleInput();
 
-    struct TutorialPage { std::wstring text; float hx = 0, hy = 0, hw = 0, hh = 0; int hoverCard = -1; bool stepsTip = false; };
+    struct TutorialPage { std::wstring text; float hx = 0, hy = 0, hw = 0, hh = 0; 
+    int hoverCard = -1; bool stepsTip = false; bool showHitmark = false; };
     std::vector<TutorialPage> m_tutorialPages;
     int m_tutorialPage = 0;
     bool m_tutorialOpen = false;
