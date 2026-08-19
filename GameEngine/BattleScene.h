@@ -100,11 +100,7 @@ public:
     void SetForceHitmark(bool b) { m_forceHitmark = b; }
     bool GetHitmarkRect(float& x, float& y, float& w, float& h) const;
 
-<<<<<<< HEAD
     void OnCardPlayed(const CardData* d);
-
-=======
->>>>>>> 35c672055e94719f7657b4dc1ec63ef5eae2eba0
 private:
     BattleUI* m_battleUI;
     GridMap* m_gridMap;

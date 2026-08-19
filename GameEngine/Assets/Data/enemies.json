@@ -657,11 +657,7 @@
 
     {
       "id": "elite_slimeking",
-<<<<<<< HEAD
       "texture": "enemy_slimeboss",
-      "hp": 140,
-=======
-      "texture": "enemy_slimeking",
       "hp": 140,
       "width": 1.3,
       "height": 1.3,
@@ -694,12 +690,10 @@
       "id": "elite_bear",
       "texture": "enemy_bear",
       "hp": 117,
->>>>>>> 35c672055e94719f7657b4dc1ec63ef5eae2eba0
       "width": 1.3,
       "height": 1.3,
       "actions": [
         {
-<<<<<<< HEAD
           "description": "分裂召喚",
           "target": { "rangeType": "None" },
           "effects": [
@@ -716,9 +710,6 @@
         },
         {
           "description": "のしかかり{0}",
-=======
-          "description": "追撃、{0}ダメージ",
->>>>>>> 35c672055e94719f7657b4dc1ec63ef5eae2eba0
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -728,17 +719,12 @@
           "effects": [
             {
               "kind": "Damage",
-<<<<<<< HEAD
-              "value": 11
-=======
               "value": 14
->>>>>>> 35c672055e94719f7657b4dc1ec63ef5eae2eba0
             }
           ],
           "select": { "chance": 20 }
         },
         {
-<<<<<<< HEAD
           "description": "{0}ダメージ+毒{1}",
           "target": {
             "rangeType": "Area",
@@ -807,8 +793,6 @@
           "select": { "chance": 20 }
         },
         {
-=======
->>>>>>> 35c672055e94719f7657b4dc1ec63ef5eae2eba0
           "description": "突進、{0}ダメージ",
           "target": {
             "rangeType": "Cross",

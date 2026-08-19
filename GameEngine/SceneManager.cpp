@@ -211,10 +211,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 			TextureManager::Load("icon_buff", L"Assets/UI/icon_buff.png");
 			TextureManager::Load("icon_debuff", L"Assets/UI/icon_debuff.png");
 			TextureManager::Load("icon_move", L"Assets/UI/icon_move.png");
-<<<<<<< HEAD
 			TextureManager::Load("icon_summon", L"Assets/UI/icon_summon.png");
-=======
->>>>>>> 35c672055e94719f7657b4dc1ec63ef5eae2eba0
 			TextureManager::Load("buff_attackup", L"Assets/UI/buff_attackup.png");
 			TextureManager::Load("buff_defenseup", L"Assets/UI/buff_defenseup.png");
 			TextureManager::Load("buff_weak", L"Assets/UI/buff_weak.png");
