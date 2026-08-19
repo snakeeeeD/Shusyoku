@@ -12,7 +12,7 @@
       "sellPrice": 20,
       "modSlots": 2,
       "mainType": "Damage",
-      "mainValue": 4
+      "mainValue": 3
     },
     {
       "id": "core_slash_h",
@@ -55,6 +55,34 @@
       "modSlots": 1,
       "mainType": "None",
       "mainValue": 0
+    },
+    {
+      "id": "core_reach",
+      "name": "貫核",
+      "desc": "直線2マス先まで届く単体攻撃 / 素材2枠",
+      "type": "Attack",
+      "rangeType": "Cross",
+      "range": 2,
+      "cost": 1,
+      "buyPrice": 130,
+      "sellPrice": 20,
+      "modSlots": 2,
+      "mainType": "Damage",
+      "mainValue": 2
+    },
+    {
+      "id": "core_sweep",
+      "name": "薙核",
+      "desc": "前方扇状の全体攻撃 / 素材2枠",
+      "type": "Attack",
+      "rangeType": "Cone",
+      "range": 2,
+      "cost": 1,
+      "buyPrice": 140,
+      "sellPrice": 20,
+      "modSlots": 2,
+      "mainType": "Damage",
+      "mainValue": 2
     }
   ],
 
@@ -64,13 +92,13 @@
       "id": "sword_fragment",
       "name": "剣の破片",
       "tag": "鋭",
-      "desc": "攻撃:ダメ+5 / スキル:攻撃UP / パワー:永続攻撃UP",
+      "desc": "攻撃:ダメ+2 / スキル:攻撃UP / パワー:永続攻撃UP",
       "cost": 0,
       "buyPrice": 120,
       "sellPrice": 10,
       "Attack": {
         "slot": "amplifyMain",
-        "value": 5
+        "value": 2
       },
       "Skill": {
         "slot": "sub",
@@ -108,6 +136,100 @@
       "Attack": {
         "slot": "hits",
         "value": 1
+      }
+    },
+    {
+      "id": "venom_fang",
+      "name": "毒牙",
+      "tag": "毒",
+      "desc": "攻撃:命中時に毒2を付与",
+      "cost": 0,
+      "buyPrice": 130,
+      "sellPrice": 15,
+      "Attack": {
+        "slot": "onHit",
+        "type": "ApplyDebuff",
+        "buffType": "Poison",
+        "value": 2,
+        "duration": 2
+      }
+    },
+    {
+      "id": "iron_shard",
+      "name": "鉄片",
+      "tag": "盾",
+      "desc": "攻撃:ブロック+2 / スキル:ブロック+2",
+      "cost": 0,
+      "buyPrice": 120,
+      "sellPrice": 15,
+      "Attack": {
+        "slot": "sub",
+        "type": "Block",
+        "value": 2
+      },
+      "Skill": {
+        "slot": "amplifyMain",
+        "value": 2
+      }
+    },
+    {
+      "id": "spark_chip",
+      "name": "電片",
+      "tag": "引",
+      "desc": "カードを1枚引く（全コア）",
+      "cost": 0,
+      "buyPrice": 140,
+      "sellPrice": 15,
+      "all": {
+        "slot": "sub",
+        "type": "Draw",
+        "value": 1
+      }
+    },
+    {
+      "id": "dull_stone",
+      "name": "鈍石",
+      "tag": "鈍",
+      "desc": "攻撃:命中時に弱体(1ターン)を付与",
+      "cost": 0,
+      "buyPrice": 120,
+      "sellPrice": 15,
+      "Attack": {
+        "slot": "onHit",
+        "type": "ApplyDebuff",
+        "buffType": "Weak",
+        "value": 1,
+        "duration": 1
+      }
+    },
+    {
+      "id": "vuln_shard",
+      "name": "脆片",
+      "tag": "脆",
+      "desc": "攻撃:命中時に脆弱(1ターン)を付与",
+      "cost": 0,
+      "buyPrice": 140,
+      "sellPrice": 15,
+      "Attack": {
+        "slot": "onHit",
+        "type": "ApplyDebuff",
+        "buffType": "Vulnerable",
+        "value": 1,
+        "duration": 1
+      }
+    },
+    {
+      "id": "life_shard",
+      "name": "生片",
+      "tag": "生",
+      "desc": "使用時にHPを2回復（全コア）",
+      "cost": 0,
+      "buyPrice": 150,
+      "sellPrice": 15,
+      "all": {
+        "slot": "sub",
+        "type": "Heal",
+        "value": 2
       }
     },
     {

@@ -171,6 +171,8 @@ public:
 
     void DrawDropTooltipTop();
 
+    bool GetHitmarkRect(Enemy* enemy, Renderer3D* renderer3D, float& x, float& y, float& w, float& h) const;
+
 private:
     SpriteRenderer* m_spriteRenderer = nullptr;
     TextRenderer* m_textRenderer = nullptr;

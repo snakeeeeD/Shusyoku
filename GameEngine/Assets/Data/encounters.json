@@ -72,6 +72,9 @@
     { "layer": 1, "category": "elite", "weight": 50, "enemies": [
       { "id": "elite_tentacle", "col": 4, "row": 0 }
     ] },
+    { "layer": 1, "category": "elite", "weight": 80, "enemies": [
+      { "id": "elite_slimeking", "col": 4, "row": 3 }
+    ] },
 
     { "layer": 1, "tier": 1, "category": "event", "weight": 1, "enemies": [
       { "id": "warden", "col": 6, "row": 2 }

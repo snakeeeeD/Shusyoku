@@ -94,6 +94,12 @@ public:
     void ApplyDiscardEffect(const CardEffectData& e);
     void AutoDiscardAll();
 
+    void SetFreeLook(bool b) { m_freeLook = b; }
+    void FreeLookStep(Input& in, float deltaTime);   // チュートリアル中の「見る系」駆動
+
+    void SetForceHitmark(bool b) { m_forceHitmark = b; }
+    bool GetHitmarkRect(float& x, float& y, float& w, float& h) const;
+
 private:
     BattleUI* m_battleUI;
     GridMap* m_gridMap;
@@ -220,4 +226,8 @@ private:
     std::string m_rewardRelic;
 
     void RunTurnCycle();   // 回転の輪：レリック値ぶん捨てて引く
+
+    bool m_freeLook = false;
+
+    bool m_forceHitmark = false;
 };

@@ -588,15 +588,25 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             // この敵の攻撃が今あなたに当たる → キャラの頭上に大きめの赤警告（敵の識別色フチ）
             if (enemy->hitsPlayer && ctx.isPlayerTurn)
             {
-                float mk = 34.0f;                 // ← 大きく（小さければ 40〜46 まで）
+                float mk = 34.0f;   
                 float mx = headX - mk / 2.0f;
-                float my = headY - mk - 14.0f;     // ← 頭上に余白。もっと離すなら -14 を大きく
+                float my = headY - mk - 14.0f;
                 float pulse = 0.75f + 0.25f * sinf(ctx.highlightTimer * 6.0f);
                 const XMFLOAT4& hue = enemy->hueColor;
                 m_spriteRenderer->DrawSprite(TextureManager::Get("ui_hitring"),
                     mx, my, mk, mk, 0.0f, XMFLOAT4(hue.x, hue.y, hue.z, pulse));   // 敵色フチ
                 m_spriteRenderer->DrawSprite(TextureManager::Get("ui_hitmark"),
                     mx, my, mk, mk, 0.0f, XMFLOAT4(1.0f, 1.0f, 1.0f, pulse));       // 赤バッジ
+
+                if (ctx.mousePos.x >= mx && ctx.mousePos.x <= mx + mk
+                    && ctx.mousePos.y >= my && ctx.mousePos.y <= my + mk)
+                {
+                    m_intentHover = true;
+                    m_intentX = mx + mk * 0.5f;
+                    m_intentY = my;
+                    m_intentTitle = L"攻撃が当たる！";
+                    m_intentBody = L"今の位置はこの敵の攻撃範囲内\n移動して避けよう";
+                }
             }
 
             float footX2, footY2;
@@ -2451,4 +2461,15 @@ void BattleUI::DrawUnitStatusText(float footX, float footY, float scale, bool is
         m_textRenderer->DrawText(bv, vX + iconSize + 2.0f, vY + 1.0f, 11.0f, D2D1::ColorF(D2D1::ColorF::White));
         vX += iconSize + 20.0f;
     }
+}
+
+bool BattleUI::GetHitmarkRect(Enemy* enemy, Renderer3D* r3d, float& x, float& y, float& w, float& h) const
+{
+    float hx, hy;
+    if (!GetEnemyScreenPos(enemy, r3d, hx, hy)) return false;
+    const float mk = 34.0f;                       // 当たりマーカーと同じレイアウト
+    x = hx - mk / 2.0f - 8.0f;
+    y = hy - mk - 14.0f - 8.0f;
+    w = mk + 16.0f; h = mk + 16.0f;
+    return true;
 }

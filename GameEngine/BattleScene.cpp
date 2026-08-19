@@ -422,6 +422,7 @@ void BattleScene::OnPlayerMoved()
 void BattleScene::Update(float deltaTime)
 {
     m_input.Update();
+    if (m_freeLook) return;
 
 #ifdef _DEBUG
     ImGuiIO& io = ImGui::GetIO();
@@ -2716,4 +2717,81 @@ void BattleScene::DashGlideTo(int c, int r)
     float dur = (dist / 1.1f) * 0.07f;   // 1マスあたり0.07秒＝距離で時間が伸びる＝速度一定感を避けつつ滑らか
     if (dur < 0.06f) dur = 0.06f;
     m_dashEnemy->StartMove(wx, wz, dur, false);   // false = smoothstep（緩急つき）
+}
+
+void BattleScene::FreeLookStep(Input& in, float deltaTime)
+{
+    // ズーム
+    int wd = in.GetMouseWheelDelta();
+    if (wd != 0) { m_cameraZoom -= wd > 0 ? ZOOM_SPEED : -ZOOM_SPEED; m_cameraZoom = max(ZOOM_MIN, min(ZOOM_MAX, m_cameraZoom)); }
+
+    // パン（中ボタンドラッグ）
+    if (in.GetMouseButtonPress(2)) {
+        POINT mp = in.GetMousePos();
+        if (!m_isDraggingCamera) { m_isDraggingCamera = true; m_dragStartPos = mp; }
+        else {
+            float dx = (float)(mp.x - m_dragStartPos.x), dy = (float)(mp.y - m_dragStartPos.y);
+            m_cameraOffsetX += dx * 0.02f * m_cameraZoom;
+            m_cameraOffsetZ -= dy * 0.02f * m_cameraZoom;
+            float gW = (m_gridMap->GetCols() / 2.0f) * 1.1f, gH = (m_gridMap->GetRows() / 2.0f) * 1.1f;
+            float zf = (m_cameraZoom > 1.0f) ? 1.0f / m_cameraZoom : 1.0f;
+            m_cameraOffsetX = max((-gW + 2.0f) * zf, min((gW - 3.0f) * zf, m_cameraOffsetX));
+            m_cameraOffsetZ = max((-gH + 1.0f) * zf, min((gH - 2.0f) * zf, m_cameraOffsetZ));
+            m_dragStartPos = mp;
+        }
+    }
+    else m_isDraggingCamera = false;
+
+    // リセット（中クリック）
+    if (in.GetMouseButtonTrigger(2)) { m_cameraZoom = ZOOM_MAX; m_cameraOffsetX = m_player->worldX; m_cameraOffsetZ = m_player->worldZ; }
+
+    // 敵クリック（グリッド）→ 範囲選択
+    if (in.GetMouseButtonTrigger(0)
+        && in.GetMousePos().x < m_screenWidth - 250.0f
+        && in.GetMousePos().y < m_screenHeight - 150.0f) {
+        auto rc = m_gridMap->GetClickedCell3D(in.GetMousePos(),
+            m_renderer3D->GetViewMatrix(), m_renderer3D->GetProjectionMatrix(), m_screenWidth, m_screenHeight);
+        int found = -1;
+        if (rc.cell)
+            for (int i = 0; i < (int)m_enemies.size(); i++)
+                for (auto& [dc, dr] : m_enemies[i]->GetGridShape())
+                    if (m_enemies[i]->gridCol + dc == rc.col && m_enemies[i]->gridRow + dr == rc.row) found = i;
+        m_selectedEnemyRange = (found >= 0 && found != m_selectedEnemyRange) ? found : -1;
+    }
+    // 敵パネルクリック → 範囲選択＋その敵へカメラ
+    if (in.GetMouseButtonTrigger(0)) {
+        POINT mp = in.GetMousePos();
+        float px = m_screenWidth - 250.0f, py = 50.0f, pw = 240.0f, eh = 90.0f;
+        for (int i = 0; i < (int)m_enemies.size(); i++) {
+            float ey = py + i * (eh + 5.0f);
+            if (mp.x >= px && mp.x <= px + pw && mp.y >= ey && mp.y <= ey + eh) {
+                m_selectedEnemyRange = (m_selectedEnemyRange == i) ? -1 : i;
+                m_cameraOffsetX = m_enemies[i]->worldX; m_cameraOffsetZ = m_enemies[i]->worldZ; break;
+            }
+        }
+    }
+
+    // カメラ適用
+    {
+        float sx, sz; ScreenShake::GetOffset(sx, sz);
+        XMFLOAT3 tgt(m_cameraOffsetX + sx, -2.0f, m_cameraOffsetZ + sz);
+        XMFLOAT3 pos(m_cameraOffsetX + sx, tgt.y + 17.0f * m_cameraZoom, m_cameraOffsetZ + sz + 6.0f * m_cameraZoom);
+        m_renderer3D->SetCamera(pos, tgt, XMFLOAT3(0, 1, 0));
+    }
+
+    // ハイライト（脅威範囲＋当たりマーカー）
+    int hi = m_battleUI->GetPanelHoveredEnemy();
+    m_highlighter.SetSelectedEnemy(hi >= 0 ? hi : m_selectedEnemyRange);
+    m_highlighter.ClearPlayerHighlight(m_gridMap);
+    m_highlightTimer += deltaTime * 0.5f;
+    if (m_highlightTimer > 3.14159f * 2.0f) m_highlightTimer = 0.0f;
+    m_highlighter.UpdateEnemyHighlight(m_enemies, m_gridMap, m_player,
+        m_playerCol, m_playerRow, m_highlightTimer, m_decoyCol, m_decoyRow);
+    if (m_forceHitmark && !m_enemies.empty()) m_enemies[0]->hitsPlayer = true;   // 学習用に強制表示
+}
+
+bool BattleScene::GetHitmarkRect(float& x, float& y, float& w, float& h) const
+{
+    if (m_enemies.empty() || !m_battleUI) return false;
+    return m_battleUI->GetHitmarkRect(m_enemies[0], m_renderer3D, x, y, w, h);
 }
