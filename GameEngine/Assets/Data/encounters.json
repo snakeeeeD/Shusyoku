@@ -72,8 +72,13 @@
     { "id": "enc17", "layer": 1, "category": "elite", "weight": 50, "enemies": [
       { "id": "elite_tentacle", "col": 4, "row": 0 }
     ] },
+<<<<<<< HEAD
     { "id": "enc18", "layer": 1, "category": "elite", "weight": 80, "enemies": [
       { "id": "elite_slimeking", "col": 4, "row": 1 }
+=======
+    { "layer": 1, "category": "elite", "weight": 80, "enemies": [
+      { "id": "elite_slimeking", "col": 4, "row": 3 }
+>>>>>>> 35c672055e94719f7657b4dc1ec63ef5eae2eba0
     ] },
 
     { "id": "enc19", "layer": 1, "tier": 1, "category": "event", "weight": 1, "enemies": [

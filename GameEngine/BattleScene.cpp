@@ -2836,6 +2836,7 @@ bool BattleScene::GetHitmarkRect(float& x, float& y, float& w, float& h) const
 {
     if (m_enemies.empty() || !m_battleUI) return false;
     return m_battleUI->GetHitmarkRect(m_enemies[0], m_renderer3D, x, y, w, h);
+<<<<<<< HEAD
 }
 
 void BattleScene::OnCardPlayed(const CardData* d)
@@ -2861,4 +2862,6 @@ void BattleScene::OnCardPlayed(const CardData* d)
         (d->type == CardType::Move) ? "move" : "";
     if (k[0]) tick(k);   // その種別
     tick("card");        // 全カード共通
+=======
+>>>>>>> 35c672055e94719f7657b4dc1ec63ef5eae2eba0
 }
