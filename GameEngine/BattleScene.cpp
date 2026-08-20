@@ -1304,23 +1304,36 @@ void BattleScene::Draw()
             }
     }
 
+    // 背景テーマ（層＋ボスで地面/装飾/サイズを決定）
+    struct Theme { const char* ground; const char* tex[3]; float w[3]; float h[3]; };
+    int themeLayer = PlayerDataManager::GetData().layer;
+    Theme th;
+    if (m_category == EncCategory::Boss)
+        th = { "ground_scorched", { "deco_deadtree","deco_ember","deco_darkrock" }, { 2.8f,2.6f,2.6f }, { 3.8f,2.1f,2.1f } };
+    else if (themeLayer <= 1)
+        th = { "ground_grass",    { "deco_tree","deco_bush","deco_rock" },          { 3.0f,2.4f,2.6f }, { 3.8f,1.8f,2.1f } };
+    else if (themeLayer == 2)
+        th = { "ground_cave",     { "deco_stalagmite","deco_crystal","deco_caverock" }, { 2.0f,2.4f,2.6f }, { 3.8f,3.4f,2.1f } };
+    else
+        th = { "ground_future",   { "deco_pillar","deco_terminal","deco_techblock" }, { 1.9f,2.6f,2.6f }, { 3.8f,3.0f,2.2f } };
+
     // === 接地用の地面（見下ろし草地をタイル状に敷く） ===
     {
         const float TILE = 6.0f;   // 1枚のワールドサイズ（テクスチャ1回分）
         const int   N = 6;         // 中心から±N枚（(2N+1)^2枚）
         for (int gz = -N; gz <= N; gz++)
             for (int gx = -N; gx <= N; gx++)
-                m_renderer3D->DrawTile(TextureManager::Get("ground_grass"),
-                    gx* TILE, gz* TILE, TILE * 1.02f,     // 少し重ねて継ぎ目防止
-                    XMFLOAT4(1, 1, 1, 1), -0.06f);
+                m_renderer3D->DrawTile(TextureManager::Get(th.ground),
+                    gx * TILE, gz * TILE, TILE * 1.02f, XMFLOAT4(1, 1, 1, 1), -0.06f);
     }
 
     // 背景装飾（透明quadがdepthを書いて四角化するのを防ぐため depth-write OFF）
     m_renderer3D->SetDepthWrite(false);
     for (auto& dc : m_decos)
     {
-        const char* tex = (dc.type == 0) ? "deco_tree" : (dc.type == 1) ? "deco_bush" : "deco_rock";
-        float w, h;
+        const char* tex = th.tex[dc.type];
+        float w = th.w[dc.type] * dc.scale;
+        float h = th.h[dc.type] * dc.scale;
         if (dc.type == 0) { w = 3.0f; h = 3.8f; }        // 木
         else if (dc.type == 1) { w = 2.4f; h = 1.8f; }   // 茂み
         else { w = 2.6f; h = 2.1f; }                     // 岩

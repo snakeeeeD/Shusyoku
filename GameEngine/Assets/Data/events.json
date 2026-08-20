@@ -298,6 +298,30 @@
     },
 
     {
+      "id": "treasure_field",
+      "title": "財宝",
+      "desc": "誰かが遺した宝だ。好きなものを一つ選ぼう。",
+      "random": false,
+      "choices": [
+        {
+          "label": "レリックを選ぶ",
+          "result": "遺物を手に入れた。",
+          "outcomes": [ { "type": "relic" } ]
+        },
+        {
+          "label": "レアカードを選ぶ",
+          "result": "強力なカードを得た。",
+          "outcomes": [ { "type": "pickCard", "param": "rare" } ]
+        },
+        {
+          "label": "強化されたカードを選ぶ",
+          "result": "鍛えられたカードを得た。",
+          "outcomes": [ { "type": "pickCard", "param": "upgraded" } ]
+        }
+      ]
+    },
+
+    {
       "id": "treasure",
       "title": "財宝",
       "desc": "宝が眠っている。ただ、タダでは持ち出せなさそうだ…",

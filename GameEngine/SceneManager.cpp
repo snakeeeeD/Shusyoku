@@ -140,10 +140,25 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	{
 		TextureManager::Load("title", L"Assets/Test/Title.png");
 		TextureManager::Load("battle_bg", L"Assets/Field/GrassField.jpg");
+		// 1層 草原
 		TextureManager::Load("ground_grass", L"Assets/Field/ground_grass.png");
 		TextureManager::Load("deco_tree", L"Assets/Field/deco_tree.png");
 		TextureManager::Load("deco_rock", L"Assets/Field/deco_rock.png");
 		TextureManager::Load("deco_bush", L"Assets/Field/deco_bush.png");
+		// 2層 洞窟
+		TextureManager::Load("ground_cave", L"Assets/Field/ground_cave.png");
+		TextureManager::Load("deco_stalagmite", L"Assets/Field/deco_stalagmite.png");
+		TextureManager::Load("deco_crystal", L"Assets/Field/deco_crystal.png");
+		TextureManager::Load("deco_caverock", L"Assets/Field/deco_caverock.png");
+		// 3層 近未来
+		TextureManager::Load("ground_future", L"Assets/Field/ground_future.png");
+		TextureManager::Load("deco_pillar", L"Assets/Field/deco_pillar.png");
+		TextureManager::Load("deco_terminal", L"Assets/Field/deco_terminal.png");
+		TextureManager::Load("deco_techblock", L"Assets/Field/deco_techblock.png");
+		TextureManager::Load("ground_scorched", L"Assets/Field/ground_scorched.png");
+		TextureManager::Load("deco_deadtree", L"Assets/Field/deco_deadtree.png");
+		TextureManager::Load("deco_darkrock", L"Assets/Field/deco_darkrock.png");
+		TextureManager::Load("deco_ember", L"Assets/Field/deco_ember.png");
 		TextureManager::Load("deco_shadow", L"Assets/Field/deco_shadow.png");
 		TextureManager::Load("map_bg", L"Assets/Field/Map.jpg");
 		TextureManager::Load("cardSelect_bg", L"Assets/Field/CardSelect.jpeg");

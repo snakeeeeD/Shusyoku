@@ -682,7 +682,7 @@ void FieldScene::HandleInput()
                     {
                         node.visited = true;
                         SaveProgress();
-                        if (onEvent) onEvent("treasure");   // 財宝イベントを開くだけ
+                        if (onEvent) onEvent("treasure_field");  // 財宝イベントを開くだけ
                         break;
                     }
                     default:
