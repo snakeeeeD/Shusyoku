@@ -34,6 +34,8 @@ enum class EnemyTurnPhase
     EndTurn 
 };
 
+enum class TrapFire { Detonate, Trigger };
+
 class BattleScene : public Scene
 {
 public:
@@ -101,6 +103,21 @@ public:
     bool GetHitmarkRect(float& x, float& y, float& w, float& h) const;
 
     void OnCardPlayed(const CardData* d);
+
+    struct TrapQueue {
+        std::vector<std::pair<int, int>> cells;
+        float  timer = 0.0f;
+        TrapFire mode = TrapFire::Detonate;
+        bool   full = false;      // Detonate—p
+        Enemy* enemy = nullptr;   // Trigger—p
+        bool Active() const { return !cells.empty(); }
+    };
+    TrapQueue m_trapQueue;
+
+    std::vector<std::pair<int, int>> m_coilTrapQueue;
+    float  m_coilTrapTimer = 0.0f;
+    Enemy* m_coilTrapEnemy = nullptr;
+
 private:
     BattleUI* m_battleUI;
     GridMap* m_gridMap;
@@ -239,4 +256,10 @@ private:
 
     struct Deco { float x, z, scale; int type; };   // type: 0=–Ø 1=–Î‚Ý 2=Šâ
     std::vector<Deco> m_decos;
+
+    int   m_eMultiRemain = 0;
+    int   m_eMultiDamage = 0;
+    float m_eMultiTimer = 0.0f;
+    Enemy* m_eMultiEnemy = nullptr;
+
 };

@@ -23,7 +23,9 @@
               "type": "gold",
               "value": -60
             },
-            { "type": "relic" }
+            {
+              "type": "relic"
+            }
           ]
         },
         {
@@ -31,7 +33,8 @@
           "result": "何も起きなかった。",
           "outcomes": []
         }
-      ]
+      ],
+      "layer": 1
     },
     {
       "id": "chest",
@@ -67,7 +70,8 @@
           "result": "君は先へ進んだ。",
           "outcomes": []
         }
-      ]
+      ],
+      "layer": 1
     },
     {
       "id": "spring",
@@ -99,9 +103,9 @@
             }
           ]
         }
-      ]
+      ],
+      "layer": 1
     },
-
     {
       "id": "forge",
       "title": "旅の鍛冶場",
@@ -111,7 +115,9 @@
           "label": "カードを1枚強化してもらう（-50G）",
           "result": "カードが鍛えられた。",
           "outcomes": [
-            { "type": "upgradeCard" },
+            {
+              "type": "upgradeCard"
+            },
             {
               "type": "gold",
               "value": -80
@@ -123,9 +129,9 @@
           "result": "君は先へ進んだ。",
           "outcomes": []
         }
-      ]
+      ],
+      "layer": 0
     },
-
     {
       "id": "cursed_altar",
       "title": "呪いの祭壇",
@@ -139,22 +145,28 @@
               "type": "gold",
               "value": -80
             },
-            { "type": "removeCard" }
+            {
+              "type": "removeCard"
+            }
           ]
         },
         {
           "label": "カードを賭ける（ランダム変化）",
           "result": "カードが姿を変えた。",
-          "outcomes": [ { "type": "transformCard" } ]
+          "outcomes": [
+            {
+              "type": "transformCard"
+            }
+          ]
         },
         {
           "label": "断る",
           "result": "君は祭壇を後にした。",
           "outcomes": []
         }
-      ]
+      ],
+      "layer": 2
     },
-
     {
       "id": "spirit",
       "title": "気まぐれな精霊",
@@ -163,16 +175,20 @@
         {
           "label": "レリックを1つ入れ替える",
           "result": "レリックが姿を変えた。",
-          "outcomes": [ { "type": "transformRelic" } ]
+          "outcomes": [
+            {
+              "type": "transformRelic"
+            }
+          ]
         },
         {
           "label": "断る",
           "result": "精霊は消えていった。",
           "outcomes": []
         }
-      ]
+      ],
+      "layer": 2
     },
-
     {
       "id": "ambush",
       "title": "怪しい足音",
@@ -181,7 +197,11 @@
         {
           "label": "身構える",
           "result": "敵が飛びかかってきた！",
-          "outcomes": [ { "type": "battle" } ]
+          "outcomes": [
+            {
+              "type": "battle"
+            }
+          ]
         },
         {
           "label": "そっと離れる",
@@ -193,9 +213,9 @@
             }
           ]
         }
-      ]
+      ],
+      "layer": 0
     },
-
     {
       "id": "dark_altar",
       "title": "暗い祭壇",
@@ -205,7 +225,9 @@
           "label": "力を奪い取る（レリック＋番人と戦闘）",
           "result": "力を得たが、闇の番人が目覚めた！",
           "outcomes": [
-            { "type": "relic" },
+            {
+              "type": "relic"
+            },
             {
               "type": "battle",
               "param": "altar_guardian"
@@ -217,9 +239,9 @@
           "result": "無事に通り過ぎた。",
           "outcomes": []
         }
-      ]
+      ],
+      "layer": 2
     },
-
     {
       "id": "merchant",
       "title": "怪しい行商人",
@@ -228,16 +250,20 @@
         {
           "label": "店を見る",
           "result": "商人は荷を広げた。",
-          "outcomes": [ { "type": "shop" } ]
+          "outcomes": [
+            {
+              "type": "shop"
+            }
+          ]
         },
         {
           "label": "無視する",
           "result": "商人は去っていった。",
           "outcomes": []
         }
-      ]
+      ],
+      "layer": 0
     },
-
     {
       "id": "lost_cache",
       "title": "忘れ去られた蓄え",
@@ -263,9 +289,9 @@
           "result": "先へ進んだ。",
           "outcomes": []
         }
-      ]
+      ],
+      "layer": 2
     },
-
     {
       "id": "sealed_vault",
       "title": "封印された金庫",
@@ -294,9 +320,195 @@
           "result": "先へ進んだ。",
           "outcomes": []
         }
+      ],
+      "layer": 3
+    },
+    {
+      "id": "cave_lake",
+      "title": "地底湖",
+      "desc": "青く澄んだ地底の湖。ほのかに光っている。",
+      "layer": 2,
+      "random": true,
+      "choices": [
+        {
+          "label": "水を飲む（+16HP）",
+          "result": "冷たい水で癒された。",
+          "outcomes": [
+            {
+              "type": "hp",
+              "value": 16
+            }
+          ]
+        },
+        {
+          "label": "湖底を探る（-6HP, 素材獲得）",
+          "result": "鉱石を拾った。",
+          "outcomes": [
+            {
+              "type": "hp",
+              "value": -6
+            },
+            {
+              "type": "material",
+              "param": "golden_fragment",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "label": "立ち去る",
+          "result": "先へ進んだ。",
+          "outcomes": []
+        }
       ]
     },
-
+    {
+      "id": "cave_vein",
+      "title": "光る鉱脈",
+      "desc": "壁に埋もれた鉱脈が淡く輝いている。",
+      "layer": 2,
+      "random": true,
+      "choices": [
+        {
+          "label": "掘り出す（-50G, レリック）",
+          "result": "遺物を掘り当てた。",
+          "outcomes": [
+            {
+              "type": "gold",
+              "value": -50
+            },
+            {
+              "type": "relic"
+            }
+          ]
+        },
+        {
+          "label": "砕いて売る（+90G）",
+          "result": "鉱石を売り払った。",
+          "outcomes": [
+            {
+              "type": "gold",
+              "value": 90
+            }
+          ]
+        },
+        {
+          "label": "触れない",
+          "result": "先へ進んだ。",
+          "outcomes": []
+        }
+      ]
+    },
+    {
+      "id": "tech_terminal",
+      "title": "放棄端末",
+      "desc": "埃をかぶった端末がまだ稼働している。",
+      "layer": 3,
+      "random": true,
+      "choices": [
+        {
+          "label": "データを解析（レアカード）",
+          "result": "戦術データを取得した。",
+          "outcomes": [
+            {
+              "type": "pickCard",
+              "param": "rare"
+            }
+          ]
+        },
+        {
+          "label": "電力を奪う（+80G, -5HP）",
+          "result": "エネルギーを抜き取った。",
+          "outcomes": [
+            {
+              "type": "gold",
+              "value": 80
+            },
+            {
+              "type": "hp",
+              "value": -5
+            }
+          ]
+        },
+        {
+          "label": "放置する",
+          "result": "先へ進んだ。",
+          "outcomes": []
+        }
+      ]
+    },
+    {
+      "id": "tech_pod",
+      "title": "修復ポッド",
+      "desc": "自動修復ポッド。まだ機能しているようだ。",
+      "layer": 3,
+      "random": true,
+      "choices": [
+        {
+          "label": "治療を受ける（+22HP）",
+          "result": "傷が塞がった。",
+          "outcomes": [
+            {
+              "type": "hp",
+              "value": 22
+            }
+          ]
+        },
+        {
+          "label": "強化施術（最大HP+8, -40G）",
+          "result": "身体が強化された。",
+          "outcomes": [
+            {
+              "type": "maxHp",
+              "value": 8
+            },
+            {
+              "type": "gold",
+              "value": -40
+            }
+          ]
+        },
+        {
+          "label": "部品を剥ぐ（+70G）",
+          "result": "部品を売った。",
+          "outcomes": [
+            {
+              "type": "gold",
+              "value": 70
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tech_drone",
+      "title": "警備ドローン",
+      "desc": "赤いランプの警備ドローンが起動した。",
+      "layer": 3,
+      "random": true,
+      "choices": [
+        {
+          "label": "撃破する（戦闘）",
+          "result": "ドローンが襲ってきた！",
+          "outcomes": [
+            {
+              "type": "battle",
+              "param": "event"
+            }
+          ]
+        },
+        {
+          "label": "システムを騙す（-6HP）",
+          "result": "なんとかやり過ごした。",
+          "outcomes": [
+            {
+              "type": "hp",
+              "value": -6
+            }
+          ]
+        }
+      ]
+    },
     {
       "id": "treasure_field",
       "title": "財宝",
@@ -306,21 +518,34 @@
         {
           "label": "レリックを選ぶ",
           "result": "遺物を手に入れた。",
-          "outcomes": [ { "type": "relic" } ]
+          "outcomes": [
+            {
+              "type": "relic"
+            }
+          ]
         },
         {
           "label": "レアカードを選ぶ",
           "result": "強力なカードを得た。",
-          "outcomes": [ { "type": "pickCard", "param": "rare" } ]
+          "outcomes": [
+            {
+              "type": "pickCard",
+              "param": "rare"
+            }
+          ]
         },
         {
           "label": "強化されたカードを選ぶ",
           "result": "鍛えられたカードを得た。",
-          "outcomes": [ { "type": "pickCard", "param": "upgraded" } ]
+          "outcomes": [
+            {
+              "type": "pickCard",
+              "param": "upgraded"
+            }
+          ]
         }
       ]
     },
-
     {
       "id": "treasure",
       "title": "財宝",
@@ -331,25 +556,44 @@
           "label": "遺物を奪う（レリック獲得 / -14HP）",
           "result": "痛みと引き換えに遺物を得た。",
           "outcomes": [
-            { "type": "relic" },
-            { "type": "hp", "value": -14 }
+            {
+              "type": "relic"
+            },
+            {
+              "type": "hp",
+              "value": -14
+            }
           ]
         },
         {
           "label": "呪物を持ち出す（レアカード / 最大HP-5）",
           "result": "力を得たが、体が少し蝕まれた。",
           "outcomes": [
-            { "type": "pickCard", "param": "rare" },
-            { "type": "maxHp", "value": -5 }
+            {
+              "type": "pickCard",
+              "param": "rare"
+            },
+            {
+              "type": "maxHp",
+              "value": -5
+            }
           ]
         },
         {
           "label": "全部かっさらう（レリック＋150G / その場で戦闘）",
           "result": "宝を抱えた瞬間、番人が現れた！",
           "outcomes": [
-            { "type": "relic" },
-            { "type": "gold", "value": 150 },
-            { "type": "battle", "param": "event" }
+            {
+              "type": "relic"
+            },
+            {
+              "type": "gold",
+              "value": 150
+            },
+            {
+              "type": "battle",
+              "param": "event"
+            }
           ]
         },
         {
@@ -359,6 +603,5 @@
         }
       ]
     }
-
   ]
 }

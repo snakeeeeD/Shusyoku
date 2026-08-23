@@ -23,4 +23,5 @@ struct EnemyData
     std::vector<std::pair<int, int>> gridShape;
     std::vector<EnemyAction> actions;
     std::vector<DropDef> drops;
+    bool snake = false;
 };

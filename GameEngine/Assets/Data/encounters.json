@@ -1,97 +1,873 @@
 ﻿{
   "encounters": [
-
-    { "id": "enc0", "layer": 1, "tier": 1, "category": "normal", "weight": 25, "enemies": [
-      { "id": "slime", "col": 5, "row": 2 },
-      { "id": "slime", "col": 6, "row": 3 },
-      { "id": "slime", "col": 5, "row": 4 }
-    ] },
-    { "id": "enc1", "layer": 1, "tier": 1, "category": "normal", "weight": 22, "enemies": [
-      { "id": "slime", "col": 6, "row": 2 },
-      { "id": "slime", "col": 6, "row": 4 },
-      { "id": "hound", "col": 5, "row": 3 }
-    ] },
-    { "id": "enc2", "layer": 1, "tier": 1, "category": "normal", "weight": 20, "enemies": [
-      { "id": "hound", "col": 6, "row": 2 },
-      { "id": "hound", "col": 6, "row": 4 }
-    ] },
-    { "id": "enc3", "layer": 1, "tier": 1, "category": "normal", "weight": 12, "enemies": [
-      { "id": "brute", "col": 6, "row": 3 }
-    ] },
-    { "id": "enc4", "layer": 1, "tier": 1, "category": "normal", "weight": 15, "enemies": [
-      { "id": "stonebug", "col": 6, "row": 3 }
-    ] },
-
-    { "id": "enc5", "layer": 1, "tier": 2, "category": "normal", "weight": 20, "enemies": [
-      { "id": "goblin", "col": 6, "row": 3 }
-    ] },
-    { "id": "enc6", "layer": 1, "tier": 2, "category": "normal", "weight": 18, "enemies": [
-      { "id": "goblin", "col": 6, "row": 3 },
-      { "id": "hound", "col": 6, "row": 1 }
-    ] },
-    { "id": "enc7", "layer": 1, "tier": 2, "category": "normal", "weight": 15, "enemies": [
-      { "id": "caster", "col": 7, "row": 3 },
-      { "id": "hound", "col": 5, "row": 3 }
-    ] },
-    { "id": "enc8", "layer": 1, "tier": 2, "category": "normal", "weight": 15, "enemies": [
-      { "id": "archer", "col": 7, "row": 2 },
-      { "id": "hound", "col": 5, "row": 4 }
-    ] },
-    { "id": "enc9", "layer": 1, "tier": 2, "category": "normal", "weight": 15, "enemies": [
-      { "id": "emberwalker", "col": 7, "row": 1 },
-      { "id": "brute", "col": 5, "row": 4 }
-    ] },
-    { "id": "enc10", "layer": 1, "tier": 2, "category": "normal", "weight": 15, "enemies": [
-      { "id": "firespore", "col": 7, "row": 3 },
-      { "id": "slime", "col": 5, "row": 3 }
-    ] },
-
-    { "id": "enc11", "layer": 1, "tier": 3, "category": "normal", "weight": 20, "enemies": [
-      { "id": "orc", "col": 6, "row": 3 }
-    ] },
-    { "id": "enc12", "layer": 1, "tier": 3, "category": "normal", "weight": 12, "enemies": [
-      { "id": "warden", "col": 6, "row": 3 },
-      { "id": "emberwalker", "col": 7, "row": 1 }
-    ] },
-    { "id": "enc13", "layer": 1, "tier": 3, "category": "normal", "weight": 12, "enemies": [
-      { "id": "warden", "col": 5, "row": 3 },
-      { "id": "caster", "col": 7, "row": 3 }
-    ] },
-    { "id": "enc14", "layer": 1, "tier": 3, "category": "normal", "weight": 15, "enemies": [
-      { "id": "goblin", "col": 6, "row": 2 },
-      { "id": "goblin", "col": 6, "row": 4 }
-    ] },
-    { "id": "enc15", "layer": 1, "tier": 3, "category": "normal", "weight": 12, "enemies": [
-      { "id": "wraith", "col": 7, "row": 1 },
-      { "id": "orc", "col": 5, "row": 4 }
-    ] },
-
-    { "id": "enc16", "layer": 1, "category": "elite", "weight": 150, "enemies": [
-      { "id": "elite_bear", "col": 4, "row": 1 }
-    ] },
-    { "id": "enc17", "layer": 1, "category": "elite", "weight": 50, "enemies": [
-      { "id": "elite_tentacle", "col": 4, "row": 0 }
-    ] },
-    { "id": "enc18", "layer": 1, "category": "elite", "weight": 80, "enemies": [
-      { "id": "elite_slimeking", "col": 4, "row": 1 }
-    ] },
-
-    { "id": "enc19", "layer": 1, "tier": 1, "category": "event", "weight": 1, "enemies": [
-      { "id": "warden", "col": 6, "row": 2 }
-    ] },
-    { "id": "enc20", "layer": 1, "tier": 2, "category": "event", "weight": 1, "enemies": [
-      { "id": "wraith", "col": 7, "row": 3 }
-    ] },
-    { "id": "altar_guardian", "layer": 1, "tier": 1, "category": "event", "weight": 1, "enemies": [
-      { "id": "warden", "col": 4, "row": 2 },
-      { "id": "wraith", "col": 4, "row": 0 }
-    ] },
-    { "id": "enc21", "layer": 1, "tier": 2, "category": "event", "weight": 1, "enemies": [
-      { "id": "mimic", "col": 5, "row": 3 }
-    ] },
-
-    { "id": "dragon", "layer": 1, "category": "boss", "weight": 100, "enemies": [
-      { "id": "dragon", "col": 4, "row": 0 }
-    ] }
+    {
+      "id": "enc0",
+      "layer": 1,
+      "tier": 1,
+      "category": "normal",
+      "weight": 25,
+      "enemies": [
+        {
+          "id": "slime",
+          "col": 5,
+          "row": 2
+        },
+        {
+          "id": "slime",
+          "col": 6,
+          "row": 3
+        },
+        {
+          "id": "slime",
+          "col": 3,
+          "row": 4
+        }
+      ]
+    },
+    {
+      "id": "enc1",
+      "layer": 1,
+      "tier": 1,
+      "category": "normal",
+      "weight": 22,
+      "enemies": [
+        {
+          "id": "slime",
+          "col": 6,
+          "row": 2
+        },
+        {
+          "id": "slime",
+          "col": 2,
+          "row": 4
+        },
+        {
+          "id": "hound",
+          "col": 4,
+          "row": 1
+        }
+      ]
+    },
+    {
+      "id": "enc2",
+      "layer": 1,
+      "tier": 1,
+      "category": "normal",
+      "weight": 20,
+      "enemies": [
+        {
+          "id": "hound",
+          "col": 6,
+          "row": 2
+        },
+        {
+          "id": "hound",
+          "col": 6,
+          "row": 4
+        }
+      ]
+    },
+    {
+      "id": "enc3",
+      "layer": 1,
+      "tier": 1,
+      "category": "normal",
+      "weight": 12,
+      "enemies": [
+        {
+          "id": "brute",
+          "col": 4,
+          "row": 1
+        }
+      ]
+    },
+    {
+      "id": "enc4",
+      "layer": 1,
+      "tier": 1,
+      "category": "normal",
+      "weight": 15,
+      "enemies": [
+        {
+          "id": "stonebug",
+          "col": 2,
+          "row": 3
+        }
+      ]
+    },
+    {
+      "id": "enc5",
+      "layer": 1,
+      "tier": 2,
+      "category": "normal",
+      "weight": 20,
+      "enemies": [
+        {
+          "id": "goblin",
+          "col": 4,
+          "row": 1
+        }
+      ]
+    },
+    {
+      "id": "enc6",
+      "layer": 1,
+      "tier": 2,
+      "category": "normal",
+      "weight": 18,
+      "enemies": [
+        {
+          "id": "goblin",
+          "col": 6,
+          "row": 3
+        },
+        {
+          "id": "hound",
+          "col": 7,
+          "row": 2
+        }
+      ]
+    },
+    {
+      "id": "enc7",
+      "layer": 1,
+      "tier": 2,
+      "category": "normal",
+      "weight": 15,
+      "enemies": [
+        {
+          "id": "bigfoot",
+          "col": 7,
+          "row": 3
+        },
+        {
+          "id": "hound",
+          "col": 5,
+          "row": 3
+        }
+      ]
+    },
+    {
+      "id": "enc8",
+      "layer": 1,
+      "tier": 2,
+      "category": "normal",
+      "weight": 15,
+      "enemies": [
+        {
+          "id": "archer",
+          "col": 7,
+          "row": 2
+        },
+        {
+          "id": "hound",
+          "col": 5,
+          "row": 4
+        }
+      ]
+    },
+    {
+      "id": "enc9",
+      "layer": 1,
+      "tier": 2,
+      "category": "normal",
+      "weight": 15,
+      "enemies": [
+        {
+          "id": "emberwalker",
+          "col": 7,
+          "row": 1
+        },
+        {
+          "id": "brute",
+          "col": 1,
+          "row": 4
+        }
+      ]
+    },
+    {
+      "id": "enc10",
+      "layer": 1,
+      "tier": 2,
+      "category": "normal",
+      "weight": 15,
+      "enemies": [
+        {
+          "id": "firespore",
+          "col": 4,
+          "row": 2
+        },
+        {
+          "id": "slime",
+          "col": 5,
+          "row": 3
+        }
+      ]
+    },
+    {
+      "id": "enc11",
+      "layer": 1,
+      "tier": 3,
+      "category": "normal",
+      "weight": 20,
+      "enemies": [
+        {
+          "id": "orc",
+          "col": 4,
+          "row": 2
+        }
+      ]
+    },
+    {
+      "id": "enc12",
+      "layer": 1,
+      "tier": 3,
+      "category": "normal",
+      "weight": 12,
+      "enemies": [
+        {
+          "id": "warden",
+          "col": 6,
+          "row": 3
+        },
+        {
+          "id": "emberwalker",
+          "col": 1,
+          "row": 2
+        }
+      ]
+    },
+    {
+      "id": "enc13",
+      "layer": 1,
+      "tier": 3,
+      "category": "normal",
+      "weight": 12,
+      "enemies": [
+        {
+          "id": "warden",
+          "col": 5,
+          "row": 3
+        },
+        {
+          "id": "bigfoot",
+          "col": 2,
+          "row": 3
+        }
+      ]
+    },
+    {
+      "id": "enc14",
+      "layer": 1,
+      "tier": 3,
+      "category": "normal",
+      "weight": 15,
+      "enemies": [
+        {
+          "id": "goblin",
+          "col": 6,
+          "row": 2
+        },
+        {
+          "id": "goblin",
+          "col": 2,
+          "row": 2
+        }
+      ]
+    },
+    {
+      "id": "enc15",
+      "layer": 1,
+      "tier": 3,
+      "category": "normal",
+      "weight": 12,
+      "enemies": [
+        {
+          "id": "wraith",
+          "col": 7,
+          "row": 1
+        },
+        {
+          "id": "orc",
+          "col": 5,
+          "row": 4
+        }
+      ]
+    },
+    {
+      "id": "enc16",
+      "layer": 1,
+      "category": "elite",
+      "weight": 150,
+      "enemies": [
+        {
+          "id": "elite_bear",
+          "col": 4,
+          "row": 1
+        }
+      ]
+    },
+    {
+      "id": "enc17",
+      "layer": 1,
+      "category": "elite",
+      "weight": 50,
+      "enemies": [
+        {
+          "id": "elite_tentacle",
+          "col": 4,
+          "row": 0
+        }
+      ]
+    },
+    {
+      "id": "enc18",
+      "layer": 1,
+      "category": "elite",
+      "weight": 80,
+      "enemies": [
+        {
+          "id": "elite_slimeking",
+          "col": 4,
+          "row": 1
+        }
+      ]
+    },
+    {
+      "id": "enc19",
+      "layer": 1,
+      "tier": 1,
+      "category": "event",
+      "weight": 1,
+      "enemies": [
+        {
+          "id": "warden",
+          "col": 6,
+          "row": 2
+        }
+      ]
+    },
+    {
+      "id": "enc20",
+      "layer": 1,
+      "tier": 2,
+      "category": "event",
+      "weight": 1,
+      "enemies": [
+        {
+          "id": "wraith",
+          "col": 7,
+          "row": 3
+        }
+      ]
+    },
+    {
+      "id": "altar_guardian",
+      "layer": 1,
+      "tier": 1,
+      "category": "event",
+      "weight": 1,
+      "enemies": [
+        {
+          "id": "warden",
+          "col": 4,
+          "row": 2
+        },
+        {
+          "id": "wraith",
+          "col": 4,
+          "row": 0
+        }
+      ]
+    },
+    {
+      "id": "enc21",
+      "layer": 1,
+      "tier": 2,
+      "category": "event",
+      "weight": 1,
+      "enemies": [
+        {
+          "id": "mimic",
+          "col": 4,
+          "row": 2
+        }
+      ]
+    },
+    {
+      "id": "dragon",
+      "layer": 1,
+      "category": "boss",
+      "weight": 100,
+      "enemies": [
+        {
+          "id": "dragon",
+          "col": 4,
+          "row": 0
+        }
+      ]
+    },
+    {
+      "id": "l2n0",
+      "layer": 2,
+      "category": "normal",
+      "weight": 25,
+      "enemies": [
+        {
+          "id": "bat",
+          "col": 5,
+          "row": 2
+        },
+        {
+          "id": "bat",
+          "col": 3,
+          "row": 2
+        },
+        {
+          "id": "cave_slime",
+          "col": 6,
+          "row": 4
+        }
+      ],
+      "tier": 1
+    },
+    {
+      "id": "l2n1",
+      "layer": 2,
+      "category": "normal",
+      "weight": 22,
+      "enemies": [
+        {
+          "id": "cave_slime",
+          "col": 6,
+          "row": 2
+        },
+        {
+          "id": "cave_slime",
+          "col": 2,
+          "row": 2
+        }
+      ],
+      "tier": 1
+    },
+    {
+      "id": "l2n2",
+      "layer": 2,
+      "category": "normal",
+      "weight": 18,
+      "enemies": [
+        {
+          "id": "crawler",
+          "col": 6,
+          "row": 3
+        },
+        {
+          "id": "bat",
+          "col": 5,
+          "row": 1
+        }
+      ],
+      "tier": 1
+    },
+    {
+      "id": "l2n3",
+      "layer": 2,
+      "category": "normal",
+      "weight": 15,
+      "enemies": [
+        {
+          "id": "crawler",
+          "col": 6,
+          "row": 3
+        }
+      ],
+      "tier": 1
+    },
+    {
+      "id": "l2n4",
+      "layer": 2,
+      "category": "normal",
+      "weight": 20,
+      "enemies": [
+        {
+          "id": "spider",
+          "col": 6,
+          "row": 3
+        },
+        {
+          "id": "spider",
+          "col": 2,
+          "row": 3
+        },
+        {
+          "id": "spider",
+          "col": 5,
+          "row": 5
+        },
+        {
+          "id": "spider",
+          "col": 4,
+          "row": 1
+        },
+        {
+          "id": "spider",
+          "col": 3,
+          "row": 5
+        }
+      ],
+      "tier": 1
+    },
+    {
+      "id": "l2n5",
+      "layer": 2,
+      "category": "normal",
+      "weight": 18,
+      "enemies": [
+        {
+          "id": "shrieker",
+          "col": 7,
+          "row": 2
+        },
+        {
+          "id": "crawler",
+          "col": 5,
+          "row": 4
+        }
+      ],
+      "tier": 2
+    },
+    {
+      "id": "l2n6",
+      "layer": 2,
+      "category": "normal",
+      "weight": 18,
+      "enemies": [
+        {
+          "id": "myconid",
+          "col": 6,
+          "row": 3
+        },
+        {
+          "id": "cave_slime",
+          "col": 5,
+          "row": 3
+        }
+      ],
+      "tier": 2
+    },
+    {
+      "id": "l2n7",
+      "layer": 2,
+      "category": "normal",
+      "weight": 15,
+      "enemies": [
+        {
+          "id": "spider",
+          "col": 7,
+          "row": 2
+        },
+        {
+          "id": "spider",
+          "col": 7,
+          "row": 6
+        },
+        {
+          "id": "shrieker",
+          "col": 5,
+          "row": 3
+        }
+      ],
+      "tier": 2
+    },
+    {
+      "id": "l2n8",
+      "layer": 2,
+      "category": "normal",
+      "weight": 20,
+      "enemies": [
+        {
+          "id": "cave_golem",
+          "col": 6,
+          "row": 3
+        }
+      ],
+      "tier": 3
+    },
+    {
+      "id": "l2n9",
+      "layer": 2,
+      "category": "normal",
+      "weight": 15,
+      "enemies": [
+        {
+          "id": "venomancer",
+          "col": 7,
+          "row": 2
+        },
+        {
+          "id": "spider",
+          "col": 5,
+          "row": 3
+        },
+        {
+          "id": "spider",
+          "col": 1,
+          "row": 3
+        }
+      ],
+      "tier": 3
+    },
+    {
+      "id": "l2n10",
+      "layer": 2,
+      "category": "normal",
+      "weight": 15,
+      "enemies": [
+        {
+          "id": "crystal_guard",
+          "col": 7,
+          "row": 1
+        },
+        {
+          "id": "crawler",
+          "col": 5,
+          "row": 4
+        }
+      ],
+      "tier": 3
+    },
+    {
+      "id": "l2n11",
+      "layer": 2,
+      "category": "normal",
+      "weight": 12,
+      "enemies": [
+        {
+          "id": "venomancer",
+          "col": 7,
+          "row": 1
+        },
+        {
+          "id": "crystal_guard",
+          "col": 5,
+          "row": 4
+        }
+      ],
+      "tier": 3
+    },
+    {
+      "id": "l2e0",
+      "layer": 2,
+      "category": "elite",
+      "weight": 120,
+      "enemies": [
+        {
+          "id": "elite_broodmother",
+          "col": 4,
+          "row": 1
+        }
+      ]
+    },
+    {
+      "id": "l2e1",
+      "layer": 2,
+      "category": "elite",
+      "weight": 120,
+      "enemies": [
+        {
+          "id": "elite_stonelord",
+          "col": 4,
+          "row": 1
+        }
+      ]
+    },
+    {
+      "id": "l2e2",
+      "layer": 2,
+      "category": "elite",
+      "weight": 120,
+      "enemies": [
+        {
+          "id": "elite_gloomwing",
+          "col": 4,
+          "row": 2
+        }
+      ]
+    },
+    {
+      "id": "l2ev0",
+      "layer": 2,
+      "category": "event",
+      "weight": 1,
+      "enemies": [
+        {
+          "id": "venomancer",
+          "col": 6,
+          "row": 2
+        }
+      ],
+      "tier": 1
+    },
+    {
+      "id": "l2ev1",
+      "layer": 2,
+      "category": "event",
+      "weight": 1,
+      "enemies": [
+        {
+          "id": "cave_golem",
+          "col": 6,
+          "row": 3
+        }
+      ],
+      "tier": 2
+    },
+    {
+      "id": "l2boss",
+      "layer": 2,
+      "category": "boss",
+      "weight": 100,
+      "enemies": [
+        {
+          "id": "orochi",
+          "col": 4,
+          "row": 0
+        }
+      ]
+    },
+    {
+      "id": "l2n12",
+      "layer": 2,
+      "tier": 1,
+      "category": "normal",
+      "weight": 20,
+      "enemies": [
+        {
+          "id": "bat",
+          "col": 5,
+          "row": 1
+        },
+        {
+          "id": "bat",
+          "col": 6,
+          "row": 2
+        },
+        {
+          "id": "bat",
+          "col": 6,
+          "row": 4
+        }
+      ]
+    },
+    {
+      "id": "l2n13",
+      "layer": 2,
+      "tier": 1,
+      "category": "normal",
+      "weight": 18,
+      "enemies": [
+        {
+          "id": "cave_slime",
+          "col": 6,
+          "row": 2
+        },
+        {
+          "id": "crawler",
+          "col": 6,
+          "row": 4
+        }
+      ]
+    },
+    {
+      "id": "l2n14",
+      "layer": 2,
+      "tier": 1,
+      "category": "normal",
+      "weight": 16,
+      "enemies": [
+        {
+          "id": "bat",
+          "col": 5,
+          "row": 1
+        },
+        {
+          "id": "cave_slime",
+          "col": 6,
+          "row": 3
+        },
+        {
+          "id": "crawler",
+          "col": 7,
+          "row": 4
+        }
+      ]
+    },
+    {
+      "id": "l2n15",
+      "layer": 2,
+      "tier": 1,
+      "category": "normal",
+      "weight": 14,
+      "enemies": [
+        {
+          "id": "crawler",
+          "col": 5,
+          "row": 3
+        },
+        {
+          "id": "crawler",
+          "col": 7,
+          "row": 3
+        }
+      ]
+    },
+    {
+      "id": "l2n16",
+      "layer": 2,
+      "tier": 1,
+      "category": "normal",
+      "weight": 18,
+      "enemies": [
+        {
+          "id": "bat",
+          "col": 5,
+          "row": 2
+        },
+        {
+          "id": "bat",
+          "col": 7,
+          "row": 2
+        },
+        {
+          "id": "cave_slime",
+          "col": 6,
+          "row": 4
+        }
+      ]
+    },
+    {
+      "id": "l2n17",
+      "layer": 2,
+      "tier": 1,
+      "category": "normal",
+      "weight": 16,
+      "enemies": [
+        {
+          "id": "cave_slime",
+          "col": 5,
+          "row": 2
+        },
+        {
+          "id": "cave_slime",
+          "col": 7,
+          "row": 2
+        },
+        {
+          "id": "bat",
+          "col": 6,
+          "row": 4
+        }
+      ]
+    }
   ]
 }

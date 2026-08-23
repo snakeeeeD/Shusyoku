@@ -24,11 +24,14 @@ public:
 	int GetAimDx() const { return m_aimDx; }
 	int GetAimDy() const { return m_aimDy; }
 	int GetActionIndex() const { return m_actionIndex; }
+	int GetLastHitDamage() const { return m_lastHitDamage; }
+	int GetLastHitCount()  const { return m_lastHitCount; }
 	float GetDisplayHp() const { return m_displayHp; }
 	BuffManager& GetBuffManager() { return m_buffManager; }
 	const std::string& GetTextureName() const { return m_textureName; }
 	const std::string& GetId() const { return m_id; }
 	const std::vector<std::pair<int, int>>& GetMovePath() const { return m_movePath; }
+
 	bool DidDash() const { return m_didDash; }
 
 	// セッター
@@ -67,6 +70,9 @@ public:
 	void MoveAway(int playerCol, int playerRow, class GridMap* gridMap, int steps = 1);
 	bool MoveDash(int playerCol, int playerRow, class GridMap* gridMap, int steps = 1);
 	void MoveAlongPlanned(GridMap* gridMap);   // テレグラフ経路(m_plannedMovePath)どおりに動く
+	void AlignToTarget(int playerCol, int playerRow, GridMap* gridMap, int steps);
+
+	void MoveToCenter(GridMap* gridMap, int steps);
 
 	void AddBlock(int amount);
 	void ResetBlock();
@@ -110,6 +116,14 @@ public:
 		auto s = m_pendingSummons; m_pendingSummons.clear(); return s;
 	}
 
+	bool IsSnake() const { return m_isSnake; }
+	const std::vector<std::pair<int, int>>& GetBodyCells() const { return m_bodyCells; }
+	void InitSnake(GridMap* gridMap);
+	void GrowCoil(GridMap* gridMap, int steps, class Player* player);
+	bool PushPlayerToCenter(GridMap* gridMap, class Player* player);
+	bool OccupiesCell(int col, int row) const;
+	void MarkHeadHit(bool h) { m_lastHitHead = h; }
+
 private:
 	bool IsAdjacentTo(int playerCol, int playerRow);
 
@@ -133,6 +147,9 @@ private:
 
 	int m_idleTurns = 0;
 	int m_lastDecideCol = -999, m_lastDecideRow = -999;
+
+	int m_lastHitDamage = 0;
+	int m_lastHitCount = 1;
 
 	std::string m_textureName;
 	std::string m_id;
@@ -159,5 +176,15 @@ private:
 	void ClearFootprint(GridMap* gridMap);
 	void MarkFootprint(GridMap* gridMap);
 	bool CanOccupy(GridMap* gridMap, int newCol, int newRow) const;
+
+
+	bool m_isSnake = false;
+	std::vector<std::pair<int, int>> m_bodyCells;   // 胴体（通った跡）
+	std::vector<std::pair<int, int>> m_spiral;      // 頭が辿る渦巻き
+	int  m_spiralIdx = 0;
+	bool m_coilComplete = false;
+	bool m_lastHitHead = false;
+	bool m_coilReached = false;   // 中央（距離1以内）に到達したか
+	int  m_coilStuck = 0;       // 到達後の経過ターン（フィニッシャー遅延）
 };
 

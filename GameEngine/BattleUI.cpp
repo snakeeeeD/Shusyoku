@@ -495,6 +495,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             float headX, headY, footX, footY;
             if (!GetEnemyScreenPos(enemy, ctx.renderer3D, headX, headY)) continue;
             if (!GetEnemyFootPos(enemy, ctx.renderer3D, footX, footY)) continue;
+            if (enemy->IsSnake()) footY += 40.0f * (1.0f / ctx.cameraZoom);   // 蛇は平置きなのでUIを下げる
 
             float scale = 1.0f / ctx.cameraZoom;  // ズームアウト時に小さくなる
 
@@ -605,6 +606,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             float headX, headY, footX, footY;
             if (!GetEnemyScreenPos(enemy, ctx.renderer3D, headX, headY)) continue;
             if (!GetEnemyFootPos(enemy, ctx.renderer3D, footX, footY)) continue;
+            if (enemy->IsSnake()) footY += 40.0f * (1.0f / ctx.cameraZoom);   // 蛇は平置きなのでUIを下げる
 
             float scale = 1.0f / ctx.cameraZoom;
             float barWidth = (enemy->IsBoss() ? 100.0f : 50.0f) * scale;

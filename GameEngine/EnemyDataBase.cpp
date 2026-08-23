@@ -30,6 +30,7 @@ static Effect ParseEffect(const json& j)
     e.buff = j.value("buff", "");
     e.duration = j.value("duration", 0);
     e.summonId = j.value("summonId", "");
+    e.hits = j.value("hits", 1);
 
     // 既定の適用先（kind ごと）
     ApplyTo def = (e.kind == EffectKind::Block || e.kind == EffectKind::Buff)
@@ -114,6 +115,7 @@ void EnemyDataBase::Init()
                 data.isBoss = e.value("isBoss", false);
                 data.immovable = e.value("immovable", false);
                 data.sequential = e.value("sequential", false);
+                data.snake = e.value("snake", false);
 
                 // 行動データの読み込み
                 if (e.contains("actions") && e["actions"].is_array())

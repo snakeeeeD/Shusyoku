@@ -14,9 +14,11 @@
 Enemy* CardExecutor::GetEnemyAt(int col, int row, std::vector<Enemy*>& enemies)
 {
     for (auto enemy : enemies)
-        for (auto& [dc, dr] : enemy->GetGridShape())
-            if (enemy->gridCol + dc == col && enemy->gridRow + dr == row)
-                return enemy;
+        if (enemy->OccupiesCell(col, row))                                    // “ª{“·‘Ì
+        {
+            enemy->MarkHeadHit(col == enemy->gridCol && row == enemy->gridRow); // “ªƒqƒbƒg‚©
+            return enemy;
+        }
     return nullptr;
 }
 
@@ -30,16 +32,16 @@ std::vector<Enemy*> CardExecutor::GetEnemiesInRange(
 
     for (auto enemy : enemies)
     {
-        bool inRange = false;
-        for (auto& [dc, dr] : enemy->GetGridShape())
+        bool inRange = false, headHit = false;
+        for (auto& [cc, cr] : candidates)
         {
-            int col = enemy->gridCol + dc;
-            int row = enemy->gridRow + dr;
-            for (auto& [cc, cr] : candidates)
-                if (cc == col && cr == row) { inRange = true; break; }
-            if (inRange) break;
+            if (enemy->OccupiesCell(cc, cr))
+            {
+                inRange = true;
+                if (cc == enemy->gridCol && cr == enemy->gridRow) headHit = true;  // “ª‚ðŠÜ‚Þ
+            }
         }
-        if (inRange) result.push_back(enemy);
+        if (inRange) { enemy->MarkHeadHit(headHit); result.push_back(enemy); }
     }
     return result;
 }
@@ -358,6 +360,13 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 {
                     inShape = true; break;
                 }
+            if (!inShape && target->IsSnake())               // “·‘Ìƒ}ƒX‚àŽË’ö”»’è‚ÉŠÜ‚ß‚é
+                for (auto& b : target->GetBodyCells())
+                    if (RangeShape::Contains(playerCol, playerRow,
+                        b.first, b.second, data.rangeType, range))
+                    {
+                        inShape = true; break;
+                    }
             if (!inShape)
                 return result;
             player->UseEnergy(data.cost);

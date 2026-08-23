@@ -450,6 +450,8 @@ void BattleScene::AddEnemy(int col, int row, const std::string& id)
     for (auto& [dc, dr] : enemy->GetGridShape())
         m_gridMap->SetCellType(col + dc, row + dr, cellType);
 
+    if (enemy->IsSnake()) enemy->InitSnake(m_gridMap);
+
     m_enemies.push_back(enemy);
 }
 
@@ -516,6 +518,45 @@ void BattleScene::Update(float deltaTime)
             }
         }
     }
+
+    // 敵の連続攻撃：1発ずつプレイヤーに適用
+    if (m_eMultiRemain > 0)
+    {
+        m_eMultiTimer -= deltaTime;
+        if (m_eMultiTimer <= 0.0f)
+        {
+            int hpBefore = m_player->GetHp();
+            m_player->TakeDamage(m_eMultiDamage);   // 1発（数字はTakeDamage内で出る）
+            if (m_eMultiEnemy && m_eMultiEnemy->GetHp() > 0)
+            {
+                int th = m_player->GetBuffManager().GetBuffValue(BuffType::Thorns);
+                if (th > 0) m_eMultiEnemy->TakeDamage(th);
+                bool fullyBlocked = (m_player->GetHp() == hpBefore);
+                int rip = m_player->GetBuffManager().GetBuffValue(BuffType::Riposte);
+                if (fullyBlocked && rip > 0) m_eMultiEnemy->TakeDamage(rip);
+            }
+            m_eMultiRemain--;
+            m_eMultiTimer = MULTI_HIT_INTERVAL;
+            if (m_eMultiRemain <= 0) m_eMultiEnemy = nullptr;
+        }
+    }
+
+    // とぐろの経路罠：1つずつ段階発火
+    if (!m_coilTrapQueue.empty() && m_coilTrapEnemy)
+    {
+        m_coilTrapTimer -= deltaTime;
+        if (m_coilTrapTimer <= 0.0f)
+        {
+            auto cr = m_coilTrapQueue.front();
+            m_coilTrapQueue.erase(m_coilTrapQueue.begin());
+            auto& cell = m_gridMap->GetCell(cr.first, cr.second);
+            if (cell.tileEffect.active && m_coilTrapEnemy->GetHp() > 0)
+                CardExecutor::TriggerTrap(cell, m_coilTrapEnemy, cr.first, cr.second, m_gridMap, m_enemies);
+            m_coilTrapTimer = 0.15f;
+            if (m_coilTrapQueue.empty()) m_coilTrapEnemy = nullptr;
+        }
+    }
+
 
     if (m_startPoisonAmount > 0)
     {
@@ -987,21 +1028,30 @@ void BattleScene::Update(float deltaTime)
                 m_playerRow = m_player->gridRow;
                 if (damage > 0)
                 {
-                    int hpBefore = m_player->GetHp();
-                    m_player->TakeDamage(damage);
-                    bool fullyBlocked = (m_player->GetHp() == hpBefore);   // HPが減ってない＝完全に受けきった
-
-                    int th = m_player->GetBuffManager().GetBuffValue(BuffType::Thorns);
-                    if (th > 0 && enemy->GetHp() > 0) enemy->TakeDamage(th);
-
-                    int rip = m_player->GetBuffManager().GetBuffValue(BuffType::Riposte);
-                    if (fullyBlocked && rip > 0 && enemy->GetHp() > 0)
+                    if (enemy->GetLastHitCount() > 1)
                     {
-                        enemy->TakeDamage(rip);
-                        float wx = (enemy->gridCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                        float wz = (enemy->gridRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
-                        EffectManager::Play("hit", wx, 0.6f, wz);   // 反撃の一撃
-                        ScreenShake::Add(0.2f);
+                        // 多段：1発ずつ時間差で適用（プレイヤー多段と同じ）
+                        m_eMultiRemain = enemy->GetLastHitCount();
+                        m_eMultiDamage = enemy->GetLastHitDamage();
+                        m_eMultiTimer  = 0.0f;
+                        m_eMultiEnemy  = enemy;
+                    }
+                    else
+                    {
+                        int hpBefore = m_player->GetHp();
+                        m_player->TakeDamage(damage);
+                        bool fullyBlocked = (m_player->GetHp() == hpBefore);
+                        int th = m_player->GetBuffManager().GetBuffValue(BuffType::Thorns);
+                        if (th > 0 && enemy->GetHp() > 0) enemy->TakeDamage(th);
+                        int rip = m_player->GetBuffManager().GetBuffValue(BuffType::Riposte);
+                        if (fullyBlocked && rip > 0 && enemy->GetHp() > 0)
+                        {
+                            enemy->TakeDamage(rip);
+                            float wx = (enemy->gridCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                            float wz = (enemy->gridRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                            EffectManager::Play("hit", wx, 0.6f, wz);
+                            ScreenShake::Add(0.2f);
+                        }
                     }
                 }
                 enemy->SetActionIndex(ai + 1);
@@ -1034,20 +1084,32 @@ void BattleScene::Update(float deltaTime)
                     break;
                 }
 
-                // 通過した各マスの罠を発火（複数マス移動で飛び越えないように）
-                for (auto& mp : enemy->GetMovePath())
+                // 通過した各マスの罠
+                if (enemy->IsSnake())
                 {
-                    auto& pcell = m_gridMap->GetCell(mp.first, mp.second);
-                    if (pcell.tileEffect.active)
-                        CardExecutor::TriggerTrap(pcell, enemy, mp.first, mp.second, m_gridMap, m_enemies);
-                    if (enemy->GetHp() <= 0) break;
+                    // とぐろ：経路の罠を段階発火キューへ（実際の発火はUpdateのシーケンサ）
+                    for (auto& mp : enemy->GetMovePath())
+                        if (m_gridMap->GetCell(mp.first, mp.second).tileEffect.active)
+                            m_coilTrapQueue.push_back(mp);
+                    if (!m_coilTrapQueue.empty()) { m_coilTrapEnemy = enemy; m_coilTrapTimer = 0.0f; }
                 }
-                auto& cell = m_gridMap->GetCell(enemy->gridCol, enemy->gridRow);
-                if (enemy->GetHp() > 0 && cell.tileEffect.active)
-                    CardExecutor::TriggerTrap(cell, enemy, enemy->gridCol, enemy->gridRow, m_gridMap, m_enemies);
+                else
+                {
+                    for (auto& mp : enemy->GetMovePath())
+                    {
+                        auto& pcell = m_gridMap->GetCell(mp.first, mp.second);
+                        if (pcell.tileEffect.active)
+                            CardExecutor::TriggerTrap(pcell, enemy, mp.first, mp.second, m_gridMap, m_enemies);
+                        if (enemy->GetHp() <= 0) break;
+                    }
+                    auto& cell = m_gridMap->GetCell(enemy->gridCol, enemy->gridRow);
+                    if (enemy->GetHp() > 0 && cell.tileEffect.active)
+                        CardExecutor::TriggerTrap(cell, enemy, enemy->gridCol, enemy->gridRow, m_gridMap, m_enemies);
+                }
 
                 m_enemyPhase = EnemyTurnPhase::WaitAction;
                 m_enemyActionDelay = ENEMY_ACTION_PAUSE;
+
                 break;
             }
 
@@ -1059,7 +1121,7 @@ void BattleScene::Update(float deltaTime)
                 for (auto enemy : m_enemies)
                     if (enemy->IsMoving() || enemy->IsLunging() || enemy->IsJumping()) anyMoving = true;
 
-                if (m_enemyActionDelay <= 0 && !anyMoving)
+                if (m_enemyActionDelay <= 0 && !anyMoving && m_coilTrapQueue.empty())
                 {
                     Enemy* enemy = (m_currentEnemyIdx < (int)m_enemies.size())
                         ? m_enemies[m_currentEnemyIdx] : nullptr;
@@ -1427,6 +1489,54 @@ void BattleScene::Draw()
             }
         }
     }
+
+    m_renderer3D->SetDepthWrite(false);
+    for (auto enemy : m_enemies)
+    {
+        if (!enemy->IsSnake()) continue;
+        std::vector<std::pair<int, int>> chain = enemy->GetBodyCells();   // 尾(0)…
+        chain.push_back({ enemy->gridCol, enemy->gridRow });             // …頭(last)
+        int n = (int)chain.size();
+        auto WX = [&](int c) { return (c - m_gridMap->GetCols() / 2.0f) * 1.1f; };
+        auto WZ = [&](int r) { return (r - m_gridMap->GetRows() / 2.0f) * 1.1f; };
+        auto dirRot = [](int dx, int dy)->float {  
+            if (dy > 0) return 0.0f;      // 北
+            if (dx > 0) return 1.5708f;  // 東
+            if (dy < 0) return 3.1416f;   // 南
+            return       4.7124f;         // 西
+            };
+        for (int i = 0; i < n; i++)
+        {
+            float x = WX(chain[i].first), z = WZ(chain[i].second);
+            int bdx = 0, bdy = 0, fdx = 0, fdy = 0;
+            if (i > 0) { bdx = chain[i].first - chain[i - 1].first; bdy = chain[i].second - chain[i - 1].second; }
+            if (i < n - 1) { fdx = chain[i + 1].first - chain[i].first; fdy = chain[i + 1].second - chain[i].second; }
+            if (i == 0) { bdx = fdx; bdy = fdy; }
+
+            const char* tex; float rot; float size = 1.12f;
+            if (i == n - 1)   // 頭
+            {
+                tex = "snake_head"; rot = dirRot(-bdx, -bdy);
+                size = 1.7f;                                  // 大きめ
+                float off = (size - 1.12f) * 0.5f;            // 首を体の接合面に合わせ、頭は前方へ
+                x += bdx * off;                                // 進行方向へずらす
+                z += bdy * off;
+            }
+            else if (bdx == fdx && bdy == fdy) { tex = (bdx != 0) ? "snake_body_h" : "snake_body_v"; rot = 0.0f; } // 直線
+            else   // 角
+            {
+                tex = "snake_corner_l";
+                // 繋がる2辺：尾側(-bd) と 頭側(fd)
+                auto has = [&](int x, int y) { return (-bdx == x && -bdy == y) || (fdx == x && fdy == y); };
+                rot = (has(-1, 0) && has(0, 1)) ? 3.1416f     // +180 (0 → 3.1416)
+                    : (has(0, -1) && has(-1, 0)) ? 1.5708f     // +180 (4.7124 → 1.5708)
+                    : (has(1, 0) && has(0, -1)) ? 0.0f         // +180 (3.1416 → 0)
+                    : 4.7124f;    // +180 (1.5708 → 4.7124)
+            }
+            m_renderer3D->DrawTileEx(TextureManager::Get(tex), x, z, size, size, rot, XMFLOAT4(1, 1, 1, 1));
+        }
+    }
+    m_renderer3D->SetDepthWrite(true);
 
     if (m_decoyCol >= 0)
     {
@@ -2203,9 +2313,11 @@ void BattleScene::HandleInput()
                 }
                 if (execResult.startSeqDetonate)
                 {
-                    m_detonateQueue = execResult.seqDetonateCells;
-                    m_detonateFull = execResult.seqFull;
-                    m_detonateTimer = 0.0f;   // すぐ1個目
+                    m_trapQueue.cells = execResult.seqDetonateCells;
+                    m_trapQueue.mode = TrapFire::Detonate;
+                    m_trapQueue.full = execResult.seqFull;
+                    m_trapQueue.enemy = nullptr;
+                    m_trapQueue.timer = 0.0f;
                 }
 
                 if (execResult.placeDecoy)

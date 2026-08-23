@@ -4,11 +4,12 @@
 #include <vector>
 
 // 効果を当てるための移動（効果の"前"に起きる／予告の危険範囲に含む）
-enum class ApproachType { None, Toward, Dash };
+enum class ApproachType { None, Toward, Dash, Align };
 
 // 何が起きるか
 enum class EffectKind { Damage, Block, Buff, Debuff, MoveToward, 
-    MoveAway, PullPlayer, KnockbackPlayer, Summon, Hazard};
+    MoveAway, PullPlayer, KnockbackPlayer, Summon, Hazard, Heal, Coil
+};
 
 // 誰に効くか
 enum class ApplyTo { Self, Player, Allies };
@@ -32,6 +33,7 @@ struct Effect
     int         duration = 0;
     ApplyTo     applyTo = ApplyTo::Player;    // パース時に kind ごとの既定を入れる
     std::string summonId;   // Summonで召喚する敵ID（valueが体数）
+    int hits = 1;   // 複数回攻撃（Damageのヒット数）
 };
 
 // いつ選ばれるか（行動の中身とは別レイヤー）

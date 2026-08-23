@@ -21,7 +21,9 @@
               "value": 3
             }
           ],
-          "select": { "chance": 40 }
+          "select": {
+            "chance": 40
+          }
         },
         {
           "description": "{0}ダメージ+毒{1}",
@@ -43,44 +45,49 @@
               "duration": 3
             }
           ],
-          "select": { "chance": 30 }
+          "select": {
+            "chance": 30
+          }
         },
         {
           "description": "移動",
-          "target": { "rangeType": "None" },
+          "target": {
+            "rangeType": "None"
+          },
           "effects": [
             {
               "kind": "MoveToward",
               "value": 1
             }
           ],
-          "select": { "chance": 30 }
+          "select": {
+            "chance": 30
+          }
         }
       ],
       "drops": [
         {
           "id": "sword_fragment",
-          "chance": 30,
+          "chance": 21,
           "min": 1,
           "max": 1
         },
         {
           "id": "light_stone",
-          "chance": 10,
+          "chance": 7,
           "min": 1,
           "max": 1
         },
         {
           "id": "spark_chip",
-          "chance": 15
+          "chance": 10
         },
         {
           "id": "iron_shard",
-          "chance": 15
+          "chance": 10
         }
       ]
     },
-
     {
       "id": "goblin",
       "texture": "enemy_goblin",
@@ -109,10 +116,12 @@
               "applyTo": "Self"
             }
           ],
-          "select": { "chance": 50 }
+          "select": {
+            "chance": 50
+          }
         },
         {
-          "description": "怒りの薙ぎ払い{0}",
+          "description": "薙ぎ払い、{0}ダメージ",
           "vfx": "slash",
           "target": {
             "rangeType": "Area",
@@ -133,10 +142,13 @@
               "applyTo": "Self"
             }
           ],
-          "select": { "condition": "afterDodge", "chance": 100 }
+          "select": {
+            "condition": "afterDodge",
+            "chance": 100
+          }
         },
         {
-          "description": "{0}斬って離脱",
+          "description": "{0}ダメージ、斬って離脱",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -161,17 +173,21 @@
         },
         {
           "description": "{0}ブロック",
-          "target": { "rangeType": "None" },
+          "target": {
+            "rangeType": "None"
+          },
           "effects": [
             {
               "kind": "Block",
               "value": 5
             }
           ],
-          "select": { "chance": 20 }
+          "select": {
+            "chance": 20
+          }
         },
         {
-          "description": "{0}ダメージ突進",
+          "description": "突進、{0}ダメージ",
           "target": {
             "rangeType": "Cross",
             "range": 1,
@@ -184,10 +200,12 @@
               "value": 10
             }
           ],
-          "select": { "chance": 100 }
+          "select": {
+            "chance": 100
+          }
         },
         {
-          "description": "扇薙ぎ{0}ダメージ",
+          "description": "扇薙ぎ、{0}ダメージ",
           "target": {
             "rangeType": "Cone",
             "range": 3,
@@ -200,25 +218,27 @@
               "value": 8
             }
           ],
-          "select": { "chance": 100 }
+          "select": {
+            "chance": 100
+          }
         }
       ],
       "drops": [
         {
           "id": "sword_fragment",
-          "chance": 30
+          "chance": 21
         },
         {
           "id": "combo_shard",
-          "chance": 25
+          "chance": 18
         },
         {
           "id": "venom_fang",
-          "chance": 20
+          "chance": 14
         },
         {
           "id": "dull_stone",
-          "chance": 20
+          "chance": 14
         },
         {
           "id": "core_slash",
@@ -236,14 +256,18 @@
           "rare": true
         }
       ]
-
     },
-
     {
       "id": "emberwalker",
       "drops": [
-        { "id": "venom_fang", "chance": 25 },
-        { "id": "sword_fragment", "chance": 20 }
+        {
+          "id": "venom_fang",
+          "chance": 18
+        },
+        {
+          "id": "sword_fragment",
+          "chance": 14
+        }
       ],
       "texture": "enemy_fire",
       "hp": 34,
@@ -254,7 +278,9 @@
         {
           "description": "燃え上がる",
           "vfx": "fire",
-          "target": { "rangeType": "None" },
+          "target": {
+            "rangeType": "None"
+          },
           "effects": [
             {
               "kind": "Buff",
@@ -267,7 +293,9 @@
         },
         {
           "description": "徘徊",
-          "target": { "rangeType": "None" },
+          "target": {
+            "rangeType": "None"
+          },
           "effects": [
             {
               "kind": "MoveToward",
@@ -277,14 +305,26 @@
         }
       ]
     },
-
     {
       "id": "orc",
       "drops": [
-        { "id": "iron_shard", "chance": 35 },
-        { "id": "life_shard", "chance": 25 },
-        { "id": "sword_fragment", "chance": 25 },
-        { "id": "core_slash", "chance": 5, "rare": true }
+        {
+          "id": "iron_shard",
+          "chance": 24
+        },
+        {
+          "id": "life_shard",
+          "chance": 18
+        },
+        {
+          "id": "sword_fragment",
+          "chance": 18
+        },
+        {
+          "id": "core_slash",
+          "chance": 4,
+          "rare": true
+        }
       ],
       "texture": "enemy_orc",
       "hp": 78,
@@ -305,13 +345,17 @@
               "value": 12
             }
           ],
-          "select": { "chance": 50 }
+          "select": {
+            "chance": 50
+          }
         },
         {
-          "description": "遠距離{0}ダメージ",
+          "description": "{0}ダメージ",
           "target": {
             "rangeType": "Cross",
-            "range": 5
+            "range": 5,
+            "approach": "Align",
+            "moveRange": 2
           },
           "effects": [
             {
@@ -319,22 +363,30 @@
               "value": 6
             }
           ],
-          "select": { "chance": 30 }
+          "select": {
+            "chance": 30
+          }
         },
         {
           "description": "{0}ブロック",
-          "target": { "rangeType": "None" },
+          "target": {
+            "rangeType": "None"
+          },
           "effects": [
             {
               "kind": "Block",
               "value": 8
             }
           ],
-          "select": { "chance": 20 }
+          "select": {
+            "chance": 20
+          }
         },
         {
           "description": "攻撃UP+{0}",
-          "target": { "rangeType": "None" },
+          "target": {
+            "rangeType": "None"
+          },
           "effects": [
             {
               "kind": "Buff",
@@ -351,7 +403,7 @@
           }
         },
         {
-          "description": "一撃{0}",
+          "description": "{0}ダメージ",
           "vfx": "explosion",
           "target": {
             "rangeType": "Area",
@@ -373,15 +425,26 @@
         }
       ]
     },
-
     {
       "id": "dragon",
       "texture": "enemy_dragon_red",
       "gridShape": [
-        [ 0, 0 ],
-        [ 1, 0 ],
-        [ 0, 1 ],
-        [ 1, 1 ]
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
       ],
       "hp": 195,
       "width": 1.5,
@@ -389,7 +452,7 @@
       "isBoss": true,
       "actions": [
         {
-          "description": "噛みつき{0}ダメージ",
+          "description": "噛みつき、{0}ダメージ",
           "target": {
             "rangeType": "Area",
             "range": 1
@@ -400,10 +463,12 @@
               "value": 18
             }
           ],
-          "select": { "chance": 30 }
+          "select": {
+            "chance": 30
+          }
         },
         {
-          "description": "炎ブレス{0}ダメージ",
+          "description": "炎ブレス、{0}ダメージ",
           "target": {
             "rangeType": "Cone",
             "range": 4
@@ -421,10 +486,12 @@
               "duration": 2
             }
           ],
-          "select": { "chance": 40 }
+          "select": {
+            "chance": 40
+          }
         },
         {
-          "description": "尾なぎ払い{0}ダメージ",
+          "description": "尾なぎ払い、{0}ダメージ\n吹き飛ばし",
           "target": {
             "rangeType": "Area",
             "range": 2
@@ -439,10 +506,12 @@
               "value": 1
             }
           ],
-          "select": { "chance": 30 }
+          "select": {
+            "chance": 30
+          }
         },
         {
-          "description": "灼熱のブレス{0}ダメージ",
+          "description": "灼熱のブレス、{0}ダメージ",
           "target": {
             "rangeType": "Cone",
             "range": 4
@@ -465,10 +534,14 @@
               "duration": 1
             }
           ],
-          "select": { "condition": "hpBelow", "conditionValue": 50, "chance": 60 }
+          "select": {
+            "condition": "hpBelow",
+            "conditionValue": 50,
+            "chance": 60
+          }
         },
         {
-          "description": "噛み砕き{0}ダメージ",
+          "description": "噛み砕き、{0}ダメージ",
           "target": {
             "rangeType": "Area",
             "range": 1
@@ -479,10 +552,14 @@
               "value": 22
             }
           ],
-          "select": { "condition": "hpBelow", "conditionValue": 50, "chance": 40 }
+          "select": {
+            "condition": "hpBelow",
+            "conditionValue": 50,
+            "chance": 40
+          }
         },
         {
-          "description": "滅びの息吹{0}ダメージ",
+          "description": "滅びの息吹、{0}ダメージ",
           "target": {
             "rangeType": "Area",
             "range": 3
@@ -500,16 +577,25 @@
               "duration": 2
             }
           ],
-          "select": { "condition": "hpBelow", "conditionValue": 30, "chance": 100 }
+          "select": {
+            "condition": "hpBelow",
+            "conditionValue": 30,
+            "chance": 100
+          }
         }
       ]
     },
-
     {
       "id": "brute",
       "drops": [
-        { "id": "iron_shard", "chance": 30 },
-        { "id": "sword_fragment", "chance": 25 }
+        {
+          "id": "iron_shard",
+          "chance": 21
+        },
+        {
+          "id": "sword_fragment",
+          "chance": 18
+        }
       ],
       "texture": "enemy_zako",
       "hp": 58,
@@ -517,7 +603,7 @@
       "height": 1.2,
       "actions": [
         {
-          "description": "強打{0}",
+          "description": "強打、{0}",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -530,10 +616,12 @@
               "value": 12
             }
           ],
-          "select": { "chance": 60 }
+          "select": {
+            "chance": 60
+          }
         },
         {
-          "description": "薙ぎ払い{0}ダメージ",
+          "description": "薙ぎ払い、{0}ダメージ",
           "target": {
             "rangeType": "Area",
             "range": 2,
@@ -546,16 +634,23 @@
               "value": 7
             }
           ],
-          "select": { "chance": 40 }
+          "select": {
+            "chance": 40
+          }
         }
       ]
     },
-
     {
       "id": "archer",
       "drops": [
-        { "id": "sword_fragment", "chance": 25 },
-        { "id": "dull_stone", "chance": 20 }
+        {
+          "id": "sword_fragment",
+          "chance": 18
+        },
+        {
+          "id": "dull_stone",
+          "chance": 14
+        }
       ],
       "texture": "enemy_archer",
       "hp": 36,
@@ -564,7 +659,9 @@
       "actions": [
         {
           "description": "後退",
-          "target": { "rangeType": "None" },
+          "target": {
+            "rangeType": "None"
+          },
           "effects": [
             {
               "kind": "MoveAway",
@@ -579,31 +676,40 @@
         },
         {
           "description": "狙撃{0}(必中)",
-          "target": { "unavoidable": true },
+          "target": {
+            "unavoidable": true
+          },
           "effects": [
             {
               "kind": "Damage",
               "value": 6
             }
           ],
-          "select": { "chance": 20 }
+          "select": {
+            "chance": 20
+          }
         }
       ]
     },
-
     {
-      "id": "caster",
+      "id": "bigfoot",
       "drops": [
-        { "id": "spark_chip", "chance": 25 },
-        { "id": "dull_stone", "chance": 20 }
+        {
+          "id": "spark_chip",
+          "chance": 18
+        },
+        {
+          "id": "dull_stone",
+          "chance": 14
+        }
       ],
-      "texture": "enemy_orc",
+      "texture": "enemy_bigfoot",
       "hp": 46,
       "width": 1.0,
       "height": 1.0,
       "actions": [
         {
-          "description": "波動{0}",
+          "description": "波動、{0}",
           "target": {
             "rangeType": "Area",
             "range": 3,
@@ -617,7 +723,11 @@
               "value": 9
             }
           ],
-          "select": { "chance": 60 }
+          "select": {
+            "condition": "far",
+            "conditionValue": 3,
+            "chance": 60
+          }
         },
         {
           "description": "{0}ダメージ",
@@ -633,11 +743,15 @@
               "value": 5
             }
           ],
-          "select": { "chance": 40 }
+          "select": {
+            "chance": 40
+          }
         },
         {
           "description": "射程UP",
-          "target": { "rangeType": "None" },
+          "target": {
+            "rangeType": "None"
+          },
           "effects": [
             {
               "kind": "Buff",
@@ -655,7 +769,6 @@
         }
       ]
     },
-
     {
       "id": "elite_tentacle",
       "texture": "enemy_tentacle",
@@ -666,7 +779,9 @@
       "actions": [
         {
           "description": "引き寄せ",
-          "target": { "unavoidable": true },
+          "target": {
+            "unavoidable": true
+          },
           "effects": [
             {
               "kind": "PullPlayer",
@@ -679,7 +794,7 @@
           }
         },
         {
-          "description": "薙ぎ払い{0}",
+          "description": "薙ぎ払い、{0}ダメージ",
           "target": {
             "rangeType": "Area",
             "range": 2
@@ -693,7 +808,9 @@
         },
         {
           "description": "咆哮（攻撃力+{0}）",
-          "target": { "rangeType": "None" },
+          "target": {
+            "rangeType": "None"
+          },
           "effects": [
             {
               "kind": "Buff",
@@ -708,25 +825,24 @@
       "drops": [
         {
           "id": "sword_fragment",
-          "chance": 100
+          "chance": 70
         },
         {
           "id": "combo_shard",
-          "chance": 60
+          "chance": 42
         },
         {
           "id": "core_slash_h",
-          "chance": 10,
+          "chance": 7,
           "rare": true
         },
         {
           "id": "core_shield",
-          "chance": 10,
+          "chance": 7,
           "rare": true
         }
       ]
     },
-
     {
       "id": "elite_slimeking",
       "texture": "enemy_slimeking",
@@ -736,7 +852,9 @@
       "actions": [
         {
           "description": "分裂召喚",
-          "target": { "rangeType": "None" },
+          "target": {
+            "rangeType": "None"
+          },
           "effects": [
             {
               "kind": "Summon",
@@ -750,7 +868,7 @@
           }
         },
         {
-          "description": "のしかかり{0}",
+          "description": "のしかかり、{0}ダメージ",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -763,7 +881,9 @@
               "value": 14
             }
           ],
-          "select": { "chance": 20 }
+          "select": {
+            "chance": 20
+          }
         },
         {
           "description": "{0}ダメージ+毒{1}",
@@ -785,31 +905,32 @@
               "duration": 3
             }
           ],
-          "select": { "chance": 30 }
+          "select": {
+            "chance": 30
+          }
         }
       ],
       "drops": [
         {
           "id": "life_shard",
-          "chance": 100
+          "chance": 70
         },
         {
           "id": "iron_shard",
-          "chance": 60
+          "chance": 42
         },
         {
           "id": "core_slash_h",
-          "chance": 10,
+          "chance": 7,
           "rare": true
         },
         {
           "id": "core_shield",
-          "chance": 10,
+          "chance": 7,
           "rare": true
         }
       ]
     },
-
     {
       "id": "elite_bear",
       "texture": "enemy_bear",
@@ -831,7 +952,9 @@
               "value": 14
             }
           ],
-          "select": { "chance": 20 }
+          "select": {
+            "chance": 20
+          }
         },
         {
           "description": "突進、{0}ダメージ",
@@ -847,10 +970,12 @@
               "value": 14
             }
           ],
-          "select": { "chance": 40 }
+          "select": {
+            "chance": 40
+          }
         },
         {
-          "description": "たたきつけ{0}",
+          "description": "たたきつけ、{0}ダメージ",
           "target": {
             "rangeType": "Area",
             "range": 2
@@ -861,11 +986,15 @@
               "value": 13
             }
           ],
-          "select": { "chance": 20 }
+          "select": {
+            "chance": 20
+          }
         },
         {
           "description": "爪とぎ（攻撃力+{0}）",
-          "target": { "rangeType": "None" },
+          "target": {
+            "rangeType": "None"
+          },
           "effects": [
             {
               "kind": "Buff",
@@ -883,45 +1012,61 @@
         },
         {
           "description": "岩投げ、{0}ダメージ(必中)",
-          "target": { "unavoidable": true },
+          "target": {
+            "unavoidable": true
+          },
           "effects": [
             {
               "kind": "Damage",
               "value": 9
             }
           ],
-          "select": { "chance": 20 }
+          "select": {
+            "chance": 20
+          }
         }
       ],
       "drops": [
         {
           "id": "sword_fragment",
-          "chance": 20
+          "chance": 14
         },
         {
           "id": "combo_shard",
-          "chance": 10
+          "chance": 7
         },
         {
           "id": "core_slash_h",
-          "chance": 10,
+          "chance": 7,
           "rare": true
         },
         {
           "id": "core_shield",
-          "chance": 10,
+          "chance": 7,
           "rare": true
         }
       ]
     },
-
     {
       "id": "warden",
       "drops": [
-        { "id": "iron_shard", "chance": 35 },
-        { "id": "vuln_shard", "chance": 25 },
-        { "id": "combo_shard", "chance": 20 },
-        { "id": "core_shield", "chance": 5, "rare": true }
+        {
+          "id": "iron_shard",
+          "chance": 24
+        },
+        {
+          "id": "vuln_shard",
+          "chance": 18
+        },
+        {
+          "id": "combo_shard",
+          "chance": 14
+        },
+        {
+          "id": "core_shield",
+          "chance": 4,
+          "rare": true
+        }
       ],
       "texture": "enemy_golem",
       "hp": 110,
@@ -942,21 +1087,27 @@
               "value": 13
             }
           ],
-          "select": { "chance": 45 }
+          "select": {
+            "chance": 45
+          }
         },
         {
           "description": "守りを固める（{0}ブロック）",
-          "target": { "rangeType": "None" },
+          "target": {
+            "rangeType": "None"
+          },
           "effects": [
             {
               "kind": "Block",
               "value": 15
             }
           ],
-          "select": { "chance": 30 }
+          "select": {
+            "chance": 30
+          }
         },
         {
-          "description": "渾身の一撃{0}",
+          "description": "渾身の一撃、{0}ダメージ",
           "vfx": "explosion",
           "target": {
             "rangeType": "Area",
@@ -978,7 +1129,6 @@
         }
       ]
     },
-
     {
       "id": "mimic",
       "texture": "enemy_mimic",
@@ -988,7 +1138,9 @@
       "actions": [
         {
           "description": "引きずり込む",
-          "target": { "unavoidable": true },
+          "target": {
+            "unavoidable": true
+          },
           "effects": [
             {
               "kind": "PullPlayer",
@@ -1002,10 +1154,10 @@
           }
         },
         {
-          "description": "喰らいつき{0}",
+          "description": "喰らいつき、{0}ダメージ",
           "target": {
             "rangeType": "Area",
-            "range": 1,
+            "range": 2,
             "approach": "Toward",
             "moveRange": 1
           },
@@ -1015,28 +1167,47 @@
               "value": 16
             }
           ],
-          "select": { "chance": 60 }
+          "select": {
+            "chance": 60
+          }
         },
         {
           "description": "殻を閉じる（{0}ブロック）",
-          "target": { "rangeType": "None" },
+          "target": {
+            "rangeType": "None"
+          },
           "effects": [
             {
               "kind": "Block",
-              "value": 12
+              "value": 45
             }
           ],
-          "select": { "chance": 40 }
+          "select": {
+            "chance": 40
+          }
         }
       ]
     },
     {
       "id": "wraith",
       "drops": [
-        { "id": "venom_fang", "chance": 30 },
-        { "id": "vuln_shard", "chance": 25 },
-        { "id": "spark_chip", "chance": 20 },
-        { "id": "core_reach", "chance": 5, "rare": true }
+        {
+          "id": "venom_fang",
+          "chance": 21
+        },
+        {
+          "id": "vuln_shard",
+          "chance": 18
+        },
+        {
+          "id": "spark_chip",
+          "chance": 14
+        },
+        {
+          "id": "core_reach",
+          "chance": 4,
+          "rare": true
+        }
       ],
       "texture": "enemy_obake",
       "hp": 65,
@@ -1045,7 +1216,9 @@
       "actions": [
         {
           "description": "後退",
-          "target": { "rangeType": "None" },
+          "target": {
+            "rangeType": "None"
+          },
           "effects": [
             {
               "kind": "MoveAway",
@@ -1059,7 +1232,7 @@
           }
         },
         {
-          "description": "呪詛{0}＋弱体",
+          "description": "呪詛、ダメージ{0}＋弱体",
           "target": {
             "rangeType": "Area",
             "range": 4,
@@ -1078,7 +1251,9 @@
               "applyTo": "Player"
             }
           ],
-          "select": { "chance": 50 }
+          "select": {
+            "chance": 50
+          }
         },
         {
           "description": "毒の霧（毒{0}）",
@@ -1096,7 +1271,9 @@
               "applyTo": "Player"
             }
           ],
-          "select": { "chance": 30 }
+          "select": {
+            "chance": 30
+          }
         },
         {
           "description": "脆弱化",
@@ -1121,7 +1298,6 @@
         }
       ]
     },
-
     {
       "id": "reaper",
       "texture": "enemy_reaper",
@@ -1132,7 +1308,9 @@
       "actions": [
         {
           "description": "鎌を研ぐ（攻撃力+{0}）",
-          "target": { "rangeType": "None" },
+          "target": {
+            "rangeType": "None"
+          },
           "effects": [
             {
               "kind": "Buff",
@@ -1142,11 +1320,15 @@
               "applyTo": "Self"
             }
           ],
-          "select": { "chance": 100 }
+          "select": {
+            "chance": 100
+          }
         },
         {
-          "description": "死の一撃{0}",
-          "target": { "unavoidable": true },
+          "description": "死の一撃、{0}ダメージ",
+          "target": {
+            "unavoidable": true
+          },
           "effects": [
             {
               "kind": "Damage",
@@ -1161,12 +1343,17 @@
         }
       ]
     },
-
     {
       "id": "stonebug",
       "drops": [
-        { "id": "iron_shard", "chance": 35 },
-        { "id": "light_stone", "chance": 15 }
+        {
+          "id": "iron_shard",
+          "chance": 24
+        },
+        {
+          "id": "light_stone",
+          "chance": 10
+        }
       ],
       "texture": "enemy_bug",
       "hp": 39,
@@ -1175,14 +1362,21 @@
       "actions": [
         {
           "description": "守りを固める（{0}ブロック）",
-          "target": { "rangeType": "None" },
+          "target": {
+            "rangeType": "None"
+          },
           "effects": [
-            { "kind": "Block", "value": 7 }
+            {
+              "kind": "Block",
+              "value": 8
+            }
           ],
-          "select": { "chance": 40 }
+          "select": {
+            "chance": 40
+          }
         },
         {
-          "description": "石の一撃{0}",
+          "description": "{0}ダメージ",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -1190,18 +1384,28 @@
             "moveRange": 1
           },
           "effects": [
-            { "kind": "Damage", "value": 7 }
+            {
+              "kind": "Damage",
+              "value": 7
+            }
           ],
-          "select": { "chance": 60 }
+          "select": {
+            "chance": 60
+          }
         }
       ]
     },
-
     {
       "id": "firespore",
       "drops": [
-        { "id": "venom_fang", "chance": 30 },
-        { "id": "light_stone", "chance": 15 }
+        {
+          "id": "venom_fang",
+          "chance": 21
+        },
+        {
+          "id": "light_stone",
+          "chance": 10
+        }
       ],
       "texture": "enemy_spore",
       "hp": 31,
@@ -1209,7 +1413,7 @@
       "height": 1.0,
       "actions": [
         {
-          "description": "胞子爆発{0}",
+          "description": "胞子爆発、{0}ダメージ",
           "vfx": "explosion",
           "target": {
             "rangeType": "Area",
@@ -1218,7 +1422,10 @@
             "moveRange": 1
           },
           "effects": [
-            { "kind": "Damage", "value": 14 }
+            {
+              "kind": "Damage",
+              "value": 14
+            }
           ],
           "select": {
             "condition": "turnMultiple",
@@ -1227,7 +1434,7 @@
           }
         },
         {
-          "description": "火の粉{0}",
+          "description": "火の粉、{0}ダメージ",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -1235,18 +1442,28 @@
             "moveRange": 1
           },
           "effects": [
-            { "kind": "Damage", "value": 4 }
+            {
+              "kind": "Damage",
+              "value": 4
+            }
           ],
-          "select": { "chance": 100 }
+          "select": {
+            "chance": 100
+          }
         }
       ]
     },
-
     {
       "id": "hound",
       "drops": [
-        { "id": "dull_stone", "chance": 25 },
-        { "id": "spark_chip", "chance": 20 }
+        {
+          "id": "dull_stone",
+          "chance": 18
+        },
+        {
+          "id": "spark_chip",
+          "chance": 14
+        }
       ],
       "texture": "enemy_hound",
       "hp": 23,
@@ -1254,7 +1471,7 @@
       "height": 1.0,
       "actions": [
         {
-          "description": "突進{0}",
+          "description": "突進、{0}ダメージ",
           "target": {
             "rangeType": "Cross",
             "range": 1,
@@ -1262,12 +1479,17 @@
             "moveRange": 3
           },
           "effects": [
-            { "kind": "Damage", "value": 7 }
+            {
+              "kind": "Damage",
+              "value": 7
+            }
           ],
-          "select": { "chance": 70 }
+          "select": {
+            "chance": 70
+          }
         },
         {
-          "description": "噛みつき{0}",
+          "description": "噛みつき、{0}ダメージ",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -1275,15 +1497,28 @@
             "moveRange": 1
           },
           "effects": [
-            { "kind": "Damage", "value": 6 }
+            {
+              "kind": "Damage",
+              "value": 6
+            }
           ],
-          "select": { "chance": 30 }
+          "select": {
+            "chance": 30
+          }
         },
         {
           "description": "唸る（攻撃力+{0}）",
-          "target": { "rangeType": "None" },
+          "target": {
+            "rangeType": "None"
+          },
           "effects": [
-            { "kind": "Buff", "buff": "AttackUp", "value": 2, "duration": -1, "applyTo": "Self" }
+            {
+              "kind": "Buff",
+              "buff": "AttackUp",
+              "value": 2,
+              "duration": -1,
+              "applyTo": "Self"
+            }
           ],
           "select": {
             "condition": "turnMultiple",
@@ -1292,6 +1527,1023 @@
           }
         }
       ]
+    },
+    {
+      "id": "bat",
+      "texture": "enemy_bat",
+      "hp": 42,
+      "width": 1.0,
+      "height": 1.0,
+      "actions": [
+        {
+          "description": "吸血、{0}ダメージ",
+          "target": {
+            "rangeType": "Area",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 3
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 6
+            },
+            {
+              "kind": "Heal",
+              "value": 0
+            }
+          ],
+          "select": {
+            "chance": 60
+          }
+        },
+        {
+          "description": "旋回",
+          "target": {
+            "rangeType": "None",
+            "range": 1
+          },
+          "effects": [
+            {
+              "kind": "MoveToward",
+              "value": 3
+            }
+          ],
+          "select": {
+            "chance": 40
+          }
+        }
+      ],
+      "drops": [
+        {
+          "id": "venom_fang",
+          "chance": 14
+        },
+        {
+          "id": "light_stone",
+          "chance": 10
+        }
+      ]
+    },
+    {
+      "id": "cave_slime",
+      "texture": "enemy_caveslime",
+      "hp": 56,
+      "width": 1.0,
+      "height": 1.0,
+      "actions": [
+        {
+          "description": "体当たり、{0}ダメージ",
+          "target": {
+            "rangeType": "Area",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 1
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 12
+            }
+          ],
+          "select": {
+            "chance": 60
+          }
+        },
+        {
+          "description": "酸を吐く、{0}ダメージ＋脆弱",
+          "target": {
+            "rangeType": "Cross",
+            "range": 2,
+            "approach": "Align",
+            "moveRange": 2
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 7
+            },
+            {
+              "kind": "Debuff",
+              "buff": "Vulnerable",
+              "value": 1,
+              "duration": 2
+            }
+          ],
+          "select": {
+            "chance": 40
+          }
+        }
+      ],
+      "drops": [
+        {
+          "id": "iron_shard",
+          "chance": 15
+        },
+        {
+          "id": "life_shard",
+          "chance": 10
+        }
+      ]
+    },
+    {
+      "id": "crawler",
+      "texture": "enemy_crawler",
+      "hp": 66,
+      "width": 1.0,
+      "height": 1.0,
+      "actions": [
+        {
+          "description": "{0}ブロック",
+          "target": {
+            "rangeType": "None",
+            "range": 1
+          },
+          "effects": [
+            {
+              "kind": "Block",
+              "value": 14
+            }
+          ],
+          "select": {
+            "chance": 40
+          }
+        },
+        {
+          "description": "食らいつき、{0}ダメージ",
+          "target": {
+            "rangeType": "Area",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 1
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 13
+            }
+          ],
+          "select": {
+            "chance": 60
+          }
+        }
+      ],
+      "drops": [
+        {
+          "id": "iron_shard",
+          "chance": 18
+        },
+        {
+          "id": "dull_stone",
+          "chance": 13
+        }
+      ]
+    },
+    {
+      "id": "spider",
+      "texture": "enemy_spider",
+      "hp": 35,
+      "width": 1.0,
+      "height": 1.0,
+      "actions": [
+        {
+          "description": "毒噛み、{0}ダメージ＋毒",
+          "target": {
+            "rangeType": "Area",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 2
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 4
+            },
+            {
+              "kind": "Debuff",
+              "buff": "Poison",
+              "value": 3,
+              "duration": 3
+            }
+          ],
+          "select": {
+            "chance": 55
+          }
+        },
+        {
+          "description": "糸を吐く、{0}ダメージ＋弱体",
+          "target": {
+            "rangeType": "Cross",
+            "range": 3,
+            "approach": "Align",
+            "moveRange": 2
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 7
+            },
+            {
+              "kind": "Debuff",
+              "buff": "Weak",
+              "value": 1,
+              "duration": 2
+            }
+          ],
+          "select": {
+            "chance": 45
+          }
+        }
+      ],
+      "drops": [
+        {
+          "id": "venom_fang",
+          "chance": 21
+        },
+        {
+          "id": "combo_shard",
+          "chance": 13
+        },
+        {
+          "id": "core_reach",
+          "chance": 3,
+          "rare": true
+        }
+      ]
+    },
+    {
+      "id": "shrieker",
+      "texture": "enemy_shrieker",
+      "hp": 64,
+      "width": 1.0,
+      "height": 1.0,
+      "actions": [
+        {
+          "description": "晶片、{0}ダメージ",
+          "target": {
+            "rangeType": "Cross",
+            "range": 4,
+            "approach": "Align",
+            "moveRange": 2
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 18
+            }
+          ],
+          "select": {
+            "chance": 60
+          },
+          "vfx": "hit"
+        },
+        {
+          "description": "怒りの咆哮、{0}ダメージ＋攻撃UP",
+          "target": {
+            "rangeType": "Area",
+            "range": 2
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 19
+            },
+            {
+              "kind": "Buff",
+              "buff": "AttackUp",
+              "value": 3,
+              "duration": 2,
+              "applyTo": "Self"
+            }
+          ],
+          "select": {
+            "chance": 100,
+            "condition": "afterDodge"
+          }
+        },
+        {
+          "description": "後退",
+          "target": {
+            "rangeType": "None",
+            "range": 1
+          },
+          "effects": [
+            {
+              "kind": "MoveAway",
+              "value": 2
+            }
+          ],
+          "select": {
+            "chance": 40
+          }
+        }
+      ],
+      "drops": [
+        {
+          "id": "spark_chip",
+          "chance": 18
+        },
+        {
+          "id": "vuln_shard",
+          "chance": 14
+        },
+        {
+          "id": "core_sweep",
+          "chance": 3,
+          "rare": true
+        }
+      ]
+    },
+    {
+      "id": "myconid",
+      "texture": "enemy_myconid",
+      "hp": 78,
+      "width": 1.0,
+      "height": 1.0,
+      "actions": [
+        {
+          "description": "胞子爆発、{0}ダメージ＋毒",
+          "target": {
+            "rangeType": "Area",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 1
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 8
+            },
+            {
+              "kind": "Debuff",
+              "buff": "Poison",
+              "value": 4,
+              "duration": 3
+            }
+          ],
+          "select": {
+            "chance": 55
+          }
+        },
+        {
+          "description": "殴打、{0}ダメージ",
+          "target": {
+            "rangeType": "Area",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 1
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 26
+            }
+          ],
+          "select": {
+            "chance": 45
+          }
+        }
+      ],
+      "drops": [
+        {
+          "id": "life_shard",
+          "chance": 18
+        },
+        {
+          "id": "venom_fang",
+          "chance": 14
+        },
+        {
+          "id": "core_slash",
+          "chance": 3,
+          "rare": true
+        }
+      ]
+    },
+    {
+      "id": "cave_golem",
+      "texture": "enemy_cavegolem",
+      "hp": 128,
+      "width": 1.3,
+      "height": 1.3,
+      "actions": [
+        {
+          "description": "{0}ブロック",
+          "target": {
+            "rangeType": "None",
+            "range": 1
+          },
+          "effects": [
+            {
+              "kind": "Block",
+              "value": 30
+            }
+          ],
+          "select": {
+            "chance": 35
+          }
+        },
+        {
+          "description": "岩振り、{0}ダメージ＋ノックバック",
+          "target": {
+            "rangeType": "Area",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 1
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 19
+            },
+            {
+              "kind": "KnockbackPlayer",
+              "value": 1
+            }
+          ],
+          "select": {
+            "chance": 45
+          }
+        },
+        {
+          "description": "突進、{0}ダメージ",
+          "target": {
+            "rangeType": "Cross",
+            "range": 1,
+            "approach": "Dash",
+            "moveRange": 4
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 19
+            }
+          ],
+          "select": {
+            "chance": 100,
+            "condition": "far",
+            "conditionValue": 3
+          }
+        }
+      ],
+      "drops": [
+        {
+          "id": "iron_shard",
+          "chance": 24
+        },
+        {
+          "id": "life_shard",
+          "chance": 18
+        },
+        {
+          "id": "core_shield",
+          "chance": 4,
+          "rare": true
+        }
+      ]
+    },
+    {
+      "id": "venomancer",
+      "texture": "enemy_venomancer",
+      "hp": 71,
+      "width": 1.0,
+      "height": 1.0,
+      "actions": [
+        {
+          "description": "毒矢、{0}ダメージ＋毒",
+          "target": {
+            "unavoidable": true
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 9
+            },
+            {
+              "kind": "Debuff",
+              "buff": "Poison",
+              "value": 6,
+              "duration": 3
+            }
+          ],
+          "select": {
+            "chance": 45
+          }
+        },
+        {
+          "description": "衰弱の霧、{0}ダメージ＋脆弱",
+          "target": {
+            "rangeType": "Cross",
+            "range": 3,
+            "approach": "Align",
+            "moveRange": 2
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 6
+            },
+            {
+              "kind": "Debuff",
+              "buff": "Vulnerable",
+              "value": 2,
+              "duration": 2
+            }
+          ],
+          "select": {
+            "chance": 30
+          }
+        },
+        {
+          "description": "後退",
+          "target": {
+            "rangeType": "None",
+            "range": 1
+          },
+          "effects": [
+            {
+              "kind": "MoveAway",
+              "value": 2
+            }
+          ],
+          "select": {
+            "chance": 25,
+            "condition": "near",
+            "conditionValue": 1
+          }
+        }
+      ],
+      "drops": [
+        {
+          "id": "venom_fang",
+          "chance": 24
+        },
+        {
+          "id": "vuln_shard",
+          "chance": 18
+        },
+        {
+          "id": "core_reach",
+          "chance": 4,
+          "rare": true
+        }
+      ]
+    },
+    {
+      "id": "crystal_guard",
+      "texture": "enemy_crystalguard",
+      "hp": 138,
+      "width": 1.0,
+      "height": 1.0,
+      "actions": [
+        {
+          "description": "茨をまとう＋棘",
+          "target": {
+            "rangeType": "None",
+            "range": 1
+          },
+          "effects": [
+            {
+              "kind": "Buff",
+              "buff": "Thorns",
+              "value": 3,
+              "duration": 3,
+              "applyTo": "Self"
+            }
+          ],
+          "select": {
+            "chance": 30
+          }
+        },
+        {
+          "description": "晶ビーム、{0}ダメージ",
+          "target": {
+            "rangeType": "Cross",
+            "range": 5,
+            "approach": "Align",
+            "moveRange": 2
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 13
+            }
+          ],
+          "select": {
+            "chance": 45
+          }
+        },
+        {
+          "description": "{0}ブロック",
+          "target": {
+            "rangeType": "None",
+            "range": 1
+          },
+          "effects": [
+            {
+              "kind": "Block",
+              "value": 10
+            }
+          ],
+          "select": {
+            "chance": 25
+          }
+        }
+      ],
+      "drops": [
+        {
+          "id": "iron_shard",
+          "chance": 21
+        },
+        {
+          "id": "spark_chip",
+          "chance": 18
+        },
+        {
+          "id": "core_shield",
+          "chance": 4,
+          "rare": true
+        }
+      ]
+    },
+    {
+      "id": "elite_broodmother",
+      "texture": "enemy_broodmother",
+      "hp": 125,
+      "width": 1.3,
+      "height": 1.3,
+      "actions": [
+        {
+          "description": "産卵召喚",
+          "target": {
+            "rangeType": "None",
+            "range": 1
+          },
+          "effects": [
+            {
+              "kind": "Summon",
+              "summonId": "spider",
+              "value": 1
+            }
+          ],
+          "select": {
+            "chance": 25,
+            "condition": "allyBelow",
+            "conditionValue": 2
+          }
+        },
+        {
+          "description": "毒牙、{0}ダメージ＋毒",
+          "target": {
+            "rangeType": "Area",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 1
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 14
+            },
+            {
+              "kind": "Debuff",
+              "buff": "Poison",
+              "value": 4,
+              "duration": 3
+            }
+          ],
+          "select": {
+            "chance": 60
+          }
+        },
+        {
+          "description": "糸縛り、{0}ダメージ＋弱体",
+          "target": {
+            "rangeType": "Cross",
+            "range": 3,
+            "approach": "Align",
+            "moveRange": 2
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 8
+            },
+            {
+              "kind": "Debuff",
+              "buff": "Weak",
+              "value": 1,
+              "duration": 2
+            }
+          ],
+          "select": {
+            "chance": 40
+          }
+        }
+      ],
+      "drops": [
+        {
+          "id": "venom_fang",
+          "chance": 70
+        },
+        {
+          "id": "combo_shard",
+          "chance": 42
+        },
+        {
+          "id": "core_slash_h",
+          "chance": 10,
+          "rare": true
+        },
+        {
+          "id": "core_reach",
+          "chance": 10,
+          "rare": true
+        }
+      ]
+    },
+    {
+      "id": "elite_stonelord",
+      "texture": "enemy_stonelord",
+      "hp": 245,
+      "width": 1.5,
+      "height": 1.5,
+      "actions": [
+        {
+          "description": "大地の守り＋バリケード",
+          "target": {
+            "rangeType": "None",
+            "range": 1
+          },
+          "effects": [
+            {
+              "kind": "Buff",
+              "buff": "Barricade",
+              "value": 1,
+              "duration": 2,
+              "applyTo": "Self"
+            },
+            {
+              "kind": "Block",
+              "value": 15
+            }
+          ],
+          "select": {
+            "chance": 35
+          }
+        },
+        {
+          "description": "震撼、{0}ダメージ＋ノックバック",
+          "target": {
+            "rangeType": "Area",
+            "range": 2,
+            "approach": "Toward",
+            "moveRange": 1
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 16
+            },
+            {
+              "kind": "KnockbackPlayer",
+              "value": 2
+            }
+          ],
+          "select": {
+            "chance": 45
+          }
+        },
+        {
+          "description": "怒りの一撃、{0}ダメージ",
+          "target": {
+            "rangeType": "Area",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 1
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 24
+            }
+          ],
+          "select": {
+            "chance": 100,
+            "condition": "hpBelow",
+            "conditionValue": 40
+          }
+        }
+      ],
+      "drops": [
+        {
+          "id": "iron_shard",
+          "chance": 70
+        },
+        {
+          "id": "life_shard",
+          "chance": 42
+        },
+        {
+          "id": "core_slash_h",
+          "chance": 10,
+          "rare": true
+        },
+        {
+          "id": "core_shield",
+          "chance": 10,
+          "rare": true
+        }
+      ]
+    },
+    {
+      "id": "elite_gloomwing",
+      "texture": "enemy_gloomwing",
+      "hp": 180,
+      "width": 1.2,
+      "height": 1.2,
+      "actions": [
+        {
+          "description": "急襲、{0}ダメージ",
+          "target": {
+            "rangeType": "Cross",
+            "range": 1,
+            "approach": "Dash",
+            "moveRange": 5
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 12
+            }
+          ],
+          "select": {
+            "chance": 25
+          }
+        },
+        {
+          "description": "乱舞、{0}ダメージ×3",
+          "target": {
+            "rangeType": "Area",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 2
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 5,
+              "hits": 3
+            }
+          ],
+          "select": {
+            "chance": 35
+          }
+        },
+        {
+          "description": "戦意高揚、永続攻撃UP",
+          "target": {
+            "rangeType": "None"
+          },
+          "effects": [
+            {
+              "kind": "Buff",
+              "buff": "AttackUp",
+              "value": 2,
+              "duration": -1,
+              "applyTo": "Self"
+            }
+          ],
+          "select": {
+            "chance": 20
+          }
+        },
+        {
+          "description": "突進、{0}ダメージ",
+          "target": {
+            "rangeType": "Cross",
+            "range": 1,
+            "approach": "Dash",
+            "moveRange": 5
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 14
+            }
+          ],
+          "select": {
+            "chance": 20
+          }
+        }
+      ],
+      "drops": [
+        {
+          "id": "combo_shard",
+          "chance": 70
+        },
+        {
+          "id": "spark_chip",
+          "chance": 42
+        },
+        {
+          "id": "core_slash",
+          "chance": 10,
+          "rare": true
+        },
+        {
+          "id": "core_sweep",
+          "chance": 10,
+          "rare": true
+        }
+      ]
+    },
+    {
+      "id": "orochi",
+      "texture": "enemy_orochi",
+      "isBoss": true,
+      "hp": 240,
+      "width": 1.4,
+      "height": 1.4,
+      "gridShape": [
+        [
+          0,
+          0
+        ]
+      ],
+      "actions": [
+        {
+          "description": "薙ぎ払い{0}",
+          "target": {
+            "rangeType": "Area",
+            "range": 2
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 14
+            },
+            {
+              "kind": "KnockbackPlayer",
+              "value": 1
+            },
+            {
+              "kind": "Coil",
+              "value": 3
+            }
+          ],
+          "select": {
+            "chance": 50
+          }
+        },
+        {
+          "description": "毒噴き{0}",
+          "target": {
+            "rangeType": "Area",
+            "range": 1
+          },
+          "vfx": "poison",
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 12
+            },
+            {
+              "kind": "Debuff",
+              "buff": "Poison",
+              "value": 3,
+              "duration": 3
+            },
+            {
+              "kind": "Coil",
+              "value": 3
+            }
+          ],
+          "select": {
+            "chance": 50
+          }
+        },
+        {
+          "description": "まるのみ、{0}ダメージ",
+          "target": {
+            "rangeType": "Area",
+            "range": 6,
+            "unavoidable": true
+          },
+          "vfx": "explosion",
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 999
+            }
+          ],
+          "select": {
+            "condition": "coiled",
+            "chance": 100
+          }
+        }
+      ],
+      "snake": true
     }
   ]
 }

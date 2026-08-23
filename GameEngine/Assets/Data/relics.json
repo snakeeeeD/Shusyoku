@@ -299,9 +299,9 @@
       "id": "travelers_charm",
       "name": "旅人のお守り",
       "kind": "winHeal",
-      "value": 4,
+      "value": 2,
       "rarity": "starter",
-      "desc": "戦闘に勝つと HP+4 回復"
+      "desc": "戦闘に勝つと HP+2 回復"
     },
     {
       "id": "onslaught_ring",

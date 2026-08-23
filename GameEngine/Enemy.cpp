@@ -35,6 +35,7 @@ void Enemy::Init(const std::string& id)
     m_immovable = data->immovable;
 	m_textureName = data->textureName;
     m_gridShape = data->gridShape;
+    m_isSnake = data->snake;
 }
 
 void Enemy::Update(float delteTime)
@@ -45,6 +46,7 @@ void Enemy::Update(float delteTime)
 void Enemy::Draw3D(Renderer3D* renderer)
 {
     if (!isActive) return;
+    if (m_isSnake) return;
 
     XMFLOAT4 drawColor = m_isBoss
         ? XMFLOAT4(1.0f, 0.6f, 0.6f, 1.0f)
@@ -265,9 +267,59 @@ void Enemy::MoveAlongPlanned(GridMap* gridMap)
             (gridRow - gridMap->GetRows() / 2.0f) * 1.1f);
 }
 
+void Enemy::AlignToTarget(int playerCol, int playerRow, GridMap* gridMap, int steps)
+{
+    if (m_buffManager.HasBuff(BuffType::Root)) return;
+    size_t pathStart = m_movePath.size();
+    for (int s = 0; s < steps; s++)
+    {
+        int dc = playerCol - gridCol, dr = playerRow - gridRow;
+        if (dc == 0 || dr == 0) break;                    // 既に十字線上
+        int mc = 0, mr = 0;
+        if (abs(dc) <= abs(dr)) mc = (dc > 0) ? 1 : -1;   // 小さい方の軸を詰める＝距離は保つ
+        else                    mr = (dr > 0) ? 1 : -1;
+        int nc = gridCol + mc, nr = gridRow + mr;
+        if (!CanOccupy(gridMap, nc, nr)) break;           // 障害物で停止
+        ClearFootprint(gridMap);
+        gridCol = nc; gridRow = nr;
+        MarkFootprint(gridMap);
+        m_movePath.push_back({ gridCol, gridRow });        // 通過罠判定用
+    }
+    if (m_movePath.size() != pathStart)
+        StartMove((gridCol - gridMap->GetCols() / 2.0f) * 1.1f,
+            (gridRow - gridMap->GetRows() / 2.0f) * 1.1f);
+}
+
+void Enemy::MoveToCenter(GridMap* gridMap, int steps)
+{
+    if (m_buffManager.HasBuff(BuffType::Root)) return;
+    int cc = gridMap->GetCols() / 2, cr = gridMap->GetRows() / 2;
+    size_t pathStart = m_movePath.size();
+    for (int s = 0; s < steps; s++)
+    {
+        int dc = cc - gridCol, dr = cr - gridRow;
+        if (dc == 0 && dr == 0) break;                    // 中央到達
+        int mc = 0, mr = 0;
+        if (abs(dc) >= abs(dr)) mc = (dc > 0) ? 1 : -1;   // 大きい方の軸から詰める
+        else                    mr = (dr > 0) ? 1 : -1;
+        int nc = gridCol + mc, nr = gridRow + mr;
+        if (!CanOccupy(gridMap, nc, nr)) break;
+        ClearFootprint(gridMap);
+        gridCol = nc; gridRow = nr;
+        MarkFootprint(gridMap);
+        m_movePath.push_back({ gridCol, gridRow });
+    }
+    if (m_movePath.size() != pathStart)
+        StartMove((gridCol - gridMap->GetCols() / 2.0f) * 1.1f,
+            (gridRow - gridMap->GetRows() / 2.0f) * 1.1f);
+}
+
 void Enemy::TakeDamage(int damage, DamageFeel feel)
 {
     Audio::PlaySE("Assets/Sound/se/hit.mp3");
+
+    if (m_isSnake && m_lastHitHead) damage *= 2;   // 頭は弱点（2倍）
+    m_lastHitHead = false;
 
     // Vulnerable: 50%増
     if (m_buffManager.HasBuff(BuffType::Vulnerable))
@@ -390,6 +442,7 @@ bool Enemy::ConditionMet(const EnemyAction& a, int playerCol, int playerRow, int
     if (a.select.condition == "turnExact")    return turn == a.select.conditionValue;
     if (a.select.condition == "afterDodge") return m_lastAttackWhiffed;
     if (a.select.condition == "allyBelow") return m_allyCount < a.select.conditionValue;
+    if (a.select.condition == "coiled") return m_coilComplete;
     return true;
 }
 
@@ -498,7 +551,7 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
     }
 
     // ボスが2ターン攻撃を外し続けたら「移動」を足して近づく（ブロックのみのターンは維持）
-    if (m_isBoss && m_missStreak >= 2 && !m_plannedActions.empty())
+    if (m_isBoss && !m_isSnake && m_missStreak >= 2 && !m_plannedActions.empty())
     {
         auto& act = m_plannedActions[0];
         bool alreadyMoves = (act.target.approach != ApproachType::None);
@@ -524,6 +577,7 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
 
     if (actionIdx < 0 || actionIdx >= (int)m_plannedActions.size()) return 0;
     m_movePath.clear();
+    m_lastHitCount = 1; m_lastHitDamage = 0;
     m_didDash = false;
     const EnemyAction& act = m_plannedActions[actionIdx];
     const TargetSpec& tg = act.target;
@@ -553,6 +607,9 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
             hitTarget = hitTarget || dh;
             break;
         }
+        case ApproachType::Align:                              
+            if (!hitTarget) AlignToTarget(mtC, mtR, gridMap, tg.moveRange);
+            break;
         default: break;
         }
     }
@@ -564,6 +621,7 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
         switch (e.kind)
         {
         case EffectKind::MoveToward: MoveToward(mtC, mtR, gridMap, e.value); break;
+        case EffectKind::Coil: GrowCoil(gridMap, e.value, player); break;
         case EffectKind::MoveAway:
             MoveAway(mtC, mtR, gridMap, e.value);
             m_plannedMovePath.clear();   // 離脱後は接近矢印が残らないよう消す
@@ -577,7 +635,13 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
                 else                                 StartJump(0.5f, 0.25f);
             }
             if (hitPlayer)
-                damage += m_buffManager.GetFinalAttack(e.value);   // 実ダメージは本物のプレイヤー
+            {
+                int perHit = m_buffManager.GetFinalAttack(e.value);
+                int h = (e.hits > 1) ? e.hits : 1;
+                damage += perHit * h;
+                m_lastHitDamage = perHit;   // 1ヒット分
+                m_lastHitCount = h;        // ヒット数
+            }
             break;
 
         case EffectKind::Block:
@@ -598,7 +662,10 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
                 m_buffManager.AddBuff(b);
             else if (e.applyTo == ApplyTo::Player)
             {
-                if (hitPlayer && player) player->GetBuffManager().AddBuff(b);
+                // 攻撃をブロックで防ぎ切ったら状態異常(毒など)も食らわない
+                bool fullyBlocked = (damage > 0 && player && player->GetBlock() >= damage);
+                if (hitPlayer && player && !fullyBlocked)
+                    player->GetBuffManager().AddBuff(b);
             }
             else // Allies：範囲内の他の敵
             {
@@ -611,12 +678,13 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
             }
             break;
         }
-        case EffectKind::PullPlayer: 
-            PullPlayer(playerCol, playerRow, gridMap, player, e.value); 
+        case EffectKind::PullPlayer:
+            if (hitPlayer) PullPlayer(playerCol, playerRow, gridMap, player, e.value);
             break;
 
-        case EffectKind::KnockbackPlayer: 
-            KnockbackPlayer(playerCol, playerRow, gridMap, player, e.value); break;
+        case EffectKind::KnockbackPlayer:
+            if (hitPlayer) KnockbackPlayer(playerCol, playerRow, gridMap, player, e.value);
+            break;
         case EffectKind::Summon:
             m_pendingSummons.push_back({ e.summonId, e.value });
             break;
@@ -639,6 +707,19 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
                     cell.tileEffect.persistent = true;        // 踏んでも即消えない
                     cell.tileEffect.hazardTurns = e.duration; // Nターンで自動消滅
                 }
+            break;
+        }
+        case EffectKind::Heal:
+        {
+            int heal = (e.value > 0) ? e.value : damage;   // value>0=固定回復 / 0=与ダメージ分を吸収
+            if (heal > 0 && hitPlayer)                       // 命中時だけ吸血
+            {
+                m_HP = min(m_maxHP, m_HP + heal);
+                EffectManager::Play("heal", worldX, worldY + 0.5f, worldZ);
+                FloatingTextManager::Spawn(worldX, worldY + 0.9f, worldZ,
+                    L"+" + std::to_wstring(heal),
+                    XMFLOAT4(0.4f, 1.0f, 0.5f, 1.0f), 32.0f);   // 緑で回復量
+            }
             break;
         }
         }
@@ -779,6 +860,23 @@ std::vector<std::pair<int, int>> Enemy::PlannedMovePath(int targetCol, int targe
             for (int s = 0; s < tg.moveRange; s++) if (!StepToward(c, r, targetCol, targetRow, gridMap, path)) break;
             return path;
         }
+        if (tg.approach == ApproachType::Align)
+        {
+            int c = gridCol, r = gridRow;
+            for (int s = 0; s < tg.moveRange; s++)
+            {
+                int dc = targetCol - c, dr = targetRow - r;
+                if (dc == 0 || dr == 0) break;                    // 十字線上＝整列済み
+                int mc = 0, mr = 0;
+                if (abs(dc) <= abs(dr)) mc = (dc > 0) ? 1 : -1;   // 小さい方の軸を詰める（距離は保つ）
+                else                    mr = (dr > 0) ? 1 : -1;
+                int nc = c + mc, nr = r + mr;
+                if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) break;
+                if (gridMap->GetCell(nc, nr).type != CellType::Empty) break;
+                c = nc; r = nr; path.push_back({ c, r });
+            }
+            return path;
+        }
     }
 
     // 純移動効果（MoveToward / MoveAway）
@@ -813,4 +911,102 @@ std::vector<std::pair<int, int>> Enemy::PlannedMovePath(int targetCol, int targe
         }
     }
     return path;
+}
+
+void Enemy::InitSnake(GridMap* gridMap)
+{
+    if (!m_isSnake) return;
+    int cols = gridMap->GetCols(), rows = gridMap->GetRows();
+    m_spiral.clear(); m_bodyCells.clear(); m_spiralIdx = 0;
+    int top = 0, bot = rows - 1, left = 0, right = cols - 1;   // 外周→内へ渦巻き
+    while (top <= bot && left <= right)
+    {
+        for (int c = left; c <= right; c++) m_spiral.push_back({ c, top });   top++;
+        for (int r = top; r <= bot; r++) m_spiral.push_back({ right, r });  right--;
+        if (top <= bot) { for (int c = right; c >= left; c--) m_spiral.push_back({ c, bot }); bot--; }
+        if (left <= right) { for (int r = bot;   r >= top;  r--) m_spiral.push_back({ left, r }); left++; }
+    }
+    gridMap->SetCellType(gridCol, gridRow, CellType::Empty);   // 元の位置を空ける
+    gridCol = m_spiral[0].first; gridRow = m_spiral[0].second; // 頭を渦巻き先頭へ
+    gridMap->SetCellType(gridCol, gridRow, CellType::Boss);
+    worldX = (gridCol - cols / 2.0f) * 1.1f;
+    worldZ = (gridRow - rows / 2.0f) * 1.1f;
+}
+
+void Enemy::GrowCoil(GridMap* gridMap, int steps, Player* player)
+{
+    if (!m_isSnake || m_spiral.empty()) return;
+
+    // 中央到達後は伸ばさず、数ターン待ってからフィニッシャー解禁
+    if (m_coilReached)
+    {
+        if (++m_coilStuck >= 4) m_coilComplete = true;   // この 2 を増やすほど遅い
+    }
+
+    m_lastHitHead = false;                       // とぐろ移動の罠は2倍対象外
+    std::vector<std::pair<float, float>> pts;
+    for (int s = 0; s < steps; s++)
+    {
+        if (m_spiralIdx + 1 >= (int)m_spiral.size()) break;
+
+        auto nx = m_spiral[m_spiralIdx + 1];
+        CellType t = gridMap->GetCell(nx.first, nx.second).type;
+        if (t == CellType::Wall) break;
+        if (t == CellType::Player)
+        {
+            if (player) player->TakeDamage(8);              // 轢かれダメージ（攻撃とは別）
+            if (!PushPlayerToCenter(gridMap, player)) break;
+        }
+        // 以降、頭を nx へ進める（既存のまま）
+        m_bodyCells.push_back({ gridCol, gridRow });
+        gridMap->SetCellType(gridCol, gridRow, CellType::Boss);
+        gridCol = nx.first; gridRow = nx.second;
+        gridMap->SetCellType(gridCol, gridRow, CellType::Boss);
+        m_spiralIdx++;
+        m_movePath.push_back({ gridCol, gridRow });        // 通過マス（罠判定用）
+        int cc = gridMap->GetCols() / 2, cr = gridMap->GetRows() / 2;
+        if (abs(gridCol - cc) + abs(gridRow - cr) <= 1) m_coilReached = true;
+        pts.push_back({ (gridCol - gridMap->GetCols() / 2.0f) * 1.1f,
+                        (gridRow - gridMap->GetRows() / 2.0f) * 1.1f });
+    }
+    if (!pts.empty()) StartWalk(pts, 0.1f);
+}
+
+bool Enemy::PushPlayerToCenter(GridMap* gridMap, Player* player)
+{
+    if (!player) return false;
+    int pc = player->gridCol, pr = player->gridRow;
+    int cc = gridMap->GetCols() / 2, cr = gridMap->GetRows() / 2;
+    int dc = cc - pc, dr = cr - pr;
+
+    std::vector<std::pair<int, int>> tries;
+    if (abs(dc) >= abs(dr)) { if (dc) tries.push_back({ dc > 0 ? 1 : -1, 0 }); if (dr) tries.push_back({ 0, dr > 0 ? 1 : -1 }); }
+    else { if (dr) tries.push_back({ 0, dr > 0 ? 1 : -1 }); if (dc) tries.push_back({ dc > 0 ? 1 : -1, 0 }); }
+    // フォールバック：中央方向が塞がってたら空いてる方へ押し出す
+    tries.push_back({ 1,0 }); tries.push_back({ -1,0 }); tries.push_back({ 0,1 }); tries.push_back({ 0,-1 });
+
+    for (auto& [sx, sy] : tries)
+    {
+        int nc = pc + sx, nr = pr + sy;
+        if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) continue;
+        if (gridMap->GetCell(nc, nr).type != CellType::Empty) continue;
+        gridMap->SetCellType(pc, pr, CellType::Empty);
+        player->gridCol = nc; player->gridRow = nr;
+        gridMap->SetCellType(nc, nr, CellType::Player);
+        std::vector<std::pair<float, float>> pts = {
+            { (nc - gridMap->GetCols() / 2.0f) * 1.1f, (nr - gridMap->GetRows() / 2.0f) * 1.1f } };
+        player->StartWalk(pts, 0.08f);
+        return true;
+    }
+    return false;   // 完全に囲まれてて押せない
+}
+
+bool Enemy::OccupiesCell(int col, int row) const
+{
+    for (auto& [dc, dr] : m_gridShape)
+        if (gridCol + dc == col && gridRow + dr == row) return true;
+    if (m_isSnake)
+        for (auto& b : m_bodyCells)
+            if (b.first == col && b.second == row) return true;
+    return false;
 }

@@ -102,8 +102,12 @@ public:
         switch (e.kind)
         {
         case EffectKind::Damage:
-            title = L"攻撃";
-            body = std::to_wstring(v) + L" ダメージ";
+            title = (e.hits > 1) ? L"連続攻撃" : L"攻撃";
+            if (e.hits > 1)
+                body = std::to_wstring(v) + L" ダメージ ×" + std::to_wstring(e.hits)
+                + L"\n合計 " + std::to_wstring(v * e.hits) + L" ダメージ";
+            else
+                body = std::to_wstring(v) + L" ダメージ";
             { std::wstring r = RangeText(a.target); if (!r.empty()) body += L"\n範囲: " + r; }
             break;
         case EffectKind::Block:
@@ -127,6 +131,10 @@ public:
         case EffectKind::PullPlayer:      title = L"引き寄せ"; body = L"プレイヤーを " + std::to_wstring(e.value) + L" マス引き寄せる"; break;
         case EffectKind::KnockbackPlayer: title = L"突き飛ばし"; body = L"プレイヤーを " + std::to_wstring(e.value) + L" マス突き飛ばす"; break;
         case EffectKind::Summon:          title = L"召喚"; body = L"仲間を " + std::to_wstring(e.value) + L" 体呼ぶ"; break;
+        case EffectKind::Coil:
+            title = L"とぐろ";
+            body = L"中央へ巻きつつ " + std::to_wstring(e.value) + L" マス伸びる\n体に押し込まれると轢かれる";
+            break;
         default: title = L""; body = L""; break;
         }
     }
@@ -148,7 +156,7 @@ public:
         int sum = 0;
         for (auto& e : a.effects)
             if (e.kind == EffectKind::Damage)
-                sum += buffs.GetFinalAttack(e.value);
+                sum += buffs.GetFinalAttack(e.value) * (e.hits > 1 ? e.hits : 1);
         return sum;
     }
 
@@ -160,7 +168,7 @@ public:
     {
         switch (e.kind)
         {
-        case EffectKind::Damage:            return "icon_attack";
+        case EffectKind::Damage:            return (e.hits > 1) ? "icon_multihit" : "icon_attack";
         case EffectKind::Block:             return "icon_block";
         case EffectKind::Buff:              return "icon_buff";
         case EffectKind::Debuff:            return "icon_debuff";
@@ -169,6 +177,7 @@ public:
         case EffectKind::PullPlayer:        return "icon_attack";
         case EffectKind::KnockbackPlayer :  return "icon_attack";
         case EffectKind::Summon:            return "icon_summon";
+        case EffectKind::Coil:              return "icon_coil";
         default:                            return "";
         }
     }

@@ -176,6 +176,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("enemy_zako", L"Assets/Enemy/zako.png");
 		TextureManager::Load("enemy_goblin", L"Assets/Enemy/goblin.png");
 		TextureManager::Load("enemy_orc", L"Assets/Enemy/orc.png");
+		TextureManager::Load("enemy_bigfoot", L"Assets/Enemy/bigfoot.png");
 		TextureManager::Load("enemy_fire", L"Assets/Enemy/fireEnemy.png");
 		TextureManager::Load("enemy_bug", L"Assets/Enemy/bug.png");
 		TextureManager::Load("enemy_spore", L"Assets/Enemy/spore.png");
@@ -189,6 +190,25 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("enemy_golem", L"Assets/Enemy/golem.png");
 		TextureManager::Load("enemy_obake", L"Assets/Enemy/obake.png");
 		TextureManager::Load("enemy_mimic", L"Assets/Enemy/mimic.png");
+		TextureManager::Load("enemy_bat", L"Assets/Enemy/bat.png");
+		TextureManager::Load("enemy_caveslime", L"Assets/Enemy/caveslime.png");
+		TextureManager::Load("enemy_crawler", L"Assets/Enemy/crawler.png");
+		TextureManager::Load("enemy_spider", L"Assets/Enemy/spider.png");
+		TextureManager::Load("enemy_shrieker", L"Assets/Enemy/shrieker.png");
+		TextureManager::Load("enemy_myconid", L"Assets/Enemy/myconid.png");
+		TextureManager::Load("enemy_cavegolem", L"Assets/Enemy/cavegolem.png");
+		TextureManager::Load("enemy_venomancer", L"Assets/Enemy/venomancer.png");
+		TextureManager::Load("enemy_crystalguard", L"Assets/Enemy/crystalguard.png");
+		TextureManager::Load("enemy_broodmother", L"Assets/Enemy/broodmother.png");
+		TextureManager::Load("enemy_stonelord", L"Assets/Enemy/stonelord.png");
+		TextureManager::Load("enemy_gloomwing", L"Assets/Enemy/gloomwing.png");
+		TextureManager::Load("snake_head", L"Assets/Enemy/snake_head.png");
+		TextureManager::Load("snake_body_h", L"Assets/Field/snake_body_h.png");
+		TextureManager::Load("snake_body_v", L"Assets/Field/snake_body_v.png");
+		TextureManager::Load("snake_corner_l", L"Assets/Field/snake_corner_l.png");
+		TextureManager::Load("snake_corner_r", L"Assets/Field/snake_corner_r.png");
+		TextureManager::Load("snake_tail", L"Assets/Field/snake_tail.png");
+		TextureManager::Load("enemy_orochi", L"Assets/Enemy/orochi.png");  // 頭。仮なら既存絵に向けてOK
 	}
 
 	// UI
@@ -243,11 +263,13 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		// バフデバフアイコン
 		{
 			TextureManager::Load("icon_attack", L"Assets/UI/icon_attack.png");
+			TextureManager::Load("icon_multihit", L"Assets/UI/icon_multihit.png");
 			TextureManager::Load("icon_block", L"Assets/UI/icon_block.png");
 			TextureManager::Load("icon_buff", L"Assets/UI/icon_buff.png");
 			TextureManager::Load("icon_debuff", L"Assets/UI/icon_debuff.png");
 			TextureManager::Load("icon_move", L"Assets/UI/icon_move.png");
 			TextureManager::Load("icon_summon", L"Assets/UI/icon_summon.png");
+			TextureManager::Load("icon_coil", L"Assets/UI/icon_coil.png");
 			TextureManager::Load("buff_attackup", L"Assets/UI/buff_attackup.png");
 			TextureManager::Load("buff_defenseup", L"Assets/UI/buff_defenseup.png");
 			TextureManager::Load("buff_weak", L"Assets/UI/buff_weak.png");

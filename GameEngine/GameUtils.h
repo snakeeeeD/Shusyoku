@@ -120,6 +120,7 @@ inline ApproachType StringToApproach(const std::string& s)
 {
     if (s == "Toward") return ApproachType::Toward;
     if (s == "Dash")   return ApproachType::Dash;
+    if (s == "Align")  return ApproachType::Align;
     return ApproachType::None;
 }
 
@@ -134,6 +135,8 @@ inline EffectKind StringToEffectKind(const std::string& s)
     if (s == "KnockbackPlayer") return EffectKind::KnockbackPlayer;
     if (s == "Summon")     return EffectKind::Summon;
     if (s == "Hazard") return EffectKind::Hazard;
+    if (s == "Heal") return EffectKind::Heal;
+    if (s == "Coil") return EffectKind::Coil;
     return EffectKind::Damage;
 }
 
