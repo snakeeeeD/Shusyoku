@@ -6,10 +6,12 @@
 #include <fstream>
 #include <windows.h>
 #include <algorithm>
+#include <filesystem>
 
 using json = nlohmann::json;
 
 PlayerData PlayerDataManager::m_data;
+bool PlayerDataManager::s_runOver = false;
 const char* PlayerDataManager::SAVE_PATH = "Assets/Data/playerdata.json";
 
 bool PlayerDataManager::HasSaveData()
@@ -98,6 +100,8 @@ void PlayerDataManager::Load()
 {
 	std::ifstream file(SAVE_PATH);
 	if (!file.is_open()) return;
+
+	s_runOver = false;
 
 	try
 	{
@@ -197,6 +201,7 @@ void PlayerDataManager::StartNewGame()
 
 	m_data.tutorialField = false;
 	m_data.tutorialBattle = false;
+	s_runOver = false;
 
 	m_data.gold = 100;          // 開始所持金
 	m_data.materials.clear();
@@ -216,7 +221,9 @@ void PlayerDataManager::StartNewGame()
 
 void PlayerDataManager::DeleteSave()
 {
-	std::remove(SAVE_PATH);
+	std::error_code ec;
+	std::filesystem::remove(SAVE_PATH, ec);   // ワイドパスで確実に削除（日本語CWD対策）
+	s_runOver = true;
 }
 
 void PlayerDataManager::RemoveCard(int index)

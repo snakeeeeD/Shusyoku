@@ -519,7 +519,7 @@ void FieldScene::Draw()
                 }
             }
 
-            bool hovMove = CanMove(col, row)
+            bool hovMove = m_hoverEnabled && CanMove(col, row)
                 && mp.x >= pos.x && mp.x <= pos.x + CELL_SIZE
                 && mp.y >= pos.y && mp.y <= pos.y + CELL_SIZE;
             float ny = hovMove ? pos.y - 8.0f : pos.y;   // ホバーで浮く

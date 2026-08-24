@@ -1,0 +1,41 @@
+{
+  "bgmVolume": 0.5,
+  "clearedNodes": [],
+  "currentNodeIndex": 0,
+  "deck": [
+    "ATK_strike",
+    "ATK_strike",
+    "ATK_strike",
+    "ATK_Spin Slash",
+    "SKL_defend",
+    "SKL_defend",
+    "SKL_defend",
+    "SKL_defend",
+    "MOV_move",
+    "MOV_move",
+    "MOV_dash"
+  ],
+  "fieldNodeEnemyIds": [],
+  "fieldNodeTypes": [],
+  "fieldNodeVisited": [],
+  "fieldPlayerCol": 11,
+  "fieldPlayerRow": 3,
+  "fieldSteps": 20,
+  "gold": 100,
+  "hp": 50,
+  "layer": 1,
+  "masterVolume": 1.0,
+  "materials": {},
+  "maxHp": 50,
+  "relicCounters": {},
+  "relics": [
+    "travelers_charm"
+  ],
+  "removeCount": 0,
+  "tutorialBattle": false,
+  "tutorialCardSelect": true,
+  "tutorialCraft": true,
+  "tutorialField": true,
+  "tutorialRest": false,
+  "tutorialShop": false
+}

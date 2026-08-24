@@ -54,64 +54,63 @@ void TitleScene::Draw()
     bool hov = (mp.x >= bx && mp.x <= bx + bw && mp.y >= by && mp.y <= by + bh);
     float dy = hov ? -4.0f : 0.0f;
 
+    float nx, ny, cx, cy, mw, mh; MenuBtnRects(nx, ny, cx, cy, mw, mh);
+    bool hasSave = PlayerDataManager::HasSaveData() && !PlayerDataManager::IsRunOver();
+    bool nHov = (mp.x >= nx && mp.x <= nx + mw && mp.y >= ny && mp.y <= ny + mh);
+    bool cHov = hasSave && (mp.x >= cx && mp.x <= cx + mw && mp.y >= cy && mp.y <= cy + mh);
+    float nDy = nHov ? -4.0f : 0.0f, cDy = cHov ? -4.0f : 0.0f;
+
     m_spriteRenderer->Begin();
-
-    // タイトル画像（画面中央に表示）
     if (m_titleTexture)
-    {
-        float imgW = m_screenWidth;
-        float imgH = m_screenHeight;
-        float x = (m_screenWidth - imgW) / 2.0f;
-        float y = (m_screenHeight - imgH) / 2.0f;
-        m_spriteRenderer->DrawSprite(m_titleTexture, x, y, imgW, imgH,
-            0.0f, XMFLOAT4(1, 1, 1, 1));
-    }
+        m_spriteRenderer->DrawSprite(m_titleTexture, 0.0f, 0.0f,
+            (float)m_screenWidth, (float)m_screenHeight, 0.0f, XMFLOAT4(1, 1, 1, 1));
 
+    // 表示モード切替ボタン（既存・左下）
     UiWindow::Button(m_spriteRenderer, TextureManager::Get("white"), bx, by + dy, bw, bh,
         hov ? XMFLOAT4(0.35f, 0.5f, 0.7f, 1.0f) : XMFLOAT4(0.25f, 0.28f, 0.4f, 1.0f));
 
+    // ニューゲーム（常時）
+    UiWindow::Button(m_spriteRenderer, TextureManager::Get("white"), nx, ny + nDy, mw, mh,
+        nHov ? XMFLOAT4(0.35f, 0.5f, 0.7f, 1.0f) : XMFLOAT4(0.25f, 0.28f, 0.4f, 1.0f));
+    // コンティニュー（セーブがある時だけ）
+    if (hasSave)
+        UiWindow::Button(m_spriteRenderer, TextureManager::Get("white"), cx, cy + cDy, mw, mh,
+            cHov ? XMFLOAT4(0.35f, 0.5f, 0.7f, 1.0f) : XMFLOAT4(0.25f, 0.28f, 0.4f, 1.0f));
     m_spriteRenderer->End();
 
     m_textRenderer->Begin();
-
-    m_textRenderer->DrawText(L"左クリック：ニューゲーム",
-        m_screenWidth / 2.0f - 150.0f,
-        m_screenHeight / 2.0f + 50.0f,
-        28.0f, D2D1::ColorF(D2D1::ColorF::Red));
-
-    m_textRenderer->DrawText(L"右クリック：コンティニュー",
-        m_screenWidth / 2.0f - 150.0f,
-        m_screenHeight / 2.0f + 90.0f,
-        28.0f, D2D1::ColorF(D2D1::ColorF::Black));
+    m_textRenderer->DrawText(L"ニューゲーム", nx + mw / 2.0f - 84.0f, ny + nDy + 15.0f, 28.0f, D2D1::ColorF(1, 1, 1));
+    if (hasSave)
+        m_textRenderer->DrawText(L"コンティニュー", cx + mw / 2.0f - 98.0f, cy + cDy + 15.0f, 28.0f, D2D1::ColorF(1, 1, 1));
 
     const wchar_t* label = (Settings::Get().displayMode == DisplayMode::Borderless)
         ? L"表示: 全画面" : L"表示: ウィンドウ";
     m_textRenderer->DrawText(label, bx + 16.0f, by + dy + 9.0f, 20.0f, D2D1::ColorF(1, 1, 1));
-
     m_textRenderer->End();
 }
 
 void TitleScene::HandleInput()
 {
-    // 初回フレームはクリックを無視（前シーンのクリックを拾わないように）
-    if (m_skipFirstFrame)
-    {
-        m_skipFirstFrame = false;
-        return;
-    }
+    if (m_skipFirstFrame) { m_skipFirstFrame = false; return; }
 
-    // ニューゲーム開始時
-    // 表示モードのトグル
     POINT mp = m_input.GetMousePos();
     float bx, by, bw, bh; DispBtnRect(bx, by, bw, bh);
     bool hov = (mp.x >= bx && mp.x <= bx + bw && mp.y >= by && mp.y <= by + bh);
     if (hov && !m_dispHover) Audio::PlaySE("Assets/Sound/se/hover.mp3");
     m_dispHover = hov;
 
-    // ニューゲーム開始判定
+    float nx, ny, cx, cy, mw, mh; MenuBtnRects(nx, ny, cx, cy, mw, mh);
+    bool hasSave = PlayerDataManager::HasSaveData() && !PlayerDataManager::IsRunOver();
+    bool nHov = (mp.x >= nx && mp.x <= nx + mw && mp.y >= ny && mp.y <= ny + mh);
+    bool cHov = hasSave && (mp.x >= cx && mp.x <= cx + mw && mp.y >= cy && mp.y <= cy + mh);
+    if (nHov && !m_newHover)  Audio::PlaySE("Assets/Sound/se/hover.mp3");
+    m_newHover = nHov;
+    if (cHov && !m_contHover) Audio::PlaySE("Assets/Sound/se/hover.mp3");
+    m_contHover = cHov;
+
     if (m_input.GetMouseButtonTrigger(0))
     {
-        if (hov)   // ボタン上：モード切替（ニューゲームにしない）
+        if (hov)   // 表示モード切替
         {
             DisplayMode next = (Settings::Get().displayMode == DisplayMode::Borderless)
                 ? DisplayMode::Windowed : DisplayMode::Borderless;
@@ -119,17 +118,19 @@ void TitleScene::HandleInput()
             Audio::PlaySE("Assets/Sound/se/click.mp3");
             return;
         }
-        PlayerDataManager::StartNewGame();
-        if (onChangeScene)
-            onChangeScene(SceneType::Field);
-    }
-
-    // コンティニュー
-    if (m_input.GetMouseButtonTrigger(1))
-    {
-        if (!PlayerDataManager::HasSaveData()) return;
-        PlayerDataManager::Load();
-        if (onChangeScene)
-            onChangeScene(SceneType::Field);
+        if (nHov)   // ニューゲーム
+        {
+            Audio::PlaySE("Assets/Sound/se/click.mp3");
+            PlayerDataManager::StartNewGame();
+            if (onChangeScene) onChangeScene(SceneType::Field);
+            return;
+        }
+        if (cHov)   // コンティニュー
+        {
+            Audio::PlaySE("Assets/Sound/se/click.mp3");
+            PlayerDataManager::Load();
+            if (onChangeScene) onChangeScene(SceneType::Field);
+            return;
+        }
     }
 }

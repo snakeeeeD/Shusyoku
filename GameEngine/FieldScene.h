@@ -42,6 +42,8 @@ public:
 
     void SetupEventBattle(EncCategory cat, const std::string& param = "");
 
+    void SetHoverEnabled(bool e) { m_hoverEnabled = e; }
+
 private:
     void GenerateMap();
     void SaveProgress();
@@ -81,4 +83,6 @@ private:
 
     bool m_resumeBattle = false;
     bool m_freeMove = false;
+
+    bool m_hoverEnabled = true;
 };

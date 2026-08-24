@@ -20,7 +20,7 @@
 #include "ResultScene.h"
 
 struct URect { float x, y, w, h; bool has(POINT p) const { return p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h; } };
-struct SettingsUI { URect panel, disp, bgmTrack, seTrack, shake, close, gear; };
+struct SettingsUI { URect panel, disp, bgmTrack, seTrack, shake, gameEnd, close, gear; };
 
 class SceneManager
 {
@@ -186,13 +186,14 @@ private:
     {
         SettingsUI u{};
         u.gear = { (float)m_screenWidth - 58.0f, 5.0f, 48.0f, 30.0f };
-        float pw = 440.0f, ph = 300.0f;
+        float pw = 440.0f, ph = 348.0f;
         float px = (m_screenWidth - pw) / 2.0f, py = (m_screenHeight - ph) / 2.0f;
         u.panel = { px, py, pw, ph };
         u.disp = { px + 180.0f, py + 54.0f, 200.0f, 34.0f };
         u.bgmTrack = { px + 180.0f, py + 120.0f, 200.0f, 14.0f };
         u.seTrack = { px + 180.0f, py + 168.0f, 200.0f, 14.0f };
         u.shake = { px + 180.0f, py + 208.0f, 120.0f, 34.0f };
+        u.gameEnd = { px + pw / 2.0f - 90.0f, py + 250.0f, 180.0f, 34.0f };
         u.close = { px + pw / 2.0f - 70.0f, py + ph - 52.0f, 140.0f, 38.0f };
         return u;
     }

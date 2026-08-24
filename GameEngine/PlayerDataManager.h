@@ -33,7 +33,11 @@ public:
     static void AddRelic(const std::string& id);
     static void RemoveRelic(const std::string& id);
 
+    static bool IsRunOver() { return s_runOver; }
+
 private:
     static PlayerData m_data;
     static const char* SAVE_PATH;
+
+    static bool s_runOver;
 };

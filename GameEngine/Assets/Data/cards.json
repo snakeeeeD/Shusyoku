@@ -4,7 +4,6 @@
       "id": "ATK_strike",
       "name": "ストライク",
       "type": "Attack",
-      "starter": true,
       "rarity": "Common",
       "cost": 1,
       "range": 1,
@@ -23,7 +22,9 @@
       "name": "柄打ち",
       "type": "Attack",
       "rarity": "Common",
-      "tags": [ "Strike" ],
+      "tags": [
+        "Strike"
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -45,9 +46,10 @@
       "id": "ATK_Spin Slash",
       "name": "回転切り",
       "type": "Attack",
-      "starter": true,
       "rarity": "Uncommon",
-      "tags": [ "Strike" ],
+      "tags": [
+        "Strike"
+      ],
       "cost": 2,
       "range": 1,
       "rangeType": "Area",
@@ -65,12 +67,16 @@
       "name": "扇薙ぎ",
       "type": "Attack",
       "rarity": "Common",
-      "tags": [ "Strike" ],
+      "tags": [
+        "Strike"
+      ],
       "cost": 1,
       "range": 2,
       "rangeType": "Cone",
       "description": "扇状の範囲の敵に{value}ダメージ",
-      "upgrade": { "mainValue": 3 },
+      "upgrade": {
+        "mainValue": 3
+      },
       "mainEffect": {
         "type": "Damage",
         "value": 8
@@ -81,13 +87,16 @@
       "name": "二連撃",
       "type": "Attack",
       "rarity": "Common",
-      "tags": [ "Strike" ],
+      "tags": [
+        "Strike"
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
-      "hits": 2,
       "description": "{value}ダメージ×{hits}",
-      "upgrade": { "mainValue": 2 },
+      "upgrade": {
+        "mainValue": 2
+      },
       "mainEffect": {
         "type": "Damage",
         "value": 4
@@ -98,13 +107,13 @@
       "name": "乱れ突き",
       "type": "Attack",
       "rarity": "Rare",
-      "tags": [ "Strike" ],
+      "tags": [
+        "Strike"
+      ],
       "cost": 3,
       "range": 1,
       "rangeType": "Adjacent",
-      "hits": 7,
       "description": "{value}ダメージ×{hits}",
-      "upgrade": { "hits": 3 },
       "mainEffect": {
         "type": "Damage",
         "value": 2
@@ -115,12 +124,16 @@
       "name": "ボディスラム",
       "type": "Attack",
       "rarity": "Uncommon",
-      "tags": [ "Bulwark" ],
+      "tags": [
+        "Bulwark"
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
       "description": "現在のブロックぶんダメージ",
-      "upgrade": { "cost": -1 },
+      "upgrade": {
+        "cost": -1
+      },
       "mainEffect": {
         "type": "BlockDamage",
         "value": 100
@@ -131,7 +144,9 @@
       "name": "城壁強打",
       "type": "Attack",
       "rarity": "Rare",
-      "tags": [ "Bulwark" ],
+      "tags": [
+        "Bulwark"
+      ],
       "cost": 3,
       "range": 1,
       "rangeType": "Adjacent",
@@ -174,12 +189,16 @@
       "name": "毒塗り",
       "type": "Attack",
       "rarity": "Common",
-      "tags": [ "Poison" ],
+      "tags": [
+        "Poison"
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
       "description": "毒{onhit}を付与",
-      "upgrade": { "onHitValue": 2 },
+      "upgrade": {
+        "onHitValue": 2
+      },
       "mainEffect": {
         "type": "Damage",
         "value": 0
@@ -196,12 +215,16 @@
       "name": "毒霧",
       "type": "Attack",
       "rarity": "Common",
-      "tags": [ "Poison" ],
+      "tags": [
+        "Poison"
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Area",
       "description": "範囲{value}ダメージ 毒{onhit}",
-      "upgrade": { "onHitValue": 1 },
+      "upgrade": {
+        "onHitValue": 1
+      },
       "mainEffect": {
         "type": "Damage",
         "value": 2
@@ -218,13 +241,17 @@
       "name": "毒鞭",
       "type": "Attack",
       "rarity": "Uncommon",
-      "tags": [ "Poison" ],
+      "tags": [
+        "Poison"
+      ],
       "cost": 1,
       "range": 3,
       "rangeType": "Cross",
-      "pierce": true,
       "description": "直線{value}ダメージ 毒{onhit}",
-      "upgrade": { "range": 1 },
+      "pierce": true,
+      "upgrade": {
+        "range": 1
+      },
       "mainEffect": {
         "type": "Damage",
         "value": 3
@@ -241,12 +268,16 @@
       "name": "衰弱の毒",
       "type": "Attack",
       "rarity": "Uncommon",
-      "tags": [ "Poison" ],
+      "tags": [
+        "Poison"
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
       "description": "{value}ダメージ 毒{onhit} 弱体",
-      "upgrade": { "onHitValue": 2 },
+      "upgrade": {
+        "onHitValue": 2
+      },
       "mainEffect": {
         "type": "Damage",
         "value": 3
@@ -256,12 +287,6 @@
         "value": 3,
         "duration": 3,
         "buffType": "Poison"
-      },
-      "onHitEffect2": {
-        "type": "ApplyDebuff",
-        "value": 1,
-        "duration": 2,
-        "buffType": "Weak"
       }
     },
     {
@@ -269,12 +294,16 @@
       "name": "毒の扇",
       "type": "Attack",
       "rarity": "Uncommon",
-      "tags": [ "Poison" ],
+      "tags": [
+        "Poison"
+      ],
       "cost": 1,
       "range": 2,
       "rangeType": "Cone",
       "description": "扇状に{value}ダメージ 毒{onhit}",
-      "upgrade": { "onHitValue": 2 },
+      "upgrade": {
+        "onHitValue": 2
+      },
       "mainEffect": {
         "type": "Damage",
         "value": 4
@@ -291,7 +320,9 @@
       "name": "触媒",
       "type": "Attack",
       "rarity": "Uncommon",
-      "tags": [ "Poison" ],
+      "tags": [
+        "Poison"
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -311,12 +342,14 @@
       "name": "毒吸い",
       "type": "Attack",
       "rarity": "Uncommon",
-      "tags": [ "Poison" ],
+      "tags": [
+        "Poison"
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
-      "exhaust": true,
       "description": "対象の毒を吸収し その1/10を回復",
+      "exhaust": true,
       "upgrade": {
         "mainValue": -5,
         "description": "対象の毒を吸収し その1/5を回復"
@@ -331,12 +364,16 @@
       "name": "疫病の嵐",
       "type": "Attack",
       "rarity": "Rare",
-      "tags": [ "Poison" ],
+      "tags": [
+        "Poison"
+      ],
       "cost": 3,
       "range": 2,
       "rangeType": "Area",
       "description": "範囲{value}ダメージ 毒{onhit}",
-      "upgrade": { "onHitValue": 3 },
+      "upgrade": {
+        "onHitValue": 3
+      },
       "mainEffect": {
         "type": "Damage",
         "value": 6
@@ -353,12 +390,16 @@
       "name": "毒の華",
       "type": "Attack",
       "rarity": "Rare",
-      "tags": [ "Poison" ],
+      "tags": [
+        "Poison"
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
       "description": "{value}ダメージ 毒{onhit} 全敵に毒2",
-      "upgrade": { "onHitValue": 2 },
+      "upgrade": {
+        "onHitValue": 2
+      },
       "mainEffect": {
         "type": "Damage",
         "value": 3
@@ -368,11 +409,6 @@
         "value": 3,
         "duration": 3,
         "buffType": "Poison"
-      },
-      "allEnemyEffect": {
-        "buffType": "Poison",
-        "value": 2,
-        "duration": 2
       }
     },
     {
@@ -380,12 +416,16 @@
       "name": "猛毒注入",
       "type": "Attack",
       "rarity": "Rare",
-      "tags": [ "Poison" ],
+      "tags": [
+        "Poison"
+      ],
       "cost": 2,
       "range": 1,
       "rangeType": "Adjacent",
       "description": "毒を{value}付与し 現在の毒ぶん即ダメージ",
-      "upgrade": { "mainValue": 4 },
+      "upgrade": {
+        "mainValue": 4
+      },
       "mainEffect": {
         "type": "PoisonBurst",
         "value": 9
@@ -395,13 +435,14 @@
       "id": "ATK_knife",
       "name": "ナイフ",
       "type": "Attack",
-      "tags": [ "Knife" ],
+      "tags": [
+        "Knife"
+      ],
       "cost": 0,
       "range": 1,
       "rangeType": "Adjacent",
       "description": "{value}ダメージ",
       "exhaust": true,
-      "generated": true,
       "upgrade": {
         "mainValue": 2
       },
@@ -415,7 +456,9 @@
       "name": "切り裂き",
       "type": "Attack",
       "rarity": "Common",
-      "tags": [ "Knife" ],
+      "tags": [
+        "Knife"
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -430,7 +473,6 @@
       },
       "subEffect": {
         "type": "CreateCard",
-        "cardId": "ATK_knife",
         "value": 1
       }
     },
@@ -438,8 +480,10 @@
       "id": "ATK_dash_attack",
       "name": "猪突猛進",
       "type": "Attack",
-      "tags": [ "Strike" ],
       "rarity": "Common",
+      "tags": [
+        "Strike"
+      ],
       "cost": 2,
       "range": 4,
       "rangeType": "Cross",
@@ -459,12 +503,16 @@
       "name": "突き飛ばし",
       "type": "Attack",
       "rarity": "Common",
-      "tags": [ "Trap" ],
+      "tags": [
+        "Trap"
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
       "description": "{value}ダメージ、\n{onhit}マスノックバック",
-      "upgrade": { "onHitValue": 1 },
+      "upgrade": {
+        "onHitValue": 1
+      },
       "mainEffect": {
         "type": "Damage",
         "value": 2
@@ -479,12 +527,16 @@
       "name": "突風",
       "type": "Attack",
       "rarity": "Uncommon",
-      "tags": [ "Trap" ],
+      "tags": [
+        "Trap"
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Area",
       "description": "周囲の敵に{value}ダメージ、\n{onhit}マスノックバック",
-      "upgrade": { "mainValue": 2 },
+      "upgrade": {
+        "mainValue": 2
+      },
       "mainEffect": {
         "type": "Damage",
         "value": 2
@@ -499,7 +551,9 @@
       "name": "シールドバッシュ",
       "type": "Attack",
       "rarity": "Uncommon",
-      "tags": [ "Trap" ],
+      "tags": [
+        "Trap"
+      ],
       "cost": 2,
       "range": 1,
       "rangeType": "Adjacent",
@@ -521,7 +575,9 @@
       "name": "フック",
       "type": "Attack",
       "rarity": "Uncommon",
-      "tags": [ "Trap" ],
+      "tags": [
+        "Trap"
+      ],
       "cost": 1,
       "range": 2,
       "rangeType": "Cross",
@@ -543,8 +599,11 @@
       "id": "ATK_reckless_strike",
       "name": "捨て身",
       "type": "Attack",
-      "tags": [ "Strike", "Berserk" ],
       "rarity": "Uncommon",
+      "tags": [
+        "Strike",
+        "Berserk"
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -563,12 +622,16 @@
       "name": "吸血斬",
       "type": "Attack",
       "rarity": "Uncommon",
-      "tags": [ "Berserk" ],
+      "tags": [
+        "Berserk"
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
       "description": "{value}ダメージ HP+{sub}回復",
-      "upgrade": { "subValue": 1 },
+      "upgrade": {
+        "subValue": 1
+      },
       "mainEffect": {
         "type": "Damage",
         "value": 6
@@ -583,15 +646,17 @@
       "name": "狂乱撃",
       "type": "Attack",
       "rarity": "Uncommon",
-      "tags": [ "Berserk" ],
+      "tags": [
+        "Berserk"
+      ],
       "cost": 2,
       "range": 1,
       "rangeType": "Adjacent",
-      "hits": 2,
-      "selfDamage": 3,
       "description": "{value}ダメージ×{hits}\n自傷3",
-      "自傷3\",": null,
-      "upgrade": { "mainValue": 2 },
+      "selfDamage": 3,
+      "upgrade": {
+        "mainValue": 2
+      },
       "mainEffect": {
         "type": "Damage",
         "value": 7
@@ -623,9 +688,11 @@
       "cost": 7,
       "range": 20,
       "rangeType": "Area",
-      "vfx": "explosion",
       "description": "全ての敵に{value}ダメージ",
-      "upgrade": { "cost": -1 },
+      "vfx": "explosion",
+      "upgrade": {
+        "cost": -1
+      },
       "mainEffect": {
         "type": "Damage",
         "value": 60
@@ -639,10 +706,8 @@
       "cost": 3,
       "range": 1,
       "rangeType": "Area",
-      "hits": 3,
-      "vfx": "hit",
       "description": "周囲の敵に{value}ダメージ×{hits}",
-      "upgrade": { "hits": 1 },
+      "vfx": "hit",
       "mainEffect": {
         "type": "Damage",
         "value": 6
@@ -653,7 +718,9 @@
       "name": "強打",
       "type": "Attack",
       "rarity": "Common",
-      "tags": [ "Strike" ],
+      "tags": [
+        "Strike"
+      ],
       "cost": 2,
       "range": 1,
       "rangeType": "Cross",
@@ -679,12 +746,16 @@
       "name": "豪打",
       "type": "Attack",
       "rarity": "Uncommon",
-      "tags": [ "Strike" ],
+      "tags": [
+        "Strike"
+      ],
       "cost": 5,
       "range": 1,
       "rangeType": "Adjacent",
       "description": "敵単体に{value}ダメージ",
-      "upgrade": { "mainValue": 6 },
+      "upgrade": {
+        "mainValue": 6
+      },
       "mainEffect": {
         "type": "Damage",
         "value": 36
@@ -695,12 +766,16 @@
       "name": "気勢斬",
       "type": "Attack",
       "rarity": "Common",
-      "tags": [ "Strike" ],
+      "tags": [
+        "Strike"
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
       "description": "{value}ダメージ、\nこのターン攻撃力+{sub}",
-      "upgrade": { "mainValue": 4 },
+      "upgrade": {
+        "mainValue": 4
+      },
       "mainEffect": {
         "type": "Damage",
         "value": 3
@@ -717,14 +792,15 @@
       "name": "牽制突き",
       "type": "Attack",
       "rarity": "Common",
-      "tags": [ "Strike" ],
+      "tags": [
+        "Strike"
+      ],
       "cost": 0,
       "range": 1,
       "rangeType": "Adjacent",
       "description": "{value}ダメージ、\n脱力{onhit}付与",
       "upgrade": {
-        "mainValue": 2,
-        "onHitDuration": 1
+        "mainValue": 2
       },
       "mainEffect": {
         "type": "Damage",
@@ -742,12 +818,16 @@
       "name": "受け流し斬り",
       "type": "Attack",
       "rarity": "Common",
-      "tags": [ "Strike" ],
+      "tags": [
+        "Strike"
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
       "description": "{value}ダメージ、\nブロック{sub}",
-      "upgrade": { "subValue": 2 },
+      "upgrade": {
+        "subValue": 2
+      },
       "mainEffect": {
         "type": "Damage",
         "value": 5
@@ -762,12 +842,16 @@
       "name": "なぎ払い",
       "type": "Attack",
       "rarity": "Common",
-      "tags": [ "Strike" ],
+      "tags": [
+        "Strike"
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Area",
       "description": "周囲の敵に{value}ダメージ",
-      "upgrade": { "mainValue": 3 },
+      "upgrade": {
+        "mainValue": 3
+      },
       "mainEffect": {
         "type": "Damage",
         "value": 5
@@ -778,12 +862,13 @@
       "name": "呪詛斬",
       "type": "Attack",
       "rarity": "Rare",
-      "tags": [ "Strike" ],
+      "tags": [
+        "Strike"
+      ],
       "cost": 3,
       "range": 1,
       "rangeType": "Adjacent",
       "description": "{value}ダメージ、\n弱体・脆弱を付与",
-      "upgrade": { "onHitDuration": 1 },
       "mainEffect": {
         "type": "Damage",
         "value": 8
@@ -793,20 +878,12 @@
         "value": 1,
         "duration": 1,
         "buffType": "Weak"
-      },
-      "onHitEffect2": {
-        "type": "ApplyDebuff",
-        "value": 1,
-        "duration": 1,
-        "buffType": "Vulnerable"
       }
     },
-
     {
       "id": "SKL_defend",
       "name": "ディフェンド",
       "type": "Skill",
-      "starter": true,
       "rarity": "Common",
       "cost": 1,
       "range": 0,
@@ -825,7 +902,9 @@
       "name": "鉄壁",
       "type": "Skill",
       "rarity": "Common",
-      "tags": [ "Bulwark" ],
+      "tags": [
+        "Bulwark"
+      ],
       "cost": 2,
       "range": 0,
       "rangeType": "None",
@@ -843,12 +922,16 @@
       "name": "盾の備え",
       "type": "Skill",
       "rarity": "Common",
-      "tags": [ "Bulwark" ],
+      "tags": [
+        "Bulwark"
+      ],
       "cost": 1,
       "range": 0,
       "rangeType": "None",
       "description": "ブロック{value} 1ドロー",
-      "upgrade": { "mainValue": 3 },
+      "upgrade": {
+        "mainValue": 3
+      },
       "mainEffect": {
         "type": "Block",
         "value": 8
@@ -863,12 +946,16 @@
       "name": "踏ん張り",
       "type": "Skill",
       "rarity": "Uncommon",
-      "tags": [ "Bulwark" ],
+      "tags": [
+        "Bulwark"
+      ],
       "cost": 2,
       "range": 0,
       "rangeType": "None",
       "description": "ブロック{value} このターン移動不可",
-      "upgrade": { "mainValue": 8 },
+      "upgrade": {
+        "mainValue": 8
+      },
       "mainEffect": {
         "type": "Block",
         "value": 20
@@ -876,8 +963,8 @@
       "subEffect": {
         "type": "ApplyBuff",
         "value": 1,
-        "buffType": "MoveLock",
-        "duration": 1
+        "duration": 1,
+        "buffType": "MoveLock"
       }
     },
     {
@@ -885,12 +972,16 @@
       "name": "不動",
       "type": "Skill",
       "rarity": "Rare",
-      "tags": [ "Bulwark" ],
+      "tags": [
+        "Bulwark"
+      ],
       "cost": 5,
       "range": 0,
       "rangeType": "None",
       "description": "ブロック{value} このターン移動不可",
-      "upgrade": { "mainValue": 20 },
+      "upgrade": {
+        "mainValue": 20
+      },
       "mainEffect": {
         "type": "Block",
         "value": 100
@@ -898,8 +989,8 @@
       "subEffect": {
         "type": "ApplyBuff",
         "value": 1,
-        "buffType": "MoveLock",
-        "duration": 1
+        "duration": 1,
+        "buffType": "MoveLock"
       }
     },
     {
@@ -907,19 +998,17 @@
       "name": "断捨離",
       "type": "Skill",
       "rarity": "Common",
-      "tags": [ "Bulwark", "Discard" ],
+      "tags": [
+        "Bulwark",
+        "Discard"
+      ],
       "cost": 1,
       "range": 0,
       "rangeType": "None",
       "description": "ブロック{value} ／ 捨てられた時 ブロック{ondiscard}",
-      "upgrade": { "onDiscardValue": 2 },
       "mainEffect": {
         "type": "Block",
         "value": 4
-      },
-      "onDiscardEffect": {
-        "type": "Block",
-        "value": 9
       }
     },
     {
@@ -927,12 +1016,16 @@
       "name": "渾身",
       "type": "Skill",
       "rarity": "Uncommon",
-      "tags": [ "Strike" ],
+      "tags": [
+        "Strike"
+      ],
       "cost": 0,
       "range": 0,
       "rangeType": "None",
       "description": "このターン、攻撃力+{value}",
-      "upgrade": { "mainValue": 2 },
+      "upgrade": {
+        "mainValue": 2
+      },
       "mainEffect": {
         "type": "ApplyBuff",
         "value": 3,
@@ -985,7 +1078,9 @@
       "name": "剣の舞",
       "type": "Skill",
       "rarity": "Common",
-      "tags": [ "Knife" ],
+      "tags": [
+        "Knife"
+      ],
       "cost": 1,
       "range": 0,
       "rangeType": "None",
@@ -1004,7 +1099,9 @@
       "name": "護りの仕込み",
       "type": "Skill",
       "rarity": "Uncommon",
-      "tags": [ "Knife" ],
+      "tags": [
+        "Knife"
+      ],
       "cost": 1,
       "range": 0,
       "rangeType": "None",
@@ -1019,7 +1116,6 @@
       },
       "subEffect": {
         "type": "CreateCard",
-        "cardId": "ATK_knife",
         "value": 1
       }
     },
@@ -1028,21 +1124,21 @@
       "name": "暗器",
       "type": "Skill",
       "rarity": "Common",
-      "tags": [ "Knife", "Discard" ],
+      "tags": [
+        "Knife",
+        "Discard"
+      ],
       "cost": 1,
       "range": 0,
       "rangeType": "None",
       "description": "ナイフ{value}枚生成 ／ 捨てられた時 ナイフ1枚生成",
-      "upgrade": { "mainValue": 1 },
+      "upgrade": {
+        "mainValue": 1
+      },
       "mainEffect": {
         "type": "CreateCard",
-        "cardId": "ATK_knife",
-        "value": 1
-      },
-      "onDiscardEffect": {
-        "type": "CreateCard",
-        "cardId": "ATK_knife",
-        "value": 1
+        "value": 1,
+        "cardId": "ATK_knife"
       }
     },
     {
@@ -1124,7 +1220,9 @@
       "name": "見切り",
       "type": "Skill",
       "rarity": "Common",
-      "tags": [ "Discard" ],
+      "tags": [
+        "Discard"
+      ],
       "cost": 0,
       "range": 0,
       "rangeType": "None",
@@ -1147,19 +1245,16 @@
       "name": "反射神経",
       "type": "Skill",
       "rarity": "Common",
-      "tags": [ "Discard" ],
+      "tags": [
+        "Discard"
+      ],
       "cost": 1,
       "range": 0,
       "rangeType": "None",
       "description": "捨てられた時 {ondiscard}ドロー",
-      "upgrade": { "onDiscardValue": 1 },
       "mainEffect": {
         "type": "None",
         "value": 0
-      },
-      "onDiscardEffect": {
-        "type": "Draw",
-        "value": 2
       }
     },
     {
@@ -1167,19 +1262,16 @@
       "name": "戦術家",
       "type": "Skill",
       "rarity": "Uncommon",
-      "tags": [ "Discard" ],
+      "tags": [
+        "Discard"
+      ],
       "cost": 0,
       "range": 0,
       "rangeType": "None",
       "description": "捨てられた時 エナジー+{ondiscard}",
-      "upgrade": { "onDiscardValue": 1 },
       "mainEffect": {
         "type": "None",
         "value": 0
-      },
-      "onDiscardEffect": {
-        "type": "AddEnergy",
-        "value": 1
       }
     },
     {
@@ -1187,20 +1279,17 @@
       "name": "毒の投げ捨て",
       "type": "Skill",
       "rarity": "Common",
-      "tags": [ "Poison", "Discard" ],
+      "tags": [
+        "Poison",
+        "Discard"
+      ],
       "cost": 1,
       "range": 0,
       "rangeType": "None",
       "description": "1枚捨てる \n このカードが捨てられた時 全敵に毒{ondiscard}",
-      "upgrade": { "onDiscardValue": 2 },
       "mainEffect": {
         "type": "Discard",
         "value": 1
-      },
-      "onDiscardEffect": {
-        "type": "ApplyDebuff",
-        "value": 5,
-        "buffType": "Poison"
       }
     },
     {
@@ -1208,13 +1297,17 @@
       "name": "血の盾",
       "type": "Skill",
       "rarity": "Common",
-      "tags": [ "Berserk" ],
+      "tags": [
+        "Berserk"
+      ],
       "cost": 2,
       "range": 0,
       "rangeType": "None",
-      "selfDamage": 2,
       "description": "ブロック{value} 自傷4",
-      "upgrade": { "mainValue": 4 },
+      "selfDamage": 2,
+      "upgrade": {
+        "mainValue": 4
+      },
       "mainEffect": {
         "type": "Block",
         "value": 16
@@ -1225,13 +1318,17 @@
       "name": "血の代償",
       "type": "Skill",
       "rarity": "Common",
-      "tags": [ "Berserk" ],
+      "tags": [
+        "Berserk"
+      ],
       "cost": 0,
       "range": 0,
       "rangeType": "None",
-      "selfDamage": 2,
       "description": "{value}ドロー 自傷3",
-      "upgrade": { "mainValue": 1 },
+      "selfDamage": 2,
+      "upgrade": {
+        "mainValue": 1
+      },
       "mainEffect": {
         "type": "Draw",
         "value": 2
@@ -1242,14 +1339,18 @@
       "name": "無謀",
       "type": "Skill",
       "rarity": "Uncommon",
-      "tags": [ "Berserk" ],
+      "tags": [
+        "Berserk"
+      ],
       "cost": 0,
       "range": 0,
       "rangeType": "None",
-      "selfDamage": 5,
       "description": "{value}ドロー エナジー+{sub} 自傷5",
       "exhaust": true,
-      "upgrade": { "subValue": 1 },
+      "selfDamage": 5,
+      "upgrade": {
+        "subValue": 1
+      },
       "mainEffect": {
         "type": "Draw",
         "value": 3
@@ -1259,7 +1360,6 @@
         "value": 1
       }
     },
-
     {
       "id": "MOV_move",
       "name": "ステップ",
@@ -1340,8 +1440,8 @@
       "rangeType": "Diamond",
       "description": "{value}マス先まで移動",
       "upgrade": {
-        "range": 1,
-        "mainValue": 1
+        "mainValue": 1,
+        "range": 1
       },
       "mainEffect": {
         "type": "None",
@@ -1388,12 +1488,16 @@
       "name": "戦士の誓い",
       "type": "Power",
       "rarity": "Rare",
-      "tags": [ "Strike" ],
+      "tags": [
+        "Strike"
+      ],
       "cost": 4,
       "range": 0,
       "rangeType": "None",
       "description": "毎ターン、攻撃力が{value}上昇",
-      "upgrade": { "mainValue": 1 },
+      "upgrade": {
+        "mainValue": 1
+      },
       "mainEffect": {
         "type": "ApplyBuff",
         "value": 2,
@@ -1406,12 +1510,16 @@
       "name": "憤怒",
       "type": "Power",
       "rarity": "Uncommon",
-      "tags": [ "Strike" ],
+      "tags": [
+        "Strike"
+      ],
       "cost": 1,
       "range": 0,
       "rangeType": "None",
       "description": "攻撃力を+{value}（戦闘中）",
-      "upgrade": { "mainValue": 1 },
+      "upgrade": {
+        "mainValue": 1
+      },
       "mainEffect": {
         "type": "ApplyBuff",
         "value": 2,
@@ -1424,22 +1532,21 @@
       "name": "戦いの渇き",
       "type": "Power",
       "rarity": "Uncommon",
-      "tags": [ "Strike" ],
+      "tags": [
+        "Strike"
+      ],
       "cost": 2,
       "range": 0,
       "rangeType": "None",
       "description": "攻撃力を+{value}。\nただし敵全体の攻撃力+1",
-      "upgrade": { "mainValue": 1 },
+      "upgrade": {
+        "mainValue": 1
+      },
       "mainEffect": {
         "type": "ApplyBuff",
         "value": 2,
         "duration": -1,
         "buffType": "AttackUp"
-      },
-      "allEnemyEffect": {
-        "buffType": "AttackUp",
-        "value": 1,
-        "duration": -1
       }
     },
     {
@@ -1447,12 +1554,16 @@
       "name": "狂乱",
       "type": "Power",
       "rarity": "Rare",
-      "tags": [ "Strike" ],
+      "tags": [
+        "Strike"
+      ],
       "cost": 2,
       "range": 0,
       "rangeType": "None",
       "description": "与ダメージ+50%。\n被ダメージ+50%、\n移動すると自傷",
-      "upgrade": { "cost": -1 },
+      "upgrade": {
+        "cost": -1
+      },
       "mainEffect": {
         "type": "ApplyBuff",
         "value": 1,
@@ -1484,17 +1595,21 @@
       "name": "要塞",
       "type": "Power",
       "rarity": "Rare",
-      "tags": [ "Bulwark" ],
+      "tags": [
+        "Bulwark"
+      ],
       "cost": 4,
       "range": 0,
       "rangeType": "None",
       "description": "ブロックが毎ターン持ち越される",
-      "upgrade": { "cost": -1 },
+      "upgrade": {
+        "cost": -1
+      },
       "mainEffect": {
         "type": "ApplyBuff",
         "value": 1,
-        "buffType": "Barricade",
-        "duration": -1
+        "duration": -1,
+        "buffType": "Barricade"
       }
     },
     {
@@ -1502,17 +1617,21 @@
       "name": "茨の鎧",
       "type": "Power",
       "rarity": "Uncommon",
-      "tags": [ "Bulwark" ],
+      "tags": [
+        "Bulwark"
+      ],
       "cost": 1,
       "range": 0,
       "rangeType": "None",
       "description": "攻撃を受けると 攻撃した敵に{value}ダメージ",
-      "upgrade": { "mainValue": 2 },
+      "upgrade": {
+        "mainValue": 2
+      },
       "mainEffect": {
         "type": "ApplyBuff",
         "value": 3,
-        "buffType": "Thorns",
-        "duration": -1
+        "duration": -1,
+        "buffType": "Thorns"
       }
     },
     {
@@ -1520,17 +1639,21 @@
       "name": "受け返し",
       "type": "Power",
       "rarity": "Rare",
-      "tags": [ "Bulwark" ],
+      "tags": [
+        "Bulwark"
+      ],
       "cost": 1,
       "range": 0,
       "rangeType": "None",
       "description": "攻撃を完全に防ぐと 攻撃した敵に{value}ダメージ",
-      "upgrade": { "mainValue": 3 },
+      "upgrade": {
+        "mainValue": 3
+      },
       "mainEffect": {
         "type": "ApplyBuff",
         "value": 6,
-        "buffType": "Riposte",
-        "duration": -1
+        "duration": -1,
+        "buffType": "Riposte"
       }
     },
     {
@@ -1538,17 +1661,21 @@
       "name": "毒の瘴気",
       "type": "Power",
       "rarity": "Uncommon",
-      "tags": [ "Poison" ],
+      "tags": [
+        "Poison"
+      ],
       "cost": 2,
       "range": 0,
       "rangeType": "None",
       "description": "毎ターン全ての敵に毒{value}",
-      "upgrade": { "mainValue": 1 },
+      "upgrade": {
+        "mainValue": 1
+      },
       "mainEffect": {
         "type": "ApplyBuff",
         "value": 1,
-        "buffType": "NoxiousFumes",
-        "duration": -1
+        "duration": -1,
+        "buffType": "NoxiousFumes"
       }
     },
     {
@@ -1556,17 +1683,21 @@
       "name": "毒の脈動",
       "type": "Power",
       "rarity": "Rare",
-      "tags": [ "Poison" ],
+      "tags": [
+        "Poison"
+      ],
       "cost": 3,
       "range": 0,
       "rangeType": "None",
       "description": "毒のダメージ回数+{value}",
-      "upgrade": { "mainValue": 1 },
+      "upgrade": {
+        "mainValue": 1
+      },
       "mainEffect": {
         "type": "ApplyBuff",
         "value": 1,
-        "buffType": "ToxicRhythm",
-        "duration": -1
+        "duration": -1,
+        "buffType": "ToxicRhythm"
       }
     },
     {
@@ -1574,17 +1705,21 @@
       "name": "研磨",
       "type": "Power",
       "rarity": "Uncommon",
-      "tags": [ "Knife" ],
+      "tags": [
+        "Knife"
+      ],
       "cost": 1,
       "range": 0,
       "rangeType": "None",
       "description": "ナイフのダメージ+{value}",
-      "upgrade": { "mainValue": 1 },
+      "upgrade": {
+        "mainValue": 1
+      },
       "mainEffect": {
         "type": "ApplyBuff",
         "value": 2,
-        "buffType": "KnifePower",
-        "duration": -1
+        "duration": -1,
+        "buffType": "KnifePower"
       }
     },
     {
@@ -1592,17 +1727,21 @@
       "name": "投擲術",
       "type": "Power",
       "rarity": "Uncommon",
-      "tags": [ "Knife" ],
+      "tags": [
+        "Knife"
+      ],
       "cost": 1,
       "range": 0,
       "rangeType": "None",
       "description": "ナイフが射程{value}の遠距離攻撃になる",
-      "upgrade": { "mainValue": 1 },
+      "upgrade": {
+        "mainValue": 1
+      },
       "mainEffect": {
         "type": "ApplyBuff",
         "value": 2,
-        "buffType": "KnifeThrow",
-        "duration": -1
+        "duration": -1,
+        "buffType": "KnifeThrow"
       }
     },
     {
@@ -1610,17 +1749,22 @@
       "name": "刃の守り",
       "type": "Power",
       "rarity": "Rare",
-      "tags": [ "Knife", "Bulwark" ],
+      "tags": [
+        "Knife",
+        "Bulwark"
+      ],
       "cost": 3,
       "range": 0,
       "rangeType": "None",
       "description": "カードを使うたび ブロック{value}",
-      "upgrade": { "cost": -2 },
+      "upgrade": {
+        "cost": -2
+      },
       "mainEffect": {
         "type": "ApplyBuff",
         "value": 1,
-        "buffType": "CardBlock",
-        "duration": -1
+        "duration": -1,
+        "buffType": "CardBlock"
       }
     },
     {
@@ -1628,17 +1772,21 @@
       "name": "刃の心得",
       "type": "Power",
       "rarity": "Uncommon",
-      "tags": [ "Knife" ],
+      "tags": [
+        "Knife"
+      ],
       "cost": 1,
       "range": 0,
       "rangeType": "None",
       "description": "毎ターン開始時 ナイフを{value}枚生成",
-      "upgrade": { "mainValue": 1 },
+      "upgrade": {
+        "mainValue": 1
+      },
       "mainEffect": {
         "type": "ApplyBuff",
         "value": 1,
-        "buffType": "KnifeGen",
-        "duration": -1
+        "duration": -1,
+        "buffType": "KnifeGen"
       }
     },
     {
@@ -1646,17 +1794,21 @@
       "name": "火事場の力",
       "type": "Power",
       "rarity": "Uncommon",
-      "tags": [ "Berserk" ],
+      "tags": [
+        "Berserk"
+      ],
       "cost": 1,
       "range": 0,
       "rangeType": "None",
       "description": "HP半分以下の間 攻撃+{value}",
-      "upgrade": { "mainValue": 1 },
+      "upgrade": {
+        "mainValue": 1
+      },
       "mainEffect": {
         "type": "ApplyBuff",
         "value": 3,
-        "buffType": "LastStand",
-        "duration": -1
+        "duration": -1,
+        "buffType": "LastStand"
       }
     },
     {
@@ -1664,29 +1816,34 @@
       "name": "決死の覚悟",
       "type": "Power",
       "rarity": "Rare",
-      "tags": [ "Berserk" ],
+      "tags": [
+        "Berserk"
+      ],
       "cost": 2,
       "range": 0,
       "rangeType": "None",
       "description": "HP1/4以下の間 攻撃+{value}",
-      "upgrade": { "mainValue": 2 },
+      "upgrade": {
+        "mainValue": 2
+      },
       "mainEffect": {
         "type": "ApplyBuff",
         "value": 5,
-        "buffType": "DeepStand",
-        "duration": -1
+        "duration": -1,
+        "buffType": "DeepStand"
       }
     },
-
     {
       "id": "SKL_Trap_explosion_trap",
       "name": "爆発の罠",
       "type": "Skill",
       "rarity": "Common",
+      "tags": [
+        "Trap"
+      ],
       "cost": 1,
-      "tags": [ "Trap" ],
-      "rangeType": "Diamond",
       "range": 1,
+      "rangeType": "Diamond",
       "description": "足元に{value}ダメージの\n罠を設置",
       "upgrade": {
         "mainValue": 5
@@ -1702,10 +1859,12 @@
       "name": "拘束の罠",
       "type": "Skill",
       "rarity": "Common",
+      "tags": [
+        "Trap"
+      ],
       "cost": 1,
-      "tags": [ "Trap" ],
-      "rangeType": "Area",
       "range": 1,
+      "rangeType": "Area",
       "description": "足元に拘束の罠を設置（{value}T）",
       "upgrade": {
         "mainValue": 1
@@ -1722,10 +1881,12 @@
       "name": "毒の罠",
       "type": "Skill",
       "rarity": "Common",
+      "tags": [
+        "Trap"
+      ],
       "cost": 1,
-      "tags": [ "Trap" ],
-      "rangeType": "Diamond",
       "range": 2,
+      "rangeType": "Diamond",
       "description": "足元に毒{value}の罠を設置",
       "upgrade": {
         "mainValue": 3
@@ -1742,12 +1903,16 @@
       "name": "脆弱の罠",
       "type": "Skill",
       "rarity": "Common",
-      "tags": [ "Trap" ],
+      "tags": [
+        "Trap"
+      ],
       "cost": 1,
       "range": 2,
       "rangeType": "Diamond",
       "description": "踏むと脆弱になる罠を設置",
-      "upgrade": { "range": 1 },
+      "upgrade": {
+        "range": 1
+      },
       "mainEffect": {
         "type": "PlaceTrap",
         "value": 1,
@@ -1760,12 +1925,16 @@
       "name": "弱体の罠",
       "type": "Skill",
       "rarity": "Common",
-      "tags": [ "Trap" ],
+      "tags": [
+        "Trap"
+      ],
       "cost": 1,
       "range": 2,
       "rangeType": "Diamond",
       "description": "踏むと弱体化する罠を設置",
-      "upgrade": { "range": 1 },
+      "upgrade": {
+        "range": 1
+      },
       "mainEffect": {
         "type": "PlaceTrap",
         "value": 1,
@@ -1778,12 +1947,16 @@
       "name": "大地雷",
       "type": "Skill",
       "rarity": "Rare",
-      "tags": [ "Trap" ],
+      "tags": [
+        "Trap"
+      ],
       "cost": 3,
       "range": 1,
       "rangeType": "Diamond",
       "description": "踏むと{value}ダメージ（周囲にも）の罠を設置",
-      "upgrade": { "mainValue": 6 },
+      "upgrade": {
+        "mainValue": 6
+      },
       "mainEffect": {
         "type": "PlaceTrap",
         "value": 20,
@@ -1795,12 +1968,16 @@
       "name": "地雷原",
       "type": "Skill",
       "rarity": "Rare",
-      "tags": [ "Trap" ],
+      "tags": [
+        "Trap"
+      ],
       "cost": 2,
       "range": 1,
       "rangeType": "Area",
       "description": "周囲の空マス全てに\n爆発罠を設置する",
-      "upgrade": { "mainValue": 6 },
+      "upgrade": {
+        "mainValue": 6
+      },
       "mainEffect": {
         "type": "PlaceTrapArea",
         "value": 8,
@@ -1812,7 +1989,9 @@
       "name": "一斉起爆",
       "type": "Skill",
       "rarity": "Uncommon",
-      "tags": [ "Trap" ],
+      "tags": [
+        "Trap"
+      ],
       "cost": 2,
       "range": 2,
       "rangeType": "Diamond",
@@ -1831,7 +2010,9 @@
       "name": "狙い撃ち起爆",
       "type": "Skill",
       "rarity": "Uncommon",
-      "tags": [ "Trap" ],
+      "tags": [
+        "Trap"
+      ],
       "cost": 1,
       "range": 4,
       "rangeType": "Diamond",
@@ -1850,7 +2031,9 @@
       "name": "殲滅",
       "type": "Skill",
       "rarity": "Rare",
-      "tags": [ "Trap" ],
+      "tags": [
+        "Trap"
+      ],
       "cost": 3,
       "range": 20,
       "rangeType": "Diamond",
@@ -1868,7 +2051,9 @@
       "name": "連鎖起爆",
       "type": "Skill",
       "rarity": "Rare",
-      "tags": [ "Trap" ],
+      "tags": [
+        "Trap"
+      ],
       "cost": 3,
       "range": 4,
       "rangeType": "Diamond",
@@ -1886,12 +2071,16 @@
       "name": "罠回収",
       "type": "Skill",
       "rarity": "Uncommon",
-      "tags": [ "Trap" ],
+      "tags": [
+        "Trap"
+      ],
       "cost": 1,
       "range": 0,
       "rangeType": "None",
       "description": "盤面の罠を全て回収。\n1つにつきエナジー+1、1枚ドロー",
-      "upgrade": { "cost": -1 },
+      "upgrade": {
+        "cost": -1
+      },
       "mainEffect": {
         "type": "RecallTraps",
         "value": 1
@@ -1902,13 +2091,16 @@
       "name": "共鳴爆破",
       "type": "Attack",
       "rarity": "Rare",
-      "tags": [ "Trap" ],
+      "tags": [
+        "Trap"
+      ],
       "cost": 2,
       "range": 1,
       "rangeType": "Area",
-      "scaleByTrapCount": true,
       "description": "周囲の敵に、盤面の罠\n1つにつき{value}ダメージ",
-      "upgrade": { "mainValue": 2 },
+      "upgrade": {
+        "mainValue": 2
+      },
       "mainEffect": {
         "type": "Damage",
         "value": 4
@@ -1919,17 +2111,20 @@
       "name": "身代わり人形",
       "type": "Skill",
       "rarity": "Uncommon",
-      "tags": [ "Trap" ],
+      "tags": [
+        "Trap"
+      ],
       "cost": 1,
       "range": 3,
       "rangeType": "Diamond",
       "description": "指定マスに身代わりを置く。\n敵の攻撃を1回引き受ける",
-      "upgrade": { "cost": -1 },
+      "upgrade": {
+        "cost": -1
+      },
       "mainEffect": {
         "type": "PlaceDecoy",
         "value": 0
       }
     }
-
   ]
 }

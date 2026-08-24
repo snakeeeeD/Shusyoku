@@ -911,11 +911,9 @@ void BattleScene::Update(float deltaTime)
         if (m_player->GetHp() <= 0)
         {
             m_battleResult = BattleResult::Lose;
-            // セーブデータを削除（ニューゲームからやり直し）
-            std::remove("Assets/Data/playerdata.json");
-            PlayerDataManager::Init();
-            PlayerDataManager::Save();
             return;
+            // セーブデータを削除（ニューゲームからやり直し）
+            
         }
 
         if (m_turnManager.IsEnemyTurn())
@@ -1857,7 +1855,7 @@ void BattleScene::HandleInput()
             if (m_category == EncCategory::Boss)
             {
                 auto& pd = PlayerDataManager::GetData();
-                if (pd.layer < 3)
+                if (pd.layer < 2)
                 {
                     pd.layer++;                       // 次の層へ
                     pd.fieldNodeTypes.clear();        // マップを作り直させる
@@ -1866,7 +1864,11 @@ void BattleScene::HandleInput()
                     PlayerDataManager::Save();
                     onChangeScene(SceneType::Field);
                 }
-                else onChangeScene(SceneType::Result);   // 最終層クリア＝RUN CLEAR
+                else
+                {
+                    PlayerDataManager::DeleteSave();   // クリア＝セーブ削除
+                    onChangeScene(SceneType::Result);
+                }
             }
             else onChangeScene(SceneType::CardSelect);
         }
@@ -1875,7 +1877,10 @@ void BattleScene::HandleInput()
     if (m_battleResult == BattleResult::Lose)
     {
         if (m_input.GetMouseButtonTrigger(0) && onChangeScene)
+        {
+            PlayerDataManager::DeleteSave();   // ゲームオーバー＝セーブ削除
             onChangeScene(SceneType::Result);
+        }
         return;
     }
 

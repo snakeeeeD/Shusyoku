@@ -45,4 +45,14 @@ private:
     {
         w = 220.0f; h = 40.0f; x = 20.0f; y = (float)m_screenHeight - 60.0f;   // ç∂â∫
     }
+
+    bool m_newHover = false;
+    bool m_contHover = false;
+    void MenuBtnRects(float& nx, float& ny, float& cx, float& cy, float& w, float& h) const
+    {
+        w = 280.0f; h = 60.0f;
+        nx = (m_screenWidth - w) / 2.0f;
+        ny = m_screenHeight / 2.0f + 40.0f;
+        cx = nx; cy = ny + h + 18.0f;
+    }
 };

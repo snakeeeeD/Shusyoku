@@ -343,8 +343,11 @@ void SceneManager::DoChangeScene(SceneType type)
 	EncCategory battleCategory = EncCategory::Normal;
 	bool resultCleared = false;
 	if (type == SceneType::Result)
+	{
 		if (auto battle = dynamic_cast<BattleScene*>(m_currentScene))
 			resultCleared = (battle->GetBattleResult() == BattleResult::Win);
+		PlayerDataManager::DeleteSave();   // ランを終えたらセーブ削除 → コンティニュー非表示
+	}
 	if (type == SceneType::Battle)
 	{
 
@@ -513,6 +516,12 @@ void SceneManager::DoChangeScene(SceneType type)
 
 void SceneManager::Draw()
 {
+	if (auto field = dynamic_cast<FieldScene*>(m_currentScene))
+	{
+		bool overlay = m_settingsOpen || m_craftOpen || m_restOpen || m_mapOpen
+			|| m_invOpen || m_deckOpen || m_tutorialOpen;
+		field->SetHoverEnabled(!overlay);
+	}
 	if (m_currentScene) m_currentScene->Draw();
 	if (m_invOpen) DrawInventory();
 	if (m_mapOpen) DrawMap();
@@ -625,7 +634,7 @@ void SceneManager::DrawOverlay()
 	swprintf_s(sbuf, L"Steps %d", pd.fieldSteps);
 	m_textRenderer->DrawText(sbuf, 140.0f, 10.0f, 16.0f, D2D1::ColorF(0.6f, 0.9f, 0.6f));
 
-	wchar_t lbuf[32]; swprintf_s(lbuf, L"Layer %d/3", pd.layer);
+	wchar_t lbuf[32]; swprintf_s(lbuf, L"Layer %d/2", pd.layer);
 	m_textRenderer->DrawText(lbuf, 280.0f, 10.0f, 16.0f, D2D1::ColorF(0.75f, 0.8f, 1.0f));
 
 	m_textRenderer->End();
@@ -872,6 +881,7 @@ void SceneManager::HandleInput()
 					SetDisplayMode(nx); Audio::PlaySE("Assets/Sound/se/click.mp3");
 				}
 				else if (su.shake.has(m)) { s.screenShake = !s.screenShake; Settings::Save(); Audio::PlaySE("Assets/Sound/se/click.mp3"); }
+				else if (su.gameEnd.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); PostQuitMessage(0); }
 				else if (su.close.has(m) || !su.panel.has(m)) { m_settingsOpen = false; m_dragSlider = -1; Settings::Save(); Audio::PlaySE("Assets/Sound/se/click.mp3"); }
 			}
 			return;   // 設定中は他のバー操作を止める
@@ -1179,6 +1189,8 @@ void SceneManager::DrawSettings()
 
 	UiWindow::Button(m_uiSprite, white, u.shake.x, u.shake.y, u.shake.w, u.shake.h,
 		s.screenShake ? XMFLOAT4(0.3f, 0.55f, 0.3f, 1) : XMFLOAT4(0.45f, 0.3f, 0.3f, 1));
+	UiWindow::Button(m_uiSprite, white, u.gameEnd.x, u.gameEnd.y, u.gameEnd.w, u.gameEnd.h,
+		u.gameEnd.has(mp) ? XMFLOAT4(0.75f, 0.30f, 0.30f, 1) : XMFLOAT4(0.50f, 0.24f, 0.24f, 1));
 	UiWindow::Button(m_uiSprite, white, u.close.x, u.close.y, u.close.w, u.close.h,
 		u.close.has(mp) ? XMFLOAT4(0.5f, 0.35f, 0.35f, 1) : XMFLOAT4(0.35f, 0.25f, 0.25f, 1));
 	m_uiSprite->End();
@@ -1191,6 +1203,7 @@ void SceneManager::DrawSettings()
 	m_textRenderer->DrawText(L"SE", u.panel.x + 40, u.seTrack.y - 6, 20, D2D1::ColorF(1, 1, 1));
 	m_textRenderer->DrawText(L"画面シェイク", u.panel.x + 40, u.shake.y + 6, 18, D2D1::ColorF(1, 1, 1));
 	m_textRenderer->DrawText(s.screenShake ? L"ON" : L"OFF", u.shake.x + 46, u.shake.y + 6, 20, D2D1::ColorF(1, 1, 1));
+	m_textRenderer->DrawText(L"ゲーム終了", u.gameEnd.x + 40, u.gameEnd.y + 6, 20, D2D1::ColorF(1, 0.9f, 0.9f));
 	m_textRenderer->DrawText(L"閉じる", u.close.x + 42, u.close.y + 8, 20, D2D1::ColorF(1, 1, 1));
 	wchar_t b[16];
 	swprintf_s(b, L"%d%%", (int)(s.bgmVolume * 100 + 0.5f)); m_textRenderer->DrawText(b, u.bgmTrack.x + u.bgmTrack.w + 14, u.bgmTrack.y - 6, 16, D2D1::ColorF(0.8f, 0.9f, 1));
@@ -1220,7 +1233,7 @@ void SceneManager::DrawBarTips()
 	}
 	else if (mp.x >= 274 && mp.x <= 380)
 	{
-		title = L"層"; desc = L"ダンジョンの階層(全3層)。深いほど敵が強い"; x = 274.0f;
+		title = L"層"; desc = L"ダンジョンの階層(全2層)。深いほど敵が強い"; x = 274.0f;
 	}
 	if (!title) return;
 
