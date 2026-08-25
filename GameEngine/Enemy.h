@@ -124,6 +124,9 @@ public:
 	bool OccupiesCell(int col, int row) const;
 	void MarkHeadHit(bool h) { m_lastHitHead = h; }
 
+	struct PendingCurse { std::string cardId, target; int count; };
+	std::vector<PendingCurse>& PendingCurses() { return m_pendingCurses; }
+
 private:
 	bool IsAdjacentTo(int playerCol, int playerRow);
 
@@ -186,5 +189,7 @@ private:
 	bool m_lastHitHead = false;
 	bool m_coilReached = false;   // 中央（距離1以内）に到達したか
 	int  m_coilStuck = 0;       // 到達後の経過ターン（フィニッシャー遅延）
+
+	std::vector<PendingCurse> m_pendingCurses;
 };
 

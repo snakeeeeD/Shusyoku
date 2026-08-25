@@ -7,8 +7,9 @@
 enum class ApproachType { None, Toward, Dash, Align };
 
 // ‰½‚ª‹N‚«‚é‚©
-enum class EffectKind { Damage, Block, Buff, Debuff, MoveToward, 
-    MoveAway, PullPlayer, KnockbackPlayer, Summon, Hazard, Heal, Coil
+enum class EffectKind {
+    Damage, Block, Buff, Debuff, MoveToward,
+    MoveAway, PullPlayer, KnockbackPlayer, Summon, Hazard, Heal, Coil, AddCard
 };
 
 // ’N‚ÉŒø‚­‚©

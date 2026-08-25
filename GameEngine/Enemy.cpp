@@ -722,6 +722,9 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
             }
             break;
         }
+        case EffectKind::AddCard:
+            m_pendingCurses.push_back({ e.summonId, e.buff.empty() ? "deck" : e.buff, e.value > 0 ? e.value : 1 });
+            break;
         }
 
 

@@ -112,6 +112,8 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     if (player->GetEnergy() < data.cost)
         return result;
 
+    if (data.unplayable) return result;   // 使用不可カードは弾く
+
     int pendingDiscard = 0;
 
     struct SlotGuard {
@@ -650,6 +652,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
 
            break;
        }
+    case CardType::Status:   // お邪魔もスキルと同じ再生処理（効果なし→廃棄/捨て札へ）
     case CardType::Skill:
     {
         // 設置カード：エナジー消費前に対象セルを検証

@@ -325,7 +325,28 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
             for (auto enemy : m_enemies)
                 enemy->ResetBlock();
-            m_battleUI->StartDiscardEffects();
+            float seq = 0.0f;
+            float burnEnd = 0.0f;
+            m_burnClock = 0.0f;
+            const float BURN_GAP = 0.5f;   // 連続時は詰めて一連を速く
+            for (int i = 0; i < (int)m_hand.GetCards().size(); i++)
+            {
+                const CardData* dd = CardDataBase::Get(m_hand.GetCards()[i]->GetId());
+                if (dd && dd->endTurnDamage > 0)
+                {
+                    m_battleUI->StartPlayCardEffectFromHand(dd, i, seq, true);      // ← 手札からシームレス
+                    m_burnHits.push_back({ seq + 0.36f * 0.75f, dd->endTurnDamage });
+                    burnEnd = seq + 0.75f;     // この過負荷が終わる時刻
+                    seq += BURN_GAP;
+                }
+            }
+            // 残り（過負荷以外）は通常の捨てアニメ（過負荷の後に）
+            for (int i = 0; i < (int)m_hand.GetCards().size(); i++)
+            {
+                const CardData* dd = CardDataBase::Get(m_hand.GetCards()[i]->GetId());
+                if (dd && dd->endTurnDamage > 0) continue;
+                m_battleUI->StartDiscardEffectAt(i, dd, seq);
+            }
             for (auto card : m_hand.GetCards())
                 m_deck.DiscardCard(card->GetId());
             m_hand.Clear();
@@ -335,7 +356,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             m_currentEnemyIdx = 0;
             m_poisonIdx = 0;         
             m_poisonSubTicks = 0;
-            m_enemyActionDelay = 0.8f;
+            m_enemyActionDelay = max(0.8f, burnEnd + 0.25f);   // 過負荷が全て終わるまで敵は動かない
         };
 
     int encCount = EncounterDataBase::GetCount();
@@ -810,6 +831,15 @@ void BattleScene::Update(float deltaTime)
 
         m_battleUI->UpdateDrawCardEffects(deltaTime);
         m_battleUI->UpdatePlayCardEffects(deltaTime);
+        if (!m_burnHits.empty())
+        {
+            m_burnClock += deltaTime;
+            for (auto it = m_burnHits.begin(); it != m_burnHits.end(); )
+            {
+                if (m_burnClock >= it->atTime) { m_player->TakeDamage(it->dmg); it = m_burnHits.erase(it); }
+                else ++it;
+            }
+        }
         bool selectedNeedsTarget = false;
         if (m_selectedCardIndex >= 0 && m_selectedCardIndex < (int)m_hand.GetCards().size())
         {
@@ -846,25 +876,29 @@ void BattleScene::Update(float deltaTime)
 
             // 初勝利：クラフト導入（コア＋素材を確定ドロップ。
             // 勝利画面で行0=コア/行1=素材に固定し、チュートリアルのスポットライトを合わせる）
+            int matDrops = 0;   // コア込みのドロップ数（最大3）
             if (!pd.tutorialCraft)
             {
-                pd.materials["core_slash"] += 1;      m_dropResult.push_back({ "core_slash", 1, true });
-                pd.materials["sword_fragment"] += 1;  m_dropResult.push_back({ "sword_fragment", 1, false });
+                pd.materials["core_slash"] += 1;      m_dropResult.push_back({ "core_slash", 1, true });  matDrops++;
+                pd.materials["sword_fragment"] += 1;  m_dropResult.push_back({ "sword_fragment", 1, false }); matDrops++;
             }
 
 
             // 素材ドロップ判定
             for (auto& eid : m_defeatedEnemyIds)
             {
+                if (matDrops >= 3) break;                 // 上限
                 const EnemyData* ed = EnemyDataBase::Get(eid);
                 if (!ed) continue;
                 for (auto& d : ed->drops)
                 {
+                    if (matDrops >= 3) break;             // 上限
                     if (rand() % 100 < d.chance)
                     {
                         int n = d.min + (d.max > d.min ? rand() % (d.max - d.min + 1) : 0);
                         pd.materials[d.id] += n;
-                        m_dropResult.push_back({ d.id, n, d.rare });   // 表示用
+                        m_dropResult.push_back({ d.id, n, d.rare });
+                        matDrops++;                        // 加算
                     }
                 }
             }
@@ -882,7 +916,7 @@ void BattleScene::Update(float deltaTime)
             int nodeIdx = pd.fieldPlayerCol * 7 + pd.fieldPlayerRow;
             if (nodeIdx >= 0 && nodeIdx < (int)pd.fieldNodeVisited.size())
                 pd.fieldNodeVisited[nodeIdx] = true;
-            pd.gold += 10 + rand() % 16;
+            pd.gold += 8 + rand() % 8;
             if (m_category == EncCategory::Elite)
             {
                 pd.gold += 25;
@@ -894,11 +928,12 @@ void BattleScene::Update(float deltaTime)
                 {
                     std::vector<std::string> mids;
                     for (auto& kv : MaterialDataBase::AllMaterials()) mids.push_back(kv.first);
-                    for (int k = 0; k < em && !mids.empty(); k++)
+                    for (int k = 0; k < em && !mids.empty() && matDrops < 3; k++)
                     {
                         std::string mid = mids[rand() % mids.size()];
                         pd.materials[mid] += 1;
-                        m_dropResult.push_back({ mid, 1, false });   // 勝利画面に表示
+                        m_dropResult.push_back({ mid, 1, false });
+                        matDrops++;                        // 加算
                     }
                 }
             }
@@ -1019,6 +1054,16 @@ void BattleScene::Update(float deltaTime)
                 bool targetedDecoy = (m_decoyCol >= 0 && tC == m_decoyCol && tR == m_decoyRow);
                 bool atk = false;
                 int damage = enemy->ExecuteAction(ai, m_playerCol, m_playerRow, m_gridMap, m_player, m_enemies, tC, tR, &atk);
+
+                for (auto& pc : enemy->PendingCurses())
+                    for (int k = 0; k < pc.count; k++)
+                    {
+                        if (pc.target == "hand")         m_hand.AddCard(pc.cardId);
+                        else if (pc.target == "discard")  m_deck.DiscardCard(pc.cardId);
+                        else                              m_deck.AddCard(pc.cardId);
+                    }
+                enemy->PendingCurses().clear();
+
                 for (auto& sm : enemy->TakePendingSummons())
                     SummonNear(enemy, sm.first, sm.second);
 
@@ -1368,7 +1413,11 @@ void BattleScene::Draw()
     struct Theme { const char* ground; const char* tex[3]; float w[3]; float h[3]; };
     int themeLayer = PlayerDataManager::GetData().layer;
     Theme th;
-    if (m_category == EncCategory::Boss)
+    if (m_category == EncCategory::Boss && themeLayer == 2)
+        th = { "ground_snakepit", { "deco_darkspike","deco_bones","deco_egg" }, { 2.6f,2.4f,2.6f }, { 3.8f,3.4f,2.1f } };
+    else if (m_category == EncCategory::Boss)
+        th = { "ground_scorched", { "deco_deadtree","deco_ember","deco_darkrock" }, { 2.8f,2.6f,2.6f }, { 3.8f,2.1f,2.1f } };
+    else if (m_category == EncCategory::Boss && themeLayer <= 1)
         th = { "ground_scorched", { "deco_deadtree","deco_ember","deco_darkrock" }, { 2.8f,2.6f,2.6f }, { 3.8f,2.1f,2.1f } };
     else if (themeLayer <= 1)
         th = { "ground_grass",    { "deco_tree","deco_bush","deco_rock" },          { 3.0f,2.4f,2.6f }, { 3.8f,1.8f,2.1f } };
@@ -1855,7 +1904,7 @@ void BattleScene::HandleInput()
             if (m_category == EncCategory::Boss)
             {
                 auto& pd = PlayerDataManager::GetData();
-                if (pd.layer < 2)
+                if (pd.layer < 3)
                 {
                     pd.layer++;                       // 次の層へ
                     pd.fieldNodeTypes.clear();        // マップを作り直させる
@@ -3022,6 +3071,7 @@ void BattleScene::AutoDiscardAll()
         const CardData* dd = CardDataBase::Get(m_hand.GetCards()[i]->GetId());
         if (dd && dd->onDiscardEffect.hasEffect) effects.push_back(dd->onDiscardEffect);
         m_battleUI->StartDiscardEffectAt(i);
+        if (dd && dd->endTurnDamage > 0) m_player->TakeDamage(dd->endTurnDamage);
         m_hand.DiscardAt(i);
         m_battleUI->OnCardRemoved(i);
     }

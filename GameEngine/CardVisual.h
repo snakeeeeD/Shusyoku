@@ -39,6 +39,7 @@ public:
         case CardType::Skill:  color = XMFLOAT4(0.2f, 0.4f, 1.0f, 1.0f); break;
         case CardType::Move:   color = XMFLOAT4(0.2f, 0.6f, 0.3f, 1.0f); break;
         case CardType::Power:  color = XMFLOAT4(0.8f, 0.2f, 1.0f, 1.0f); break;
+        case CardType::Status: color = XMFLOAT4(0.45f, 0.40f, 0.50f, 1.0f); break;
         default:               color = XMFLOAT4(0.7f, 0.7f, 0.7f, 1.0f); break;
         }
         if (hovered) color = XMFLOAT4(0.2f, 0.4f, 0.8f, 1.0f);

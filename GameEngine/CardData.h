@@ -83,6 +83,8 @@ struct CardData
     bool dash = false;      // moveカード以外に移動効果があるかフラグ
     int selfDamage = 0;     // 自傷ダメージ
     int hits = 1;         // 攻撃回数（マルチヒット）
+    bool unplayable = false;   // 使用不可（お邪魔C）
+    int  endTurnDamage = 0;    // ターン終了時、手札にあると受けるダメージ
 
     bool scaleByTrapCount = false;
 };

@@ -262,4 +262,7 @@ private:
     float m_eMultiTimer = 0.0f;
     Enemy* m_eMultiEnemy = nullptr;
 
+    struct BurnHit { float atTime; int dmg; };
+    std::vector<BurnHit> m_burnHits;
+    float m_burnClock = 0.0f;
 };

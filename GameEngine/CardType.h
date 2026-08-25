@@ -6,6 +6,7 @@ enum class CardType
 	Skill,		// スキル
 	Move,		// 移動
 	Power,		// パワー
+    Status,		// お邪魔（状態異常カード
 };
 
 enum class RangeType

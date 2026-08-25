@@ -22,13 +22,15 @@ public:
             || e.kind == EffectKind::MoveToward
             || e.kind == EffectKind::MoveAway
             || e.kind == EffectKind::PullPlayer
-            || e.kind == EffectKind::KnockbackPlayer;
+            || e.kind == EffectKind::KnockbackPlayer
+            || e.kind == EffectKind::AddCard;
     }
 
     // 数値を出す効果か
     static bool HasValue(const Effect& e)
     {
         if (e.kind == EffectKind::MoveToward || e.kind == EffectKind::MoveAway) return false;
+        if (e.kind == EffectKind::AddCard) return e.value > 0;
         return e.value > 0;
     }
 
@@ -45,6 +47,7 @@ public:
         case EffectKind::PullPlayer:      return XMFLOAT4(0.2f, 0.8f, 0.3f, 1.0f);
         case EffectKind::KnockbackPlayer: return XMFLOAT4(0.2f, 0.8f, 0.3f, 1.0f);
         case EffectKind::Summon:          return XMFLOAT4(0.4f, 0.85f, 0.4f, 1.0f);
+        case EffectKind::AddCard:         return XMFLOAT4(0.6f, 0.4f, 0.8f, 1.0f);
         default:                          return XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
         }
     }
@@ -135,6 +138,13 @@ public:
             title = L"とぐろ";
             body = L"中央へ巻きつつ " + std::to_wstring(e.value) + L" マス伸びる\n体に押し込まれると轢かれる";
             break;
+        case EffectKind::AddCard:
+        {
+            const wchar_t* where = (e.buff == "hand") ? L"手札" : (e.buff == "discard") ? L"捨て札" : L"山札";
+            title = L"お邪魔生成";
+            body = std::wstring(where) + L"に お邪魔カードを " + std::to_wstring(e.value) + L" 枚追加";
+            break;
+        }
         default: title = L""; body = L""; break;
         }
     }
@@ -178,6 +188,7 @@ public:
         case EffectKind::KnockbackPlayer :  return "icon_attack";
         case EffectKind::Summon:            return "icon_summon";
         case EffectKind::Coil:              return "icon_coil";
+        case EffectKind::AddCard:           return "icon_curse";
         default:                            return "";
         }
     }

@@ -54,6 +54,8 @@ void CardDataBase::Init()
             }
 
             data.exhaust = c.value("exhaust", false);
+            data.unplayable = c.value("unplayable", false);
+            data.endTurnDamage = c.value("endTurnDamage", 0);
             data.pierce = c.value("pierce", false);
             data.dash = c.value("dash", false);
             data.selfDamage = c.value("selfDamage", 0);

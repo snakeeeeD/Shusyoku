@@ -242,8 +242,8 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             exhaustX + exhaustW - 24.0f, epy + exhaustH - 22.0f, 24.0f, 24.0f, 0.0f, XMFLOAT4(0.10f, 0.09f, 0.13f, 1.0f));
     }
 
-    DrawPlayCardEffects();
-    DrawDiscardEffects();
+    DrawPlayCardEffectsFull(ctx);
+    DrawDiscardEffectsFull(ctx);
 
     m_spriteRenderer->End();
 
@@ -368,7 +368,6 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     }
     m_spriteRenderer->End();
     m_textRenderer->Begin();
-    DrawPlayCardEffectTexts(ctx);
 
     // 使用可能カードの発光（縁・パルス）を1枚描く
     auto drawPlayableGlow = [&](int i) {
@@ -1672,6 +1671,7 @@ void BattleUI::UpdateDiscardEffects(float deltaTime)
     for (auto& e : m_discardCardEffects)
     {
         if (e.done) continue;
+        if (e.delay > 0.0f) { e.delay -= deltaTime; continue; }   // ← 遅延中は待機
         e.timer += deltaTime;
         float t = min(1.0f, e.timer / DISCARD_EFFECT_DUR);
         e.alpha = 1.0f - t;
@@ -1685,21 +1685,61 @@ void BattleUI::UpdateDiscardEffects(float deltaTime)
 
 void BattleUI::DrawDiscardEffects()
 {
-    float targetX = 80.0f;
-    float targetY = (float)(m_screenHeight - 60);
-
+    float targetX = 80.0f, targetY = (float)(m_screenHeight - 60);
     for (auto& e : m_discardCardEffects)
     {
+        XMFLOAT4 c = CardVisual::GetCardColor(e.cardType, false);
+        if (e.delay > 0.0f) {   // 待機中：手札そのままの見た目
+            CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, e.startX, e.startY, e.startScale, e.startRot, c, e.data, 0.0f);
+            continue;
+        }
         float t = min(1.0f, e.timer / DISCARD_EFFECT_DUR);
         float ease = t * t;
         float x = e.startX + (targetX - e.startX) * ease;
-        float y = e.startY + (targetY - e.startY) * ease;
+        float y = e.startY + (targetY - e.startY) * ease - sinf(t * 3.14159f) * 70.0f;
+        float s = e.startScale;            // ← 手札と同じサイズを維持（縮小しない）
+        c.w = e.alpha;
+        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, x, y, s, e.startRot, c, e.data, 0.0f);
+    }
+}
 
-        y -= sinf(t * 3.14159f) * 70.0f;      // 途中でふわっと上へ（山なり）
+void BattleUI::DrawDiscardEffectTexts(const BattleUIContext& ctx)
+{
+    float targetX = 80.0f, targetY = (float)(m_screenHeight - 60);
+    for (auto& e : m_discardCardEffects)
+    {
+        if (e.delay > 0.0f) {
+            CardVisual::DrawTexts(m_textRenderer, e.data, ctx.player, e.startX, e.startY, e.startScale, e.startRot, 1.0f);
+            continue;
+        }
+        float t = min(1.0f, e.timer / DISCARD_EFFECT_DUR);
+        float ease = t * t;
+        float x = e.startX + (targetX - e.startX) * ease;
+        float y = e.startY + (targetY - e.startY) * ease - sinf(t * 3.14159f) * 70.0f;
+        float s = e.startScale;            // ← 縮小しない
+        CardVisual::DrawTexts(m_textRenderer, e.data, ctx.player, x, y, s, e.startRot, e.alpha);
+    }
+}
 
-        XMFLOAT4 color(0.4f, 0.4f, 0.4f, e.alpha);
-        m_spriteRenderer->DrawSprite(m_whiteTexture, x, y,
-            CARD_WIDTH, CARD_HEIGHT, 0.0f, color);
+void BattleUI::DrawDiscardEffectsFull(const BattleUIContext& ctx)
+{
+    // 呼び出し時はスプライトパス中
+    float targetX = 80.0f, targetY = (float)(m_screenHeight - 60);
+    for (auto& e : m_discardCardEffects)
+    {
+        float s = e.startScale, rot = e.startRot, x, y;
+        if (e.delay > 0.0f) { x = e.startX; y = e.startY; }
+        else {
+            float t = min(1.0f, e.timer / DISCARD_EFFECT_DUR);
+            float ease = t * t;
+            x = e.startX + (targetX - e.startX) * ease;
+            y = e.startY + (targetY - e.startY) * ease - sinf(t * 3.14159f) * 70.0f;
+        }
+        XMFLOAT4 c = CardVisual::GetCardColor(e.cardType, false); c.w = e.alpha;
+        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, x, y, s, rot, c, e.data, 0.0f);
+        m_spriteRenderer->End(); m_textRenderer->Begin();
+        CardVisual::DrawTexts(m_textRenderer, e.data, ctx.player, x, y, s, rot, e.alpha);
+        m_textRenderer->End(); m_spriteRenderer->Begin();   // スプライトに戻す
     }
 }
 
@@ -1708,9 +1748,14 @@ void BattleUI::UpdatePlayCardEffects(float deltaTime)
     for (auto& e : m_playCardEffects)
     {
         if (e.done) continue;
+        if (e.delay > 0.0f) { e.delay -= deltaTime; continue; }
         e.timer += deltaTime;
-        float t = min(1.0f, e.timer / PLAY_EFFECT_DUR);
-        e.alpha = (t < 0.4f) ? 1.0f : 1.0f - (t - 0.4f) / 0.6f;   // 後半でフェード
+        float dur = e.isBurn ? BURN_EFFECT_DUR : PLAY_EFFECT_DUR;
+        float t = min(1.0f, e.timer / dur);
+        if (e.isBurn)
+            e.alpha = (t < 0.58f) ? 1.0f : 1.0f - (t - 0.58f) / 0.42f;   // 退場で消える（ため中は不透明）
+        else
+            e.alpha = (t < 0.4f) ? 1.0f : 1.0f - (t - 0.4f) / 0.6f;
         if (t >= 1.0f) e.done = true;
     }
     m_playCardEffects.erase(
@@ -2247,53 +2292,91 @@ void BattleUI::StartPlayCardEffect(const CardData* data, int cardIndex)
     m_playCardEffects.push_back(effect);
 }
 
-void BattleUI::GetPlayEffectTransform(const PlayCardEffect& e, float& x, float& y, float& scale)
+void BattleUI::StartPlayCardEffect(const CardData* data, float startX, float startY, float delay, bool isBurn)
 {
-    float t = min(1.0f, e.timer / PLAY_EFFECT_DUR);
-    scale = (t < 0.6f)
-        ? 1.0f + 0.4f * (t / 0.6f)                  // 中央へ向かいながら拡大
-        : 1.4f - 1.1f * ((t - 0.6f) / 0.4f);        // 着いてから一気に縮む
-    float ease = 1.0f - (1.0f - t) * (1.0f - t);
+    PlayCardEffect e;
+    e.startX = startX; e.startY = startY;
+    e.alpha = 1.0f; e.timer = 0.0f; e.done = false;
+    e.cardType = data ? data->type : CardType::Status;
+    e.data = data; e.delay = delay;
+    e.isBurn = isBurn;
+    m_playCardEffects.push_back(e);
+}
+
+void BattleUI::StartPlayCardEffectFromHand(const CardData* data, int cardIndex, float delay, bool isBurn)
+{
+    PlayCardEffect e;
+    if (cardIndex >= 0 && cardIndex < (int)m_cardAnims.size()) {
+        e.startX = m_cardAnims[cardIndex].currentX;
+        e.startY = m_cardAnims[cardIndex].currentY;
+        e.startScale = m_cardAnims[cardIndex].currentScale;
+        e.startRot = m_cardAnims[cardIndex].currentRot;
+    }
+    else {
+        e.startX = m_screenWidth / 2.0f - CARD_WIDTH / 2.0f;
+        e.startY = (float)m_screenHeight - CARD_HEIGHT;
+    }
+    e.alpha = 1.0f; e.timer = 0.0f; e.done = false;
+    e.cardType = data ? data->type : CardType::Status;
+    e.data = data; e.delay = delay; e.isBurn = isBurn;
+    m_playCardEffects.push_back(e);
+}
+
+void BattleUI::GetPlayEffectTransform(const PlayCardEffect& e, float& x, float& y, float& scale, float& rot)
+{
     float tx = m_screenWidth / 2.0f - CARD_WIDTH / 2.0f;
     float ty = m_screenHeight / 2.0f - CARD_HEIGHT / 2.0f;
+
+    if (e.isBurn)
+    {
+        float t = min(1.0f, e.timer / BURN_EFFECT_DUR);
+        float posT, scl, rt;
+        if (t < 0.30f) {                                   // 接近：手札scale/rotから
+            float u = t / 0.30f; float eo = 1.0f - (1.0f - u) * (1.0f - u);
+            posT = eo;
+            scl = e.startScale + (1.55f - e.startScale) * eo;   // 手札→1.55
+            rt = e.startRot * (1.0f - eo);                      // 回転→0
+        }
+        else if (t < 0.58f) {                            // 中央でためる
+            posT = 1.0f; float u = (t - 0.30f) / 0.28f; scl = 1.55f - 0.15f * u; rt = 0.0f;
+        }
+        else {                                           // 退場：手札サイズへ戻しつつフェード
+            posT = 1.0f; float u = (t - 0.58f) / 0.42f;
+            scl = 1.40f + (e.startScale - 1.40f) * u;      // 1.40 → 手札サイズ（小さくならない）
+            rt = 0.0f;
+        }
+        float bx = e.startX + (tx - e.startX) * posT;
+        float by = e.startY + (ty - e.startY) * posT;
+        float w = CARD_WIDTH * scl, h = CARD_HEIGHT * scl;
+        x = bx - (w - CARD_WIDTH) / 2.0f;
+        y = by - (h - CARD_HEIGHT) / 2.0f;
+        scale = scl; rot = rt;
+        return;
+    }
+
+    // ↓ 通常カード（従来のまま）＋ rot=0
+    float t = min(1.0f, e.timer / PLAY_EFFECT_DUR);
+    scale = (t < 0.6f) ? 1.0f + 0.4f * (t / 0.6f) : 1.4f - 1.1f * ((t - 0.6f) / 0.4f);
+    float ease = 1.0f - (1.0f - t) * (1.0f - t);
     float bx = e.startX + (tx - e.startX) * ease;
     float by = e.startY + (ty - e.startY) * ease;
     float w = CARD_WIDTH * scale, h = CARD_HEIGHT * scale;
     x = bx - (w - CARD_WIDTH) / 2.0f;
     y = by - (h - CARD_HEIGHT) / 2.0f;
+    rot = 0.0f;
 }
 
 void BattleUI::DrawPlayCardEffects()
 {
     for (auto& e : m_playCardEffects)
     {
-        float x, y, s;
-        GetPlayEffectTransform(e, x, y, s);
-        // GetPlayEffectTransform は左上座標なので、DrawBase の基準座標に戻す
+        float x, y, s, rot;
+        GetPlayEffectTransform(e, x, y, s, rot);
         float baseX = x + (CardVisual::CARD_W * s - CardVisual::CARD_W) / 2.0f;
         float baseY = y + (CardVisual::CARD_H * s - CardVisual::CARD_H) / 2.0f;
-
         XMFLOAT4 color = CardVisual::GetCardColor(e.cardType, false);
         color.w = e.alpha;
-
-        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture,
-            baseX, baseY, s, 0.0f, color, e.data, 0.0f);
-    }
-}
-
-void BattleUI::DrawPlayCardEffectTexts(const BattleUIContext& ctx)
-{
-    for (auto& e : m_playCardEffects)
-    {
-        if (!e.data) continue;
-        float x, y, s;
-        GetPlayEffectTransform(e, x, y, s);
-        // GetPlayEffectTransform は左上座標を返すので、中心基準に戻す
-        float baseX = x + (CardVisual::CARD_W * s - CardVisual::CARD_W) / 2.0f;
-        float baseY = y + (CardVisual::CARD_H * s - CardVisual::CARD_H) / 2.0f;
-
-        CardVisual::DrawTexts(m_textRenderer, e.data, ctx.player,
-            baseX, baseY, s, 0.0f, e.alpha);
+        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, baseX, baseY, s, rot, color, e.data, 0.0f);
     }
 }
 
@@ -2333,6 +2416,23 @@ void BattleUI::DrawFloatingTexts(const BattleUIContext& ctx)
     }
 }
 
+void BattleUI::DrawPlayCardEffectsFull(const BattleUIContext& ctx)
+{
+    // 呼び出し時はスプライトパス中
+    for (auto& e : m_playCardEffects)
+    {
+        float x, y, s, rot;
+        GetPlayEffectTransform(e, x, y, s, rot);
+        float baseX = x + (CardVisual::CARD_W * s - CardVisual::CARD_W) / 2.0f;
+        float baseY = y + (CardVisual::CARD_H * s - CardVisual::CARD_H) / 2.0f;
+        XMFLOAT4 color = CardVisual::GetCardColor(e.cardType, false); color.w = e.alpha;
+        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, baseX, baseY, s, rot, color, e.data, 0.0f);
+        m_spriteRenderer->End(); m_textRenderer->Begin();
+        CardVisual::DrawTexts(m_textRenderer, e.data, ctx.player, baseX, baseY, s, rot, e.alpha);
+        m_textRenderer->End(); m_spriteRenderer->Begin();   // スプライトに戻す
+    }
+}
+
 void BattleUI::GetDiscardConfirmRect(float& x, float& y, float& w, float& h) const
 {
     w = 140.0f; h = 40.0f;
@@ -2359,17 +2459,30 @@ bool BattleUI::IsOnDiscardView(POINT p) const
     return p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h;
 }
 
-void BattleUI::StartDiscardEffectAt(int cardIndex)
+void BattleUI::StartDiscardEffectAt(int cardIndex, const CardData* data, float delay)
 {
     if (cardIndex < 0 || cardIndex >= (int)m_cardAnims.size()) return;
+    DiscardCardEffect e;
+    e.startX = m_cardAnims[cardIndex].currentX;
+    e.startY = m_cardAnims[cardIndex].currentY;
+    e.startScale = m_cardAnims[cardIndex].currentScale;
+    e.startRot = m_cardAnims[cardIndex].currentRot;
+    e.alpha = 1.0f; e.timer = 0.0f; e.done = false;
+    e.cardType = data ? data->type : CardType::Skill;
+    e.data = data;
+    e.delay = delay;
+    m_discardCardEffects.push_back(e);
+}
 
-    DiscardCardEffect effect;
-    effect.startX = m_cardAnims[cardIndex].currentX;   // そのカードの今の位置から
-    effect.startY = m_cardAnims[cardIndex].currentY;
-    effect.alpha = 1.0f;
-    effect.timer = 0.0f;
-    effect.done = false;
-    m_discardCardEffects.push_back(effect);
+void BattleUI::StartBurnDiscard(const CardData* data, float delay)
+{
+    DiscardCardEffect e;
+    e.startX = m_screenWidth / 2.0f - CARD_WIDTH / 2.0f;
+    e.startY = m_screenHeight / 2.0f - CARD_HEIGHT / 2.0f;   // 画面中央
+    e.alpha = 1.0f; e.timer = 0.0f; e.done = false;
+    e.cardType = data ? data->type : CardType::Status;
+    e.delay = delay; e.fromCenter = true;
+    m_discardCardEffects.push_back(e);
 }
 
 void BattleUI::DrawUnitStatusSprites(float footX, float footY, float scale, bool isBoss,

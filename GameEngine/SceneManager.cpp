@@ -150,6 +150,11 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("deco_stalagmite", L"Assets/Field/deco_stalagmite.png");
 		TextureManager::Load("deco_crystal", L"Assets/Field/deco_crystal.png");
 		TextureManager::Load("deco_caverock", L"Assets/Field/deco_caverock.png");
+
+		TextureManager::Load("ground_snakepit", L"Assets/Field/ground_snakepit.png");
+		TextureManager::Load("deco_darkspike", L"Assets/Field/deco_darkspike.png");
+		TextureManager::Load("deco_bones", L"Assets/Field/deco_bones.png");
+		TextureManager::Load("deco_egg", L"Assets/Field/deco_egg.png");
 		// 3層 近未来
 		TextureManager::Load("ground_future", L"Assets/Field/ground_future.png");
 		TextureManager::Load("deco_pillar", L"Assets/Field/deco_pillar.png");
@@ -209,6 +214,18 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("snake_corner_r", L"Assets/Field/snake_corner_r.png");
 		TextureManager::Load("snake_tail", L"Assets/Field/snake_tail.png");
 		TextureManager::Load("enemy_orochi", L"Assets/Enemy/orochi.png");  // 頭。仮なら既存絵に向けてOK
+		TextureManager::Load("enemy_mutant_stalker", L"Assets/Enemy/mutant_stalker.png");
+		TextureManager::Load("enemy_plasma_wraith", L"Assets/Enemy/plasma_wraith.png");
+		TextureManager::Load("enemy_toxic_bloom", L"Assets/Enemy/toxic_bloom.png");
+		TextureManager::Load("enemy_augmented_soldier", L"Assets/Enemy/augmented_soldier.png");
+		TextureManager::Load("enemy_nanite_swarm", L"Assets/Enemy/nanite_swarm.png");
+		TextureManager::Load("enemy_psi_watcher", L"Assets/Enemy/psi_watcher.png");
+		TextureManager::Load("enemy_grav_anomalyr", L"Assets/Enemy/grav_anomaly.png");
+		TextureManager::Load("enemy_chem_hound", L"Assets/Enemy/chem_hound.png");
+		TextureManager::Load("enemy_glitch_phantom", L"Assets/Enemy/glitch_phantom.png");
+		TextureManager::Load("enemy_chimera", L"Assets/Enemy/chimera.png");
+		TextureManager::Load("enemy_corrupted_core", L"Assets/Enemy/corrupted_core.png");
+		TextureManager::Load("enemy_void_weaver", L"Assets/Enemy/void_weaver.png");
 	}
 
 	// UI
@@ -233,6 +250,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 			TextureManager::Load("ui_reach", L"Assets/UI/ui_reach.png");
 			TextureManager::Load("ui_hitmark", L"Assets/UI/ui_hitmark.png");
 			TextureManager::Load("ui_hitring", L"Assets/UI/ui_hitring.png");
+			TextureManager::Load("icon_curse", L"Assets/UI/icon_curse.png");
 
 			TextureManager::Load("node_battle", L"Assets/UI/node_battle.png");
 			TextureManager::Load("node_rest", L"Assets/UI/node_rest.png");
@@ -634,7 +652,7 @@ void SceneManager::DrawOverlay()
 	swprintf_s(sbuf, L"Steps %d", pd.fieldSteps);
 	m_textRenderer->DrawText(sbuf, 140.0f, 10.0f, 16.0f, D2D1::ColorF(0.6f, 0.9f, 0.6f));
 
-	wchar_t lbuf[32]; swprintf_s(lbuf, L"Layer %d/2", pd.layer);
+	wchar_t lbuf[32]; swprintf_s(lbuf, L"Layer %d/3", pd.layer);
 	m_textRenderer->DrawText(lbuf, 280.0f, 10.0f, 16.0f, D2D1::ColorF(0.75f, 0.8f, 1.0f));
 
 	m_textRenderer->End();
@@ -1233,7 +1251,7 @@ void SceneManager::DrawBarTips()
 	}
 	else if (mp.x >= 274 && mp.x <= 380)
 	{
-		title = L"層"; desc = L"ダンジョンの階層(全2層)。深いほど敵が強い"; x = 274.0f;
+		title = L"層"; desc = L"ダンジョンの階層(全3層)。深いほど敵が強い"; x = 274.0f;
 	}
 	if (!title) return;
 

@@ -28,6 +28,7 @@ inline CardType StringToCardType(const std::string& str)
     if (str == "Skill")  return CardType::Skill;
     if (str == "Move")   return CardType::Move;
     if (str == "Power")  return CardType::Power;
+    if (str == "Status") return CardType::Status;
     return CardType::Attack;
 }
 
@@ -137,6 +138,7 @@ inline EffectKind StringToEffectKind(const std::string& s)
     if (s == "Hazard") return EffectKind::Hazard;
     if (s == "Heal") return EffectKind::Heal;
     if (s == "Coil") return EffectKind::Coil;
+    if (s == "AddCard") return EffectKind::AddCard;
     return EffectKind::Damage;
 }
 

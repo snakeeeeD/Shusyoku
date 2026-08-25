@@ -37,9 +37,15 @@ struct DrawCardEffect
 
 struct DiscardCardEffect {
     float startX, startY;
+    float startScale = 1.0f;
+    float startRot = 0.0f;
     float alpha;
     float timer;
     bool done;
+    CardType cardType = CardType::Skill;   // 種別（色表示用）
+    float delay = 0.0f;                     // 開始遅延（過負荷の先出し用）
+    const CardData* data = nullptr;
+    bool  fromCenter = false;               // 中央スタート（過負荷）
 };
 
 
@@ -51,11 +57,15 @@ struct CardAnimState {
 
 struct PlayCardEffect {
     float startX, startY;
+    float startScale = 1.0f;
+    float startRot = 0.0f;
     float alpha;
     float timer;
     bool done;
     CardType cardType;
     const CardData* data = nullptr;
+    float delay = 0.0f;
+    bool isBurn = false;    // 過負荷専用モーション（ため＋メリハリ）
 };
 
 struct HPBarInfo
@@ -142,6 +152,7 @@ public:
     void StartPlayCardEffect(CardType type, int cardIndex);
     void StartPlayCardEffect(const CardData* data, int cardIndex);
     void StartPlayCardEffect(CardType type, float fromX, float fromY);
+    void StartPlayCardEffect(const CardData* data, float startX, float startY, float delay = 0.0f, bool isBurn = false);
 
     TextRenderer* GetTextRenderer() { return m_textRenderer; }
     int GetPanelHoveredEnemy() const { return m_panelHoveredEnemy; }
@@ -162,7 +173,9 @@ public:
     void GetDiscardViewRect(float& x, float& y, float& w, float& h) const;
     bool IsOnDiscardConfirm(POINT p) const;
     bool IsOnDiscardView(POINT p) const;
-    void StartDiscardEffectAt(int cardIndex);
+    void StartDiscardEffectAt(int cardIndex, const CardData* data = nullptr, float delay = 0.0f);
+    void StartBurnDiscard(const CardData* data, float delay);
+    void StartPlayCardEffectFromHand(const CardData* data, int cardIndex, float delay = 0.0f, bool isBurn = false);
 
     void DrawUnitStatusSprites(float footX, float footY, float scale, bool isBoss,
         const HPBarInfo& bar, BuffManager& bm, POINT mousePos, float timer);
@@ -172,6 +185,8 @@ public:
     void DrawDropTooltipTop();
 
     bool GetHitmarkRect(Enemy* enemy, Renderer3D* renderer3D, float& x, float& y, float& w, float& h) const;
+
+    static constexpr float BURN_EFFECT_DUR = 0.75f;   // 過負荷は長め（ため time込み）
 
 private:
     SpriteRenderer* m_spriteRenderer = nullptr;
@@ -223,8 +238,10 @@ private:
     bool GetEnemyFootPos(Enemy* enemy, Renderer3D* renderer3D, float& outX, float& outY) const;
 
     static void GridToWorld(GridMap* gridMap, int col, int row, float& outX, float& outZ);
-    void GetPlayEffectTransform(const PlayCardEffect& e, float& x, float& y, float& scale);
-    void DrawPlayCardEffectTexts(const BattleUIContext& ctx);
+    void GetPlayEffectTransform(const PlayCardEffect& e, float& x, float& y, float& scale, float& rot);
+    void DrawPlayCardEffectsFull(const BattleUIContext& ctx);
+    void DrawDiscardEffectTexts(const BattleUIContext& ctx);
+    void DrawDiscardEffectsFull(const BattleUIContext& ctx);
 
     static constexpr float PLAY_EFFECT_DUR = 0.45f;
     static constexpr float DISCARD_EFFECT_DUR = 0.55f;
