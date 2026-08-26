@@ -8,7 +8,7 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "{0}ダメージ",
+     "description": "攻撃、{0}ダメージ",
      "target": {
       "rangeType": "Area",
       "range": 1,
@@ -26,7 +26,7 @@
      }
     },
     {
-     "description": "{0}ダメージ+毒{1}",
+     "description": "攻撃、{0}ダメージ、毒{1}付与",
      "target": {
       "rangeType": "Area",
       "range": 1,
@@ -50,7 +50,7 @@
      }
     },
     {
-     "description": "移動",
+     "description": "接近",
      "target": {
       "rangeType": "None"
      },
@@ -96,7 +96,7 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "{0}ダメージ＋攻撃UP",
+     "description": "攻撃、{0}ダメージ、攻撃力↑付与",
      "target": {
       "rangeType": "Area",
       "range": 1,
@@ -121,7 +121,7 @@
      }
     },
     {
-     "description": "薙ぎ払い、{0}ダメージ",
+     "description": "薙ぎ払い、{0}ダメージ、攻撃力↑付与",
      "vfx": "slash",
      "target": {
       "rangeType": "Area",
@@ -148,7 +148,7 @@
      }
     },
     {
-     "description": "{0}ダメージ、斬って離脱",
+     "description": "攻撃、{0}ダメージ、後退",
      "target": {
       "rangeType": "Area",
       "range": 1,
@@ -172,7 +172,7 @@
      }
     },
     {
-     "description": "{0}ブロック",
+     "description": "防御、{0}ブロック",
      "target": {
       "rangeType": "None"
      },
@@ -276,7 +276,7 @@
    "sequential": true,
    "actions": [
     {
-     "description": "燃え上がる",
+     "description": "燃え上がる、残り火付与",
      "vfx": "fire",
      "target": {
       "rangeType": "None"
@@ -292,7 +292,7 @@
      ]
     },
     {
-     "description": "徘徊",
+     "description": "接近",
      "target": {
       "rangeType": "None"
      },
@@ -332,7 +332,7 @@
    "height": 1.2,
    "actions": [
     {
-     "description": "{0}ダメージ",
+     "description": "攻撃、{0}ダメージ",
      "target": {
       "rangeType": "Area",
       "range": 1,
@@ -350,7 +350,7 @@
      }
     },
     {
-     "description": "{0}ダメージ",
+     "description": "攻撃、{0}ダメージ",
      "target": {
       "rangeType": "Cross",
       "range": 5,
@@ -368,7 +368,7 @@
      }
     },
     {
-     "description": "{0}ブロック",
+     "description": "防御、{0}ブロック",
      "target": {
       "rangeType": "None"
      },
@@ -383,7 +383,7 @@
      }
     },
     {
-     "description": "攻撃UP+{0}",
+     "description": "攻撃UP、攻撃力↑付与",
      "target": {
       "rangeType": "None"
      },
@@ -403,7 +403,7 @@
      }
     },
     {
-     "description": "{0}ダメージ",
+     "description": "攻撃、{0}ダメージ",
      "vfx": "explosion",
      "target": {
       "rangeType": "Area",
@@ -468,7 +468,7 @@
      }
     },
     {
-     "description": "炎ブレス、{0}ダメージ",
+     "description": "炎ブレス、{0}ダメージ、火傷{1}付与",
      "target": {
       "rangeType": "Cone",
       "range": 4
@@ -491,7 +491,7 @@
      }
     },
     {
-     "description": "尾なぎ払い、{0}ダメージ\n吹き飛ばし",
+     "description": "尾なぎ払い、{0}ダメージ、ノックバック",
      "target": {
       "rangeType": "Area",
       "range": 2
@@ -511,7 +511,7 @@
      }
     },
     {
-     "description": "灼熱のブレス、{0}ダメージ",
+     "description": "灼熱のブレス、{0}ダメージ、火傷{1}付与、床設置",
      "target": {
       "rangeType": "Cone",
       "range": 4
@@ -559,7 +559,7 @@
      }
     },
     {
-     "description": "滅びの息吹、{0}ダメージ",
+     "description": "滅びの息吹、{0}ダメージ、脆弱{1}付与",
      "target": {
       "rangeType": "Area",
       "range": 3
@@ -603,7 +603,7 @@
    "height": 1.2,
    "actions": [
     {
-     "description": "強打、{0}",
+     "description": "強打、{0}ダメージ",
      "target": {
       "rangeType": "Area",
       "range": 1,
@@ -675,7 +675,7 @@
      }
     },
     {
-     "description": "狙撃{0}(必中)",
+     "description": "狙撃、{0}ダメージ",
      "target": {
       "unavoidable": true
      },
@@ -709,7 +709,7 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "波動、{0}",
+     "description": "波動、{0}ダメージ",
      "target": {
       "rangeType": "Area",
       "range": 3,
@@ -730,7 +730,7 @@
      }
     },
     {
-     "description": "{0}ダメージ",
+     "description": "攻撃、{0}ダメージ",
      "target": {
       "rangeType": "Area",
       "range": 1,
@@ -748,7 +748,7 @@
      }
     },
     {
-     "description": "射程UP",
+     "description": "射程UP、射程↑付与",
      "target": {
       "rangeType": "None"
      },
@@ -778,7 +778,7 @@
    "sequential": true,
    "actions": [
     {
-     "description": "引き寄せ",
+     "description": "引き寄せ、引き寄せ",
      "target": {
       "unavoidable": true
      },
@@ -807,7 +807,7 @@
      ]
     },
     {
-     "description": "咆哮（攻撃力+{0}）",
+     "description": "咆哮、攻撃力↑付与",
      "target": {
       "rangeType": "None"
      },
@@ -851,7 +851,7 @@
    "height": 1.3,
    "actions": [
     {
-     "description": "分裂召喚",
+     "description": "分裂、召喚",
      "target": {
       "rangeType": "None"
      },
@@ -886,7 +886,7 @@
      }
     },
     {
-     "description": "{0}ダメージ+毒{1}",
+     "description": "攻撃、{0}ダメージ、毒{1}付与",
      "target": {
       "rangeType": "Area",
       "range": 1,
@@ -991,7 +991,7 @@
      }
     },
     {
-     "description": "爪とぎ（攻撃力+{0}）",
+     "description": "爪とぎ、攻撃力↑付与",
      "target": {
       "rangeType": "None"
      },
@@ -1011,7 +1011,7 @@
      }
     },
     {
-     "description": "岩投げ、{0}ダメージ(必中)",
+     "description": "岩投げ、{0}ダメージ",
      "target": {
       "unavoidable": true
      },
@@ -1074,7 +1074,7 @@
    "height": 1.3,
    "actions": [
     {
-     "description": "石塊{0}",
+     "description": "石塊、{0}ダメージ",
      "target": {
       "rangeType": "Area",
       "range": 1,
@@ -1092,7 +1092,7 @@
      }
     },
     {
-     "description": "守りを固める（{0}ブロック）",
+     "description": "守りを固める、{0}ブロック",
      "target": {
       "rangeType": "None"
      },
@@ -1137,7 +1137,7 @@
    "height": 1.2,
    "actions": [
     {
-     "description": "引きずり込む",
+     "description": "引きずり込む、引き寄せ",
      "target": {
       "unavoidable": true
      },
@@ -1172,7 +1172,7 @@
      }
     },
     {
-     "description": "殻を閉じる（{0}ブロック）",
+     "description": "殻を閉じる、{0}ブロック",
      "target": {
       "rangeType": "None"
      },
@@ -1184,6 +1184,30 @@
      ],
      "select": {
       "chance": 40
+     }
+    },
+    {
+     "description": "まやかし、{0}ダメージ、山札にガラクタ",
+     "target": {
+      "rangeType": "Area",
+      "range": 1,
+      "approach": "Toward",
+      "moveRange": 1
+     },
+     "effects": [
+      {
+       "kind": "Damage",
+       "value": 3
+      },
+      {
+       "kind": "AddCard",
+       "summonId": "curse_junk",
+       "buff": "deck",
+       "value": 1
+      }
+     ],
+     "select": {
+      "chance": 35
      }
     }
    ]
@@ -1232,7 +1256,7 @@
      }
     },
     {
-     "description": "呪詛、ダメージ{0}＋弱体",
+     "description": "呪詛、{0}ダメージ、弱体{1}付与",
      "target": {
       "rangeType": "Area",
       "range": 4,
@@ -1256,7 +1280,7 @@
      }
     },
     {
-     "description": "毒の霧（毒{0}）",
+     "description": "毒の霧、毒{0}付与",
      "target": {
       "rangeType": "Area",
       "range": 3,
@@ -1276,7 +1300,7 @@
      }
     },
     {
-     "description": "脆弱化",
+     "description": "脆弱化、脆弱{0}付与",
      "target": {
       "rangeType": "Area",
       "range": 5
@@ -1295,6 +1319,24 @@
       "conditionValue": 3,
       "chance": 100
      }
+    },
+    {
+     "description": "呪詛、手札にノイズ",
+     "target": {
+      "rangeType": "None",
+      "range": 1
+     },
+     "effects": [
+      {
+       "kind": "AddCard",
+       "summonId": "curse_static",
+       "buff": "hand",
+       "value": 1
+      }
+     ],
+     "select": {
+      "chance": 30
+     }
     }
    ]
   },
@@ -1307,7 +1349,7 @@
    "immovable": true,
    "actions": [
     {
-     "description": "鎌を研ぐ（攻撃力+{0}）",
+     "description": "鎌を研ぐ、攻撃力↑付与",
      "target": {
       "rangeType": "None"
      },
@@ -1361,7 +1403,7 @@
    "height": 1.1,
    "actions": [
     {
-     "description": "守りを固める（{0}ブロック）",
+     "description": "守りを固める、{0}ブロック",
      "target": {
       "rangeType": "None"
      },
@@ -1376,7 +1418,7 @@
      }
     },
     {
-     "description": "{0}ダメージ",
+     "description": "攻撃、{0}ダメージ",
      "target": {
       "rangeType": "Area",
       "range": 1,
@@ -1507,7 +1549,7 @@
      }
     },
     {
-     "description": "唸る（攻撃力+{0}）",
+     "description": "唸る、攻撃力↑付与",
      "target": {
       "rangeType": "None"
      },
@@ -1536,7 +1578,7 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "吸血、{0}ダメージ",
+     "description": "吸血、{0}ダメージ、{1}回復",
      "target": {
       "rangeType": "Area",
       "range": 1,
@@ -1558,7 +1600,7 @@
      }
     },
     {
-     "description": "旋回",
+     "description": "接近",
      "target": {
       "rangeType": "None",
       "range": 1
@@ -1611,7 +1653,7 @@
      }
     },
     {
-     "description": "酸を吐く、{0}ダメージ＋脆弱",
+     "description": "酸を吐く、{0}ダメージ、脆弱{1}付与",
      "target": {
       "rangeType": "Cross",
       "range": 2,
@@ -1632,6 +1674,28 @@
      ],
      "select": {
       "chance": 40
+     }
+    },
+    {
+     "description": "粘着質、{0}ダメージ、捨て札にガラクタ",
+     "target": {
+      "rangeType": "Area",
+      "range": 1
+     },
+     "effects": [
+      {
+       "kind": "Damage",
+       "value": 3
+      },
+      {
+       "kind": "AddCard",
+       "summonId": "curse_junk",
+       "buff": "discard",
+       "value": 1
+      }
+     ],
+     "select": {
+      "chance": 30
      }
     }
    ],
@@ -1654,7 +1718,7 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "{0}ブロック",
+     "description": "防御、{0}ブロック",
      "target": {
       "rangeType": "None",
       "range": 1
@@ -1707,7 +1771,7 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "毒噛み、{0}ダメージ＋毒",
+     "description": "毒噛み、{0}ダメージ、毒{1}付与",
      "target": {
       "rangeType": "Area",
       "range": 1,
@@ -1731,7 +1795,7 @@
      }
     },
     {
-     "description": "糸を吐く、{0}ダメージ＋弱体",
+     "description": "糸を吐く、{0}ダメージ、弱体{1}付与",
      "target": {
       "rangeType": "Cross",
       "range": 3,
@@ -1798,7 +1862,7 @@
      "vfx": "hit"
     },
     {
-     "description": "怒りの咆哮、{0}ダメージ＋攻撃UP",
+     "description": "怒りの咆哮、{0}ダメージ、攻撃力↑付与",
      "target": {
       "rangeType": "Area",
       "range": 2
@@ -1836,6 +1900,30 @@
      "select": {
       "chance": 40
      }
+    },
+    {
+     "description": "不協和音、{0}ダメージ、山札にノイズ",
+     "target": {
+      "rangeType": "Cross",
+      "range": 3,
+      "approach": "Align",
+      "moveRange": 2
+     },
+     "effects": [
+      {
+       "kind": "Damage",
+       "value": 5
+      },
+      {
+       "kind": "AddCard",
+       "summonId": "curse_static",
+       "buff": "deck",
+       "value": 1
+      }
+     ],
+     "select": {
+      "chance": 35
+     }
     }
    ],
    "drops": [
@@ -1862,7 +1950,7 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "胞子爆発、{0}ダメージ＋毒",
+     "description": "胞子爆発、{0}ダメージ、毒{1}付与",
      "target": {
       "rangeType": "Area",
       "range": 1,
@@ -1928,7 +2016,7 @@
    "height": 1.3,
    "actions": [
     {
-     "description": "{0}ブロック",
+     "description": "防御、{0}ブロック",
      "target": {
       "rangeType": "None",
       "range": 1
@@ -1944,7 +2032,7 @@
      }
     },
     {
-     "description": "岩振り、{0}ダメージ＋ノックバック",
+     "description": "岩振り、{0}ダメージ、ノックバック",
      "target": {
       "rangeType": "Area",
       "range": 1,
@@ -2010,7 +2098,7 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "毒矢、{0}ダメージ＋毒",
+     "description": "毒矢、{0}ダメージ、毒{1}付与",
      "target": {
       "unavoidable": true
      },
@@ -2031,7 +2119,7 @@
      }
     },
     {
-     "description": "衰弱の霧、{0}ダメージ＋脆弱",
+     "description": "衰弱の霧、{0}ダメージ、脆弱{1}付与",
      "target": {
       "rangeType": "Cross",
       "range": 3,
@@ -2071,6 +2159,28 @@
       "condition": "near",
       "conditionValue": 1
      }
+    },
+    {
+     "description": "過剰投与、{0}ダメージ、手札に過負荷",
+     "target": {
+      "rangeType": "Area",
+      "range": 1
+     },
+     "effects": [
+      {
+       "kind": "Damage",
+       "value": 4
+      },
+      {
+       "kind": "AddCard",
+       "summonId": "curse_burn",
+       "buff": "hand",
+       "value": 1
+      }
+     ],
+     "select": {
+      "chance": 25
+     }
     }
    ],
    "drops": [
@@ -2097,7 +2207,7 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "茨をまとう＋棘",
+     "description": "茨をまとう、反射付与",
      "target": {
       "rangeType": "None",
       "range": 1
@@ -2134,7 +2244,7 @@
      }
     },
     {
-     "description": "{0}ブロック",
+     "description": "防御、{0}ブロック",
      "target": {
       "rangeType": "None",
       "range": 1
@@ -2174,7 +2284,7 @@
    "height": 1.3,
    "actions": [
     {
-     "description": "産卵召喚",
+     "description": "産卵、召喚",
      "target": {
       "rangeType": "None",
       "range": 1
@@ -2193,7 +2303,7 @@
      }
     },
     {
-     "description": "毒牙、{0}ダメージ＋毒",
+     "description": "毒牙、{0}ダメージ、毒{1}付与",
      "target": {
       "rangeType": "Area",
       "range": 1,
@@ -2217,7 +2327,7 @@
      }
     },
     {
-     "description": "糸縛り、{0}ダメージ＋弱体",
+     "description": "糸縛り、{0}ダメージ、弱体{1}付与",
      "target": {
       "rangeType": "Cross",
       "range": 3,
@@ -2270,7 +2380,7 @@
    "height": 1.5,
    "actions": [
     {
-     "description": "大地の守り＋バリケード",
+     "description": "大地の守り、防壁付与、{1}ブロック",
      "target": {
       "rangeType": "None",
       "range": 1
@@ -2293,7 +2403,7 @@
      }
     },
     {
-     "description": "震撼、{0}ダメージ＋ノックバック",
+     "description": "震撼、{0}ダメージ、ノックバック",
      "target": {
       "rangeType": "Area",
       "range": 2,
@@ -2401,7 +2511,7 @@
      }
     },
     {
-     "description": "戦意高揚、永続攻撃UP",
+     "description": "戦意高揚、攻撃力↑付与",
      "target": {
       "rangeType": "None"
      },
@@ -2473,7 +2583,7 @@
    ],
    "actions": [
     {
-     "description": "薙ぎ払い{0}",
+     "description": "薙ぎ払い、{0}ダメージ、ノックバック、とぐろ",
      "target": {
       "rangeType": "Area",
       "range": 2
@@ -2497,7 +2607,7 @@
      }
     },
     {
-     "description": "毒噴き{0}",
+     "description": "毒噴き、{0}ダメージ、毒{1}付与、とぐろ",
      "target": {
       "rangeType": "Area",
       "range": 1
@@ -2553,7 +2663,7 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "突進の一撃 {0}ダメージ＋自己攻撃UP",
+     "description": "突進の一撃、{0}ダメージ、攻撃力↑付与",
      "target": {
       "rangeType": "Area",
       "range": 1,
@@ -2578,7 +2688,7 @@
      }
     },
     {
-     "description": "威嚇（反射{0}）",
+     "description": "威嚇、反射付与",
      "target": {
       "rangeType": "None",
       "range": 1
@@ -2622,7 +2732,7 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "放電 {0}ダメージ＋鈍足",
+     "description": "放電、{0}ダメージ、鈍足{1}付与",
      "target": {
       "rangeType": "Cross",
       "range": 3,
@@ -2646,7 +2756,7 @@
      }
     },
     {
-     "description": "相転移（離脱）",
+     "description": "後退",
      "target": {
       "rangeType": "None",
       "range": 1
@@ -2671,7 +2781,7 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "胞子噴射 {0}ダメージ＋毒床",
+     "description": "胞子噴射、{0}ダメージ、床設置、毒{2}付与",
      "target": {
       "rangeType": "Area",
       "range": 2
@@ -2698,7 +2808,7 @@
      }
     },
     {
-     "description": "毒撒き（毒{0}）",
+     "description": "毒撒き、毒{0}付与",
      "target": {
       "rangeType": "Area",
       "range": 1
@@ -2725,7 +2835,7 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "シールドバッシュ {0}ダメージ＋ブロック＋ノックバック",
+     "description": "シールドバッシュ、{0}ダメージ、{1}ブロック、ノックバック",
      "target": {
       "rangeType": "Adjacent",
       "range": 1
@@ -2749,7 +2859,7 @@
      }
     },
     {
-     "description": "制圧射撃 {0}ダメージ＋手札にガラクタ",
+     "description": "制圧射撃、{0}ダメージ、手札にガラクタ",
      "target": {
       "rangeType": "Cross",
       "range": 4,
@@ -2773,7 +2883,7 @@
      }
     },
     {
-     "description": "前進",
+     "description": "接近",
      "target": {
       "rangeType": "None",
       "range": 1
@@ -2798,7 +2908,7 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "侵蝕の霧 {0}ダメージ＋毒",
+     "description": "侵蝕の霧、{0}ダメージ、毒{1}付与",
      "target": {
       "rangeType": "Area",
       "range": 2
@@ -2820,7 +2930,7 @@
      }
     },
     {
-     "description": "拡散 {0}ダメージ＋山札にノイズ2枚",
+     "description": "拡散、{0}ダメージ、山札にノイズ",
      "target": {
       "rangeType": "Area",
       "range": 1
@@ -2842,7 +2952,7 @@
      }
     },
     {
-     "description": "収束（防御UP）",
+     "description": "収束、防御力↑付与",
      "target": {
       "rangeType": "None",
       "range": 1
@@ -2870,7 +2980,7 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "精神照射 {0}ダメージ＋脆弱",
+     "description": "精神照射、{0}ダメージ、脆弱{1}付与",
      "target": {
       "rangeType": "Cross",
       "range": 4,
@@ -2894,7 +3004,7 @@
      }
     },
     {
-     "description": "瞬間移動",
+     "description": "後退",
      "target": {
       "rangeType": "None",
       "range": 1
@@ -2919,7 +3029,7 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "重力崩壊 {0}ダメージ＋引き寄せ",
+     "description": "重力崩壊、{0}ダメージ、引き寄せ",
      "target": {
       "rangeType": "Area",
       "range": 2
@@ -2939,7 +3049,7 @@
      }
     },
     {
-     "description": "空間歪曲（鈍足{0}）",
+     "description": "空間歪曲、鈍足{0}付与",
      "target": {
       "rangeType": "Diamond",
       "range": 3
@@ -2966,7 +3076,7 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "毒牙 {0}ダメージ＋毒",
+     "description": "毒牙、{0}ダメージ、毒{1}付与",
      "target": {
       "rangeType": "Area",
       "range": 1,
@@ -2990,7 +3100,7 @@
      }
     },
     {
-     "description": "遠吠え（攻撃UP{0}）",
+     "description": "遠吠え、攻撃力↑付与",
      "target": {
       "rangeType": "None",
       "range": 1
@@ -3009,7 +3119,7 @@
      }
     },
     {
-     "description": "追跡",
+     "description": "接近",
      "target": {
       "rangeType": "None",
       "range": 1
@@ -3034,7 +3144,7 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "グリッチ斬 {0}ダメージ＋弱体",
+     "description": "グリッチ斬、{0}ダメージ、弱体{1}付与",
      "target": {
       "rangeType": "Adjacent",
       "range": 1
@@ -3056,7 +3166,7 @@
      }
     },
     {
-     "description": "データ注入（手札に過負荷）",
+     "description": "データ注入、手札に過負荷",
      "target": {
       "rangeType": "None",
       "range": 1
@@ -3074,7 +3184,7 @@
      }
     },
     {
-     "description": "位相移動",
+     "description": "後退",
      "target": {
       "rangeType": "None",
       "range": 1
@@ -3099,7 +3209,7 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "乱撃 {0}ダメージ×3＋自己攻撃UP",
+     "description": "乱撃、{0}ダメージ×3、攻撃力↑付与",
      "target": {
       "rangeType": "Adjacent",
       "range": 1
@@ -3123,7 +3233,7 @@
      }
     },
     {
-     "description": "咆哮弾 {0}ダメージ＋脆弱",
+     "description": "咆哮弾、{0}ダメージ、脆弱{1}付与",
      "target": {
       "rangeType": "Area",
       "range": 2
@@ -3145,7 +3255,7 @@
      }
     },
     {
-     "description": "突進 {0}ダメージ＋ノックバック",
+     "description": "突進、{0}ダメージ、ノックバック",
      "target": {
       "rangeType": "Area",
       "range": 1,
@@ -3176,7 +3286,7 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "データ侵蝕 {0}ダメージ＋弱体＋捨て札にノイズ2枚",
+     "description": "データ侵蝕、{0}ダメージ、弱体{1}付与、捨て札にノイズ",
      "target": {
       "rangeType": "Area",
       "range": 3
@@ -3204,7 +3314,7 @@
      }
     },
     {
-     "description": "ドローン召喚",
+     "description": "ドローン、召喚",
      "target": {
       "rangeType": "None",
       "range": 1
@@ -3221,7 +3331,7 @@
      }
     },
     {
-     "description": "過負荷注入（手札に過負荷）",
+     "description": "過負荷注入、手札に過負荷",
      "target": {
       "rangeType": "None",
       "range": 1
@@ -3248,7 +3358,7 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "次元の糸 {0}ダメージ＋移動不可＋引き寄せ",
+     "description": "次元の糸、{0}ダメージ、拘束{1}付与、引き寄せ",
      "target": {
       "rangeType": "Cross",
       "range": 4,
@@ -3276,7 +3386,7 @@
      }
     },
     {
-     "description": "虚無の波 {0}ダメージ＋脆弱",
+     "description": "虚無の波、{0}ダメージ、脆弱{1}付与",
      "target": {
       "rangeType": "Area",
       "range": 2
@@ -3298,7 +3408,7 @@
      }
     },
     {
-     "description": "跳躍接近",
+     "description": "接近",
      "target": {
       "rangeType": "None",
       "range": 1

@@ -1073,6 +1073,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
     m_spriteRenderer->Begin();
     DrawEnemyInfoPanel(ctx);
+    DrawEnemyKeywords(ctx);
 
     if (ctx.hoveredCardIndex >= 0)
     {
@@ -2195,6 +2196,45 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
                 }
             }
         }
+    }
+    m_textRenderer->End();
+}
+
+void BattleUI::DrawEnemyKeywords(const BattleUIContext& ctx)
+{
+    if (m_panelHoveredEnemy < 0 || m_panelHoveredEnemy >= (int)ctx.enemies->size()) return;
+    Enemy* enemy = (*ctx.enemies)[m_panelHoveredEnemy];
+
+    // 予告している全行動のキーワードを重複なく集約
+    std::vector<std::pair<std::wstring, std::wstring>> kws;
+    std::set<std::wstring> seen;
+    for (auto& act : enemy->GetPlannedActions())
+        for (auto& kw : EnemyIntentVisual::GetKeywords(act))
+            if (seen.insert(kw.first).second) kws.push_back(kw);
+    if (kws.empty()) return;
+
+    const float pw = 300.0f, rowH = 44.0f;
+    float ph = 12.0f + kws.size() * rowH;
+
+    // 敵パネル → 詳細窓 のさらに左に出す
+    float panelX = ctx.screenWidth - 250.0f;
+    float detailX = panelX - 200.0f;
+    float px = detailX - pw - 8.0f;
+    float py = 50.0f + m_panelHoveredEnemy * (90.0f + 5.0f);
+    if (px < 6.0f) px = 6.0f;
+    if (py + ph > ctx.screenHeight - 6.0f) py = ctx.screenHeight - 6.0f - ph;
+
+    m_spriteRenderer->Begin();
+    DrawWindow(px, py, pw, ph);
+    m_spriteRenderer->End();
+
+    m_textRenderer->Begin();
+    float y = py + 10.0f;
+    for (auto& [name, desc] : kws)
+    {
+        m_textRenderer->DrawText(name.c_str(), px + 12.0f, y, 16.0f, D2D1::ColorF(1.0f, 0.85f, 0.4f));
+        m_textRenderer->DrawText(desc.c_str(), px + 12.0f, y + 20.0f, 12.0f, D2D1::ColorF(0.9f, 0.9f, 0.9f));
+        y += rowH;
     }
     m_textRenderer->End();
 }

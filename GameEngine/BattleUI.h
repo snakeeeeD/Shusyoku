@@ -212,6 +212,7 @@ private:
     void DrawHPBar(float x, float y, float w, float h, const HPBarInfo& info, float time);
     void DrawEnemyHPBar(Enemy* enemy, Renderer3D* renderer3D);
     void DrawEnemyInfoPanel(const BattleUIContext& ctx);
+    void DrawEnemyKeywords(const BattleUIContext& ctx);
     void DrawTargetIndicators(const BattleUIContext& ctx);
     void DrawArrowIndicator(float sx, float sy, const DirectX::XMFLOAT4& color, float highlightTimer);
     void DrawPileViewer(const BattleUIContext& ctx);

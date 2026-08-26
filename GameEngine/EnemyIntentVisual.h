@@ -7,6 +7,9 @@
 #include "GameUtils.h"
 
 #include <DirectXMath.h>
+#include <set>
+#include <vector>
+#include <utility>
 
 using namespace DirectX;
 
@@ -76,12 +79,19 @@ public:
     }
 
     // 攻撃範囲/接近/必中を日本語に
-    static std::wstring RangeText(const TargetSpec& tg)
+    static std::wstring RangeText(const TargetSpec& tg) 
     {
+        // 突進は「経路の直線」が脅威。rangeTypeは使われないので専用表記にする
+        if (tg.approach == ApproachType::Dash) {
+            std::wstring s = L"突進";
+            if (tg.moveRange > 0) s += L" 最大" + std::to_wstring(tg.moveRange) + L"マス";
+            if (tg.unavoidable) s += L" / 必中";
+            return s;
+        }
+
         std::wstring s;
-        switch (tg.rangeType)
-        {
-        case RangeType::Adjacent:      s = L"隣接"; break;
+        switch (tg.rangeType) {
+        case RangeType::Adjacent: s = L"隣接"; break;
         case RangeType::Cross:         s = L"十字"; break;
         case RangeType::Area:          s = L"範囲"; break;
         case RangeType::Diamond:       s = L"ひし形"; break;
@@ -91,8 +101,7 @@ public:
         default:                       return L"";   // None
         }
         if (tg.range > 0) s += L" 射程" + std::to_wstring(tg.range);
-        if (tg.approach == ApproachType::Dash)        s += L" / 突進";
-        else if (tg.approach == ApproachType::Toward) s += L" / 接近";
+        if (tg.approach == ApproachType::Toward) s += L" / 接近";
         if (tg.unavoidable) s += L" / 必中";
         return s;
     }
@@ -147,6 +156,43 @@ public:
         }
         default: title = L""; body = L""; break;
         }
+    }
+
+    // 行動に含まれるキーワード（名前, 説明）を重複なく集める（カードのGetKeywords相当）
+    static std::vector<std::pair<std::wstring, std::wstring>> GetKeywords(const EnemyAction& a)
+    {
+        std::vector<std::pair<std::wstring, std::wstring>> out;
+        std::set<std::wstring> seen;
+        auto push = [&](const std::wstring& n, const std::wstring& d) {
+            if (n.empty() || seen.count(n)) return; seen.insert(n); out.push_back({ n, d });
+            };
+
+        const TargetSpec& tg = a.target;
+        if (tg.approach == ApproachType::Dash)
+            push(L"突進", L"狙った方向へ突っ込み、経路上のマスを攻撃する");
+        if (tg.unavoidable)
+            push(L"必中", L"位置に関係なく必ず命中する");
+
+        for (auto& e : a.effects)
+        {
+            if ((e.kind == EffectKind::Buff || e.kind == EffectKind::Debuff) && !e.buff.empty())
+            {
+                BuffType bt = StringToBuffType(e.buff);
+                push(BuffInfo::Get(bt).name, BuffInfo::GetDescription(bt, e.value));
+            }
+            switch (e.kind)
+            {
+            case EffectKind::Damage:          if (e.hits > 1) push(L"連撃", L"1回の行動で複数回ヒットする"); break;
+            case EffectKind::PullPlayer:      push(L"引き寄せ", L"プレイヤーを敵の方へ引き寄せる"); break;
+            case EffectKind::KnockbackPlayer: push(L"ノックバック", L"プレイヤーを突き飛ばす"); break;
+            case EffectKind::Summon:          push(L"召喚", L"新たな敵を呼び出す"); break;
+            case EffectKind::Hazard:          push(L"地形", L"マスに危険地形を設置する。踏むとやけど"); break;
+            case EffectKind::Coil:            push(L"とぐろ", L"体が伸び、通り道のプレイヤーを押し出す"); break;
+            case EffectKind::AddCard:         push(L"お邪魔", L"デッキ・手札・捨て札にお邪魔カードを加えてくる"); break;
+            default: break;
+            }
+        }
+        return out;
     }
 
     // この行動はプレイヤーを害するか（危険表示の対象か）
