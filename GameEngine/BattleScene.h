@@ -68,6 +68,7 @@ public:
     }
 
     void SetEnemyId(const std::string& id) { m_battleEnemyId = id; }
+    std::string GetEnemyId() const { return m_battleEnemyId; }
 
     std::function<void(SceneType)> onChangeScene;
 

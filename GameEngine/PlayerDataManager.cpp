@@ -1,6 +1,7 @@
 #include "PlayerDataManager.h"
 #include "CardDataBase.h"
 #include "RelicManager.h"
+#include "Telemetry.h"
 
 #include <nlohmann/json.hpp>
 #include <fstream>
@@ -216,6 +217,11 @@ void PlayerDataManager::StartNewGame()
 	m_data.fieldNodeEnemyIds.clear();
 	m_data.fieldNodeVisited.clear();
 	m_data.relics = { "travelers_charm" };   // 初期レリック（回復＋レリック導入）
+	Telemetry::Instance().BeginRun();
+	Telemetry::Instance().SetLocation(m_data.layer, 0);
+	Telemetry::Instance().Log("run_start", {
+		{"hp", m_data.hp}, {"deckSize", (int)m_data.deck.size()}
+		});
 	Save();
 }
 

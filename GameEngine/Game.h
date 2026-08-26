@@ -4,6 +4,7 @@
 #include "input.h"
 #include "GridMap.h"
 #include "SceneManager.h"
+#include "Telemetry.h" 
 
 class Game
 {
@@ -20,4 +21,7 @@ public:
 
 private:
     SceneManager* m_sceneManager = nullptr;
+
+    bool m_prevF8 = false;      // F8エッジ検出用
+    int  m_feedbackCount = 0;   // フィードバック通し番号
 };

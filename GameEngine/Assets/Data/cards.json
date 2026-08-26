@@ -15,7 +15,8 @@
    "mainEffect": {
     "type": "Damage",
     "value": 6
-   }
+   },
+   "starter": true
   },
   {
    "id": "ATK_pommel_strike",
@@ -60,7 +61,8 @@
    "mainEffect": {
     "type": "Damage",
     "value": 10
-   }
+   },
+   "starter": true
   },
   {
    "id": "ATK_fan_slash",
@@ -93,6 +95,7 @@
    "cost": 1,
    "range": 1,
    "rangeType": "Adjacent",
+   "hits": 2,
    "description": "{value}ダメージ×{hits}",
    "upgrade": {
     "mainValue": 2
@@ -113,7 +116,11 @@
    "cost": 3,
    "range": 1,
    "rangeType": "Adjacent",
+   "hits": 7,
    "description": "{value}ダメージ×{hits}",
+   "upgrade": {
+    "hits": 3
+   },
    "mainEffect": {
     "type": "Damage",
     "value": 2
@@ -287,6 +294,12 @@
     "value": 3,
     "duration": 3,
     "buffType": "Poison"
+   },
+   "onHitEffect2": {
+    "type": "ApplyDebuff",
+    "value": 1,
+    "duration": 2,
+    "buffType": "Weak"
    }
   },
   {
@@ -409,6 +422,11 @@
     "value": 3,
     "duration": 3,
     "buffType": "Poison"
+   },
+   "allEnemyEffect": {
+    "buffType": "Poison",
+    "value": 2,
+    "duration": 2
    }
   },
   {
@@ -449,7 +467,8 @@
    "mainEffect": {
     "type": "Damage",
     "value": 4
-   }
+   },
+   "generated": true
   },
   {
    "id": "ATK_quickcut",
@@ -652,6 +671,7 @@
    "cost": 2,
    "range": 1,
    "rangeType": "Adjacent",
+   "hits": 2,
    "description": "{value}ダメージ×{hits}\n自傷3",
    "selfDamage": 3,
    "upgrade": {
@@ -706,8 +726,12 @@
    "cost": 3,
    "range": 1,
    "rangeType": "Area",
+   "hits": 3,
    "description": "周囲の敵に{value}ダメージ×{hits}",
    "vfx": "hit",
+   "upgrade": {
+    "hits": 1
+   },
    "mainEffect": {
     "type": "Damage",
     "value": 6
@@ -878,6 +902,15 @@
     "value": 1,
     "duration": 1,
     "buffType": "Weak"
+   },
+   "upgrade": {
+    "onHitDuration": 1
+   },
+   "onHitEffect2": {
+    "type": "ApplyDebuff",
+    "value": 1,
+    "duration": 1,
+    "buffType": "Vulnerable"
    }
   },
   {
@@ -895,7 +928,8 @@
    "mainEffect": {
     "type": "Block",
     "value": 5
-   }
+   },
+   "starter": true
   },
   {
    "id": "SKL_protect",
@@ -1009,6 +1043,13 @@
    "mainEffect": {
     "type": "Block",
     "value": 4
+   },
+   "upgrade": {
+    "onDiscardValue": 2
+   },
+   "onDiscardEffect": {
+    "type": "Block",
+    "value": 9
    }
   },
   {
@@ -1139,6 +1180,11 @@
     "type": "CreateCard",
     "value": 1,
     "cardId": "ATK_knife"
+   },
+   "onDiscardEffect": {
+    "type": "CreateCard",
+    "cardId": "ATK_knife",
+    "value": 1
    }
   },
   {
@@ -1255,6 +1301,13 @@
    "mainEffect": {
     "type": "None",
     "value": 0
+   },
+   "upgrade": {
+    "onDiscardValue": 1
+   },
+   "onDiscardEffect": {
+    "type": "Draw",
+    "value": 2
    }
   },
   {
@@ -1272,6 +1325,13 @@
    "mainEffect": {
     "type": "None",
     "value": 0
+   },
+   "upgrade": {
+    "onDiscardValue": 1
+   },
+   "onDiscardEffect": {
+    "type": "AddEnergy",
+    "value": 1
    }
   },
   {
@@ -1290,6 +1350,14 @@
    "mainEffect": {
     "type": "Discard",
     "value": 1
+   },
+   "upgrade": {
+    "onDiscardValue": 2
+   },
+   "onDiscardEffect": {
+    "type": "ApplyDebuff",
+    "value": 5,
+    "buffType": "Poison"
    }
   },
   {
@@ -1547,6 +1615,11 @@
     "value": 2,
     "duration": -1,
     "buffType": "AttackUp"
+   },
+   "allEnemyEffect": {
+    "buffType": "AttackUp",
+    "value": 1,
+    "duration": -1
    }
   },
   {
@@ -2104,7 +2177,8 @@
    "mainEffect": {
     "type": "Damage",
     "value": 4
-   }
+   },
+   "scaleByTrapCount": true
   },
   {
    "id": "SKL_decoy",

@@ -203,6 +203,7 @@
     <ClInclude Include="ShopScene.h" />
     <ClInclude Include="SpriteRenderer.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="Telemetry.h" />
     <ClInclude Include="TerrainDataBase.h" />
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="TextureLoader.h" />

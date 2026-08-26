@@ -11,6 +11,7 @@
 #include "MaterialDataBase.h"
 #include "CardDataBase.h"
 #include "EventDataBase.h"
+#include "Telemetry.h"
 
 #include "TitleScene.h"
 #include "BattleScene.h"
@@ -27,6 +28,18 @@ class SceneManager
 public:
     SceneManager();
     ~SceneManager();
+
+    static const char* SceneName(SceneType t) {
+        switch (t) {
+        case SceneType::Title:      return "title";
+        case SceneType::Battle:     return "battle";
+        case SceneType::CardSelect: return "cardselect";
+        case SceneType::Field:      return "field";
+        case SceneType::Shop:       return "shop";
+        case SceneType::Result:     return "result";
+        default:                    return "other";
+        }
+    }
 
     bool Init(ID3D11Device* device, ID3D11DeviceContext* context,
         int screenWidth, int screenHeight, HWND hWnd,

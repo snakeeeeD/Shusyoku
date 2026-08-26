@@ -362,9 +362,25 @@ void SceneManager::DoChangeScene(SceneType type)
 	bool resultCleared = false;
 	if (type == SceneType::Result)
 	{
+		std::string causeEnemy;
+		int hpLeft = PlayerDataManager::GetData().hp;
 		if (auto battle = dynamic_cast<BattleScene*>(m_currentScene))
+		{
 			resultCleared = (battle->GetBattleResult() == BattleResult::Win);
-		PlayerDataManager::DeleteSave();   // ランを終えたらセーブ削除 → コンティニュー非表示
+			hpLeft = battle->GetPlayerHp();
+			causeEnemy = battle->GetEnemyId();
+		}
+		auto& pd = PlayerDataManager::GetData();
+		Telemetry::Instance().Log("run_end", {
+			{"result", resultCleared ? "clear" : "gameover"},
+			{"layer",  pd.layer},
+			{"node",   pd.currentNodeIndex},
+			{"hpLeft", hpLeft},
+			{"maxHp",  pd.maxHp},
+			{"cause",  causeEnemy},
+			{"sec",    Telemetry::Instance().RunSeconds()},
+			});
+		PlayerDataManager::DeleteSave();   // ランを終えたらセーブ削除
 	}
 	if (type == SceneType::Battle)
 	{
@@ -383,6 +399,14 @@ void SceneManager::DoChangeScene(SceneType type)
 	delete m_currentScene;
 	m_currentScene = nullptr;
 	m_currentType = type;
+
+	// テレメトリ: シーン・現在地を更新して入場を記録
+	{
+		auto& pd = PlayerDataManager::GetData();
+		Telemetry::Instance().SetLocation(pd.layer, pd.fieldSteps);
+		Telemetry::Instance().SetScene(SceneName(type));
+		Telemetry::Instance().Log("scene_enter", {});
+	}
 
 	// 新しいシーンを作成
 	switch (type)

@@ -277,6 +277,9 @@
     <Filter Include="ソース ファイル\03-Object関連\20-Enemy\04-EnemyIntentVisual">
       <UniqueIdentifier>{724baa5e-0e10-4733-a462-84a71c43a7f7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用">
+      <UniqueIdentifier>{8436a3cf-0b61-482a-b14d-e8be89b3bb9d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -515,6 +518,9 @@
     </ClInclude>
     <ClInclude Include="ItemTooltip.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\50-ItemTooltip</Filter>
+    </ClInclude>
+    <ClInclude Include="Telemetry.h">
+      <Filter>ソース ファイル\07-デバッグ用</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
