@@ -371,3 +371,7 @@ GameEngine/Assets/Data/playerdata.json
 
 # テレメトリ集計の生成物（logs/*.jsonl とスクリプトから作り直せる）
 tools/telemetry_report.xlsx
+
+# Supabase 秘密鍵（service_role）とpull状態（絶対にコミットしない）
+tools/.supabase_service_key
+tools/.pull_state.json

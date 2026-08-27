@@ -6,6 +6,10 @@
 #include <fstream>
 #include <sstream>
 #include <ctime>
+#include <winhttp.h>
+#include <cstdlib>
+#include <thread>
+#pragma comment(lib, "winhttp.lib")
 
 // テレメトリ値（int/double/bool/文字列を1つに包む）
 struct TVal {
@@ -48,8 +52,10 @@ public:
         CreateDirectoryA(logDir.c_str(), nullptr);
 
         std::string ts = TimeStamp("%Y%m%d_%H%M%S");
-        m_sessionId = ts;
-        std::string base = logDir + "/session_" + ts;
+        std::srand((unsigned)GetTickCount());
+        char suf[8]; sprintf_s(suf, "_%04X", std::rand() & 0xFFFF);
+        m_sessionId = ts + suf;                       // 例 20260828_010203_9F3A
+        std::string base = logDir + "/session_" + m_sessionId;
         m_jsonl.open(base + ".jsonl", std::ios::app);
         m_txt.open(base + ".txt", std::ios::app);
         m_open = m_jsonl.is_open();
@@ -59,6 +65,7 @@ public:
     void Shutdown() {
         if (!m_open) return;
         Log("session_end", {});
+        Upload();              // = Upload(false) 同期。閉じる前に確実に送り切る
         m_jsonl.close(); m_txt.close();
         m_open = false;
     }
@@ -90,6 +97,7 @@ public:
         for (auto& [k, v] : fields) j << ",\"" << Esc(k) << "\":" << JsonVal(v);
         j << "}";
         m_jsonl << j.str() << "\n"; m_jsonl.flush();
+        m_payload += j.str(); m_payload += "\n";       // ← 送信用バッファ
 
         // 人間可読
         std::ostringstream h;
@@ -97,6 +105,15 @@ public:
             << " " << m_scene << " | " << event;
         for (auto& [k, v] : fields) h << "  " << k << "=" << PlainVal(v);
         m_txt << h.str() << "\n"; m_txt.flush();
+    }
+
+    // async=true: 裏スレッドで送信（ゲームを止めない）／false: 同期（終了時に使う）
+    void Upload(bool async = false) {
+        if (!m_upload || m_payload.empty()) return;
+        std::string body = "{\"session_id\":\"" + Esc(m_sessionId)
+            + "\",\"payload\":\"" + Esc(m_payload) + "\"}";
+        if (async) std::thread(PostBody, body).detach();
+        else       PostBody(std::move(body));
     }
 
 private:
@@ -133,10 +150,51 @@ private:
         }
     }
 
+    static std::wstring ToW(const std::string& s) {
+        if (s.empty()) return L"";
+        int n = MultiByteToWideChar(CP_UTF8, 0, s.c_str(), (int)s.size(), nullptr, 0);
+        std::wstring w(n, 0);
+        MultiByteToWideChar(CP_UTF8, 0, s.c_str(), (int)s.size(), &w[0], n);
+        return w;
+    }
+
+    static void PostBody(std::string body) {
+        const wchar_t* host = L"rjshabmjcrshzwsctesi.supabase.co";
+        const wchar_t* path = L"/rest/v1/telemetry_sessions";
+        const std::string apikey = "sb_publishable_J2Zgib1bHLMOGH6v7yQwjA_hypILsD7";
+
+        HINTERNET hs = WinHttpOpen(L"SyusyokuTelemetry/1.0",
+            WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
+            WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+        if (!hs) return;
+        WinHttpSetTimeouts(hs, 5000, 5000, 5000, 5000);
+        HINTERNET hc = WinHttpConnect(hs, host, INTERNET_DEFAULT_HTTPS_PORT, 0);
+        if (hc) {
+            HINTERNET hr = WinHttpOpenRequest(hc, L"POST", path, nullptr,
+                WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_SECURE);
+            if (hr) {
+                std::wstring headers =
+                    L"Content-Type: application/json\r\n"
+                    L"apikey: " + ToW(apikey) + L"\r\n"
+                    L"Authorization: Bearer " + ToW(apikey) + L"\r\n"
+                    L"Prefer: return=minimal\r\n";
+                WinHttpSendRequest(hr, headers.c_str(), (DWORD)-1,
+                    (LPVOID)body.data(), (DWORD)body.size(), (DWORD)body.size(), 0);
+                WinHttpReceiveResponse(hr, nullptr);
+                WinHttpCloseHandle(hr);
+            }
+            WinHttpCloseHandle(hc);
+        }
+        WinHttpCloseHandle(hs);
+    }
+
     bool m_open = false;
     std::ofstream m_jsonl, m_txt;
     std::string m_sessionId, m_build, m_scene;
     int m_runId = 0, m_layer = 0, m_floor = 0;
+
+    std::string m_payload;      // 送信用にJSONL全文を保持
+    bool m_upload = true;       // 自分のPCで送りたくない時は false に
 
     std::time_t m_runStart = 0;
 };

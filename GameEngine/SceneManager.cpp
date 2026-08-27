@@ -387,6 +387,7 @@ void SceneManager::DoChangeScene(SceneType type)
 			{"deck",     deckStr},               // ← 最終デッキ全体（アーキタイプ分析）
 			{"relics",   relicStr},              // ← 最終レリック（レリック×勝率）
 			});
+		Telemetry::Instance().Upload(true);   // ← 非同期でこのセッションを送信
 		PlayerDataManager::DeleteSave();   // ランを終えたらセーブ削除
 	}
 	if (type == SceneType::Battle)
