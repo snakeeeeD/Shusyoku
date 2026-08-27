@@ -6,6 +6,7 @@
 #include "GameUtils.h"
 #include "UiWindow.h"
 #include "Audio.h"
+#include "Telemetry.h"
 
 #include <cstdlib>
 #include <algorithm>
@@ -425,9 +426,12 @@ void ShopScene::HandleInput()
         ShopItem& it = m_items[m_hoveredIndex];
         if (!it.bought && PlayerDataManager::SpendGold(it.price))
         {
+            Telemetry::Instance().Log("shop_buy", {
+                {"id", it.id},
+                {"kind", it.kind == ShopKind::Card ? "card" : (it.kind == ShopKind::Relic ? "relic" : "other")},
+                {"price", it.price},
+                });
             if (it.kind == ShopKind::Card) PlayerDataManager::AddCard(it.id);
-            else if (it.kind == ShopKind::Relic) PlayerDataManager::AddRelic(it.id);
-            else PlayerDataManager::AddMaterial(it.id, 1);
             it.bought = true;
             PlayerDataManager::Save();
         }

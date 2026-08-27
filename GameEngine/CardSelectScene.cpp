@@ -3,6 +3,7 @@
 #include "RelicManager.h"
 #include "UiWindow.h"
 #include "Audio.h"
+#include "Telemetry.h"
 
 #include <cstdlib>
 
@@ -197,6 +198,13 @@ void CardSelectScene::HandleInput()
     {
         Audio::PlaySE("Assets/Sound/se/click.mp3");
 
+        std::string offered;
+        for (auto& c : m_choices) { if (!offered.empty()) offered += ","; offered += c; }
+        Telemetry::Instance().Log("card_pick", {
+            {"chosen",  m_choices[m_hoveredIndex]},
+            {"offered", offered},
+            });
+
         PlayerDataManager::AddCard(m_choices[m_hoveredIndex]);
         OutputDebugStringW(L"★ カード獲得！\n");
 
@@ -213,6 +221,9 @@ void CardSelectScene::HandleInput()
     if (skipHover && m_input.GetMouseButtonTrigger(0))
     {
         Audio::PlaySE("Assets/Sound/se/click.mp3");
+        std::string offered;
+        for (auto& c : m_choices) { if (!offered.empty()) offered += ","; offered += c; }
+        Telemetry::Instance().Log("card_pick", { {"chosen", "(skip)"}, {"offered", offered} });
         if (onChangeScene) onChangeScene(SceneType::Field);
         return;
     }

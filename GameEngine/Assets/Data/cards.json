@@ -492,7 +492,8 @@
    },
    "subEffect": {
     "type": "CreateCard",
-    "value": 1
+    "value": 1,
+    "cardId": "ATK_knife"
    }
   },
   {
@@ -824,7 +825,8 @@
    "rangeType": "Adjacent",
    "description": "{value}ダメージ、\n脱力{onhit}付与",
    "upgrade": {
-    "mainValue": 2
+    "mainValue": 2,
+    "onHitDuration": 1
    },
    "mainEffect": {
     "type": "Damage",
@@ -1157,7 +1159,8 @@
    },
    "subEffect": {
     "type": "CreateCard",
-    "value": 1
+    "value": 1,
+    "cardId": "ATK_knife"
    }
   },
   {

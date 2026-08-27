@@ -14,6 +14,7 @@
 #include "RangeShape.h"
 #include "UiNotice.h"
 #include "Audio.h"
+#include "Telemetry.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -444,6 +445,23 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
          m_decos.push_back(d); placed++;
      }
 
+     // テレメトリ: 戦闘開始（敵構成・開始HP）
+     m_hpStart = m_player ? m_player->GetHp() : 0;
+     {
+         std::string foes;
+         for (auto* e : m_enemies) { if (!foes.empty()) foes += ","; foes += e->GetId(); }
+         Telemetry::Instance().Log("battle_start", {
+             {"enc",   m_battleEnemyId},
+             {"cat",   (int)m_category},
+             {"tier",  m_battleTier},
+             {"count", (int)m_enemies.size()},
+             {"foes",  foes},
+             {"hp",    m_hpStart},
+             });
+     }
+
+     return true;
+
     return true;
 }
 
@@ -861,6 +879,15 @@ void BattleScene::Update(float deltaTime)
         {
             m_battleResult = BattleResult::Win;
 
+            m_battleResult = BattleResult::Win;
+            Telemetry::Instance().Log("battle_end", {
+                {"result", "win"},
+                {"turns",  m_turnCount},
+                {"hpStart",m_hpStart},
+                {"hpLeft", m_player->GetHp()},
+                {"enc",    m_battleEnemyId},
+                });
+
             m_player->Heal(RelicManager::SumValue("winHeal"));   // レリック（pd.hpに反映される）
 
             // HPを保存、現在のマスをクリア済みに
@@ -938,6 +965,10 @@ void BattleScene::Update(float deltaTime)
                 }
             }
 
+            for (auto& dr : m_dropResult)
+                Telemetry::Instance().Log("material_drop", {
+                    {"id", dr.id}, {"n", dr.count}, {"rare", dr.rare}
+                    });
             PlayerDataManager::Save();
             return;
         }
@@ -946,6 +977,15 @@ void BattleScene::Update(float deltaTime)
         if (m_player->GetHp() <= 0)
         {
             m_battleResult = BattleResult::Lose;
+
+            m_battleResult = BattleResult::Lose;
+            Telemetry::Instance().Log("battle_end", {
+                {"result", "lose"},
+                {"turns",  m_turnCount},
+                {"hpStart",m_hpStart},
+                {"hpLeft", 0},
+                {"enc",    m_battleEnemyId},
+                });
             return;
             // セーブデータを削除（ニューゲームからやり直し）
             

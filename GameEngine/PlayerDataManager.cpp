@@ -236,6 +236,7 @@ void PlayerDataManager::RemoveCard(int index)
 {
 	if (index >= 0 && index < (int)m_data.deck.size())
 	{
+		Telemetry::Instance().Log("card_remove", { {"id", m_data.deck[index]} });
 		m_data.deck.erase(m_data.deck.begin() + index);
 		Save();
 	}
@@ -283,8 +284,10 @@ void PlayerDataManager::UpgradeCard(int index)
 	std::string& id = m_data.deck[index];
 	if (id.rfind("CRAFT:", 0) == 0) return;			  // クラフトカードはアップグレード不可
 	if (!id.empty() && id.back() == '+') return;      // 既に強化済み
-	if (!CardDataBase::Get(id + "+")) return;         // 強化版が無いカード
+	if (!CardDataBase::Get(id + "+")) return;
+	std::string before = id;
 	id += "+";
+	Telemetry::Instance().Log("card_upgrade", { {"before", before}, {"after", id} });
 	Save();
 }
 
@@ -299,6 +302,7 @@ void PlayerDataManager::AddRelic(const std::string& id)
 	if (std::find(m_data.relics.begin(), m_data.relics.end(), id) == m_data.relics.end())
 	{
 		m_data.relics.push_back(id);
+		Telemetry::Instance().Log("relic_get", { {"id", id} });
 
 		// 取得時に効く永続ステータス系（今後もここに追記）
 		if (auto d = RelicManager::Get(id))

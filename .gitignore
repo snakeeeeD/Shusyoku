@@ -368,3 +368,6 @@ cards_edit.xlsx
 tools/__pycache__/
 imgui.ini
 GameEngine/Assets/Data/playerdata.json
+
+# テレメトリ集計の生成物（logs/*.jsonl とスクリプトから作り直せる）
+tools/telemetry_report.xlsx

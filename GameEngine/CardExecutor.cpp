@@ -669,16 +669,6 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 return result;
         }
 
-        if (data.mainEffect.type == CardEffectType::PlaceTrap ||
-            data.mainEffect.type == CardEffectType::PlaceTrapArea)
-        {
-            for (int i = 0; i < RelicManager::SumValue("trapDraw"); i++)
-            {
-                std::string id = deck.DrawCard();
-                if (!id.empty()) { hand.AddCard(id); result.drawnCards.push_back(id); }
-            }
-        }
-
         if (data.mainEffect.type == CardEffectType::Detonate)
         {
             bool any = false;
@@ -758,10 +748,16 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             cell.tileEffect.duration = data.mainEffect.duration;
             const TerrainDef* tDef = TerrainDataBase::Get(data.mainEffect.trapType);
             if (tDef) cell.tileEffect.persistent = tDef->persistent;
+            for (int i = 0; i < RelicManager::SumValue("trapDraw"); i++)   // 設置成功時のみ
+            {
+                std::string did = deck.DrawCard();
+                if (!did.empty()) { hand.AddCard(did); result.drawnCards.push_back(did); }
+            }
             break;
         }
         case CardEffectType::PlaceTrapArea:
         {
+            int placed = 0;
             for (int r = 0; r < gridMap->GetRows(); r++)
                 for (int c = 0; c < gridMap->GetCols(); c++)
                 {
@@ -774,6 +770,13 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                     cell.tileEffect.duration = data.mainEffect.duration;
                     const TerrainDef* tDef = TerrainDataBase::Get(data.mainEffect.trapType);
                     if (tDef) cell.tileEffect.persistent = tDef->persistent;
+                    placed++;
+                }
+            if (placed > 0)   // 1マスでも新規設置できた時だけ1回ぶん
+                for (int i = 0; i < RelicManager::SumValue("trapDraw"); i++)
+                {
+                    std::string did = deck.DrawCard();
+                    if (!did.empty()) { hand.AddCard(did); result.drawnCards.push_back(did); }
                 }
             break;
         }

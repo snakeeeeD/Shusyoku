@@ -134,6 +134,8 @@ private:
     int m_playerCol;
     int m_playerRow;
 
+    int m_hpStart = 0;   // 戦闘開始時HP（被ダメ算出用）
+
     int m_turnCount = 0;
 
     TurnManager m_turnManager;

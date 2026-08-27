@@ -371,14 +371,21 @@ void SceneManager::DoChangeScene(SceneType type)
 			causeEnemy = battle->GetEnemyId();
 		}
 		auto& pd = PlayerDataManager::GetData();
+		std::string deckStr, relicStr;
+		for (auto& c : pd.deck) { if (!deckStr.empty())  deckStr += ","; deckStr += c; }
+		for (auto& r : pd.relics) { if (!relicStr.empty()) relicStr += ","; relicStr += r; }
 		Telemetry::Instance().Log("run_end", {
 			{"result", resultCleared ? "clear" : "gameover"},
 			{"layer",  pd.layer},
-			{"node",   pd.currentNodeIndex},
+			{"node",   pd.fieldSteps},
 			{"hpLeft", hpLeft},
 			{"maxHp",  pd.maxHp},
 			{"cause",  causeEnemy},
 			{"sec",    Telemetry::Instance().RunSeconds()},
+			{"deckSize", (int)pd.deck.size()},   // ← 平均デッキ枚数（健康診断）
+			{"gold",     pd.gold},               // ← 経済（将来用・安価）
+			{"deck",     deckStr},               // ← 最終デッキ全体（アーキタイプ分析）
+			{"relics",   relicStr},              // ← 最終レリック（レリック×勝率）
 			});
 		PlayerDataManager::DeleteSave();   // ランを終えたらセーブ削除
 	}
@@ -405,7 +412,7 @@ void SceneManager::DoChangeScene(SceneType type)
 		auto& pd = PlayerDataManager::GetData();
 		Telemetry::Instance().SetLocation(pd.layer, pd.fieldSteps);
 		Telemetry::Instance().SetScene(SceneName(type));
-		Telemetry::Instance().Log("scene_enter", {});
+		Telemetry::Instance().Log("scene_enter", { {"hp", pd.hp} });
 	}
 
 	// 新しいシーンを作成
@@ -996,7 +1003,11 @@ void SceneManager::HandleInput()
 								std::string before = baseId;
 								PlayerDataManager::UpgradeCard(m_deckPreviewIdx);
 								const std::string& after = PlayerDataManager::GetData().deck[m_deckPreviewIdx];
-								if (after != before) { m_craftFxCard = after; m_craftFxTimer = CRAFT_FX_DURATION; }
+								if (after != before) 
+								{
+									const std::string& after = PlayerDataManager::GetData().deck[m_deckPreviewIdx];
+									if (after != before) { m_craftFxCard = after; m_craftFxTimer = CRAFT_FX_DURATION; }
+								}
 								m_deckPreviewIdx = -1;
 								return;
 							}
@@ -1117,6 +1128,7 @@ void SceneManager::HandleInput()
 					if (m.x >= x && m.x <= x + w && m.y >= y && m.y <= y + h && ChoiceEnabled(e->choices[i]))
 					{
 						Audio::PlaySE("Assets/Sound/se/click.mp3");
+						Telemetry::Instance().Log("event_choice", { {"event", m_eventId}, {"choice", i} });
 						ApplyOutcomes(e->choices[i]);
 						std::string pick = EventPickerType(e->choices[i]);
 						if (!pick.empty()) { m_eventPickType = pick; m_eventPickChoice = i; }
@@ -1680,6 +1692,10 @@ void SceneManager::DoCraft()
 
 	// デッキに合成カードを追加
 	PlayerDataManager::GetData().deck.push_back(rid);
+	std::string mats;
+	for (auto& kv : need)
+		for (int k = 0; k < kv.second; k++) { if (!mats.empty()) mats += ","; mats += kv.first; }
+	Telemetry::Instance().Log("craft", { {"id", rid}, {"mats", mats} });
 	PlayerDataManager::Save();
 
 	m_craftBase.clear(); m_craftMods.clear();
@@ -1879,6 +1895,9 @@ void SceneManager::HandleRestClick(POINT m)
 		if (m.x >= x && m.x <= x + w && m.y >= y && m.y <= y + h)
 		{
 			Audio::PlaySE("Assets/Sound/se/click.mp3");
+			Telemetry::Instance().Log("rest_choice", {
+				{"choice", i == 0 ? "heal" : (i == 1 ? "upgrade" : "craft")}
+				});
 			if (i == 0)          // Heal
 			{
 				auto& pd = PlayerDataManager::GetData();

@@ -12,6 +12,8 @@ Hand::~Hand()
 
 void Hand::AddCard(const std::string& id)
 {
+	if (!CardDataBase::Get(id)) return;
+
 	if ((int)m_cards.size() - (m_reserved ? 1 : 0) >= MAX_CARDS)
 	{
 		if (m_deck) m_deck->DiscardCard(id);   // èDãŒÀ‚ğ’´‚¦‚½•ª‚ÍÌ‚ÄD‚Ö
