@@ -346,11 +346,19 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 
 void SceneManager::ChangeScene(SceneType type)
 {
-	if (m_fadeState == Fade::Out) return;   // 二重予約防止
+	if (m_fadeState == Fade::Out) return;
 	m_pendingScene = type;
-	m_fadeState = Fade::Out;                 // まず暗転
+	m_onBlack = nullptr;                      // 通常遷移はonBlackなし
+	m_fadeState = Fade::Out;
 }
 
+void SceneManager::ChangeScene(SceneType type, std::function<void()> onBlack)
+{
+	if (m_fadeState == Fade::Out) return;
+	m_pendingScene = type;
+	m_onBlack = std::move(onBlack);
+	m_fadeState = Fade::Out;
+}
 void SceneManager::DoChangeScene(SceneType type)
 {
 	// 削除前に必要な情報を取得
@@ -424,6 +432,7 @@ void SceneManager::DoChangeScene(SceneType type)
 			auto scene = new TitleScene();
 			scene->onChangeScene = [this](SceneType type) {ChangeScene(type); };
 			m_currentScene = scene;
+			scene->onChangeSceneBlack = [this](SceneType t, std::function<void()> fn) { ChangeScene(t, std::move(fn)); };
 			break;
 		}
 		case SceneType::Battle:
@@ -485,6 +494,7 @@ void SceneManager::DoChangeScene(SceneType type)
 			scene->SetCleared(resultCleared);
 			scene->onChangeScene = [this](SceneType t) { ChangeScene(t); };
 			m_currentScene = scene;
+			scene->onChangeSceneBlack = [this](SceneType t, std::function<void()> fn) { ChangeScene(t, std::move(fn)); };
 			break;
 		}
 		
@@ -575,7 +585,8 @@ void SceneManager::Draw()
 	if (m_currentScene) m_currentScene->Draw();
 	if (m_invOpen) DrawInventory();
 	if (m_mapOpen) DrawMap();
-	if (m_currentType != SceneType::Title) DrawOverlay();
+	bool fading = (m_fadeState != Fade::None);
+	if (m_currentType != SceneType::Title && !fading) DrawOverlay();
 	if (m_eventOpen && !m_mapOpen && !m_invOpen && !m_deckOpen)
 	{
 		if (m_eventPickType.empty()) DrawEvent();
@@ -585,7 +596,7 @@ void SceneManager::Draw()
 	if (m_craftOpen) DrawCraft();
 	if (m_restOpen && !m_mapOpen && !m_invOpen && !m_deckOpen && !m_craftOpen) DrawRest();
 	if (m_craftFxTimer > 0.0f) DrawCraftFx();  
-	if (m_currentType != SceneType::Title) { DrawRelicBar(); DrawBarTips(); }
+	if (m_currentType != SceneType::Title && !fading) { DrawRelicBar(); DrawBarTips(); }
 	if (m_settingsOpen) DrawSettings();
 
 	if (m_tutorialOpen) DrawTutorial();
@@ -1308,7 +1319,12 @@ void SceneManager::Update(float deltaTime)
 	if (m_fadeState == Fade::Out)
 	{
 		m_fadeAlpha += FADE_SPEED * deltaTime;
-		if (m_fadeAlpha >= 1.0f) { m_fadeAlpha = 1.0f; DoChangeScene(m_pendingScene); m_fadeState = Fade::In; }
+		if (m_fadeAlpha >= 1.0f) {
+			m_fadeAlpha = 1.0f;
+			if (m_onBlack) { m_onBlack(); m_onBlack = nullptr; }   // ← 真っ黒で書き換え
+			DoChangeScene(m_pendingScene);
+			m_fadeState = Fade::In;
+		}
 		return;   // 暗転中はシーンを止める
 	}
 

@@ -20,6 +20,8 @@
 #include "ShopScene.h"
 #include "ResultScene.h"
 
+#include <functional>
+
 struct URect { float x, y, w, h; bool has(POINT p) const { return p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h; } };
 struct SettingsUI { URect panel, disp, bgmTrack, seTrack, shake, gameEnd, close, gear; };
 
@@ -53,6 +55,9 @@ public:
     SceneType m_pendingScene = SceneType::Title;
     static constexpr float FADE_SPEED = 3.0f; // 1秒あたり（約0.33秒で完了）
     void DoChangeScene(SceneType type);       // 実際の切替
+
+    void ChangeScene(SceneType type, std::function<void()> onBlack);  // onBlackを真っ黒の瞬間に実行
+    std::function<void()> m_onBlack;                                  // 暗転完了時に一度だけ実行
 
     void Update(float deltaTime);
     void Draw();

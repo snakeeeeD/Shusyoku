@@ -25,6 +25,7 @@ public:
 
     // シーン切り替え用コールバック
     std::function<void(SceneType)> onChangeScene;
+    std::function<void(SceneType, std::function<void()>)> onChangeSceneBlack;
 
 private:
     SpriteRenderer* m_spriteRenderer;

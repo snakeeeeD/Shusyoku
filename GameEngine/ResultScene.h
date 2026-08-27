@@ -19,7 +19,7 @@ public:
     void Draw() override;
     void HandleInput() override;
 
-    std::function<void(SceneType)> onChangeScene;
+    std::function<void(SceneType)> onChangeScene;    std::function<void(SceneType, std::function<void()>)> onChangeSceneBlack;
     void SetCleared(bool c) { m_cleared = c; }
 
 private:

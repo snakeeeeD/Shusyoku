@@ -121,15 +121,15 @@ void TitleScene::HandleInput()
         if (nHov)   // ニューゲーム
         {
             Audio::PlaySE("Assets/Sound/se/click.mp3");
-            PlayerDataManager::StartNewGame();
-            if (onChangeScene) onChangeScene(SceneType::Field);
+            if (onChangeSceneBlack)
+                onChangeSceneBlack(SceneType::Field, []() { PlayerDataManager::StartNewGame(); });
             return;
         }
         if (cHov)   // コンティニュー
         {
             Audio::PlaySE("Assets/Sound/se/click.mp3");
-            PlayerDataManager::Load();
-            if (onChangeScene) onChangeScene(SceneType::Field);
+            if (onChangeSceneBlack)
+                onChangeSceneBlack(SceneType::Field, []() { PlayerDataManager::Load(); });
             return;
         }
     }

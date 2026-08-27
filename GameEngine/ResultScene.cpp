@@ -52,7 +52,7 @@ void ResultScene::HandleInput()
     if (m_timer < 0.6f) return;                  // 0.6秒間はクリックを無視（持ち越しクリック対策）
     if (m_input.GetMouseButtonTrigger(0))
     {
-        PlayerDataManager::StartNewGame();
-        if (onChangeScene) onChangeScene(SceneType::Title);
+        if (onChangeSceneBlack)
+            onChangeSceneBlack(SceneType::Title, []() { PlayerDataManager::StartNewGame(); });
     }
 }
