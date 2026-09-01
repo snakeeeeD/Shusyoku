@@ -495,11 +495,14 @@ def write_summary_sheet(wb, stats, cause_rank, pick_rows, files):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("dirs", nargs="*", help="ログのディレクトリ（省略時は自動探索）")
-    ap.add_argument("-o", "--out", default="telemetry_report.xlsx", help="出力xlsx")
+    ap.add_argument("-o", "--out", default=None, help="出力xlsx（省略時は tools/telemetry_report.xlsx 固定）")
     args = ap.parse_args()
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     load_name_maps(script_dir)
+
+    # 出力先は既定でスクリプトの隣（tools/）に固定。実行場所に左右されない
+    out_path = args.out or os.path.join(script_dir, "telemetry_report.xlsx")
 
     dirs = args.dirs or default_dirs()
     if not dirs:
@@ -584,8 +587,8 @@ def main():
               simple_rows(events, "scene_enter", ["hp"]),
               ["session", "run", "layer", "node", "t", "scene", "hp"])
 
-    wb.save(args.out)
-    print(f"OK: {args.out} を出力（イベント {len(events)}件 / ラン {len(run_rows)}件 / ログ {len(files)}本）")
+    wb.save(out_path)
+    print(f"OK: {os.path.abspath(out_path)} を出力（イベント {len(events)}件 / ラン {len(run_rows)}件 / ログ {len(files)}本）")
 
 
 if __name__ == "__main__":

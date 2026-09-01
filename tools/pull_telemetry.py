@@ -66,11 +66,18 @@ def http_get_json(url, key):
 
 
 def local_session_ids():
-    """logs/ 直下（このPC自身のプレイ）のsession id。remoteと二重に取り込まないため。"""
+    """このPC自身のプレイ（各ビルドのlogs）のsession id。remoteと二重に取り込まないため。
+    集計が探索する全ローカルlogsを見る（logs/remote は除外）。"""
+    dirs = ["logs", "x64/Debug/logs", "x64/Release/logs",
+            "GameEngine/logs", "GameEngine/x64/Debug/logs"]
     ids = set()
-    for p in glob.glob(os.path.join(ROOT, "logs", "session_*.jsonl")):
-        b = os.path.basename(p)
-        ids.add(b[len("session_"):-len(".jsonl")])
+    for d in dirs:
+        base = os.path.join(ROOT, d)
+        if os.path.normpath(base) == os.path.normpath(OUT_DIR):
+            continue                                  # logs/remote 自体は対象外
+        for p in glob.glob(os.path.join(base, "session_*.jsonl")):  # 非再帰＝remoteを含まない
+            b = os.path.basename(p)
+            ids.add(b[len("session_"):-len(".jsonl")])
     return ids
 
 
