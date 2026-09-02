@@ -249,6 +249,15 @@ private:
 
     void RunTurnCycle();   // 回転の輪：レリック値ぶん捨てて引く
 
+    // 時間差ドロー（山札が尽きたらリシャッフル演出を挟む）
+    int   m_drawSeqRemaining = 0;    // 残り何枚引くか
+    float m_drawSeqTimer = 0.0f; // 次の1枚までの間隔
+    float m_reshuffleFxTimer = 0.0f; // >0の間はリシャッフル演出中でドロー停止
+    static constexpr float DRAW_SEQ_INTERVAL = 0.10f; // 1枚ごとの間隔（秒）
+    static constexpr float RESHUFFLE_FX_DUR = 0.6f;  // リシャッフル演出の長さ（秒）
+    void StartDrawSequence(int count);
+    void OnDrawSequenceComplete();
+
     bool m_freeLook = false;
 
     bool m_forceHitmark = false;

@@ -16,6 +16,7 @@
 #include "GameUtils.h"
 #include "Audio.h"
 #include <algorithm>
+#include <cmath>
 
 using namespace DirectX;
 
@@ -244,6 +245,8 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
     DrawPlayCardEffectsFull(ctx);
     DrawDiscardEffectsFull(ctx);
+
+    DrawReshuffleEffect();
 
     m_spriteRenderer->End();
 
@@ -1601,6 +1604,37 @@ void BattleUI::StartDrawCardEffect(const std::string& cardId)
     effect.timer = 0.0f;
     effect.done = false;
     m_drawCardEffects.push_back(effect);
+}
+
+void BattleUI::StartReshuffleEffect()
+{
+    m_reshuffleFx.active = true;
+    m_reshuffleFx.timer = 0.0f;
+}
+
+void BattleUI::UpdateReshuffleEffect(float deltaTime)
+{
+    if (!m_reshuffleFx.active) return;
+    m_reshuffleFx.timer += deltaTime;
+    if (m_reshuffleFx.timer >= RESHUFFLE_FX_DUR) m_reshuffleFx.active = false;
+}
+
+void BattleUI::DrawReshuffleEffect()
+{
+    if (!m_reshuffleFx.active) return;
+    float t = m_reshuffleFx.timer / RESHUFFLE_FX_DUR;   // 0→1
+    float fade = 1.0f - fabsf(0.5f - t) * 2.0f;            // 中盤で最大
+    float baseX = 60.0f, baseY = m_screenHeight - 90.0f;   // 山札あたり（左下）
+    const int N = 5;
+    for (int i = 0; i < N; i++)
+    {
+        float ph = t * 6.2831853f + i * (6.2831853f / N);
+        float r = 26.0f * fade;
+        float x = baseX + cosf(ph) * r;
+        float y = baseY + sinf(ph) * r * 0.5f;
+        XMFLOAT4 c(0.30f, 0.35f, 0.55f, fade);             // カード裏っぽい色
+        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, x, y, 0.5f, ph, c, nullptr, 0.0f);
+    }
 }
 
 void BattleUI::UpdateDrawCardEffects(float deltaTime)

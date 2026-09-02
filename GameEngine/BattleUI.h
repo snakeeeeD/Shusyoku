@@ -138,6 +138,9 @@ public:
 
     void UpdateDrawCardEffects(float deltaTime);
     void StartDrawCardEffect(const std::string& cardId);
+    void StartReshuffleEffect();
+    void UpdateReshuffleEffect(float deltaTime);
+    void DrawReshuffleEffect();
     void StartDiscardEffects();
     void StartOverflowDiscardEffect();
     void UpdateDiscardEffects(float deltaTime);
@@ -200,6 +203,10 @@ private:
 
     std::vector<DrawCardEffect> m_drawCardEffects;
     std::vector<PlayCardEffect> m_playCardEffects;
+
+    struct ReshuffleFx { bool active = false; float timer = 0.0f; };
+    ReshuffleFx m_reshuffleFx;
+    static constexpr float RESHUFFLE_FX_DUR = 0.6f;   // BattleSceneë§Ç∆çáÇÌÇπÇÈ
 
     static constexpr float CARD_WIDTH = 100.0f;
     static constexpr float CARD_HEIGHT = 140.0f;

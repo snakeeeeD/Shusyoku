@@ -141,7 +141,7 @@ void Input::SetVibration(int frame, float powor)
 	// モーターの強度を設定（0～65535）
 	vibration.wLeftMotorSpeed = (WORD)(powor * 65535.0f);
 	vibration.wRightMotorSpeed = (WORD)(powor * 65535.0f);
-	XInputSetState(0, &vibration);
+	XInputSetState(m_padIndex, &vibration);
 
 	//振動継続時間を代入
 	VibrationTime = frame;

@@ -189,7 +189,7 @@ void ShopScene::Draw()
 
     // Leave
     float leaveW = 160.0f, leaveH = 44.0f;
-    float leaveX = (m_screenWidth - leaveW) / 2.0f, leaveY = m_screenHeight - 70.0f;
+    float leaveX = (m_screenWidth - leaveW) / 2.0f, leaveY = m_screenHeight - 90.0f;
     bool lvHov = UiHoverS(leaveX, leaveY, leaveW, leaveH, mp, "leave");
     float lvYY = lvHov ? leaveY - 6.0f : leaveY;
     UiWindow::Button(m_spriteRenderer, m_whiteTexture, leaveX, lvYY, leaveW, leaveH, XMFLOAT4(0.3f, 0.3f, 0.35f, 0.95f));

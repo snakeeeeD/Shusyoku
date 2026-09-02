@@ -284,26 +284,8 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             //    if (!moveId.empty()) m_hand.AddCard(moveId);
             //}
 
-            // 残りを引く
-            for (int i = 0; i < HAND_SIZE - 1; i++)
-            {
-                std::string id = m_deck.DrawCard();
-                if (!id.empty())
-                {
-                    m_hand.AddCard(id);
-                    m_battleUI->StartDrawCardEffect(id);
-                }
-            }
-
-            // 毎ターン ナイフを生成（刃の心得）
-            int kg = m_player->GetBuffManager().GetBuffValue(BuffType::KnifeGen);
-            for (int i = 0; i < kg; i++)
-            {
-                m_hand.AddCard("ATK_knife");
-                m_battleUI->StartDrawCardEffect("ATK_knife");
-            }
-
-            RunTurnCycle();
+            // 残りを時間差で引く（引く→山札が尽きたらリシャッフル演出→残りを引く）
+            StartDrawSequence(HAND_SIZE - 1);
     
         };
     m_turnManager.onEnemyTurnStart = [this]()
@@ -848,6 +830,35 @@ void BattleScene::Update(float deltaTime)
             m_decoyCol, m_decoyRow);
 
         m_battleUI->UpdateDrawCardEffects(deltaTime);
+        // 時間差ドローの進行
+        if (m_reshuffleFxTimer > 0.0f)
+        {
+            m_reshuffleFxTimer -= deltaTime;               // 演出中はドロー停止
+        }
+        else if (m_drawSeqRemaining > 0)
+        {
+            m_drawSeqTimer -= deltaTime;
+            if (m_drawSeqTimer <= 0.0f)
+            {
+                if (m_deck.GetDrawPileCount() == 0 && m_deck.GetDiscardPileCount() > 0)
+                {
+                    // 山札が尽きた → 捨て札を山札へ戻す演出を挟む
+                    m_deck.Reset();
+                    m_battleUI->StartReshuffleEffect();
+                    Audio::PlaySE("Assets/Sound/se/card.mp3");
+                    m_reshuffleFxTimer = RESHUFFLE_FX_DUR;
+                }
+                else
+                {
+                    std::string id = m_deck.DrawCard();
+                    if (!id.empty()) { m_hand.AddCard(id); m_battleUI->StartDrawCardEffect(id); }
+                    m_drawSeqRemaining--;
+                    m_drawSeqTimer = DRAW_SEQ_INTERVAL;
+                    if (m_drawSeqRemaining == 0) OnDrawSequenceComplete();
+                }
+            }
+        }
+        m_battleUI->UpdateReshuffleEffect(deltaTime);
         m_battleUI->UpdatePlayCardEffects(deltaTime);
         if (!m_burnHits.empty())
         {
@@ -1974,6 +1985,8 @@ void BattleScene::HandleInput()
     }
 
     if (!m_turnManager.IsPlayerTurn()) return; // プレイヤーターン以外は無視
+    // 時間差ドロー中／リシャッフル演出中は操作不可
+    if (m_drawSeqRemaining > 0 || m_reshuffleFxTimer > 0.0f) return;
 
     // 捨てるカードの選択中は他の操作を受け付けない
     if (m_discardSelectCount > 0)
@@ -3132,6 +3145,25 @@ void BattleScene::RunTurnCycle()
 
     // n 枚を「選んで捨てる」既存UIを起動（8→7枚、選んだカードのonDiscardが発動）
     m_discardSelectCount = min(n, (int)m_hand.GetCards().size());
+}
+
+void BattleScene::StartDrawSequence(int count)
+{
+    m_drawSeqRemaining = count;
+    m_drawSeqTimer = 0.0f;   // 最初の1枚はすぐ
+    m_reshuffleFxTimer = 0.0f;
+}
+
+void BattleScene::OnDrawSequenceComplete()
+{
+    // 刃の心得：ナイフ生成（ドロー完了後に手札へ）
+    int kg = m_player->GetBuffManager().GetBuffValue(BuffType::KnifeGen);
+    for (int i = 0; i < kg; i++)
+    {
+        m_hand.AddCard("ATK_knife");
+        m_battleUI->StartDrawCardEffect("ATK_knife");
+    }
+    RunTurnCycle();
 }
 
 void BattleScene::DashGlideTo(int c, int r)
