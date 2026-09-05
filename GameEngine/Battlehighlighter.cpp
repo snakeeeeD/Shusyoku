@@ -443,14 +443,27 @@ void BattleHighlighter::UpdateEnemyHighlight(
         int ei = info.second;
         float phase = m_enemyCycleTimer - dist * 0.8f;    // このマスの波の位相
         auto& threats = cellThreats[pos];
-        if ((int)threats.size() > 1 && !selCells.count(pos))   // 重なりマスは波1周ごとに色替え
+        XMFLOAT4 hue = HighlightPalette::EnemyHue(ei);    // 単独マスはそのまま
+        if ((int)threats.size() > 1 && !selCells.count(pos))   // 重なりマスは色をグラデ遷移
         {
             int n = (int)threats.size();
-            int cyc = (int)std::floor(phase / 6.2831853f);     // 2π = 波1周
-            ei = threats[((cyc % n) + n) % n];
+            const float PERIOD = 6.2831853f;               // 2π = 波1周
+            float cyc = phase / PERIOD;
+            float frac = cyc - floorf(cyc);                // この周期の進み 0..1
+            int ia = ((int)floorf(cyc) % n + n) % n;       // 今の色
+            int ib = (ia + 1) % n;                         // 次の色
+            // 波が暗くなる辺り(0.55〜0.95)でだけ滑らかに乗り換え
+            float t = (frac - 0.55f) / 0.40f;
+            t = t < 0.0f ? 0.0f : (t > 1.0f ? 1.0f : t);
+            t = t * t * (3.0f - 2.0f * t);                 // smoothstep（イーズ）
+            const XMFLOAT4& ca = HighlightPalette::EnemyHue(threats[ia]);
+            const XMFLOAT4& cb = HighlightPalette::EnemyHue(threats[ib]);
+            hue = XMFLOAT4(ca.x + (cb.x - ca.x) * t,
+                ca.y + (cb.y - ca.y) * t,
+                ca.z + (cb.z - ca.z) * t,
+                ca.w + (cb.w - ca.w) * t);
         }
         float w = 0.5f + 0.5f * sin(phase);
-        const XMFLOAT4& hue = HighlightPalette::EnemyHue(ei);
         float br = selCells.count(pos) ? (0.7f + 0.3f * w) : (0.5f + 0.3f * w);
         m_enemyThreatMarks.push_back({ pos.first, pos.second, HighlightPalette::Scale(hue, br) });
         m_enemyHighlightCells.push_back(pos);

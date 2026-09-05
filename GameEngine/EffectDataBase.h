@@ -16,10 +16,23 @@ struct BurstDef
     std::string texture;
 };
 
+struct SheetAnim
+{
+    std::string texture;              // シートのテクスチャID
+    int cols = 1, rows = 1;           // 縦横のコマ数
+    int frames = 0;                   // 総コマ数（0ならcols*rows）
+    float fps = 20.0f;                // 再生速度
+    float scale = 1.0f;               // 表示サイズ
+    float yOffset = 0.0f;             // 発生位置のy補正
+    XMFLOAT4 color = { 1, 1, 1, 1 };
+    bool loop = false;                // falseで1周して消滅
+};
+
 struct EffectDef
 {
     std::string id;
     std::vector<BurstDef> bursts;
+    std::vector<SheetAnim> sheets;
 };
 
 class EffectDataBase

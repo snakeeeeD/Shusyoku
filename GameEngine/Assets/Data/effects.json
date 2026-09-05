@@ -393,6 +393,22 @@
           "texture": "particle"
         }
       ]
+    },
+    {
+      "id": "fx_test",
+      "bursts": [],
+      "sheets": [
+        {
+          "texture": "fx_test",
+          "cols": 5,
+          "rows": 2,
+          "frames": 10,
+          "fps": 5,
+          "scale": 1.5,
+          "yOffset": 0.5,
+          "loop": true
+        }
+      ]
     }
   ]
 }

@@ -134,6 +134,8 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("star", L"Assets/Particles/star.png");
 		TextureManager::Load("skull", L"Assets/Particles/skull.png");
 		TextureManager::Load("crosshair", L"Assets/Particles/crosshair.png");
+
+		TextureManager::Load("fx_test", L"Assets/Particles/fx_test.png");
 	}
 
 	// フィールド

@@ -4,6 +4,7 @@ cbuffer ConstantBuffer : register(b0)
     matrix View;
     matrix Projection;
     float4 Color;
+    float4 UvRect; // xy=原点, zw=サイズ（全面は 0,0,1,1）
 };
 
 struct VS_INPUT
@@ -27,7 +28,7 @@ PS_INPUT main(VS_INPUT input)
     pos = mul(pos, View);
     pos = mul(pos, Projection);
     output.Pos = pos;
-    output.Tex = input.Tex;
+    output.Tex = input.Tex * UvRect.zw + UvRect.xy;
     output.Color = Color;
     return output;
 }

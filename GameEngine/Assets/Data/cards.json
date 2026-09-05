@@ -1,22 +1,23 @@
 ﻿{
  "cards": [
   {
-   "id": "ATK_strike",
-   "name": "ストライク",
-   "type": "Attack",
-   "rarity": "Common",
-   "cost": 1,
-   "range": 1,
-   "rangeType": "Adjacent",
-   "description": "敵単体に{value}ダメージ",
-   "upgrade": {
-    "mainValue": 3
-   },
-   "mainEffect": {
-    "type": "Damage",
-    "value": 6
-   },
-   "starter": true
+    "id": "ATK_strike",
+    "name": "ストライク",
+    "type": "Attack",
+    "rarity": "Common",
+    "cost": 1,
+    "range": 1,
+    "rangeType": "Adjacent",
+    "description": "敵単体に{value}ダメージ",
+    "upgrade": {
+      "mainValue": 3
+    },
+    "mainEffect": {
+      "type": "Damage",
+      "value": 6
+    },
+    "starter": true,
+    "vfx": "fx_test"
   },
   {
    "id": "ATK_pommel_strike",

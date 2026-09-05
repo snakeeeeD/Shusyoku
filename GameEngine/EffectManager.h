@@ -18,6 +18,19 @@ struct Particle
     ID3D11ShaderResourceView* tex = nullptr;
 };
 
+struct SpriteInstance
+{
+    XMFLOAT3 pos;
+    ID3D11ShaderResourceView* tex = nullptr;
+    int cols, rows, frames;
+    float fps, size, elapsed = 0.0f;
+    XMFLOAT4 color;
+    bool loop = false;
+    int handle = 0;
+    bool fading = false;
+    float fade = 0.0f, fadeDur = 0.3f; 
+};
+
 // パーティクルの発生・更新・描画を1箇所に集約
 class EffectManager
 {
@@ -43,6 +56,19 @@ public:
             }
             else ++i;
         }
+        for (auto& s : m_sprites)
+        {
+            s.elapsed += dt;
+            if (s.fading) s.fade -= dt;
+        }
+        for (size_t i = 0; i < m_sprites.size(); )
+        {
+            auto& s = m_sprites[i];
+            bool oneShotDone = !s.loop && !s.fading && (int)(s.elapsed * s.fps) >= s.frames;
+            bool fadeDone = s.fading && s.fade <= 0.0f;
+            if (oneShotDone || fadeDone) { m_sprites[i] = m_sprites.back(); m_sprites.pop_back(); }
+            else ++i;
+        }
     }
 
     static void Draw(Renderer3D* r, ID3D11ShaderResourceView* tex)
@@ -60,9 +86,25 @@ public:
             float sc = p.scale * SCALE;                          // ← 倍率をかける
             r->DrawBillboard(pt, p.pos.x, p.pos.y, p.pos.z, sc, sc, 0.0f, c);
         }
+
+        for (auto& s : m_sprites)
+        {
+            int f = (int)(s.elapsed * s.fps);
+            if (s.loop && s.frames > 0) f %= s.frames;
+            if (f >= s.frames) f = s.frames - 1;
+            int col = (s.cols > 0) ? f % s.cols : 0;
+            int row = (s.cols > 0) ? f / s.cols : 0;
+            XMFLOAT4 uv((float)(col + 1) / s.cols, (float)row / s.rows,
+                -1.0f / s.cols, 1.0f / s.rows);
+            float a = s.fading ? (s.fade / s.fadeDur) : 1.0f;   // フェード率
+            if (a < 0.0f) a = 0.0f;
+            XMFLOAT4 c = s.color; c.w *= a;                     // アルファに反映
+            r->DrawBillboard(s.tex, s.pos.x, s.pos.y, s.pos.z,
+                s.size, s.size, 0.0f, c, uv);
+        }
     }
 
-    static void Clear() { m_particles.clear(); }
+    static void Clear() { m_particles.clear(); m_sprites.clear(); }
 
     // 球状にばらまく（講義のCreateRingの分布を流用）
     static void SpawnBurst(float x, float y, float z, int count,
@@ -97,19 +139,51 @@ public:
     }
 
     // 名前でエフェクトを再生（effects.jsonのプリセット）
-    static void Play(const std::string& id, float x, float y, float z)
+    static int Play(const std::string& id, float x, float y, float z)
     {
+        int handle = s_nextHandle++;
         const EffectDef* def = EffectDataBase::Get(id);
-        if (!def) return;
+        if (!def) return handle;
         for (auto& b : def->bursts)
         {
             ID3D11ShaderResourceView* t = b.texture.empty() ? nullptr : TextureManager::Get(b.texture);
             SpawnBurst(x, y, z, b.count, b.speed,
                 b.colorStart, b.colorEnd, b.life, b.scale, b.gravity, b.drag, t);
         }
+        for (auto& s : def->sheets)
+        {
+            SpriteInstance si;
+            si.pos = XMFLOAT3(x, y + s.yOffset, z);
+            si.tex = s.texture.empty() ? nullptr : TextureManager::Get(s.texture);
+            si.cols = s.cols; si.rows = s.rows;
+            si.frames = (s.frames > 0) ? s.frames : s.cols * s.rows;
+            si.fps = s.fps; si.size = s.scale;
+            si.color = s.color; si.loop = s.loop;
+            si.elapsed = 0.0f;
+            si.handle = handle;   // ← このPlayで出した全シートに同じIDを付与
+            m_sprites.push_back(si);
+        }
+        return handle;
+    }
+
+    // 指定ハンドルをフェードアウトさせて消す（fadeSec<=0で即消し）
+    static void Stop(int handle, float fadeSec = 0.3f)
+    {
+        if (handle == 0) return;
+        for (auto& s : m_sprites)
+        {
+            if (s.handle == handle && !s.fading)
+            {
+                s.fading = true;
+                s.fade = (fadeSec > 0.0f) ? fadeSec : 0.0f;
+                s.fadeDur = (fadeSec > 0.0f) ? fadeSec : 1.0f;
+            }
+        }
     }
 
 private:
     static inline std::vector<Particle> m_particles;
+    static inline std::vector<SpriteInstance> m_sprites;
+    static inline int s_nextHandle = 1;
     static float Rand01() { return (float)rand() / RAND_MAX; }
 };

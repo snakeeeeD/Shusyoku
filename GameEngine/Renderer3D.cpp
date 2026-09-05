@@ -332,7 +332,8 @@ void Renderer3D::DrawBillboard(ID3D11ShaderResourceView* texture,
     float x, float y, float z,
     float width, float height,
     float rotation,
-    const XMFLOAT4& color)
+    const XMFLOAT4& color,
+    const XMFLOAT4& uvRect)
 {
     XMMATRIX scale = XMMatrixScaling(width, height, 1.0f);
     XMMATRIX rotY = XMMatrixRotationY(rotation);
@@ -345,6 +346,7 @@ void Renderer3D::DrawBillboard(ID3D11ShaderResourceView* texture,
     cb.View = XMMatrixTranspose(m_viewMatrix);
     cb.Projection = XMMatrixTranspose(m_projectionMatrix);
     cb.Color = color;
+    cb.UvRect = uvRect;
 
     m_context->UpdateSubresource(m_constantBuffer.Get(), 0, nullptr, &cb, 0, 0);
     m_context->VSSetConstantBuffers(0, 1, m_constantBuffer.GetAddressOf());

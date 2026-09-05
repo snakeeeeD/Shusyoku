@@ -19,6 +19,7 @@ struct ConstantBuffer3D
 	XMMATRIX View;
 	XMMATRIX Projection;
 	XMFLOAT4 Color;
+    XMFLOAT4 UvRect = { 0, 0, 1, 1 };
 };
 
 class Renderer3D
@@ -53,7 +54,8 @@ public:
         float x, float y, float z,
         float width, float height,
         float rotation,
-        const XMFLOAT4& color = XMFLOAT4(1, 1, 1, 1));
+        const XMFLOAT4& color = XMFLOAT4(1, 1, 1, 1),
+        const XMFLOAT4& uvRect = XMFLOAT4(0, 0, 1, 1));
 
     void DrawShadow(ID3D11ShaderResourceView* texture,
         float baseX, float baseZ, float width, float lenX, float lenZ,

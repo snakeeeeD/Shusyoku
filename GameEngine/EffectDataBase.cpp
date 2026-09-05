@@ -34,6 +34,27 @@ void EffectDataBase::Load(const std::string& path)
             bd.texture = b.value("texture", "");
             def.bursts.push_back(bd);
         }
+        if (e.contains("sheets"))
+        {
+            for (auto& s : e["sheets"])
+            {
+                SheetAnim sa;
+                sa.texture = s.value("texture", "");
+                sa.cols = s.value("cols", 1);
+                sa.rows = s.value("rows", 1);
+                sa.frames = s.value("frames", 0);
+                sa.fps = s.value("fps", 20.0f);
+                sa.scale = s.value("scale", 1.0f);
+                sa.yOffset = s.value("yOffset", 0.0f);
+                sa.loop = s.value("loop", false);
+                if (s.contains("color"))
+                {
+                    auto c = s["color"];
+                    sa.color = XMFLOAT4(c[0], c[1], c[2], c[3]);
+                }
+                def.sheets.push_back(sa);
+            }
+        }
         s_effects[def.id] = def;
     }
 }

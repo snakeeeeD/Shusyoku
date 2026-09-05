@@ -1144,6 +1144,7 @@ void BattleScene::Update(float deltaTime)
                             float wx = (enemy->gridCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
                             float wz = (enemy->gridRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
                             EffectManager::Play("hit", wx, 0.6f, wz);
+                            EffectManager::Play("fx_test", wx, 0.6f, wz);
                             ScreenShake::Add(0.2f);
                         }
                     }
@@ -1968,6 +1969,16 @@ void BattleScene::Draw()
 
 void BattleScene::HandleInput()
 {
+#ifdef _DEBUG
+    static int s_dbgFx = 0;
+    if (m_input.GetKeyTrigger('1'))                       // 1キー：ループ再生を開始
+        s_dbgFx = EffectManager::Play("fx_test", m_player->worldX, 1.0f, m_player->worldZ);
+    if (m_input.GetKeyTrigger('2'))                       // 2キー：止める
+    {
+        EffectManager::Stop(s_dbgFx);
+        s_dbgFx = 0;
+    }
+#endif
     // 勝敗後はターンに関係なくクリックで進める
     if (m_battleResult == BattleResult::Win)
     {
