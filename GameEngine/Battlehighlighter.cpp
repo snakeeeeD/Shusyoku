@@ -169,7 +169,7 @@ void BattleHighlighter::UpdatePlayerHighlight(
                 cell.gameObject.color = HighlightPalette::MovePath;
             else if (isDangerCell)
             {
-                float blink = 0.6f + 0.4f * sin(timer * 2.0f);
+                float blink = 0.6f + 0.4f * sin(timer * 3.0f);
                 cell.gameObject.color = HighlightPalette::Scale(HighlightPalette::Danger, blink);
             }
             else
@@ -349,7 +349,7 @@ void BattleHighlighter::UpdatePlayerHighlight(
                 : HighlightPalette::AttackLine;
             else if (data->type == CardType::Move && isDangerCell)
             {
-                float blink = 0.6f + 0.4f * sin(timer * 2.0f);
+                float blink = 0.6f + 0.4f * sin(timer * 3.0f);
                 cell.gameObject.color = HighlightPalette::Scale(HighlightPalette::Danger, blink);
             }
             else
@@ -368,6 +368,7 @@ void BattleHighlighter::UpdateEnemyHighlight(
 
     std::map<std::pair<int, int>, std::pair<int, int>> cellOwner;  // マス -> (距離, 敵index)
     std::set<std::pair<int, int>> selCells;
+    std::map<std::pair<int, int>, std::vector<int>> cellThreats;   // マス -> 脅威を出す敵index全部
 
     for (int ei = 0; ei < (int)enemies.size(); ei++)
     {
@@ -399,6 +400,8 @@ void BattleHighlighter::UpdateEnemyHighlight(
         auto mark = [&](int c, int r, int dist)
             {
                 auto key = std::make_pair(c, r);
+                auto& tl = cellThreats[key];
+                if (std::find(tl.begin(), tl.end(), ei) == tl.end()) tl.push_back(ei);
                 auto it = cellOwner.find(key);
 
                 if (ei == m_selectedEnemy)
@@ -433,15 +436,23 @@ void BattleHighlighter::UpdateEnemyHighlight(
         }
     }
 
-    m_enemyCycleTimer += 0.005f;
+    m_enemyCycleTimer += 0.025f;
     for (auto& [pos, info] : cellOwner)
     {
         int dist = info.first;
         int ei = info.second;
-        float w = 0.5f + 0.5f * sin(m_enemyCycleTimer - dist * 0.8f);
+        float phase = m_enemyCycleTimer - dist * 0.8f;    // このマスの波の位相
+        auto& threats = cellThreats[pos];
+        if ((int)threats.size() > 1 && !selCells.count(pos))   // 重なりマスは波1周ごとに色替え
+        {
+            int n = (int)threats.size();
+            int cyc = (int)std::floor(phase / 6.2831853f);     // 2π = 波1周
+            ei = threats[((cyc % n) + n) % n];
+        }
+        float w = 0.5f + 0.5f * sin(phase);
         const XMFLOAT4& hue = HighlightPalette::EnemyHue(ei);
-        float br = selCells.count(pos) ? (0.7f + 0.3f * w) : (0.5f + 0.3f * w);   // マーカーは見やすく明るめ
+        float br = selCells.count(pos) ? (0.7f + 0.3f * w) : (0.5f + 0.3f * w);
         m_enemyThreatMarks.push_back({ pos.first, pos.second, HighlightPalette::Scale(hue, br) });
-        m_enemyHighlightCells.push_back(pos);   // クリア対象に残す（色は塗らない）
+        m_enemyHighlightCells.push_back(pos);
     }
 }

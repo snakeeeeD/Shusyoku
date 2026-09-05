@@ -170,7 +170,7 @@ POINT Input::GetMousePos() const
 
 bool Input::GetMouseButtonPress(int button)
 {
-	return CursorInside() && (GetAsyncKeyState(button) & 0x8000) != 0;
+	return CursorInside() && mouseState[button];
 }
 
 bool Input::GetMouseButtonTrigger(int button)

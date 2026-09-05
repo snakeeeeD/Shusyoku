@@ -4,6 +4,7 @@
 #include "SpriteRenderer.h"
 #include "TextRenderer.h"
 #include "RelicManager.h"
+#include "RangeShape.h"
 #include "TerrainDataBase.h"
 #include "TextureManager.h"
 #include "RelicManager.h"
@@ -223,6 +224,41 @@ public:
             auto orb = TextureManager::Get("ui_cost");
             sr->DrawSprite(orb ? orb : white, rx - os / 2.0f, ry - os / 2.0f, os, os, rot,
                 orb ? XMFLOAT4(1, 1, 1, color.w) : XMFLOAT4(0.15f, 0.13f, 0.25f, color.w));
+        }
+        // 攻撃範囲のミニ盤面図
+        if (data)
+        {
+            bool selfOnly = (data->rangeType == RangeType::None);   // 自分だけの効果
+            float px = x + w / 2.0f, py = y + h / 2.0f;                       // カード中心
+            int R = selfOnly ? 1 : (data->range < 1 ? 1 : (data->range > 4 ? 4 : data->range)); // 表示半径（射程に合わせる/最大4）
+            int n = 2 * R + 1;
+            float foot = 34.0f * scale;                                       // グリッド全体の幅（固定）
+            float step = foot / n;
+            float cell = step * 0.85f;                                        // セル（隙間を残す）
+            float ux0 = x + (w - foot) / 2.0f;                                // 未回転グリッド左上
+            float uy0 = y + 39.0f * scale;   
+            float cs = cosf(rot), sn = sinf(rot);
+            auto put = [&](float ucx, float ucy, float sz, const XMFLOAT4& col) {
+                float rcx = px + (ucx - px) * cs - (ucy - py) * sn;          // カード中心まわりに回転
+                float rcy = py + (ucx - px) * sn + (ucy - py) * cs;
+                sr->DrawSprite(white, rcx - sz / 2.0f, rcy - sz / 2.0f, sz, sz, rot, col);
+                };
+            put(ux0 + foot / 2.0f, uy0 + foot / 2.0f, foot + 4.0f * scale,
+                XMFLOAT4(0.0f, 0.0f, 0.0f, 0.35f * color.w));                 // 背景パネル
+            for (int dr = -R; dr <= R; dr++)
+                for (int dc = -R; dc <= R; dc++)
+                {
+                    float ucx = ux0 + (dc + R + 0.5f) * step;
+                    float ucy = uy0 + (dr + R + 0.5f) * step;
+                    XMFLOAT4 cc;
+                    if (dc == 0 && dr == 0)
+                        cc = XMFLOAT4(0.9f, 0.95f, 1.0f, color.w);           // プレイヤー
+                    else if (!selfOnly && RangeShape::Contains(0, 0, dc, dr, data->rangeType, R, 0, 0, -1))
+                        cc = XMFLOAT4(1.0f, 0.85f, 0.3f, color.w);          // 当たるマス
+                    else
+                        cc = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.12f * color.w);   // 空マス
+                    put(ucx, ucy, cell, cc);
+                }
         }
     }
 

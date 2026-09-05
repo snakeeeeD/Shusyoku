@@ -713,7 +713,7 @@ void BattleScene::Update(float deltaTime)
     }
 
     // カメラパン（右クリックドラッグ）
-    if (m_input.GetMouseButtonPress(2))
+    if (m_input.GetMouseButtonPress(1))
     {
         POINT mousePos = m_input.GetMousePos();
         if (!m_isDraggingCamera)
@@ -1345,6 +1345,28 @@ void BattleScene::Draw()
             CardData dThrow = *m_hand.GetCards()[m_selectedCardIndex]->GetData();
             ApplyKnifeThrow(dThrow, m_player);
             const CardData* d = &dThrow;
+            // 敵1体・アタックは、ホバーしていなくても敵マスを狙い先にする（ホバー時と同じ浮き演出）
+            std::pair<int, int> hov = m_hoveredCell;
+            if (d->type == CardType::Attack)
+            {
+                Enemy* sole = nullptr; int alive = 0;
+                for (auto e : m_enemies) if (e && e->GetHp() > 0) { alive++; sole = e; }
+                if (alive == 1 && sole)
+                {
+                    int rng = d->range;
+                    if (m_player->GetBuffManager().HasBuff(BuffType::Reposition))
+                        rng += m_player->GetBuffManager().GetBuffValue(BuffType::Reposition);
+                    int adx = 0, ady = 0;
+                    if (d->rangeType == RangeType::Cone && m_hoveredCell.first >= 0)
+                        RangeShape::CardinalAim(m_playerCol, m_playerRow,
+                            m_hoveredCell.first, m_hoveredCell.second, adx, ady);
+                    bool hoverInRange = (m_hoveredCell.first >= 0) &&
+                        RangeShape::Contains(m_playerCol, m_playerRow,
+                            m_hoveredCell.first, m_hoveredCell.second, d->rangeType, rng, 0, adx, ady);
+                    if (!hoverInRange)
+                        hov = { sole->gridCol, sole->gridRow };   // 射程内マス以外は敵を自動
+                }
+            }
             if (d->type == CardType::Move)
             {
                 for (auto& p : m_movePath) raised.insert(p);
@@ -1356,9 +1378,9 @@ void BattleScene::Draw()
                     range += m_player->GetBuffManager().GetBuffValue(BuffType::Reposition);
 
                 int aimDx = 0, aimDy = 0;
-                if (m_hoveredCell.first >= 0)
+                if (hov.first >= 0)
                     RangeShape::CardinalAim(m_playerCol, m_playerRow,
-                        m_hoveredCell.first, m_hoveredCell.second, aimDx, aimDy);
+                        hov.first, hov.second, aimDx, aimDy);
                 if (aimDx == 0 && aimDy == 0) aimDy = -1;   // 初期は上向き
 
                 for (auto& c : BattleHighlighter::GetCandidates(
@@ -1438,16 +1460,15 @@ void BattleScene::Draw()
                 m_gridMap->GetCell(m_playerCol, m_playerRow).gameObject.color
                     = HighlightPalette::ForCard(d->type);   // 危険色よりスキル色を優先
             }
-            else if (m_hoveredCell.first >= 0)
+            else if (hov.first >= 0)
             {
-                // 効果範囲内のマスだけ浮かせる
                 int range = d->range;
                 if (m_player->GetBuffManager().HasBuff(BuffType::Reposition))
                     range += m_player->GetBuffManager().GetBuffValue(BuffType::Reposition);
 
                 if (RangeShape::Contains(m_playerCol, m_playerRow,
-                    m_hoveredCell.first, m_hoveredCell.second, d->rangeType, range))
-                    raised.insert({ m_hoveredCell.first, m_hoveredCell.second });
+                    hov.first, hov.second, d->rangeType, range))
+                    raised.insert({ hov.first, hov.second });
             }
         }
 
@@ -2127,6 +2148,8 @@ void BattleScene::HandleInput()
 
         if (result.cell)
             m_hoveredCell = { result.col, result.row };
+        else
+            m_hoveredCell = { -1, -1 };   // マス外に出たら自動ホバー（敵）に戻す
     }
     else
     {
@@ -2355,8 +2378,13 @@ void BattleScene::HandleInput()
             int targetRow = m_playerRow;
             bool canTry = !moveCanceled;
 
+            // 敵が1体だけなら、アタックはどこで離しても自動でその敵を狙う（スキル/パワー同様）
+            Enemy* soleEnemy = nullptr; int aliveCount = 0;
+            for (auto e : m_enemies) if (e && e->GetHp() > 0) { aliveCount++; soleEnemy = e; }
+            bool autoAttack = (ct == CardType::Attack && aliveCount == 1 && soleEnemy);
+
             CardEffectType met = cards[m_selectedCardIndex]->GetData()->mainEffect.type;
-            bool needCell = (met == CardEffectType::PlaceTrap || met == CardEffectType::DetonateAt 
+            bool needCell = (met == CardEffectType::PlaceTrap || met == CardEffectType::DetonateAt
                 || met == CardEffectType::DetonateChain || met == CardEffectType::PlaceDecoy);
             if ((ct == CardType::Attack || ct == CardType::Move || needCell)
                 && !usePath && !moveCanceled)
@@ -2368,12 +2396,29 @@ void BattleScene::HandleInput()
                     m_screenWidth,
                     m_screenHeight
                 );
+                bool cellInRange = false;
                 if (result.cell)
+                {
+                    int rng = dataCopy.range;
+                    if (m_player->GetBuffManager().HasBuff(BuffType::Reposition))
+                        rng += m_player->GetBuffManager().GetBuffValue(BuffType::Reposition);
+                    int adx = 0, ady = 0;
+                    if (dataCopy.rangeType == RangeType::Cone)
+                        RangeShape::CardinalAim(m_playerCol, m_playerRow, result.col, result.row, adx, ady);
+                    cellInRange = RangeShape::Contains(m_playerCol, m_playerRow,
+                        result.col, result.row, dataCopy.rangeType, rng, 0, adx, ady);
+                }
+                if (result.cell && (cellInRange || !autoAttack))   // マス上（複数敵）or 射程内マス
                 {
                     targetCol = result.col;
                     targetRow = result.row;
                 }
-                else
+                else if (autoAttack)                               // 射程外/マス外 → 敵を自動
+                {
+                    targetCol = soleEnemy->gridCol;
+                    targetRow = soleEnemy->gridRow;
+                }
+                else                                               // 通常（複数敵）: マス外は不発
                 {
                     canTry = false;
                 }

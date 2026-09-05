@@ -891,6 +891,17 @@ void SceneManager::HandleInput()
 	m_uiInput.Update();
 	if (m_fadeState != Fade::None) return;   // フェード中は入力無効
 
+	{
+		static int _c = 0;
+		if (++_c % 60 == 0) {
+			char b[300];
+			sprintf_s(b, "[IN] type=%d fade=%d tutO=%d tutD=%.2f cfx=%.2f rest=%d craft=%d ev=%d map=%d inv=%d deck=%d set=%d\n",
+				(int)m_currentType, (int)m_fadeState, (int)m_tutorialOpen, m_tutorialDelay, m_craftFxTimer,
+				(int)m_restOpen, (int)m_craftOpen, (int)m_eventOpen, (int)m_mapOpen, (int)m_invOpen, (int)m_deckOpen, (int)m_settingsOpen);
+			OutputDebugStringA(b);
+		}
+	}
+
 	if (m_tutorialOpen)
 	{
 		if (m_uiInput.GetMouseButtonTrigger(0))
@@ -1155,6 +1166,7 @@ void SceneManager::HandleInput()
 
 	// m_uiInputが消費したホイールをシーンへ戻す（ズーム等が効くように）
 	Input::SetWheelDelta(m_uiInput.GetMouseWheelDelta());
+	OutputDebugStringA("[IN] -> scene HandleInput\n");
 	if (m_currentScene) m_currentScene->HandleInput();
 }
 
