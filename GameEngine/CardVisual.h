@@ -228,13 +228,16 @@ public:
         // 攻撃範囲のミニ盤面図
         if (data)
         {
-            bool selfOnly = (data->rangeType == RangeType::None);   // 自分だけの効果
+            bool selfOnly = (data->rangeType == RangeType::None);   // 効果が自分だけ
+            bool hitAll = (data->rangeType == RangeType::Area       // 範囲全部に当たる（回転切り等）
+                || data->rangeType == RangeType::Cone
+                || data->pierce);
             float px = x + w / 2.0f, py = y + h / 2.0f;                       // カード中心
             int R = selfOnly ? 1 : (data->range < 1 ? 1 : (data->range > 4 ? 4 : data->range)); // 表示半径（射程に合わせる/最大4）
             int n = 2 * R + 1;
             float foot = 34.0f * scale;                                       // グリッド全体の幅（固定）
             float step = foot / n;
-            float cell = step * 0.85f;                                        // セル（隙間を残す）
+            float cell = step * 0.78f;                                        // セル（隙間を残す）
             float ux0 = x + (w - foot) / 2.0f;                                // 未回転グリッド左上
             float uy0 = y + 39.0f * scale;   
             float cs = cosf(rot), sn = sinf(rot);
@@ -242,6 +245,14 @@ public:
                 float rcx = px + (ucx - px) * cs - (ucy - py) * sn;          // カード中心まわりに回転
                 float rcy = py + (ucx - px) * sn + (ucy - py) * cs;
                 sr->DrawSprite(white, rcx - sz / 2.0f, rcy - sz / 2.0f, sz, sz, rot, col);
+                };
+            auto putR = [&](float ucx, float ucy, float sw, float sh, const XMFLOAT4& col) {
+                float rcx = px + (ucx - px) * cs - (ucy - py) * sn;
+                float rcy = py + (ucx - px) * sn + (ucy - py) * cs;
+                sr->DrawSprite(white, rcx - sw / 2.0f, rcy - sh / 2.0f, sw, sh, rot, col);
+                };
+            auto inR = [&](int ddc, int ddr) {
+                return !selfOnly && RangeShape::Contains(0, 0, ddc, ddr, data->rangeType, R, 0, 0, -1);
                 };
             put(ux0 + foot / 2.0f, uy0 + foot / 2.0f, foot + 4.0f * scale,
                 XMFLOAT4(0.0f, 0.0f, 0.0f, 0.35f * color.w));                 // 背景パネル
@@ -253,12 +264,27 @@ public:
                     XMFLOAT4 cc;
                     if (dc == 0 && dr == 0)
                         cc = XMFLOAT4(0.9f, 0.95f, 1.0f, color.w);           // プレイヤー
-                    else if (!selfOnly && RangeShape::Contains(0, 0, dc, dr, data->rangeType, R, 0, 0, -1))
-                        cc = XMFLOAT4(1.0f, 0.85f, 0.3f, color.w);          // 当たるマス
+                    else if (inR(dc, dr))
+                        cc = XMFLOAT4(1.0f, 0.85f, 0.30f, color.w);          // 攻撃範囲マス
                     else
                         cc = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.12f * color.w);   // 空マス
                     put(ucx, ucy, cell, cc);
                 }
+            if (hitAll)   // 全体攻撃：隣り合う範囲マスをバーで繋ぐ
+            {
+                const XMFLOAT4 link(1.0f, 0.85f, 0.30f, color.w);   // マスと同色
+                for (int dr = -R; dr <= R; dr++)
+                    for (int dc = -R; dc <= R; dc++)
+                    {
+                        if (!inR(dc, dr)) continue;
+                        float cx = ux0 + (dc + R + 0.5f) * step;
+                        float cy = uy0 + (dr + R + 0.5f) * step;
+                        if (inR(dc + 1, dr))   // 右へ連結
+                            putR(cx + step * 0.5f, cy, step * 0.30f, cell * 0.42f, link);
+                        if (inR(dc, dr + 1))   // 下へ連結
+                            putR(cx, cy + step * 0.5f, cell * 0.42f, step * 0.30f, link);
+                    }
+            }
         }
     }
 

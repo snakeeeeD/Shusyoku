@@ -1144,7 +1144,6 @@ void BattleScene::Update(float deltaTime)
                             float wx = (enemy->gridCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
                             float wz = (enemy->gridRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
                             EffectManager::Play("hit", wx, 0.6f, wz);
-                            EffectManager::Play("fx_test", wx, 0.6f, wz);
                             ScreenShake::Add(0.2f);
                         }
                     }

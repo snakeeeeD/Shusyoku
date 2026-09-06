@@ -932,6 +932,26 @@ void SceneManager::HandleInput()
 		if (click && su.gear.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); m_settingsOpen = !m_settingsOpen; return; }
 		if (m_settingsOpen)
 		{
+			// 確認ダイアログ表示中は はい/いいえ だけ受け付ける
+			if (m_confirmAction != 0)
+			{
+				if (click)
+				{
+					if (su.cfmYes.has(m))
+					{
+						Audio::PlaySE("Assets/Sound/se/click.mp3");
+						if (m_confirmAction == 1) { PostQuitMessage(0); }
+						else if (m_confirmAction == 2)
+						{
+							m_settingsOpen = false; m_confirmAction = 0; Settings::Save();
+							ChangeScene(SceneType::Title); return;
+						}
+						m_confirmAction = 0;
+					}
+					else if (su.cfmNo.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); m_confirmAction = 0; }
+				}
+				return;
+			}
 			auto& s = Settings::Get();
 			if (m_uiInput.GetMouseButtonTrigger(0))
 			{
@@ -955,7 +975,8 @@ void SceneManager::HandleInput()
 					SetDisplayMode(nx); Audio::PlaySE("Assets/Sound/se/click.mp3");
 				}
 				else if (su.shake.has(m)) { s.screenShake = !s.screenShake; Settings::Save(); Audio::PlaySE("Assets/Sound/se/click.mp3"); }
-				else if (su.gameEnd.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); PostQuitMessage(0); }
+				else if (su.title.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); m_confirmAction = 2; }
+				else if (su.gameEnd.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); m_confirmAction = 1; }
 				else if (su.close.has(m) || !su.panel.has(m)) { m_settingsOpen = false; m_dragSlider = -1; Settings::Save(); Audio::PlaySE("Assets/Sound/se/click.mp3"); }
 			}
 			return;   // 設定中は他のバー操作を止める
@@ -1269,6 +1290,8 @@ void SceneManager::DrawSettings()
 
 	UiWindow::Button(m_uiSprite, white, u.shake.x, u.shake.y, u.shake.w, u.shake.h,
 		s.screenShake ? XMFLOAT4(0.3f, 0.55f, 0.3f, 1) : XMFLOAT4(0.45f, 0.3f, 0.3f, 1));
+	UiWindow::Button(m_uiSprite, white, u.title.x, u.title.y, u.title.w, u.title.h,
+		u.title.has(mp) ? XMFLOAT4(0.35f, 0.5f, 0.7f, 1) : XMFLOAT4(0.25f, 0.28f, 0.4f, 1));
 	UiWindow::Button(m_uiSprite, white, u.gameEnd.x, u.gameEnd.y, u.gameEnd.w, u.gameEnd.h,
 		u.gameEnd.has(mp) ? XMFLOAT4(0.75f, 0.30f, 0.30f, 1) : XMFLOAT4(0.50f, 0.24f, 0.24f, 1));
 	UiWindow::Button(m_uiSprite, white, u.close.x, u.close.y, u.close.w, u.close.h,
@@ -1283,12 +1306,33 @@ void SceneManager::DrawSettings()
 	m_textRenderer->DrawText(L"SE", u.panel.x + 40, u.seTrack.y - 6, 20, D2D1::ColorF(1, 1, 1));
 	m_textRenderer->DrawText(L"画面シェイク", u.panel.x + 40, u.shake.y + 6, 18, D2D1::ColorF(1, 1, 1));
 	m_textRenderer->DrawText(s.screenShake ? L"ON" : L"OFF", u.shake.x + 46, u.shake.y + 6, 20, D2D1::ColorF(1, 1, 1));
+	m_textRenderer->DrawText(L"タイトルに戻る", u.title.x + 24, u.title.y + 6, 20, D2D1::ColorF(1, 1, 1));
 	m_textRenderer->DrawText(L"ゲーム終了", u.gameEnd.x + 40, u.gameEnd.y + 6, 20, D2D1::ColorF(1, 0.9f, 0.9f));
 	m_textRenderer->DrawText(L"閉じる", u.close.x + 42, u.close.y + 8, 20, D2D1::ColorF(1, 1, 1));
 	wchar_t b[16];
 	swprintf_s(b, L"%d%%", (int)(s.bgmVolume * 100 + 0.5f)); m_textRenderer->DrawText(b, u.bgmTrack.x + u.bgmTrack.w + 14, u.bgmTrack.y - 6, 16, D2D1::ColorF(0.8f, 0.9f, 1));
 	swprintf_s(b, L"%d%%", (int)(s.seVolume * 100 + 0.5f));  m_textRenderer->DrawText(b, u.seTrack.x + u.seTrack.w + 14, u.seTrack.y - 6, 16, D2D1::ColorF(0.8f, 0.9f, 1));
 	m_textRenderer->End();
+
+	if (m_confirmAction != 0)
+	{
+		m_uiSprite->Begin();
+		m_uiSprite->DrawSprite(white, 0, 0, (float)m_screenWidth, (float)m_screenHeight, 0.0f, XMFLOAT4(0, 0, 0, 0.5f));
+		UiWindow::Draw(m_uiSprite, white, u.cfmPanel.x, u.cfmPanel.y, u.cfmPanel.w, u.cfmPanel.h);
+		UiWindow::Button(m_uiSprite, white, u.cfmYes.x, u.cfmYes.y, u.cfmYes.w, u.cfmYes.h,
+			u.cfmYes.has(mp) ? XMFLOAT4(0.75f, 0.30f, 0.30f, 1) : XMFLOAT4(0.50f, 0.24f, 0.24f, 1));
+		UiWindow::Button(m_uiSprite, white, u.cfmNo.x, u.cfmNo.y, u.cfmNo.w, u.cfmNo.h,
+			u.cfmNo.has(mp) ? XMFLOAT4(0.35f, 0.45f, 0.6f, 1) : XMFLOAT4(0.25f, 0.30f, 0.42f, 1));
+		m_uiSprite->End();
+
+		m_textRenderer->Begin();
+		const wchar_t* msg = (m_confirmAction == 1) ? L"ゲームを終了しますか？" : L"タイトルに戻りますか？";
+		m_textRenderer->DrawText(msg, u.cfmPanel.x + 50, u.cfmPanel.y + 44, 22, D2D1::ColorF(1, 1, 1));
+		m_textRenderer->DrawText(L"はい", u.cfmYes.x + 40, u.cfmYes.y + 9, 20, D2D1::ColorF(1, 0.9f, 0.9f));
+		m_textRenderer->DrawText(L"いいえ", u.cfmNo.x + 32, u.cfmNo.y + 9, 20, D2D1::ColorF(1, 1, 1));
+		m_textRenderer->End();
+	}
+
 }
 
 void SceneManager::ShowTutorialDelayed(const std::vector<TutorialPage>& pages, float delay)
