@@ -81,6 +81,7 @@ struct CardData
     bool exhaust = false;   // 廃棄カードフラグ
     bool pierce = false;    // 貫通フラグ
     bool dash = false;      // moveカード以外に移動効果があるかフラグ
+    bool drawBeforeDiscard = false;   // 捨てる前に1ドローする（攻撃＋捨て系の救済）
     int selfDamage = 0;     // 自傷ダメージ
     int hits = 1;         // 攻撃回数（マルチヒット）
     bool unplayable = false;   // 使用不可（お邪魔C）

@@ -374,6 +374,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
     // 使用可能カードの発光（縁・パルス）を1枚描く
     auto drawPlayableGlow = [&](int i) {
+        if (ctx.discardSelectCount > 0) return;   // 捨て選択中は使用可グローを出さない
         if (i < 0 || i >= (int)m_cardAnims.size()) return;
         if (cards[i]->GetData()->cost > ctx.player->GetEnergy()) return;
         float gx, gy, gw, gh;
@@ -387,6 +388,25 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             float pad = 2.0f + k * 3.0f + 1.5f * pulse;              // 内2 → 外8
             float a = (0.5f + 0.3f * pulse) * (1.0f - k * 0.28f);  // 内濃 → 外淡
             XMFLOAT4 glow(1.0f, 0.8f, 0.2f, a);
+            m_spriteRenderer->DrawSprite(m_whiteTexture, gx - pad, gy - pad,
+                gw + pad * 2, gh + pad * 2, m_cardAnims[i].currentRot, glow);
+        }
+    };
+
+    // 捨て選択中：捨てると効果があるカードをティールで派手に強調
+    auto drawDiscardGlow = [&](int i) {
+        if (ctx.discardSelectCount <= 0) return;
+        if (i < 0 || i >= (int)m_cardAnims.size()) return;
+        if (!cards[i]->GetData()->onDiscardEffect.hasEffect) return;
+        float gx, gy, gw, gh;
+        CardVisual::GetRect(m_cardAnims[i].currentX, m_cardAnims[i].currentY,
+            m_cardAnims[i].currentScale, gx, gy, gw, gh);
+        float pulse = 0.5f + 0.5f * sinf(ctx.highlightTimer * 6.0f);
+        for (int k = 4; k >= 0; k--)   // 5層の厚いオーラ
+        {
+            float pad = 3.0f + k * 4.0f + 4.0f * pulse;             // 内3 → 外〜23＋脈動
+            float a = (0.80f + 0.20f * pulse) * (1.0f - k * 0.18f); // 濃いめ
+            XMFLOAT4 glow(0.0f, 0.95f, 0.85f, a);                   // ティール（4種と非かぶり）
             m_spriteRenderer->DrawSprite(m_whiteTexture, gx - pad, gy - pad,
                 gw + pad * 2, gh + pad * 2, m_cardAnims[i].currentRot, glow);
         }
@@ -686,6 +706,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             m_textRenderer->End();
             m_spriteRenderer->Begin();
             drawPlayableGlow(i);
+            drawDiscardGlow(i);
 
             // 自傷で死ぬカード：赤いハローを速く点滅（色は変えず危険を示す）
             if (cards[i]->GetData()->selfDamage > 0
@@ -729,6 +750,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             m_textRenderer->End();
             m_spriteRenderer->Begin();
             drawPlayableGlow(topIdx);
+            drawDiscardGlow(topIdx);
 
             if (cards[topIdx]->GetData()->selfDamage > 0
                 && cards[topIdx]->GetData()->selfDamage >= ctx.player->GetHp())
@@ -753,21 +775,48 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 m_cardAnims[topIdx].currentX, m_cardAnims[topIdx].currentY,
                 m_cardAnims[topIdx].currentScale, m_cardAnims[topIdx].currentRot);
         }
+        const auto& buffs = ctx.player->GetBuffManager().GetBuffs();
+        float buffY = 282.0f;
 
-    const auto& buffs = ctx.player->GetBuffManager().GetBuffs();
-    float buffY = 282.0f;
-    for (auto& buff : buffs)
-    {
+        // バフがある時だけ、後ろにウィンドウを敷いて見やすく
+        if (!buffs.empty())
+        {
+            const float pad = 6.0f;
+            // ホバー説明が挟まると以降が1行(22px)下がるので、その分も窓を伸ばす
+            bool anyHover = (ctx.mousePos.x >= 20.0f && ctx.mousePos.x <= 200.0f
+                && ctx.mousePos.y >= buffY
+                && ctx.mousePos.y <= buffY + (float)buffs.size() * 20.0f);
+            float winX = 20.0f - pad;
+            float winY = buffY - pad;
+            float winW = 190.0f + pad;
+            float winH = (float)buffs.size() * 20.0f + (anyHover ? 22.0f : 0.0f) + pad * 2.0f;
+            m_textRenderer->End();
+            m_spriteRenderer->Begin();
+            UiWindow::Draw(m_spriteRenderer, m_whiteTexture, winX, winY, winW, winH);
+            m_spriteRenderer->End();
+            m_textRenderer->Begin();
+        }
+
+        for (auto& buff : buffs)
+        {
         const auto& info = BuffInfo::Get(buff.type);
         bool buffHover = (ctx.mousePos.x >= 20.0f && ctx.mousePos.x <= 200.0f
             && ctx.mousePos.y >= buffY && ctx.mousePos.y <= buffY + 20.0f);
         // アイコン
+               // アイコン（実アイコン画像。無ければ従来の色四角）
         m_textRenderer->End();
         m_spriteRenderer->Begin();
-        m_spriteRenderer->DrawSprite(m_whiteTexture, 20.0f, buffY, 16.0f, 16.0f, 0.0f,
-            XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
-        m_spriteRenderer->DrawSprite(m_whiteTexture, 21.0f, buffY + 1.0f, 14.0f, 14.0f, 0.0f,
-            info.color);
+        auto btex = TextureManager::Get(info.texture);
+        if (btex)
+            m_spriteRenderer->DrawSprite(btex, 20.0f, buffY, 16.0f, 16.0f, 0.0f,
+                buffHover ? XMFLOAT4(1, 1, 1, 1) : XMFLOAT4(0.85f, 0.85f, 0.85f, 1));
+        else
+        {
+            m_spriteRenderer->DrawSprite(m_whiteTexture, 20.0f, buffY, 16.0f, 16.0f, 0.0f,
+                XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
+            m_spriteRenderer->DrawSprite(m_whiteTexture, 21.0f, buffY + 1.0f, 14.0f, 14.0f, 0.0f,
+                info.color);
+        }
         m_spriteRenderer->End();
         m_textRenderer->Begin();
         // 名前と値
@@ -1782,16 +1831,22 @@ void BattleUI::UpdatePlayCardEffects(float deltaTime)
 {  
     for (auto& e : m_playCardEffects)
     {
-        if (e.done) continue;
-        if (e.delay > 0.0f) { e.delay -= deltaTime; continue; }
         e.timer += deltaTime;
-        float dur = e.isBurn ? BURN_EFFECT_DUR : PLAY_EFFECT_DUR;
-        float t = min(1.0f, e.timer / dur);
         if (e.isBurn)
-            e.alpha = (t < 0.58f) ? 1.0f : 1.0f - (t - 0.58f) / 0.42f;   // 退場で消える（ため中は不透明）
+        {
+            float t = min(1.0f, e.timer / BURN_EFFECT_DUR);
+            e.alpha = (t < 0.58f) ? 1.0f : 1.0f - (t - 0.58f) / 0.42f;
+            if (t >= 1.0f) e.done = true;
+        }
         else
-            e.alpha = (t < 0.4f) ? 1.0f : 1.0f - (t - 0.4f) / 0.6f;
-        if (t >= 1.0f) e.done = true;
+        {
+            float holdEnd = 0.72f * PLAY_EFFECT_DUR;
+            if (e.timer < holdEnd)
+                e.alpha = 1.0f;                                              // 接近＋タメ中は不透明
+            else
+                e.alpha = 1.0f - min(1.0f, (e.timer - holdEnd) / DISCARD_EFFECT_DUR); // 1-u（ターン終了と同じ）
+            if (e.timer >= holdEnd + DISCARD_EFFECT_DUR) e.done = true;
+        }
     }
     m_playCardEffects.erase(
         std::remove_if(m_playCardEffects.begin(), m_playCardEffects.end(),
@@ -2428,16 +2483,34 @@ void BattleUI::GetPlayEffectTransform(const PlayCardEffect& e, float& x, float& 
         return;
     }
 
-    // ↓ 通常カード（従来のまま）＋ rot=0
-    float t = min(1.0f, e.timer / PLAY_EFFECT_DUR);
-    scale = (t < 0.6f) ? 1.0f + 0.4f * (t / 0.6f) : 1.4f - 1.1f * ((t - 0.6f) / 0.4f);
-    float ease = 1.0f - (1.0f - t) * (1.0f - t);
-    float bx = e.startX + (tx - e.startX) * ease;
-    float by = e.startY + (ty - e.startY) * ease;
-    float w = CARD_WIDTH * scale, h = CARD_HEIGHT * scale;
+    // ↓ 通常カード：接近＋タメ(PLAY_EFFECT_DUR) → 退場はターン終了と同じ時間/軌道
+    float holdEnd = 0.72f * PLAY_EFFECT_DUR;                 // 接近+タメの終わり
+    float dtx = 80.0f, dty = (float)(m_screenHeight - 60);  // 捨て札パイル（ターン終了と同座標）
+    float bx, by, scl;
+    if (e.timer < holdEnd) {
+        float t = e.timer / PLAY_EFFECT_DUR;                // 0..0.72
+        if (t < 0.22f) {                                    // しゅっと接近
+            float u = t / 0.22f;
+            float eo = 1.0f - (1.0f - u) * (1.0f - u);
+            bx = e.startX + (tx - e.startX) * eo;
+            by = e.startY + (ty - e.startY) * eo;
+            scl = 1.0f + 0.45f * eo;
+        }
+        else {                                            // 中央でタメ
+            bx = tx; by = ty; scl = 1.45f;
+        }
+    }
+    else {                                                // 退場：ターン終了と同じ
+        float u = min(1.0f, (e.timer - holdEnd) / DISCARD_EFFECT_DUR);
+        float ease = u * u;
+        bx = tx + (dtx - tx) * ease;
+        by = ty + (dty - ty) * ease - sinf(u * 3.14159f) * 70.0f;   // 弧
+        scl = 1.45f + (e.startScale - 1.45f) * u;           // 手札サイズへ
+    }
+    float w = CARD_WIDTH * scl, h = CARD_HEIGHT * scl;
     x = bx - (w - CARD_WIDTH) / 2.0f;
     y = by - (h - CARD_HEIGHT) / 2.0f;
-    rot = 0.0f;
+    scale = scl; rot = 0.0f;
 }
 
 void BattleUI::DrawPlayCardEffects()

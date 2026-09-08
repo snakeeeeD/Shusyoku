@@ -58,6 +58,7 @@ void CardDataBase::Init()
             data.endTurnDamage = c.value("endTurnDamage", 0);
             data.pierce = c.value("pierce", false);
             data.dash = c.value("dash", false);
+            data.drawBeforeDiscard = c.value("drawBeforeDiscard", false);
             data.selfDamage = c.value("selfDamage", 0);
             data.hits = c.value("hits", 1);
 

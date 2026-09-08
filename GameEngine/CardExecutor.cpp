@@ -860,6 +860,14 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     }
     }
 
+    // フラグ付きカード：捨てる前に1ドロー
+    if (data.drawBeforeDiscard && data.subEffect.hasEffect
+        && data.subEffect.type == CardEffectType::Discard)
+    {
+        std::string id = deck.DrawCard();
+        if (!id.empty()) { hand.AddCard(id); result.drawnCards.push_back(id); }
+    }
+
     // サブ効果の処理
     if (data.subEffect.hasEffect)
     {

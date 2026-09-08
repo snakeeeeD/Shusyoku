@@ -2107,14 +2107,28 @@ void BattleScene::HandleInput()
             {
                 std::sort(m_discardSelected.rbegin(), m_discardSelected.rend());
                 std::vector<CardEffectData> effects;
+                float playDelay = 0.0f;
                 for (int idx : m_discardSelected)
                 {
                     const CardData* dd = CardDataBase::Get(m_hand.GetCards()[idx]->GetId());
-                    if (dd && dd->onDiscardEffect.hasEffect) effects.push_back(dd->onDiscardEffect);
-                    m_battleUI->StartDiscardEffectAt(idx);
+                    if (dd && dd->onDiscardEffect.hasEffect)
+                    {
+                        effects.push_back(dd->onDiscardEffect);
+                        m_battleUI->StartPlayCardEffectFromHand(dd, idx, playDelay, false); // 中央へ移動＝使用演出
+                        playDelay += 0.15f;                                                 // 複数枚は少しずらす
+                    }
+                    else
+                    {
+                        m_battleUI->StartDiscardEffectAt(idx);   // 効果なしは普通の捨てアニメ
+                    }
                     m_hand.DiscardAt(idx);
                     m_battleUI->OnCardRemoved(idx);
                 }
+                m_discardSelected.clear();
+                m_discardSelectCount = 0;
+                m_hoveredCardIndex = -1;
+                for (auto& e : effects) ApplyDiscardEffect(e);   // 捨て終わってから発動
+                return;
                 m_discardSelected.clear();
                 m_discardSelectCount = 0;
                 m_hoveredCardIndex = -1;
