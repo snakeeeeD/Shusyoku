@@ -1763,6 +1763,34 @@ void BattleScene::Draw()
     std::vector<Enemy*> drawOrder(m_enemies.begin(), m_enemies.end());
     std::sort(drawOrder.begin(), drawOrder.end(),
         [](Enemy* a, Enemy* b) { return a->worldZ < b->worldZ; });   // 奥(小Z)を先に、手前(大Z)を後に
+
+    // 脅威範囲にプレイヤーが入っている敵を、脈動グロー（疑似ぼかし）で強調（自ターン中のみ）
+    if (!m_turnManager.IsEnemyTurn())
+    {
+        float thPulse = 0.5f + 0.5f * sinf(m_highlightTimer * 6.0f);   // 0..1
+        const int N = 8;                                               // 重ね枚数＝滑らかさ
+        for (auto enemy : drawOrder)
+        {
+            if (!enemy->hitsPlayer || enemy->GetHp() <= 0) continue;
+            auto tex = TextureManager::Get(enemy->GetTextureName());
+            float sc = 1.18f + 0.12f * thPulse;
+            float r = 0.05f + 0.02f * thPulse;                        // ぼかし半径
+            float a = (0.55f + 0.35f * thPulse) / N * 2.2f;           // 重ね用に薄める
+            float cy = enemy->worldY - enemy->height * (sc - 1.0f) * 0.5f;
+            for (int k = 0; k < N; k++)                                // 円状にズラして重ねる
+            {
+                float ang = (float)k / N * 6.2831853f;
+                float ox = cosf(ang) * r, oy = sinf(ang) * r;
+                m_renderer3D->DrawBillboard(tex,
+                    enemy->worldX + ox, cy + oy, enemy->worldZ + 0.10f,
+                    enemy->width * sc, enemy->height * sc, 0.0f,
+                    XMFLOAT4(enemy->hueColor.x * 1.3f,
+                        enemy->hueColor.y * 1.3f,
+                        enemy->hueColor.z * 1.3f, a));
+            }
+        }
+    }
+
     for (auto enemy : drawOrder)
         enemy->Draw3D(m_renderer3D);
     m_renderer3D->SetDepthWrite(true);

@@ -119,6 +119,32 @@ const EncounterData* EncounterDataBase::GetById(const std::string& id)
     return nullptr;
 }
 
+const EncounterData* EncounterDataBase::GetEncounterAvoiding(int layer, EncCategory cat, int tier,
+    unsigned seed, const std::string& avoidId)
+{
+    std::vector<EncounterData*> cand;
+    for (int tt = tier; tt >= 1 && cand.empty(); tt--)
+        for (auto& enc : m_data)
+            if (enc.layer == layer && enc.category == cat && enc.tier == tt) cand.push_back(&enc);
+    if (cand.empty())
+        for (auto& enc : m_data)
+            if (enc.layer == 1 && enc.category == cat) cand.push_back(&enc);
+    if (cand.empty()) return nullptr;
+
+    std::vector<EncounterData*> pool;
+    for (auto* e : cand)
+        if (e->enemies.empty() || e->enemies.front().id != avoidId) pool.push_back(e);  // “¯‚¶“G‚ðœŠO
+    if (pool.empty()) pool = cand;
+
+    unsigned int h = seed;
+    h ^= h >> 16; h *= 0x7feb352du; h ^= h >> 15; h *= 0x846ca68bu; h ^= h >> 16;
+    int total = 0; for (auto* e : pool) total += (e->weight > 0 ? e->weight : 1);
+    int roll = (int)(h % (unsigned)total), acc = 0;
+    const EncounterData* picked = pool.back();
+    for (auto* e : pool) { acc += (e->weight > 0 ? e->weight : 1); if (roll < acc) { picked = e; break; } }
+    return picked;
+}
+
 const std::vector<EscalationTier>& EncounterDataBase::DefaultEscalation()
 {
     static const std::vector<EscalationTier> def = {

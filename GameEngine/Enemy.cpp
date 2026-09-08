@@ -63,7 +63,7 @@ void Enemy::Draw3D(Renderer3D* renderer)
 
     renderer->DrawBillboard(
         TextureManager::Get(m_textureName),
-        worldX, y, worldZ,
+        worldX, y, worldZ + 0.10f,
         width * s, height * s, 0.0f, drawColor);
 }
 

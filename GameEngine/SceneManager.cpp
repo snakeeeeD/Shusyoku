@@ -136,6 +136,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("crosshair", L"Assets/Particles/crosshair.png");
 
 		TextureManager::Load("fx_test", L"Assets/Particles/fx_test.png");
+		TextureManager::Load("fx_slash", L"Assets/Particles/Slash.png");
 	}
 
 	// フィールド
@@ -1189,7 +1190,6 @@ void SceneManager::HandleInput()
 
 	// m_uiInputが消費したホイールをシーンへ戻す（ズーム等が効くように）
 	Input::SetWheelDelta(m_uiInput.GetMouseWheelDelta());
-	OutputDebugStringA("[IN] -> scene HandleInput\n");
 	if (m_currentScene) m_currentScene->HandleInput();
 }
 

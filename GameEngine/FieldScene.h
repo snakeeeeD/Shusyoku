@@ -71,6 +71,8 @@ private:
     int m_maxSteps;
 
     std::string m_currentEnemyId;
+    void AvoidConsecutive(int idx);
+
     float m_highlightTimer;
 
     static constexpr int   GRID_COLS = 12;

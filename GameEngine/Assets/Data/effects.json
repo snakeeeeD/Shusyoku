@@ -409,6 +409,21 @@
           "loop": true
         }
       ]
+    },
+    {
+      "id": "slash",
+      "bursts": [],
+      "sheets": [
+        {
+          "texture": "fx_slash",
+          "cols": 1,
+          "rows": 1,
+          "frames": 1,
+          "fps": 24,
+          "scale": 1.4,
+          "yOffset": 0.4
+        }
+      ]
     }
   ]
 }

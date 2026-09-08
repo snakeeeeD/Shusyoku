@@ -637,6 +637,7 @@ void FieldScene::HandleInput()
                         m_currentBattleOverflow = (m_steps < 0) ? -m_steps : 0;
                         m_currentBattleCategory = (node.type == FieldNodeType::Boss)
                             ? EncCategory::Boss : EncCategory::Normal;
+                        if (node.type == FieldNodeType::Battle) AvoidConsecutive(idx);   // ボスは除外
                         SaveProgress();
                         if (onChangeScene) onChangeScene(SceneType::Battle);
                         return;
@@ -647,6 +648,7 @@ void FieldScene::HandleInput()
                         m_currentBattleTier = 1 + node.col * 3 / GRID_COLS; if (m_currentBattleTier > 3) m_currentBattleTier = 3;
                         m_currentBattleOverflow = (m_steps < 0) ? -m_steps : 0;
                         m_currentBattleCategory = EncCategory::Elite;
+                        AvoidConsecutive(idx);
                         SaveProgress();
                         if (onChangeScene) onChangeScene(SceneType::Battle);
                         return;
@@ -702,6 +704,25 @@ void FieldScene::HandleInput()
             }
         }
     }
+}
+
+void FieldScene::AvoidConsecutive(int idx)
+{
+    auto& pd = PlayerDataManager::GetData();
+    std::string& last = (m_currentBattleCategory == EncCategory::Elite) ? pd.lastEliteEnemy : pd.lastNormalEnemy;
+    auto leadOf = [](const std::string& encId) -> std::string {
+        const EncounterData* e = EncounterDataBase::GetById(encId);
+        return (e && !e->enemies.empty()) ? e->enemies.front().id : std::string();
+        };
+    std::string curLead = leadOf(m_currentEnemyId);
+    if (!curLead.empty() && curLead == last)   // 直前と同じ敵 → 選び直す
+    {
+        const EncounterData* enc = EncounterDataBase::GetEncounterAvoiding(
+            pd.layer, m_currentBattleCategory,
+            m_currentBattleTier, (unsigned)idx * 2654435761u + 101u, last);
+        if (enc) { m_currentEnemyId = enc->id; m_nodes[idx].enemyId = enc->id; curLead = leadOf(enc->id); }
+    }
+    last = curLead;   // PlayerDataに記録（次戦まで保持）
 }
 
 void FieldScene::SaveProgress()

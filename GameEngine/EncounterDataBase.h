@@ -13,6 +13,9 @@ public:
     static void Reload();
 
     static const EncounterData* GetEncounter(int layer, EncCategory cat, int tier, int seed);
+
+    static const EncounterData* GetEncounterAvoiding(int layer, EncCategory cat, int tier,
+        unsigned seed, const std::string& avoidId);
     static const EncounterData* GetById(const std::string& id);
     static const std::vector<EscalationTier>& DefaultEscalation();
 

@@ -31,6 +31,9 @@ struct PlayerData
 
     int layer = 1;   // 現在の層
 
+    std::string lastNormalEnemy;   // 直前に戦った通常敵の敵ID（連続回避・シーンを跨いで保持）
+    std::string lastEliteEnemy;    // 直前に戦ったエリートの敵ID
+
     float masterVolume = 1.0f;
     float bgmVolume = 0.5f;
 

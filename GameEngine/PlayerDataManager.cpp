@@ -215,6 +215,8 @@ void PlayerDataManager::StartNewGame()
 	m_data.clearedNodes.clear();
 	m_data.fieldNodeTypes.clear();
 	m_data.fieldNodeEnemyIds.clear();
+	m_data.lastNormalEnemy.clear();
+	m_data.lastEliteEnemy.clear();
 	m_data.fieldNodeVisited.clear();
 	m_data.relics = { "travelers_charm" };   // 初期レリック（回復＋レリック導入）
 	Telemetry::Instance().BeginRun();
