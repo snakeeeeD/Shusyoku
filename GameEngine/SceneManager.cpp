@@ -703,25 +703,6 @@ void SceneManager::DrawOverlay()
 
 	m_textRenderer->End();
 
-	{
-		POINT mp = m_uiInput.GetMousePos();
-		const wchar_t* tip = nullptr;
-		if (mp.y >= 5 && mp.y <= 35) {
-			if (m_currentType != SceneType::Field && mp.x >= m_screenWidth - 680 && mp.x <= m_screenWidth - 590) tip = L"マップを開く";
-			else if (mp.x >= m_screenWidth - 470 && mp.x <= m_screenWidth - 380) tip = L"アイテムを見る";
-			else if (mp.x >= btnX && mp.x <= btnX + 100)                         tip = L"デッキを見る";
-		}
-		if (tip) {
-			float tw = 150.0f, th = 30.0f, tx = (float)mp.x + 14.0f, ty = (float)mp.y + 18.0f;
-			m_uiSprite->Begin();
-			UiWindow::Draw(m_uiSprite, TextureManager::Get("white"), tx - 6, ty - 6, tw + 12, th + 12);
-			m_uiSprite->End();
-			m_textRenderer->Begin();
-			m_textRenderer->DrawText(tip, tx + 10.0f, ty + 6.0f, 16.0f, D2D1::ColorF(1, 1, 1));
-			m_textRenderer->End();
-		}
-	}
-
 	if (m_deckOpen) DrawDeckPreview();   // ← 全グリッド描画の後＝最前面
 
 	// デッキのキーワード解説（パス外で描く）
@@ -1346,29 +1327,37 @@ void SceneManager::DrawBarTips()
 	POINT mp = m_uiInput.GetMousePos();
 	if (mp.y < 5 || mp.y > 35) return;
 
-	const wchar_t* title = nullptr; const wchar_t* desc = nullptr; float x = 0.0f;
-	if (mp.x >= 12 && mp.x <= 130)
+	struct Tip { float x0, x1; const wchar_t* title; const wchar_t* desc; bool hideOnField; };
+	float btnX = m_screenWidth - 220.0f;
+	Tip tips[] = {
+		{ 12.0f, 130.0f, L"体力", L"0でゲームオーバー", false },
+		{ 140.0f, 260.0f, L"歩数", L"0を超えて進むと敵が強くなる", false },
+		{ 274.0f, 380.0f, L"層",   L"ダンジョンの階層(全3層)。深いほど敵が強い", false },
+		{ m_screenWidth - 680.0f, m_screenWidth - 590.0f, L"マップ",   L"マップを開く",   true  },
+		{ m_screenWidth - 470.0f, m_screenWidth - 380.0f, L"アイテム", L"アイテムを見る", false },
+		{ btnX,                   btnX + 100.0f,          L"デッキ",   L"デッキを見る",   false },
+	};
+
+	const Tip* hit = nullptr;
+	for (auto& t : tips)
 	{
-		title = L"体力"; desc = L"0でゲームオーバー"; x = 12.0f;
+		if (mp.x < t.x0 || mp.x > t.x1) continue;
+		if (t.hideOnField && m_currentType == SceneType::Field) continue;   // マップはフィールドで非表示
+		hit = &t; break;
 	}
-	else if (mp.x >= 140 && mp.x <= 260)
-	{
-		title = L"歩数"; desc = L"0を超えて進むと敵が強くなる"; x = 140.0f;
-	}
-	else if (mp.x >= 274 && mp.x <= 380)
-	{
-		title = L"層"; desc = L"ダンジョンの階層(全3層)。深いほど敵が強い"; x = 274.0f;
-	}
-	if (!title) return;
+	if (!hit) return;
+
+	float w = 360.0f, h = 56.0f, ty = BAR_H + 44.0f + RelicManager::BarExtraHeight(m_screenWidth);
+	float x = hit->x0;
+	if (x + w > m_screenWidth - 6.0f) x = m_screenWidth - 6.0f - w;   // 右端はみ出し防止
 
 	ID3D11ShaderResourceView* white = TextureManager::Get("white");
-	float ty = BAR_H + 44.0f, w = 360.0f, h = 56.0f;   // レリック帯の下
 	m_uiSprite->Begin();
 	UiWindow::Draw(m_uiSprite, white, x, ty, w, h);
 	m_uiSprite->End();
 	m_textRenderer->Begin();
-	m_textRenderer->DrawText(title, x + 10.0f, ty + 6.0f, 16.0f, D2D1::ColorF(1.0f, 0.9f, 0.6f));
-	m_textRenderer->DrawText(desc, x + 10.0f, ty + 30.0f, 14.0f, D2D1::ColorF(0.95f, 0.8f, 0.6f));
+	m_textRenderer->DrawText(hit->title, x + 10.0f, ty + 6.0f, 16.0f, D2D1::ColorF(1.0f, 0.9f, 0.6f));
+	m_textRenderer->DrawText(hit->desc, x + 10.0f, ty + 30.0f, 14.0f, D2D1::ColorF(0.95f, 0.8f, 0.6f));
 	m_textRenderer->End();
 }
 
@@ -2151,8 +2140,10 @@ void SceneManager::DrawMap()
 void SceneManager::GetRelicRect(int i, float& x, float& y, float& w, float& h) const
 {
 	w = 48.0f; h = 34.0f;
-	x = 10.0f + i * (w + 4.0f);
-	y = BAR_H + 4.0f;                  // 帯（バー）の下
+	int per = RelicManager::BarPerRow(m_screenWidth);
+	int col = i % per, row = i / per;
+	x = 10.0f + col * (w + 4.0f);
+	y = BAR_H + 4.0f + row * (h + 4.0f);   // はみ出したら下の行へ
 }
 
 std::string SceneManager::HoveredRelic(POINT mp) const
@@ -2181,14 +2172,50 @@ void SceneManager::DrawRelicBar()
 		return XMFLOAT4(0.55f, 0.55f, 0.55f, 1);  // common
 		};
 
+	BattleScene* battle = (m_currentType == SceneType::Battle)
+		? dynamic_cast<BattleScene*>(m_currentScene) : nullptr;
+	auto& counters = PlayerDataManager::GetData().relicCounters;
+	float pulse = 0.5f + 0.5f * sinf((float)GetTickCount64() * 0.004f);
+
 	m_uiSprite->Begin();
 	for (int i = 0; i < (int)relics.size(); i++)
 	{
 		float x, y, w, h; GetRelicRect(i, x, y, w, h);
 		auto rd = RelicManager::Get(relics[i]);
 		XMFLOAT4 frame = rd ? rarColor(rd->rarity) : XMFLOAT4(0.55f, 0.55f, 0.55f, 1);
-		m_uiSprite->DrawSprite(white, x - 2, y - 2, w + 4, h + 4, 0.0f, frame);
-		m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(0.22f, 0.18f, 0.28f, 1));
+
+		bool spent = battle && battle->IsRelicSpent(relics[i]);
+		bool aboutToFire = false;
+		if (rd && rd->count > 0)
+		{
+			auto it = counters.find(relics[i]);
+			if (it != counters.end() && it->second == rd->count - 1) aboutToFire = true;
+		}
+
+		if (spent)   // 使い切り：暗く沈める
+		{
+			m_uiSprite->DrawSprite(white, x - 2, y - 2, w + 4, h + 4, 0.0f, XMFLOAT4(0.25f, 0.25f, 0.25f, 1));
+			m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(0.10f, 0.10f, 0.12f, 1));
+		}
+		else
+		{
+			if (aboutToFire)   // 発動直前：金色に脈動する縁
+			{
+				float p = 4.0f + 4.0f * pulse;
+				m_uiSprite->DrawSprite(white, x - p, y - p, w + p * 2, h + p * 2, 0.0f,
+					XMFLOAT4(1.0f, 0.95f, 0.4f, 0.45f + 0.4f * pulse));
+			}
+			m_uiSprite->DrawSprite(white, x - 2, y - 2, w + 4, h + 4, 0.0f, frame);
+			m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(0.22f, 0.18f, 0.28f, 1));
+		}
+
+		float flash = RelicManager::FlashAmount(relics[i]);
+		if (flash > 0.0f)
+		{
+			float e = 8.0f * flash;
+			m_uiSprite->DrawSprite(white, x - e, y - e, w + e * 2, h + e * 2, 0.0f,
+				XMFLOAT4(1.0f, 1.0f, 0.7f, 0.75f * flash));   // 金色の膨張フラッシュ
+		}
 	}
 	m_uiSprite->End();
 
@@ -2198,7 +2225,11 @@ void SceneManager::DrawRelicBar()
 		float x, y, w, h; GetRelicRect(i, x, y, w, h);
 		auto d = RelicManager::Get(relics[i]);
 		std::wstring lb = d ? ToWString(d->name).substr(0, 2) : L"?";
-		m_textRenderer->DrawText(lb.c_str(), x + 6.0f, y + 8.0f, 18.0f, D2D1::ColorF(1, 1, 1));
+		bool spentT = (m_currentType == SceneType::Battle)
+			&& dynamic_cast<BattleScene*>(m_currentScene)
+			&& dynamic_cast<BattleScene*>(m_currentScene)->IsRelicSpent(relics[i]);
+		D2D1::ColorF nameCol = spentT ? D2D1::ColorF(0.45f, 0.45f, 0.45f) : D2D1::ColorF(1, 1, 1);
+		m_textRenderer->DrawText(lb.c_str(), x + 6.0f, y + 8.0f, 18.0f, nameCol);
 		if (d && d->count > 0)
 		{
 			auto& rc = PlayerDataManager::GetData().relicCounters;
@@ -2209,6 +2240,24 @@ void SceneManager::DrawRelicBar()
 				D2D1::ColorF(1.0f, 0.9f, 0.4f), D2D1::ColorF(0, 0, 0), 1.0f);   // 幅2.0→1.0
 		}
 	}
+
+	// 発動したレリック名を画面中央付近にフワッと表示（複数は縦に積む）
+	int flashSlot = 0;
+	for (int i = 0; i < (int)relics.size(); i++)
+	{
+		auto dd = RelicManager::Get(relics[i]);
+		float fl = RelicManager::FlashAmount(relics[i]);
+		if (fl <= 0.0f || !dd) continue;
+		std::wstring full = ToWString(dd->name);
+		float rise = (1.0f - fl) * 24.0f;                        // 消えながら上へ
+		float cx = m_screenWidth * 0.5f - full.size() * 11.0f;   // ざっくり中央寄せ
+		float cy = m_screenHeight * 0.5f - flashSlot * 28.0f - rise;
+		m_textRenderer->DrawOutlinedText(full.c_str(), cx, cy, 22.0f,
+			D2D1::ColorF(1.0f, 1.0f, 0.6f, fl),
+			D2D1::ColorF(0, 0, 0, fl), 1.5f);
+		flashSlot++;
+	}
+
 	m_textRenderer->End();
 
 	std::string rid = HoveredRelic(m_uiInput.GetMousePos());

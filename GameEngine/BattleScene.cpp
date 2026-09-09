@@ -199,6 +199,13 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         if (!id.empty()) m_hand.AddCard(id);
     }
 
+    // 戦闘開始時：1ターン用(perTurn)カウントレリックを0に
+    // ※リセットはStartPlayerTurn（ターン2以降）でしか走らないため、
+    //   前の戦闘から持ち越した値が1ターン目に残るのを防ぐ
+    for (auto& id : PlayerDataManager::GetData().relics)
+        if (auto def = RelicManager::Get(id); def && def->perTurn)
+            PlayerDataManager::GetData().relicCounters[id] = 0;
+
     // プレイヤーターン開始時にエネルギー回復
     m_turnManager.onPlayerTurnStart = [this]()
         {
@@ -3366,6 +3373,7 @@ void BattleScene::OnCardPlayed(const CardData* d)
                     c = 0;                           // 0に戻す
                     if (r->effect == "energy") m_player->AddEnergy(r->value);
                     else                       m_player->AddBlock(r->value);   // 既定=ブロック
+                    RelicManager::NotifyFired(r->id);
                 }
             }
         };
@@ -3374,4 +3382,17 @@ void BattleScene::OnCardPlayed(const CardData* d)
         (d->type == CardType::Move) ? "move" : "";
     if (k[0]) tick(k);   // その種別
     tick("card");        // 全カード共通
+}
+
+bool BattleScene::IsRelicSpent(const std::string& id) const
+{
+    auto def = RelicManager::Get(id);
+    if (!def) return false;
+    const std::string& k = def->kind;
+    // 戦闘開始で発動する系（最初のターン）＝戦闘中は常に使用済み
+    if (k == "startBlock" || k == "startHeal" || k == "startDraw"
+        || k == "startBuffAtk" || k == "startPoison") return true;
+    // 最初の攻撃
+    if (k == "firstAttack") return m_firstAttackDone;
+    return false;
 }

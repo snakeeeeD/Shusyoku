@@ -13,7 +13,6 @@
 #include "HighlightPalette.h"
 #include "RelicManager.h"
 #include "UiWindow.h"
-#include "GameUtils.h"
 #include "Audio.h"
 #include <algorithm>
 #include <cmath>
@@ -171,6 +170,8 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
     m_hasHoveredBuff = false;
 
+    float oy = RelicManager::BarExtraHeight(m_screenWidth);   // レリック折り返しぶん下げる
+
     m_spriteRenderer->Begin();
     HPBarInfo playerBar;
     playerBar.currentHP = ctx.player->GetHp();
@@ -179,14 +180,14 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     playerBar.block = ctx.player->GetBlock();
     playerBar.poisonDmg = ctx.player->GetBuffManager().GetTurnEndDamage().total();
     playerBar.hasBurn = ctx.player->GetBuffManager().HasBuff(BuffType::Burn);
-    DrawHPBar(20.0f, 140.0f, 200.0f, 30.0f, playerBar, ctx.highlightTimer);
+    DrawHPBar(20.0f, 140.0f + oy, 200.0f, 30.0f, playerBar, ctx.highlightTimer);
 
 
     if (ctx.player->GetBlock() > 0)
     {
         float pIconSize = 30.0f * 1.5f;
         float pIconX = 20.0f - pIconSize * 0.35f;
-        float pIconY = 110.0f + (30.0f - pIconSize) / 2.0f;
+        float pIconY = 110.0f + oy + (30.0f - pIconSize) / 2.0f;
         m_spriteRenderer->DrawSprite(m_whiteTexture,
             pIconX - 1.0f, pIconY - 1.0f, pIconSize + 2.0f, pIconSize + 2.0f,
             0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
@@ -196,7 +197,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     }
 
     {
-        float ex = 20.0f, ey = 190.0f, es = 60.0f;
+        float ex = 20.0f, ey = 190.0f + oy, es = 60.0f;
         m_spriteRenderer->DrawSprite(m_whiteTexture, ex - 3, ey - 3, es + 6, es + 6, 0.0f, XMFLOAT4(0.15f, 0.10f, 0.0f, 1.0f)); // 縁
         m_spriteRenderer->DrawSprite(m_whiteTexture, ex, ey, es, es, 0.0f, XMFLOAT4(0.95f, 0.72f, 0.12f, 1.0f));               // 本体（金）
     }
@@ -460,11 +461,11 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     }
     wchar_t hpText[64];
     swprintf_s(hpText, L"%d / %d", ctx.player->GetHp(), ctx.player->GetMaxHp());
-    m_textRenderer->DrawOutlinedText(hpText, 55.0f, 90.0f, 45.0f, D2D1::ColorF(D2D1::ColorF::White));
+    m_textRenderer->DrawOutlinedText(hpText, 55.0f, 90.0f + oy, 45.0f, D2D1::ColorF(D2D1::ColorF::White));
 
     wchar_t energyText[64];
     {
-        float ex = 20.0f, ey = 196.0f, es = 46.0f;
+        float ex = 20.0f, ey = 196.0f + oy, es = 46.0f;
         wchar_t eCur[16]; swprintf_s(eCur, L"%d", ctx.player->GetEnergy());
         m_textRenderer->DrawText(eCur, ex + es / 2.0f - 11.0f, ey + 5.0f, 32.0f, D2D1::ColorF(0.15f, 0.08f, 0.0f)); // 大きく
         wchar_t eMax[16]; swprintf_s(eMax, L"/%d", ctx.player->GetMaxEnergy());
@@ -491,7 +492,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     {
         float pIconSize = 30.0f * 1.5f;
         float pIconX = 20.0f - pIconSize * 0.35f;
-        float pIconY = 110.0f + (30.0f - pIconSize) / 2.0f;
+        float pIconY = 110.0f + oy + (30.0f - pIconSize) / 2.0f;
         wchar_t blockText[16];
         swprintf_s(blockText, L"%d", ctx.player->GetBlock());
         float bFontSize = 18.0f;
@@ -776,7 +777,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 m_cardAnims[topIdx].currentScale, m_cardAnims[topIdx].currentRot);
         }
         const auto& buffs = ctx.player->GetBuffManager().GetBuffs();
-        float buffY = 282.0f;
+        float buffY = 282.0f + oy;
 
         // バフがある時だけ、後ろにウィンドウを敷いて見やすく
         if (!buffs.empty())
@@ -2050,7 +2051,7 @@ void BattleUI::DrawPlayerOffScreenIndicator(const BattleUIContext& ctx)
 void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
 {
     float panelX = ctx.screenWidth - 250.0f;
-    float panelY = 50.0f;
+    float panelY = 50.0f + RelicManager::BarTotalHeight(ctx.screenWidth);
     float panelW = 240.0f;
     float entryH = 90.0f;
     float iconSize = 55.0f;
@@ -2309,7 +2310,8 @@ void BattleUI::DrawEnemyKeywords(const BattleUIContext& ctx)
     float panelX = ctx.screenWidth - 250.0f;
     float detailX = panelX - 200.0f;
     float px = detailX - pw - 8.0f;
-    float py = 50.0f + m_panelHoveredEnemy * (90.0f + 5.0f);
+    float py = 50.0f + RelicManager::BarTotalHeight(ctx.screenWidth)
+        + m_panelHoveredEnemy * (90.0f + 5.0f);
     if (px < 6.0f) px = 6.0f;
     if (py + ph > ctx.screenHeight - 6.0f) py = ctx.screenHeight - 6.0f - ph;
 

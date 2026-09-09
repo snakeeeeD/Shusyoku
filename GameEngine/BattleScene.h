@@ -119,6 +119,8 @@ public:
     float  m_coilTrapTimer = 0.0f;
     Enemy* m_coilTrapEnemy = nullptr;
 
+    bool IsRelicSpent(const std::string& id) const;   // 一度きりレリックが使用済みか
+
 private:
     BattleUI* m_battleUI;
     GridMap* m_gridMap;

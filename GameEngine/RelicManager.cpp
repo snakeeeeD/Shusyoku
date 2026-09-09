@@ -11,6 +11,8 @@
 using json = nlohmann::json;
 
 std::unordered_map<std::string, RelicDef> RelicManager::s_defs;
+std::unordered_map<std::string, unsigned long long> RelicManager::s_firedAt;
+
 
 void RelicManager::Load(const std::string& path) {
     std::ifstream f(path);
@@ -23,6 +25,8 @@ void RelicManager::Load(const std::string& path) {
             d.desc = r.value("desc", ""); d.kind = r.value("kind", "");
             d.value = r.value("value", 0);
             d.count = r.value("count", 0);
+            d.effect = r.value("effect", "block");
+            d.perTurn = r.value("perTurn", false);
             d.rarity = r.value("rarity", "common");
             s_defs[d.id] = d;
         }
@@ -110,4 +114,44 @@ std::vector<std::string> RelicManager::AllIds()
     std::vector<std::string> v;
     for (auto& kv : s_defs) v.push_back(kv.first);
     return v;
+}
+
+void RelicManager::NotifyFired(const std::string& id)
+{
+    s_firedAt[id] = GetTickCount64();
+}
+
+float RelicManager::FlashAmount(const std::string& id)
+{
+    auto it = s_firedAt.find(id);
+    if (it == s_firedAt.end()) return 0.0f;
+    float age = (float)(GetTickCount64() - it->second) / 1000.0f;
+    const float DUR = 0.6f;
+    return age < DUR ? (1.0f - age / DUR) : 0.0f;
+}
+
+int RelicManager::BarPerRow(int screenW)
+{
+    const float W = 48.0f, GAP = 4.0f, X0 = 10.0f;
+    int per = (int)((screenW - X0) / (W + GAP));
+    return per < 1 ? 1 : per;
+}
+
+float RelicManager::BarExtraHeight(int screenW)
+{
+    int n = (int)PlayerDataManager::GetData().relics.size();
+    if (n <= 0) return 0.0f;
+    int per = BarPerRow(screenW);
+    int rows = (n + per - 1) / per;
+    const float ROWH = 38.0f;   // h(34)+ŠÔŠu(4)
+    return (rows > 1) ? (rows - 1) * ROWH : 0.0f;
+}
+
+float RelicManager::BarTotalHeight(int screenW)
+{
+    int n = (int)PlayerDataManager::GetData().relics.size();
+    int per = BarPerRow(screenW);
+    int rows = (n > 0) ? (n + per - 1) / per : 0;
+    if (rows < 1) rows = 1;      // ‰Šú‚©‚çÅ’á1s•ª‚Í‰º‚°‚é
+    return rows * 38.0f;         // h(34)+ŠÔŠu(4)
 }
