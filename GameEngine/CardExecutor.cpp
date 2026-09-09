@@ -931,9 +931,19 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
 
     if (!data.vfx.empty())
     {
+        // 敵(対象マス)の中心を基準に、角度(方向)に沿ってプレイヤー側へ一定距離寄せる
         float vx = (targetCol - gridMap->GetCols() / 2.0f) * 1.1f;
         float vz = (targetRow - gridMap->GetRows() / 2.0f) * 1.1f;
-        EffectManager::Play(data.vfx, vx, 0.5f, vz);
+        float px = (playerCol - gridMap->GetCols() / 2.0f) * 1.1f;
+        float pz = (playerRow - gridMap->GetRows() / 2.0f) * 1.1f;
+        float dx = px - vx, dz = pz - vz;                 // 対象→プレイヤー方向
+        float len = sqrtf(dx * dx + dz * dz);
+        if (len > 1e-4f) { dx /= len; dz /= len; }        // 正規化
+        float d = 0.55f;                                  // プレイヤー側への寄せ距離(≒半マス)
+        vx += dx * d;
+        vz += dz * d;
+        float rot = atan2f(-(float)(targetRow - playerRow), (float)(targetCol - playerCol));
+        EffectManager::Play(data.vfx, vx, 0.5f, vz, rot);
     }
 
     return result;

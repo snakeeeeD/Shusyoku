@@ -16,6 +16,7 @@
         "type": "Damage",
         "value": 6
       },
+      "vfx": "slash",
       "starter": true
     },
     {

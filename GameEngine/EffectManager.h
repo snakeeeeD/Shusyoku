@@ -29,6 +29,7 @@ struct SpriteInstance
     int handle = 0;
     bool fading = false;
     float fade = 0.0f, fadeDur = 0.3f; 
+    float rot = 0.0f;
 };
 
 // パーティクルの発生・更新・描画を1箇所に集約
@@ -96,11 +97,22 @@ public:
             int row = (s.cols > 0) ? f / s.cols : 0;
             XMFLOAT4 uv((float)(col + 1) / s.cols, (float)row / s.rows,
                 -1.0f / s.cols, 1.0f / s.rows);
-            float a = s.fading ? (s.fade / s.fadeDur) : 1.0f;   // フェード率
+            float a = s.fading ? (s.fade / s.fadeDur) : 1.0f;
             if (a < 0.0f) a = 0.0f;
-            XMFLOAT4 c = s.color; c.w *= a;                     // アルファに反映
-            r->DrawBillboard(s.tex, s.pos.x, s.pos.y, s.pos.z,
-                s.size, s.size, 0.0f, c, uv);
+            XMFLOAT4 c = s.color; c.w *= a;
+
+            // 中心アンカー：基準点にスプライト中心が来るよう、上方向ベクトルの半分だけ戻す
+            float pitch = XMConvertToRadians(Renderer3D::GetBillboardPitch());
+            float sp = sinf(pitch), cp = cosf(pitch);
+            float upx = s.size * sp * sinf(s.rot);
+            float upy = s.size * cp;
+            float upz = s.size * sp * cosf(s.rot);
+
+            r->DrawBillboard(s.tex,
+                s.pos.x - 0.5f * upx,
+                s.pos.y - 0.5f * upy,
+                s.pos.z - 0.5f * upz,
+                s.size, s.size, s.rot, c, uv);
         }
     }
 
@@ -139,7 +151,7 @@ public:
     }
 
     // 名前でエフェクトを再生（effects.jsonのプリセット）
-    static int Play(const std::string& id, float x, float y, float z)
+    static int Play(const std::string& id, float x, float y, float z, float rot = 0.0f)
     {
         int handle = s_nextHandle++;
         const EffectDef* def = EffectDataBase::Get(id);
@@ -161,6 +173,7 @@ public:
             si.color = s.color; si.loop = s.loop;
             si.elapsed = 0.0f;
             si.handle = handle;   // ← このPlayで出した全シートに同じIDを付与
+            si.rot = rot;
             m_sprites.push_back(si);
         }
         return handle;

@@ -2454,7 +2454,7 @@ void BattleUI::StartPlayCardEffectFromHand(const CardData* data, int cardIndex, 
 void BattleUI::GetPlayEffectTransform(const PlayCardEffect& e, float& x, float& y, float& scale, float& rot)
 {
     float tx = m_screenWidth / 2.0f - CARD_WIDTH / 2.0f;
-    float ty = m_screenHeight / 2.0f - CARD_HEIGHT / 2.0f;
+    float ty = m_screenHeight / 2.0f - CARD_HEIGHT / 2.0f + 100.0f;
 
     if (e.isBurn)
     {
