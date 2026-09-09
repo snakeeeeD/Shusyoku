@@ -5,6 +5,8 @@
 #include "SceneType.h"
 #include "Audio.h"
 #include "UiWindow.h"
+#include "CardDataBase.h"
+#include "RelicManager.h"
 
 #include <cstdlib>
 #include <algorithm>
@@ -770,6 +772,83 @@ void FieldScene::DrawImGui()
     for (const auto& id : EventDataBase::AllIds())
         if (ImGui::Button(id.c_str()) && onEvent)
             onEvent(id);
+
+    ImGui::Separator();
+    ImGui::Text("Jump to Layer (test)");
+    {
+        static int archetype = 0;
+        const char* tags[] = { "Strike", "Poison", "Bulwark", "Knife", "Berserk", "Trap" };
+        ImGui::Combo("Archetype", &archetype, tags, IM_ARRAYSIZE(tags));
+
+        auto buildDeck = [&](const char* tag, int archN, int suppN, int randN) {
+            auto& pd = PlayerDataManager::GetData();
+            pd.deck.clear();
+            pd.deck.push_back("ATK_strike"); pd.deck.push_back("ATK_strike");
+            pd.deck.push_back("MOV_move");   pd.deck.push_back("MOV_move");
+            bool isBulwark = (std::string(tag) == "Bulwark");
+
+            // 条件に合うカードからランダムにn枚追加
+            auto pickCards = [&](auto pred, int n) {
+                std::vector<std::string> pool;
+                for (auto& [id, data] : CardDataBase::GetAll()) {
+                    if (data.generated || data.starter || data.unplayable) continue;
+                    if (id.rfind("CRAFT:", 0) == 0) continue;
+                    if (pred(id, data)) pool.push_back(id);
+                }
+                for (int i = 0; i < n && !pool.empty(); i++)
+                    pd.deck.push_back(pool[rand() % (int)pool.size()]);
+                };
+
+            // 軸カード
+            pickCards([&](const std::string& id, const CardData& d) {
+                for (auto& t : d.tags) if (t == tag) return true;
+                return false; }, archN);
+
+            // 補助カード
+            if (isBulwark)
+                // Bulwarkはブロックが軸 → 補助は「他軸」のランダム
+                pickCards([&](const std::string& id, const CardData& d) {
+                for (auto& t : d.tags) if (t == "Bulwark") return false;
+                return true; }, suppN);
+            else
+                // それ以外は移動＋ブロックを補助に
+                pickCards([&](const std::string& id, const CardData& d) {
+                if (d.type == CardType::Move) return true;
+                if (d.mainEffect.type == CardEffectType::Block) return true;
+                for (auto& t : d.tags) if (t == "Bulwark") return true;
+                return false; }, suppN);
+
+            // 完全ランダム
+            pickCards([&](const std::string& id, const CardData& d) { return true; }, randN);
+            };
+
+        auto grantRelics = [&](int perRarity) {
+            const char* rar[] = { "common", "uncommon", "rare", "boss" };
+            for (auto r : rar)
+                for (int i = 0; i < perRarity; i++)
+                {
+                    std::string id = RelicManager::RandomUnowned(r);
+                    if (!id.empty()) PlayerDataManager::AddRelic(id);
+                }
+            };
+
+        auto jumpTo = [&](int layer, int relicsPer, int archN, int suppN, int randN) {
+            auto& pd = PlayerDataManager::GetData();
+            buildDeck(tags[archetype], archN, suppN, randN);
+            grantRelics(relicsPer);
+            pd.layer = layer;
+            pd.hp = pd.maxHp;
+            pd.fieldNodeTypes.clear();
+            pd.fieldNodeEnemyIds.clear();
+            pd.fieldNodeVisited.clear();
+            PlayerDataManager::Save();
+            if (onChangeScene) onChangeScene(SceneType::Field);
+            };
+
+        if (ImGui::Button("Go Layer 2 (relics x1)")) jumpTo(2, 1, 5, 3, 2);   // 基本4+軸5+補助3+乱2=14
+        ImGui::SameLine();
+        if (ImGui::Button("Go Layer 3 (relics x2)")) jumpTo(3, 2, 7, 4, 4);   // 基本4+軸7+補助4+乱4=19
+    }
 
     ImGui::End();
 #endif
