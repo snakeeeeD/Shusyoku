@@ -189,7 +189,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     if (int h = RelicManager::SumValue("startHeal")) m_player->Heal(h);
     if (int atk = RelicManager::SumValue("startBuffAtk"))
     {
-        Buff b; b.type = BuffType::AttackUp; b.value = atk; b.duration = 999;
+        Buff b; b.type = BuffType::AttackUp; b.value = atk; b.duration = -1;
         b.name = L""; b.description = L"";
         m_player->GetBuffManager().AddBuff(b);
     }
@@ -739,7 +739,7 @@ void BattleScene::Update(float deltaTime)
 
             m_cameraOffsetX += dx * 0.02f * m_cameraZoom;
             m_cameraOffsetZ -= dy * 0.02f * m_cameraZoom;
-
+            
             // クランプはオフセット加算の後
             float gridHalfW = (m_gridMap->GetCols() / 2.0f) * 1.1f;
             float gridHalfH = (m_gridMap->GetRows() / 2.0f) * 1.1f;

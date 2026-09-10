@@ -6,6 +6,7 @@ class CardDataBase
 {
 public:
     static void Init();
+    static void Reload();
     static const CardData* Get(const std::string& id);
 
     static const std::unordered_map<std::string, CardData>& GetAll() { return m_data; }

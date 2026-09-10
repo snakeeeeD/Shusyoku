@@ -135,6 +135,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="AnimTune.h" />
     <ClInclude Include="Audio.h" />
     <ClInclude Include="BattleHighlighter.h" />
     <ClInclude Include="BattleScene.h" />

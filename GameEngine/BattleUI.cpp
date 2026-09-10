@@ -14,10 +14,13 @@
 #include "RelicManager.h"
 #include "UiWindow.h"
 #include "Audio.h"
+#include "AnimTune.h"
 #include <algorithm>
 #include <cmath>
 
 using namespace DirectX;
+
+AnimTuneData g_animTune;
 
 BattleUI::~BattleUI()
 {
@@ -822,12 +825,19 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         m_textRenderer->Begin();
         // 名前と値
         wchar_t buffText[64];
+        bool perm = (buff.duration < 0 || buff.duration >= 999);   // 永続判定
         if (buff.type == BuffType::Poison)
             swprintf_s(buffText, L"%s %d", info.name.c_str(), buff.value);
         else if (BuffInfo::IsDurationBased(buff.type))
-            swprintf_s(buffText, L"%s %dターン", info.name.c_str(), buff.duration);
+        {
+            if (perm) swprintf_s(buffText, L"%s 永続", info.name.c_str());
+            else      swprintf_s(buffText, L"%s %dターン", info.name.c_str(), buff.duration);
+        }
         else
-            swprintf_s(buffText, L"%s %d (%dT)", info.name.c_str(), buff.value, buff.duration);
+        {
+            if (perm) swprintf_s(buffText, L"%s %d 永続", info.name.c_str(), buff.value);
+            else      swprintf_s(buffText, L"%s %d (%dT)", info.name.c_str(), buff.value, buff.duration);
+        }
         D2D1::ColorF textColor = buffHover
             ? D2D1::ColorF(1.0f, 1.0f, 0.5f)
             : D2D1::ColorF(0.6f, 1.0f, 0.6f);
@@ -2456,7 +2466,7 @@ void BattleUI::StartPlayCardEffectFromHand(const CardData* data, int cardIndex, 
 void BattleUI::GetPlayEffectTransform(const PlayCardEffect& e, float& x, float& y, float& scale, float& rot)
 {
     float tx = m_screenWidth / 2.0f - CARD_WIDTH / 2.0f;
-    float ty = m_screenHeight / 2.0f - CARD_HEIGHT / 2.0f + 100.0f;
+    float ty = m_screenHeight / 2.0f - CARD_HEIGHT / 2.0f + g_animTune.playCenterY;
 
     if (e.isBurn)
     {
@@ -2486,28 +2496,26 @@ void BattleUI::GetPlayEffectTransform(const PlayCardEffect& e, float& x, float& 
     }
 
     // ↓ 通常カード：接近＋タメ(PLAY_EFFECT_DUR) → 退場はターン終了と同じ時間/軌道
-    float holdEnd = 0.72f * PLAY_EFFECT_DUR;                 // 接近+タメの終わり
+    float holdEnd = g_animTune.playHold * PLAY_EFFECT_DUR;         // 接近+タメの終わり
     float dtx = 80.0f, dty = (float)(m_screenHeight - 60);  // 捨て札パイル（ターン終了と同座標）
     float bx, by, scl;
     if (e.timer < holdEnd) {
-        float t = e.timer / PLAY_EFFECT_DUR;                // 0..0.72
-        if (t < 0.22f) {                                    // しゅっと接近
-            float u = t / 0.22f;
+        float t = e.timer / PLAY_EFFECT_DUR; 
+        if (t < g_animTune.playApproach) {
+            float u = t / g_animTune.playApproach;
             float eo = 1.0f - (1.0f - u) * (1.0f - u);
             bx = e.startX + (tx - e.startX) * eo;
             by = e.startY + (ty - e.startY) * eo;
-            scl = 1.0f + 0.45f * eo;
+            scl = 1.0f + (g_animTune.playScale - 1.0f) * eo;
         }
-        else {                                            // 中央でタメ
-            bx = tx; by = ty; scl = 1.45f;
-        }
+        else { bx = tx; by = ty; scl = g_animTune.playScale; }
     }
     else {                                                // 退場：ターン終了と同じ
         float u = min(1.0f, (e.timer - holdEnd) / DISCARD_EFFECT_DUR);
         float ease = u * u;
         bx = tx + (dtx - tx) * ease;
-        by = ty + (dty - ty) * ease - sinf(u * 3.14159f) * 70.0f;   // 弧
-        scl = 1.45f + (e.startScale - 1.45f) * u;           // 手札サイズへ
+        by = ty + (dty - ty) * ease - sinf(u * 3.14159f) * g_animTune.playArc;  // 弧
+        scl = g_animTune.playScale + (e.startScale - g_animTune.playScale) * u; // 手札サイズへ
     }
     float w = CARD_WIDTH * scl, h = CARD_HEIGHT * scl;
     x = bx - (w - CARD_WIDTH) / 2.0f;

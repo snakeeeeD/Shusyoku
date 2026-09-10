@@ -119,6 +119,8 @@ public:
 	
 	// マウスホイール
 	static void SetWheelDelta(int delta) { s_wheelDelta += delta; }
+	static int  GetPendingWheel() { return s_wheelDelta; }
+	static void ClearWheel() { s_wheelDelta = 0; } 
 	int GetMouseWheelDelta() const { return m_currentWheelDelta; }
 	int m_currentWheelDelta = 0;
 

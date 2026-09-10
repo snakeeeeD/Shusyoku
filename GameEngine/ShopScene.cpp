@@ -431,7 +431,9 @@ void ShopScene::HandleInput()
                 {"kind", it.kind == ShopKind::Card ? "card" : (it.kind == ShopKind::Relic ? "relic" : "other")},
                 {"price", it.price},
                 });
-            if (it.kind == ShopKind::Card) PlayerDataManager::AddCard(it.id);
+            if (it.kind == ShopKind::Card)       PlayerDataManager::AddCard(it.id);
+            else if (it.kind == ShopKind::Relic) PlayerDataManager::AddRelic(it.id);
+            else                                 PlayerDataManager::AddMaterial(it.id, 1); // Core / Material
             it.bought = true;
             PlayerDataManager::Save();
         }

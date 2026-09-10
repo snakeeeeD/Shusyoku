@@ -626,8 +626,31 @@ void SceneManager::DrawOverlay()
 
 	// === スプライト ===
 	m_uiSprite->Begin();
+
+	if (m_deckOpen)
+	{
+		m_uiSprite->DrawSprite(white, 0.0f, BAR_H, (float)m_screenWidth, (float)m_screenHeight - BAR_H,
+			0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.8f));          // 暗幕
+		DrawDeckCards(false);
+
+		// 強化後表示トグル
+		float ubX = 20.0f, ubY = m_screenHeight - 46.0f, ubW = 190.0f, ubH = 34.0f;
+		UiWindow::Button(m_uiSprite, white, ubX, ubY, ubW, ubH,
+			m_deckShowUpgrade ? XMFLOAT4(0.30f, 0.55f, 0.30f, 1.0f)
+			: XMFLOAT4(0.30f, 0.30f, 0.35f, 1.0f));
+
+		m_textRenderer->Begin();
+
+			DrawDeckCards(true);
+			m_textRenderer->DrawText(m_deckShowUpgrade ? L"強化後表示: ON" : L"強化後表示: OFF",
+				36.0f, m_screenHeight - 38.0f, 18.0f, D2D1::ColorF(1, 1, 1));
+
+		m_textRenderer->End();
+	}
+
 	m_uiSprite->DrawSprite(white, 0.0f, 0.0f, (float)m_screenWidth, BAR_H, 0.0f,
 		XMFLOAT4(0.08f, 0.08f, 0.12f, 0.9f));                 // 帯
+
 	m_uiSprite->DrawSprite(TextureManager::Get("ui_items"), m_screenWidth - 470.0f, 5.0f, 90.0f, 30.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
 
 	m_uiSprite->DrawSprite(TextureManager::Get("ui_deck"), btnX, 5.0f, 100.0f, 30.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));             // デッキボタン
@@ -644,19 +667,6 @@ void SceneManager::DrawOverlay()
 			hov ? XMFLOAT4(0.4f, 0.4f, 0.5f, 1) : XMFLOAT4(0.22f, 0.22f, 0.3f, 1));
 	}
 
-	if (m_deckOpen)
-	{
-		m_uiSprite->DrawSprite(white, 0.0f, 0.0f, (float)m_screenWidth, (float)m_screenHeight,
-			0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.8f));          // 暗幕
-		DrawDeckCards(false);
-
-		// 強化後表示トグル
-		float ubX = 20.0f, ubY = m_screenHeight - 46.0f, ubW = 190.0f, ubH = 34.0f;
-		UiWindow::Button(m_uiSprite, white, ubX, ubY, ubW, ubH,
-			m_deckShowUpgrade ? XMFLOAT4(0.30f, 0.55f, 0.30f, 1.0f)
-			: XMFLOAT4(0.30f, 0.30f, 0.35f, 1.0f));
-	}
-
 	m_uiSprite->End();
 
 	// === テキスト ===
@@ -669,13 +679,6 @@ void SceneManager::DrawOverlay()
 
 	{ SettingsUI u = SettingsLayout(); m_textRenderer->DrawText(L"設定", u.gear.x + 6.0f, u.gear.y + 7.0f, 16.0f, D2D1::ColorF(1, 1, 1)); }
 
-
-	if (m_deckOpen)
-	{
-		DrawDeckCards(true);
-		m_textRenderer->DrawText(m_deckShowUpgrade ? L"強化後表示: ON" : L"強化後表示: OFF",
-			36.0f, m_screenHeight - 38.0f, 18.0f, D2D1::ColorF(1, 1, 1));
-	}
 	
 	wchar_t gbuf[32];
 	// ゴールド
@@ -976,15 +979,6 @@ void SceneManager::HandleInput()
 			}
 		}
 
-		// Items を開く
-		if (click && !m_invOpen && !m_craftOpen
-			&& m.x >= m_screenWidth - 470.0f && m.x <= m_screenWidth - 380.0f
-			&& m.y >= 5.0f && m.y <= 35.0f)
-		{
-			Audio::PlaySE("Assets/Sound/se/click.mp3");
-			m_invOpen = true; return;
-		}
-
 		// Items（いつでも）
 		if (m_invOpen) { if (click) m_invOpen = false; return; }
 		{
@@ -997,15 +991,20 @@ void SceneManager::HandleInput()
 			}
 		}
 
-		if (onDeckBtn && !m_deckOpen)
-		{ 
-			m_deckOpen = true; 
-			m_deckScroll = 0.0f; return;
+		if (onDeckBtn && !m_deckOpen && !m_invOpen && !m_mapOpen && !m_craftOpen)
+		{
 			Audio::PlaySE("Assets/Sound/se/click.mp3");
+			m_deckOpen = true;
+			m_deckScroll = 0.0f; m_deckScrollTarget = 0.0f;
+			return;
 		}
 		if (m_deckOpen)
 		{
-			m_deckScroll -= m_uiInput.GetMouseWheelDelta() * 0.5f;
+			m_deckScrollTarget -= m_uiInput.GetMouseWheelDelta() * 0.5f;
+			const float OVER = 60.0f;
+			float maxS = DeckMaxScroll();
+			if (m_deckScrollTarget < 0.0f)        m_deckScrollTarget = 0.0f;
+			if (m_deckScrollTarget > maxS + OVER) m_deckScrollTarget = maxS + OVER;
 			if (click)
 			{
 				// 強化後表示トグル（デッキ閲覧のみ・拡大中でない時）
@@ -1324,6 +1323,8 @@ void SceneManager::ShowTutorialDelayed(const std::vector<TutorialPage>& pages, f
 
 void SceneManager::DrawBarTips()
 {
+	if (AnyModalOpen()) return;   // モーダル表示中はバー説明を出さない
+
 	POINT mp = m_uiInput.GetMousePos();
 	if (mp.y < 5 || mp.y > 35) return;
 
@@ -1449,6 +1450,23 @@ void SceneManager::Update(float deltaTime)
 		}
 	}
 
+	if (m_deckOpen)
+	{
+		m_deckScrollTarget -= Input::GetPendingWheel() * 0.5f;   // シーンが消費する前に読む
+		int w = Input::GetPendingWheel();
+		m_deckScrollTarget -= w * 0.5f;
+		Input::ClearWheel();
+		float maxS = DeckMaxScroll();
+		{
+			char b[96]; sprintf_s(b, "[DECK] wheel=%d target=%.1f scroll=%.1f maxS=%.1f\n",
+				w, m_deckScrollTarget, m_deckScroll, maxS); OutputDebugStringA(b);
+		}
+		if (m_deckScrollTarget < 0.0f)      m_deckScrollTarget = 0.0f;
+		else if (m_deckScrollTarget > maxS) m_deckScrollTarget = maxS;
+		m_deckScroll += (m_deckScrollTarget - m_deckScroll) * min(1.0f, 15.0f * deltaTime);
+		{ char b[64]; sprintf_s(b, "wheel=%d target=%.1f maxS=%.1f\n", Input::GetPendingWheel(), m_deckScrollTarget, DeckMaxScroll()); OutputDebugStringA(b); }
+	}
+
 	if (m_deckOpen || m_craftOpen || m_invOpen || m_restOpen || m_mapOpen || m_eventOpen || m_craftFxTimer > 0.0f) return;
 
 	// チュートリアル中：カード強制ホバー＋戦闘はフリールックで駆動
@@ -1468,7 +1486,10 @@ void SceneManager::Update(float deltaTime)
 		battle->SetForceHitmark(false);
 	}
 
+	
+
 	if (m_currentScene) m_currentScene->Update(deltaTime);   // 戦闘はfreeLook中は早期return
+
 }
 
 bool SceneManager::GetDeckCardBase(int i, float& baseX, float& baseY) const
@@ -1487,6 +1508,26 @@ bool SceneManager::GetDeckCardBase(int i, float& baseX, float& baseY) const
 	baseX = startX + (i % perRow) * (cw + gapX);
 	baseY = startY + (i / perRow) * (ch + gapY) - m_deckScroll;
 	return true;
+}
+
+float SceneManager::DeckMaxScroll() const
+{
+	int n = (int)PlayerDataManager::GetData().deck.size();
+	int perRow = 6;
+	int rows = (n + perRow - 1) / perRow;
+	if (rows <= 0) return 0.0f;
+
+	float ch = CardVisual::CARD_H * DECK_SCALE;
+	float gapY = 20.0f;
+	float startY = 70.0f;
+
+	// scroll=0 のときの「最下段カードの実描画下端」(GetRectの拡大分込み)
+	float lastBaseY = startY + (rows - 1) * (ch + gapY);
+	float lastBottom = lastBaseY + (ch + CardVisual::CARD_H) / 2.0f;
+
+	float wantBottom = (float)m_screenHeight - 70.0f;   // ここまで見せたい(下UIの余白)
+	float m = lastBottom - wantBottom;
+	return m > 0.0f ? m : 0.0f;                          // 収まるデッキは0(スクロール無し)
 }
 
 int SceneManager::GetDeckCardAt(POINT p) const
@@ -1972,7 +2013,7 @@ void SceneManager::HandleRestClick(POINT m)
 			else if (i == 1)     // Upgrade（デッキ強化モードを流用）
 			{
 				m_restOpen = false;
-				m_deckOpen = true; m_deckUpgradeMode = true; m_deckScroll = 0.0f;
+				m_deckOpen = true; m_deckUpgradeMode = true; m_deckScroll = 0.0f; m_deckScrollTarget = 0.0f;
 			}
 			else                 // Craft
 			{
@@ -2604,4 +2645,11 @@ void SceneManager::DrawBigCard(const CardData* d, float x, float y, float scale,
 			CardVisual::GetCardColor(d->type), d, m_uiTime);
 	else
 		CardVisual::DrawTexts(m_textRenderer, d, nullptr, x, y, scale, 0.0f, 1.0f);
+}
+
+bool SceneManager::AnyModalOpen() const
+{
+	return m_tutorialOpen || m_deckOpen || m_craftOpen || m_invOpen
+		|| m_mapOpen || m_restOpen || m_eventOpen || m_settingsOpen
+		|| m_confirmAction != 0;
 }

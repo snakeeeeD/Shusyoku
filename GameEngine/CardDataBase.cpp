@@ -176,6 +176,12 @@ void CardDataBase::Init()
     }
 }
 
+void CardDataBase::Reload()
+{
+    m_data.clear();   // 古い定義（"+"版・CRAFT含む）を全消去
+    Init();           // cards.json から読み直し
+}
+
 const CardData* CardDataBase::Get(const std::string& id)
 {
     auto it = m_data.find(id);

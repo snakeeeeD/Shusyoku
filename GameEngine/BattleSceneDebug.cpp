@@ -1,5 +1,6 @@
 #ifdef _DEBUG
 #include "BattleScene.h"
+#include "AnimTune.h"
 #include "External/imgui/imgui.h"
 #include "EncounterDataBase.h"
 #include "EnemyDataBase.h"
@@ -24,8 +25,21 @@ void BattleScene::DrawImGui()
     ImGui::SliderInt("Rank", &m_debugRank, 1, 3);
     if (ImGui::Button("Reload & Reset"))
     {
+
+        // 手札IDを退避（GetId()はDBポインタ参照なので、Reload前に取る）
+        std::vector<std::string> handIds;
+        for (auto c : m_hand.GetCards())
+            handIds.push_back(c->GetId());
+
+        CardDataBase::Reload();
         EnemyDataBase::Reload();
         EncounterDataBase::Reload();
+
+        // 手札を新データで作り直す（ダングリング回避）
+        m_battleUI->ClearCardAnimations();
+        m_hand.Clear();
+        for (auto& id : handIds)
+            m_hand.AddCard(id);
 
         for (auto enemy : m_enemies)
         {
@@ -58,7 +72,7 @@ void BattleScene::DrawImGui()
         m_player->SetHp(hp);
 
     int energy = m_player->GetEnergy();
-    if (ImGui::SliderInt("Energy", &energy, 0, m_player->GetMaxEnergy()))
+    if (ImGui::SliderInt("Energy", &energy, 0, m_player->GetMaxEnergy() + 5))
         m_player->SetEnergy(energy);
 
     int block = m_player->GetBlock();
@@ -213,6 +227,22 @@ void BattleScene::DrawImGui()
             if (!id.empty())
                 m_hand.AddCard(id);
         }
+    }
+
+    ImGui::Separator();
+    ImGui::Text("Animation: Card Play");
+    ImGui::SliderFloat("Center Y", &g_animTune.playCenterY, -100.0f, 300.0f);
+    ImGui::SliderFloat("Approach", &g_animTune.playApproach, 0.05f, 0.60f);
+    ImGui::SliderFloat("Hold end", &g_animTune.playHold, 0.30f, 0.95f);
+    ImGui::SliderFloat("Center scale", &g_animTune.playScale, 1.0f, 2.2f);
+    ImGui::SliderFloat("Exit arc", &g_animTune.playArc, 0.0f, 200.0f);
+    if (ImGui::Button("Log values (copy to code)"))
+    {
+        char b[192];
+        sprintf_s(b, "[AnimTune] centerY=%.1f approach=%.2f hold=%.2f scale=%.2f arc=%.1f\n",
+            g_animTune.playCenterY, g_animTune.playApproach, g_animTune.playHold,
+            g_animTune.playScale, g_animTune.playArc);
+        OutputDebugStringA(b);
     }
 
     ImGui::End();

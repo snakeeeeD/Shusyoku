@@ -118,6 +118,7 @@ private:
     static constexpr float BAR_H = 40.0f;
 
     float m_deckScroll = 0.0f;
+    float m_deckScrollTarget = 0.0f;
 
     float m_uiTime = 0.0f;
 
@@ -128,6 +129,7 @@ private:
     static constexpr float DECK_SCALE = 1.1f;
 
     bool GetDeckCardBase(int i, float& baseX, float& baseY) const;   // カードの基準位置
+    float DeckMaxScroll() const;   // デッキ表示のスクロール
     int  GetDeckCardAt(POINT p) const;                              // 座標→デッキindex
     std::vector<int> VisibleDeckIndices() const;
 
@@ -201,6 +203,8 @@ private:
     int  m_confirmAction = 0;
     int  m_dragSlider = -1;               // 0=BGM,1=SE,-1=なし
     void DrawSettings();
+    bool AnyModalOpen() const;
+
     SettingsUI SettingsLayout() const
     {
         SettingsUI u{};

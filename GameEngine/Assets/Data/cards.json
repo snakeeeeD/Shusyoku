@@ -173,6 +173,7 @@
       "name": "毒刃",
       "type": "Attack",
       "rarity": "Common",
+      "tags": "Poison",
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -1017,7 +1018,7 @@
         "value": 6
       },
       "allEnemyEffect": {
-        "buffType": "Weak",
+        "buffType": "Vulnerable",
         "value": 1,
         "duration": 2
       }

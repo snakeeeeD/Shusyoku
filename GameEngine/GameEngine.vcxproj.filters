@@ -280,6 +280,9 @@
     <Filter Include="ソース ファイル\07-デバッグ用">
       <UniqueIdentifier>{8436a3cf-0b61-482a-b14d-e8be89b3bb9d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\10-AnimTune">
+      <UniqueIdentifier>{9fd637c0-8ffd-44cf-bef6-f5626bddafc9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -521,6 +524,9 @@
     </ClInclude>
     <ClInclude Include="Telemetry.h">
       <Filter>ソース ファイル\07-デバッグ用</Filter>
+    </ClInclude>
+    <ClInclude Include="AnimTune.h">
+      <Filter>ソース ファイル\01-描画関連\10-AnimTune</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

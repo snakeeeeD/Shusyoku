@@ -1398,7 +1398,7 @@
     }
    ],
    "texture": "enemy_bug",
-   "hp": 39,
+   "hp": 45,
    "width": 1.1,
    "height": 1.1,
    "actions": [
@@ -1410,7 +1410,7 @@
      "effects": [
       {
        "kind": "Block",
-       "value": 8
+       "value": 11
       }
      ],
      "select": {
