@@ -89,6 +89,10 @@ public:
     std::string CraftRecipeId() const;
     int CraftModSlots() const;
 
+    void  GetBackBtnRect(float& x, float& y, float& w, float& h) const;
+    bool  BackBtnHit(POINT m) const;
+    void  DrawBackButton();
+
     void DrawEventRelicPicker();
     void GetEventRelicSlot(int i, float& x, float& y) const;
     int  EventRelicAt(POINT p) const;
@@ -120,6 +124,14 @@ private:
     float m_deckScroll = 0.0f;
     float m_deckScrollTarget = 0.0f;
 
+    float m_matScroll = 0.0f;
+    float m_matScrollTarget = 0.0f;
+
+    bool m_mDrag = false;
+    int  m_mDragStartY = 0;
+    int  m_mDragLastY = 0;
+    bool m_mDragMoved = false;   // 閾値以上動いた＝ドラッグ扱い（選択を抑制）
+
     float m_uiTime = 0.0f;
 
     void DrawOverlay();
@@ -130,6 +142,11 @@ private:
 
     bool GetDeckCardBase(int i, float& baseX, float& baseY) const;   // カードの基準位置
     float DeckMaxScroll() const;   // デッキ表示のスクロール
+    float MatMaxScroll() const;
+    float MatTop() const;
+    float MatBottom() const;
+    float MatAlphaAt(float y) const;
+    float CoreTop() const;
     int  GetDeckCardAt(POINT p) const;                              // 座標→デッキindex
     std::vector<int> VisibleDeckIndices() const;
 
