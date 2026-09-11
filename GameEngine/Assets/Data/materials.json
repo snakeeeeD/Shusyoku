@@ -89,6 +89,36 @@
       "modSlots": 2,
       "mainType": "Damage",
       "mainValue": 2
+    },
+    {
+      "id": "core_frame",
+      "name": "拡張核",
+      "desc": "スキルコア / 素材4枠",
+      "type": "Skill",
+      "rangeType": "None",
+      "range": 0,
+      "cost": 1,
+      "buyPrice": 160,
+      "sellPrice": 30,
+      "modSlots": 4,
+      "mainType": "Block",
+      "mainValue": 1,
+      "layer": 2
+    },
+    {
+      "id": "core_void",
+      "name": "虚核",
+      "desc": "攻撃コア / 素材5枠",
+      "type": "Attack",
+      "rangeType": "Adjacent",
+      "range": 1,
+      "cost": 2,
+      "buyPrice": 200,
+      "sellPrice": 40,
+      "modSlots": 5,
+      "mainType": "Damage",
+      "mainValue": 1,
+      "layer": 3
     }
   ],
 
@@ -340,6 +370,81 @@
         "type": "ApplyBuff",
         "buffType": "DefenseUp",
         "value": 2,
+        "duration": -1
+      }
+    },
+    {
+      "id": "fume_core",
+      "name": "瘴気核片",
+      "tag": "瘴",
+      "layer": 3,
+      "desc": "パワー:毎ターン全敵に毒1(永続)",
+      "cost": 3,
+      "buyPrice": 180,
+      "sellPrice": 25,
+      "Power": {
+        "slot": "main",
+        "type": "ApplyBuff",
+        "buffType": "NoxiousFumes",
+        "value": 1,
+        "duration": -1
+      }
+    },
+    {
+      "id": "growth_stone",
+      "name": "成長石",
+      "tag": "成",
+      "layer": 3,
+      "desc": "パワー:毎ターン攻撃+1(永続)",
+      "cost": 3,
+      "buyPrice": 180,
+      "sellPrice": 25,
+      "Power": {
+        "slot": "main",
+        "type": "ApplyBuff",
+        "buffType": "AttackGrowth",
+        "value": 1,
+        "duration": -1
+      }
+    },
+    {
+      "id": "spark_plus",
+      "name": "電片・改",
+      "tag": "引改",
+      "layer": 3,
+      "desc": "パワー:毎ターン+2ドロー(永続)",
+      "cost": 3,
+      "buyPrice": 190,
+      "sellPrice": 25,
+      "Power": {
+        "slot": "main",
+        "type": "ApplyBuff",
+        "buffType": "DrawPerTurn",
+        "value": 2,
+        "duration": -1
+      }
+    },
+    {
+      "id": "riposte_edge",
+      "name": "返しの刃",
+      "tag": "返",
+      "layer": 3,
+      "desc": "スキル:受け返し / パワー:永続で受け返し",
+      "cost": 2,
+      "buyPrice": 180,
+      "sellPrice": 25,
+      "Skill": {
+        "slot": "sub",
+        "type": "ApplyBuff",
+        "buffType": "Riposte",
+        "value": 1,
+        "duration": 2
+      },
+      "Power": {
+        "slot": "main",
+        "type": "ApplyBuff",
+        "buffType": "Riposte",
+        "value": 1,
         "duration": -1
       }
     },

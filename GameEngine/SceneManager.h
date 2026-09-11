@@ -144,6 +144,8 @@ private:
     float DeckMaxScroll() const;   // デッキ表示のスクロール
     float MatMaxScroll() const;
     float MatTop() const;
+    float MatBottom() const;
+    float MatAlphaAt(float y) const;
     float CoreTop() const;
     int  GetDeckCardAt(POINT p) const;                              // 座標→デッキindex
     std::vector<int> VisibleDeckIndices() const;

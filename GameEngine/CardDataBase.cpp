@@ -199,28 +199,45 @@ static void applyEntry(CardData& c, const MaterialDef& m, const std::string& bas
 {
     const MatEntry* e = m.entryFor(baseType);
     if (!e) return;
-    if (e->slot == "amplifyMain")
-        c.mainEffect.value += e->value;
-    else if (e->slot == "sub") {
-        c.subEffect.hasEffect = true;
-        c.subEffect.type = StringToCardEffectType(e->type);
-        c.subEffect.value = e->value; c.subEffect.duration = e->duration;
-        c.subEffect.buffType = e->buffType;
+    CardEffectType et = StringToCardEffectType(e->type);
+
+    if (e->slot == "amplifyMain") c.mainEffect.value += e->value;
+    else if (e->slot == "hits")   c.hits += e->value;
+    else if (e->slot == "main")
+    {
+        c.mainEffect.hasEffect = true; c.mainEffect.type = et;
+        c.mainEffect.value = e->value; c.mainEffect.duration = e->duration; c.mainEffect.buffType = e->buffType;
     }
-    else if (e->slot == "onHit") {
-        c.onHitEffect.hasEffect = true;
-        c.onHitEffect.type = StringToCardEffectType(e->type);
-        c.onHitEffect.value = e->value; c.onHitEffect.duration = e->duration;
-        c.onHitEffect.buffType = e->buffType;
+    else if (e->slot == "sub")
+    {
+        if (c.subEffect.hasEffect && c.subEffect.type == et && c.subEffect.buffType == e->buffType)
+        {
+            c.subEffect.value += e->value; c.subEffect.duration += e->duration;
+        }   // “¯í‚Í‰ÁZ
+        else if (!c.subEffect.hasEffect)
+        {
+            c.subEffect.hasEffect = true; c.subEffect.type = et;
+            c.subEffect.value = e->value; c.subEffect.duration = e->duration; c.subEffect.buffType = e->buffType;
+        }
+        else c.subEffect.value += e->value;   // sub˜g‚Í1‚Â¨•Êí‚Å‚à’l‚¾‚¯‰ÁZ
     }
-    else if (e->slot == "main") {
-        c.mainEffect.type = StringToCardEffectType(e->type);
-        c.mainEffect.value = e->value; c.mainEffect.duration = e->duration;
-        c.mainEffect.buffType = e->buffType;
+    else if (e->slot == "onHit")
+    {
+        if (c.onHitEffect.hasEffect && c.onHitEffect.type == et && c.onHitEffect.buffType == e->buffType)
+        {
+            c.onHitEffect.value += e->value; c.onHitEffect.duration += e->duration; return;
+        }
+        if (c.onHitEffect2.hasEffect && c.onHitEffect2.type == et && c.onHitEffect2.buffType == e->buffType)
+        {
+            c.onHitEffect2.value += e->value; c.onHitEffect2.duration += e->duration; return;
+        }
+        CardEffectData* slot = !c.onHitEffect.hasEffect ? &c.onHitEffect
+            : (!c.onHitEffect2.hasEffect ? &c.onHitEffect2 : nullptr);
+        if (!slot) { c.onHitEffect.value += e->value; return; }   // —¼•û–„¨’l‚¾‚¯‰ÁZ
+        slot->hasEffect = true; slot->type = et;
+        slot->value = e->value; slot->duration = e->duration; slot->buffType = e->buffType;
     }
-    else if (e->slot == "hits")
-        c.hits += e->value;
-    // none / onArrival ‚Í v1 ‚Å‚Í–³‹ionArrival‚ÍˆÚ“®ŠjÀ‘•j
+    // none / onArrival ‚Í˜‚¦’u‚«
 }
 
 CardData CardDataBase::BuildCrafted(const std::string& id)

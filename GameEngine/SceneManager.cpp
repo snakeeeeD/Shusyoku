@@ -599,7 +599,7 @@ void SceneManager::Draw()
 	}
 	if (m_craftOpen) DrawCraft();
 	if (m_restOpen && !m_mapOpen && !m_invOpen && !m_deckOpen && !m_craftOpen) DrawRest();
-	if (m_deckOpen || m_mapOpen || m_invOpen || m_restOpen) DrawBackButton();
+	if (m_deckOpen || m_mapOpen || m_invOpen || m_restOpen || m_craftOpen) DrawBackButton();
 	if (m_craftFxTimer > 0.0f) DrawCraftFx();  
 	if (m_currentType != SceneType::Title && !fading) { DrawRelicBar(); DrawBarTips(); }
 	if (m_settingsOpen) DrawSettings();
@@ -880,8 +880,11 @@ void SceneManager::HandleInput()
 	m_uiInput.Update();
 	if (m_fadeState != Fade::None) return;   // フェード中は入力無効
 
-	// マウスドラッグで縦スクロール（デッキ / クラフト / インベントリ）
 	{
+		// ホイールでもスクロール（デッキと同じ m_uiInput 経由・ドラッグと同じターゲットを共有）
+		if (m_craftOpen || m_invOpen)
+			m_matScrollTarget -= m_uiInput.GetMouseWheelDelta() * 0.5f;
+
 		bool held = m_uiInput.GetMouseButtonPress(0);
 		POINT mp = m_uiInput.GetMousePos();
 		if (held && (m_deckOpen || m_craftOpen || m_invOpen))
@@ -1504,11 +1507,15 @@ void SceneManager::Update(float deltaTime)
 
 	if (m_craftOpen || m_invOpen)
 	{
-		m_matScrollTarget -= Input::GetPendingWheel() * 0.5f;
-		Input::ClearWheel();
 		float maxS = MatMaxScroll();
-		if (m_matScrollTarget < 0.0f)      m_matScrollTarget = 0.0f;
-		else if (m_matScrollTarget > maxS) m_matScrollTarget = maxS;
+		const float OVER = 60.0f;
+		if (m_matScrollTarget < -OVER)       m_matScrollTarget = -OVER;
+		if (m_matScrollTarget > maxS + OVER) m_matScrollTarget = maxS + OVER;
+		if (!m_mDrag)
+		{
+			if (m_matScrollTarget < 0.0f)      m_matScrollTarget += (0.0f - m_matScrollTarget) * min(1.0f, 12.0f * deltaTime);
+			else if (m_matScrollTarget > maxS) m_matScrollTarget += (maxS - m_matScrollTarget) * min(1.0f, 12.0f * deltaTime);
+		}
 		m_matScroll += (m_matScrollTarget - m_matScroll) * min(1.0f, 15.0f * deltaTime);
 	}
 
@@ -1613,9 +1620,15 @@ int SceneManager::CraftModSlots() const
 
 void SceneManager::GetCraftSlotRect(int i, float& x, float& y, float& w, float& h) const
 {
-	w = 150.0f; h = 60.0f; y = 130.0f;
-	x = m_screenWidth / 2.0f - 250.0f + i * 170.0f;   // 0=土台,1,2=修飾
+	int nSlots = 1 + CraftModSlots();
+	float sw = 150.0f, gap = 20.0f;
+	if (nSlots > 4) { sw = 110.0f; gap = 12.0f; }   // 枠が多い時は縮小
+	w = sw; h = 60.0f; y = 130.0f;
+	float totalW = nSlots * sw + (nSlots - 1) * gap;
+	float startX = m_screenWidth / 2.0f - totalW / 2.0f;
+	x = startX + i * (sw + gap);
 }
+
 void SceneManager::GetCraftInvRect(int i, float& x, float& y, float& w, float& h) const
 {
 	w = 190.0f; h = 38.0f;
@@ -1624,6 +1637,7 @@ void SceneManager::GetCraftInvRect(int i, float& x, float& y, float& w, float& h
 	x = startX + (i % cols) * (w + gap);
 	y = 380.0f + (i / cols) * (h + gap);
 }
+
 void SceneManager::GetCraftBtnRect(float& x, float& y, float& w, float& h) const
 {
 	w = 160.0f; h = 48.0f;
@@ -1690,16 +1704,17 @@ void SceneManager::DrawCraft()
 	const BaseDef* cb = m_craftBase.empty() ? nullptr : MaterialDataBase::GetBase(m_craftBase);
 	for (int i = 0; i < (int)md.size(); i++) {
 		float x, y, w, h; GetCraftModRect(i, x, y, w, h);
-		if (y + h <= MatTop() || y >= m_screenHeight - 120.0f) continue;
+		float a = MatAlphaAt(y + h * 0.5f); if (a <= 0.0f) continue;
 		auto mdef = MaterialDataBase::GetMaterial(md[i].first);
-		bool compat = cb && mdef && mdef->entryFor(cb->type);   // Base未選択 or 非対応はグレー
+		bool compat = cb && mdef && mdef->entryFor(cb->type);
 		if (compat && mdef->entryFor(cb->type)->slot == "none" && CraftModSlots() == 1) compat = false;
-		UiWindow::Button(m_uiSprite, white, x, y, w, h,
-			compat ? XMFLOAT4(0.2f, 0.3f, 0.3f, 1.0f) : XMFLOAT4(0.12f, 0.12f, 0.14f, 1.0f));
+		XMFLOAT4 bc = compat ? XMFLOAT4(0.2f, 0.3f, 0.3f, 1.0f) : XMFLOAT4(0.12f, 0.12f, 0.14f, 1.0f);
+		bc.w *= a;
+		UiWindow::Button(m_uiSprite, white, x, y, w, h, bc);
 		auto icons = MatFitIcons(md[i].first);
 		for (int k = 0; k < (int)icons.size(); k++)
 			m_uiSprite->DrawSprite(TextureManager::Get(icons[k]),
-				x + w - 22.0f - k * 20.0f, y + (h - 18.0f) / 2.0f, 18.0f, 18.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
+				x + w - 22.0f - k * 20.0f, y + (h - 18.0f) / 2.0f, 18.0f, 18.0f, 0.0f, XMFLOAT4(1, 1, 1, a));
 	}
 	
 		// 作成ボタン
@@ -1721,6 +1736,14 @@ void SceneManager::DrawCraft()
 		CardVisual::DrawBase(m_uiSprite, white, bx, by, 1.2f, 0.0f,
 			CardVisual::GetCardColor(prev->type), prev, m_uiTime);
 	}
+
+	// 見出しの下地ウィンドウ
+	{
+		float hx = m_screenWidth / 2.0f - (6 * 150.0f + 5 * 8.0f) / 2.0f;
+		UiWindow::Draw(m_uiSprite, white, hx - 10.0f, CoreTop() - 30.0f, 120.0f, 28.0f);
+		UiWindow::Draw(m_uiSprite, white, hx - 10.0f, MatTop() - 32.0f, 150.0f, 28.0f);
+	}
+
 	m_uiSprite->End();
 
 	// --- テキスト ---
@@ -1749,26 +1772,19 @@ void SceneManager::DrawCraft()
 		m_textRenderer->DrawText(buf, x + 6.0f, y + 8.0f, 15.0f, D2D1::ColorF(1, 1, 1));
 	}
 	auto mods = CraftMods();
-	for (int i = 0; i < (int)mods.size(); i++)
+	for (int i = 0; i < (int)mods.size(); i++) 
 	{
 		float x, y, w, h; GetCraftModRect(i, x, y, w, h);
-		if (y + h <= MatTop() || y >= m_screenHeight - 120.0f) continue; // バンド外は無視
-		wchar_t buf[64];
-		swprintf_s(buf, L"%s x%d", matName(mods[i].first).c_str(), mods[i].second);
-		m_textRenderer->DrawText(buf, x + 6.0f, y + 8.0f, 15.0f, D2D1::ColorF(1, 1, 1));
+		float aT = MatAlphaAt(y + 8.0f), aB = MatAlphaAt(y + 8.0f + 15.0f);
+		if (aT <= 0.0f && aB <= 0.0f) continue;
+		wchar_t buf[64]; swprintf_s(buf, L"%s x%d", matName(mods[i].first).c_str(), mods[i].second);
+		m_textRenderer->DrawTextGradientV(buf, x + 6.0f, y + 8.0f, 15.0f, D2D1::ColorF(1, 1, 1), aT, aB);
 	}
 	{
 		float x, y, w, h; GetCraftBtnRect(x, y, w, h);
 		POINT mp = m_uiInput.GetMousePos();
 		float dy = (mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h) ? -4.0f : 0.0f;
 		m_textRenderer->DrawText(L"Make", x + 55.0f, y + dy + 12.0f, 20.0f, D2D1::ColorF(1, 1, 1));
-
-		std::wstring reason;
-		if (m_craftBase.empty())                                   reason = L"Baseを選択してください";
-		else if ((int)m_craftMods.size() < CraftModSlots())
-			reason = L"素材をあと" + std::to_wstring(CraftModSlots() - (int)m_craftMods.size()) + L"個";
-		if (!reason.empty())
-			m_textRenderer->DrawText(reason.c_str(), x - 20.0f, y - 22.0f, 15.0f, D2D1::ColorF(1.0f, 0.8f, 0.5f));
 	}
 	if (prev)
 		CardVisual::DrawTexts(m_textRenderer, prev, nullptr,
@@ -1781,6 +1797,8 @@ void SceneManager::DrawCraft()
 
 void SceneManager::HandleCraftClick(POINT m)
 {
+	if (BackBtnHit(m)) { m_craftOpen = false; if (m_restActive) m_restOpen = true; return; }  // 戻る
+
 	// 枠クリックで解除（最初に判定）
 	int nSlots = 1 + CraftModSlots();
 	for (int i = 0; i < nSlots; i++)
@@ -1831,7 +1849,7 @@ void SceneManager::HandleCraftClick(POINT m)
 	auto mods = CraftMods();
 	for (int i = 0; i < (int)mods.size(); i++) {
 		float x, y, w, h; GetCraftModRect(i, x, y, w, h);
-		if (y + h <= MatTop() || y >= m_screenHeight - 120.0f) continue;  // バンド外は無視
+		if (y + h <= MatTop() || y >= MatBottom()) continue;   // 上に完全に出た/下端以降の行だけ除外（箱は帯の下に潜る）
 		if (m.x >= x && m.x <= x + w && m.y >= y && m.y <= y + h) {
 			const std::string& id = mods[i].first;
 			if (m_craftBase.empty()) return;                         // 先にBaseを選ぶ
@@ -1844,9 +1862,6 @@ void SceneManager::HandleCraftClick(POINT m)
 			return;
 		}
 	}
-	// どれでもない所（枠外）→ 閉じる
-	m_craftOpen = false;
-	if (m_restActive) m_restOpen = true;
 }
 
 void SceneManager::DoCraft()
@@ -1902,8 +1917,7 @@ float SceneManager::MatMaxScroll() const
 	int cols = 4; float h = 38.0f, gap = 8.0f;
 	int rows = ((int)CraftMods().size() + cols - 1) / cols;
 	float contentH = rows * (h + gap);
-	float visibleH = (m_screenHeight - 120.0f) - MatTop();   // バンドの高さ
-	float maxS = contentH - visibleH;
+	float visibleH = MatBottom() - MatTop();	float maxS = contentH - visibleH;
 	return maxS > 0.0f ? maxS : 0.0f;
 }
 
@@ -1913,6 +1927,23 @@ float SceneManager::MatTop() const
 	int coreRows = ((int)CraftBases().size() + coreCols - 1) / coreCols;
 	if (coreRows < 1) coreRows = 1;
 	return CoreTop() + coreRows * (38.0f + 8.0f) + 34.0f;
+}
+
+float SceneManager::MatBottom() const
+{
+	return m_screenHeight - 100.0f;   // Makeボタンの上に余白を確保
+}
+
+float SceneManager::MatAlphaAt(float y) const
+{
+	float top = MatTop(), bot = MatBottom();
+	const float FT = 34.0f;   // 上：バンドより上に出た分だけフェード
+	const float FB = 40.0f;   // 下フェード
+	if (y < top - FT || y > bot) return 0.0f;
+	float a = 1.0f;
+	if (y < top)      a = (y - (top - FT)) / FT;   // top以上は薄くしない＝最上段が反応
+	if (bot - y < FB) a = min(a, (bot - y) / FB);
+	return a < 0.0f ? 0.0f : (a > 1.0f ? 1.0f : a);
 }
 
 float SceneManager::CoreTop() const
@@ -1945,7 +1976,7 @@ std::string SceneManager::HoveredItem(POINT mp) const
 	auto mods = CraftMods();
 	for (int i = 0; i < (int)mods.size(); i++) {
 		float x, y, w, h; GetCraftModRect(i, x, y, w, h);
-		if (y + h <= MatTop() || y >= m_screenHeight - 120.0f) continue;  // バンド外は無視
+		if (MatAlphaAt(y + h * 0.5f) < 0.6f) continue;   // 端で薄い行はホバー対象外（詳細を出さない）
 		if (mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h) return mods[i].first;
 	}
 	return "";
@@ -1976,13 +2007,21 @@ void SceneManager::DrawInventory()
 	auto mods = CraftMods();
 	for (int i = 0; i < (int)mods.size(); i++) {
 		float x, y, w, h; GetCraftModRect(i, x, y, w, h);
-		if (y + h <= MatTop() || y >= m_screenHeight - 120.0f) continue;  // バンド外は無視
+		if (y + h <= MatTop() || y >= MatBottom()) continue;   // 上に完全に出た/下端以降の行だけ除外（箱は帯の下に潜る）
 		m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(0.2f, 0.3f, 0.3f, 0.85f));
 		auto icons = MatFitIcons(mods[i].first);
 		for (int k = 0; k < (int)icons.size(); k++)
 			m_uiSprite->DrawSprite(TextureManager::Get(icons[k]),
 				x + w - 22.0f - k * 20.0f, y + (h - 18.0f) / 2.0f, 18.0f, 18.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
 	}
+
+	// 見出しの下地ウィンドウ
+	{
+		float hx = m_screenWidth / 2.0f - (6 * 150.0f + 5 * 8.0f) / 2.0f;
+		UiWindow::Draw(m_uiSprite, white, hx - 10.0f, CoreTop() - 30.0f, 120.0f, 28.0f);
+		UiWindow::Draw(m_uiSprite, white, hx - 10.0f, MatTop() - 32.0f, 150.0f, 28.0f);
+	}
+
 	m_uiSprite->End();
 
 	m_textRenderer->Begin();
@@ -2002,7 +2041,7 @@ void SceneManager::DrawInventory()
 	}
 	for (int i = 0; i < (int)mods.size(); i++) {
 		float x, y, w, h; GetCraftModRect(i, x, y, w, h);
-		if (y + h <= MatTop() || y >= m_screenHeight - 120.0f) continue;// バンド外は無視
+		if (y + h <= MatTop() || y + h > MatBottom()) continue;   // 帯に潜る行は文字を描かない（D2D文字は帯で隠せないため）
 		wchar_t b[64]; swprintf_s(b, L"%s x%d", GetItemInfo(mods[i].first).name.c_str(), mods[i].second);
 		m_textRenderer->DrawText(b, x + 6.0f, y + 8.0f, 15.0f, D2D1::ColorF(1, 1, 1));
 	}

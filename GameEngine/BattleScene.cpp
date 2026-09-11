@@ -913,6 +913,12 @@ void BattleScene::Update(float deltaTime)
             auto& pd = PlayerDataManager::GetData();
             pd.hp = m_player->GetHp();
 
+            if (m_category == EncCategory::Boss)   // ボス撃破で全回復
+            {
+                m_player->Heal(m_player->GetMaxHp());
+                pd.hp = m_player->GetHp();
+            }
+
             if (m_category == EncCategory::Boss && pd.layer < 3)
             {
                 std::string br = RelicManager::RandomUnowned("boss");
@@ -1480,7 +1486,14 @@ void BattleScene::Draw()
                     hov.first, hov.second, d->rangeType, range))
                     raised.insert({ hov.first, hov.second });
             }
+            // 全敵効果カード：全敵マスも範囲としてハイライト
+            if (d->allEnemyEffect.hasEffect)
+                for (auto en : m_enemies)
+                    if (en && en->GetHp() > 0)
+                        for (auto& [dc, dr] : en->GetGridShape())
+                            raised.insert({ en->gridCol + dc, en->gridRow + dr });
         }
+
 
         for (int row = 0; row < m_gridMap->GetRows(); row++)
             for (int col = 0; col < m_gridMap->GetCols(); col++)
@@ -2482,7 +2495,8 @@ void BattleScene::HandleInput()
                 }
                 else                                               // 通常（複数敵）: マス外は不発
                 {
-                    canTry = false;
+                    if (!dataCopy.allEnemyEffect.hasEffect)        // ← 全敵効果カードは対象なしでも撃てる
+                        canTry = false;
                 }
             }
 
