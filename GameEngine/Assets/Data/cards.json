@@ -1032,7 +1032,7 @@
       "cost": 1,
       "range": 0,
       "rangeType": "None",
-      "description": "ブロック{value} このターン茨{sub}",
+      "description": "ブロック{value} このターン棘{sub}",
       "vfx": "block_gain",
       "upgrade": {
         "mainValue": 3,

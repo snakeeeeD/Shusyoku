@@ -292,7 +292,8 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             //}
 
             // 残りを時間差で引く（引く→山札が尽きたらリシャッフル演出→残りを引く）
-            StartDrawSequence(HAND_SIZE - 1);
+            int extraDraw = m_player->GetBuffManager().GetBuffValue(BuffType::DrawPerTurn);
+            StartDrawSequence(HAND_SIZE - 1 + extraDraw);
     
         };
     m_turnManager.onEnemyTurnStart = [this]()
@@ -937,7 +938,9 @@ void BattleScene::Update(float deltaTime)
                 if (!ed) continue;
                 for (auto& d : ed->drops)
                 {
-                    if (matDrops >= 3) break;             // 上限
+                    if (matDrops >= 3) break;
+                    const MaterialDef* md = MaterialDataBase::GetMaterial(d.id);
+                    if (md && md->layer != 0 && md->layer != PlayerDataManager::GetData().layer) continue;  // 層外素材は落とさない
                     if (rand() % 100 < d.chance)
                     {
                         int n = d.min + (d.max > d.min ? rand() % (d.max - d.min + 1) : 0);

@@ -100,6 +100,7 @@ inline BuffType StringToBuffType(const std::string& str)
     if (str == "AttackGrowth") return BuffType::AttackGrowth;
     if (str == "Frenzy") return BuffType::Frenzy;
     if (str == "NoxiousFumes") return BuffType::NoxiousFumes;
+    if (str == "DrawPerTurn")  return BuffType::DrawPerTurn;
     if (str == "ToxicRhythm") return BuffType::ToxicRhythm;
 
     if (str == "MoveLock") return BuffType::MoveLock;

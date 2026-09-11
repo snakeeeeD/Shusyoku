@@ -7,12 +7,12 @@
 #include "UiWindow.h"
 #include "CardDataBase.h"
 #include "RelicManager.h"
+#include "MaterialDataBase.h"   
 
 #include <cstdlib>
 #include <algorithm>
 #include <ctime>
 #include <map>
-#include <ctime>
 
 #ifdef _DEBUG
 #include "External/imgui/imgui.h"
@@ -848,6 +848,31 @@ void FieldScene::DrawImGui()
         if (ImGui::Button("Go Layer 2 (relics x1)")) jumpTo(2, 1, 5, 3, 2);   // 基本4+軸5+補助3+乱2=14
         ImGui::SameLine();
         if (ImGui::Button("Go Layer 3 (relics x2)")) jumpTo(3, 2, 7, 4, 4);   // 基本4+軸7+補助4+乱4=19
+    }
+
+    ImGui::Separator();
+    ImGui::Text("Grant Cores / Materials");
+    {
+        ImGui::TextDisabled("Cores");
+        int n = 0;
+        for (auto& kv : MaterialDataBase::AllBases()) {
+            if (ImGui::Button(kv.first.c_str())) PlayerDataManager::AddMaterial(kv.first, 1);
+            if (++n % 3 != 0) ImGui::SameLine();
+        }
+        ImGui::NewLine();
+
+        ImGui::TextDisabled("Materials");
+        n = 0;
+        for (auto& kv : MaterialDataBase::AllMaterials()) {
+            if (ImGui::Button(kv.first.c_str())) PlayerDataManager::AddMaterial(kv.first, 1);
+            if (++n % 3 != 0) ImGui::SameLine();
+        }
+        ImGui::NewLine();
+
+        if (ImGui::Button("Add ALL x3")) {
+            for (auto& kv : MaterialDataBase::AllBases())     PlayerDataManager::AddMaterial(kv.first, 3);
+            for (auto& kv : MaterialDataBase::AllMaterials()) PlayerDataManager::AddMaterial(kv.first, 3);
+        }
     }
 
     ImGui::End();

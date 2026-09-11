@@ -61,16 +61,19 @@ void ShopScene::GenerateStock()
         for (int i = (int)ids.size() - 1; i > 0; i--) std::swap(ids[i], ids[rand() % (i + 1)]);
         for (int i = 0; i < n && i < (int)ids.size(); i++) pushFn(ids[i]);
         };
-        std::vector<std::string> coreIds;
+    int layer = PlayerDataManager::GetData().layer;
+    auto inLayer = [&](int L) { return L == 0 || L == layer; };   // 0=‘S‘w
+
+    std::vector<std::string> coreIds;
     for (auto& kv : MaterialDataBase::AllBases())
-        if (kv.second.buyPrice > 0) coreIds.push_back(kv.first);
+        if (kv.second.buyPrice > 0 && inLayer(kv.second.layer)) coreIds.push_back(kv.first);
     pickShuffled(coreIds, CORE_COUNT, [&](const std::string& id) {
         m_items.push_back({ id, MaterialDataBase::GetBase(id)->buyPrice, false, ShopKind::Core });
         });
 
     std::vector<std::string> matIds;
     for (auto& kv : MaterialDataBase::AllMaterials())
-        if (kv.second.buyPrice > 0) matIds.push_back(kv.first);   // ”ƒ’l0‚Í“X‚Éo‚³‚È‚¢
+        if (kv.second.buyPrice > 0 && inLayer(kv.second.layer)) matIds.push_back(kv.first);   // ‰¿Ši0/‘wŠO‚Í“X‚Éo‚³‚È‚¢
     pickShuffled(matIds, MAT_COUNT, [&](const std::string& id) {
         m_items.push_back({ id, MaterialDataBase::GetMaterial(id)->buyPrice, false, ShopKind::Material });
         });

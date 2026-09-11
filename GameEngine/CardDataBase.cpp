@@ -291,7 +291,7 @@ CardData CardDataBase::BuildCrafted(const std::string& id)
     {
     case CardEffectType::Damage:    c.description = L"{value}ダメージ" + hitSuffix; break;
     case CardEffectType::Block:     c.description = L"{value}ブロック"; break;
-    case CardEffectType::ApplyBuff: c.description = L"攻撃力+{value}"; break;
+    case CardEffectType::ApplyBuff: c.description = fxText(c.mainEffect); break;
     default:                        c.description = L"特殊カード"; break;
     }
     if (c.subEffect.hasEffect)   c.description += L" / " + fxText(c.subEffect);
