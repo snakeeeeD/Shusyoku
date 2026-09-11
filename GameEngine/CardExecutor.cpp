@@ -80,17 +80,24 @@ static void PlayOnHitVfx(const CardEffectData& e, Enemy* enemy, GridMap* gridMap
     }
 }
 
-static void ApplyAllEnemyEffect(const CardData& data, std::vector<Enemy*>& enemies)
+static void ApplyAllEnemyEffect(const CardData& data, std::vector<Enemy*>& enemies, GridMap* gridMap)
 {
     if (!data.allEnemyEffect.hasEffect || data.allEnemyEffect.buffType.empty()) return;
     BuffType bt = StringToBuffType(data.allEnemyEffect.buffType);
     for (auto e : enemies)
     {
+        if (!e || e->GetHp() <= 0) continue;
         Buff b; b.type = bt;
         b.value = data.allEnemyEffect.value;
         b.duration = data.allEnemyEffect.duration;
         b.name = BuffInfo::Get(bt).name; b.description = L"";
         e->GetBuffManager().AddBuff(b);
+
+        float wx = (e->gridCol - gridMap->GetCols() / 2.0f) * 1.1f;
+        float wz = (e->gridRow - gridMap->GetRows() / 2.0f) * 1.1f;
+        if (bt == BuffType::Poison) EffectManager::Play("poison_apply", wx, 0.5f, wz);
+        FloatingTextManager::Spawn(wx, 0.7f, wz, std::to_wstring(b.value),
+            BuffInfo::Get(bt).color, 32.0f);
     }
 }
 
@@ -126,6 +133,36 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     {
     case CardType::Attack:
     {
+        // 全敵効果カードは、射程内に敵がいなくても効果だけは必ず発動して消費する
+        if (data.allEnemyEffect.hasEffect)
+        {
+            bool anyInRange = false;
+            for (auto en : enemies)
+            {
+                if (!en || en->GetHp() <= 0) continue;
+                int adx = 0, ady = 0;
+                if (data.rangeType == RangeType::Cone)
+                    RangeShape::CardinalAim(playerCol, playerRow, targetCol, targetRow, adx, ady);
+                for (auto& [dc, dr] : en->GetGridShape())
+                    if (RangeShape::Contains(playerCol, playerRow,
+                        en->gridCol + dc, en->gridRow + dr, data.rangeType, data.range, 0, adx, ady))
+                    {
+                        anyInRange = true; break;
+                    }
+                if (anyInRange) break;
+            }
+            if (!anyInRange)
+            {
+                player->UseEnergy(data.cost);
+                ApplyAllEnemyEffect(data, enemies, gridMap);
+                if (data.exhaust) deck.ExhaustCard(cardId);
+                else              deck.DiscardCard(cardId);
+                hand.RemoveCard(cardIndex);
+                result.success = true;
+                result.cardUsed = true;
+                return result;
+            }
+        }
         if (data.rangeType == RangeType::Area || data.rangeType == RangeType::Cone)
         {
             int aimDx = 0, aimDy = 0;
@@ -854,7 +891,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
         player->UseEnergy(data.cost);
         CardEffect::ApplyEffectToPlayer(data.mainEffect, player);
         // パワーカードは捨て札に入れない
-        ApplyAllEnemyEffect(data, enemies);
+        ApplyAllEnemyEffect(data, enemies, gridMap);
         hand.RemoveCard(cardIndex);
         return { true, true };
     }
@@ -915,7 +952,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
         }
     }
 
-    ApplyAllEnemyEffect(data, enemies);
+    ApplyAllEnemyEffect(data, enemies, gridMap);
 
     if (data.exhaust)
         deck.ExhaustCard(cardId);

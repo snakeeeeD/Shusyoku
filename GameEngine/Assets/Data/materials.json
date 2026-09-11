@@ -5,6 +5,7 @@
       "name": "斬核",
       "desc": "近接ダメージ / 素材2枠",
       "type": "Attack",
+      "layer": 1,
       "rangeType": "Adjacent",
       "range": 1,
       "cost": 1,
@@ -19,6 +20,7 @@
       "name": "重斬核",
       "desc": "近接ダメージ / 素材3枠",
       "type": "Attack",
+      "layer": 2,
       "rangeType": "Adjacent",
       "range": 1,
       "cost": 2,
@@ -33,6 +35,7 @@
       "name": "盾核",
       "desc": "ブロック / 素材2枠",
       "type": "Skill",
+      "layer": 1,
       "rangeType": "None",
       "range": 0,
       "cost": 1,
@@ -47,6 +50,7 @@
       "name": "力核",
       "desc": "パワー / 素材1枠",
       "type": "Power",
+      "layer": 1,
       "rangeType": "None",
       "range": 0,
       "cost": 1,
@@ -61,6 +65,7 @@
       "name": "貫核",
       "desc": "直線2マス先まで届く単体攻撃 / 素材2枠",
       "type": "Attack",
+      "layer": 2,
       "rangeType": "Cross",
       "range": 2,
       "cost": 1,
@@ -75,6 +80,7 @@
       "name": "薙核",
       "desc": "前方扇状の全体攻撃 / 素材2枠",
       "type": "Attack",
+      "layer": 2,
       "rangeType": "Cone",
       "range": 2,
       "cost": 1,
@@ -83,6 +89,36 @@
       "modSlots": 2,
       "mainType": "Damage",
       "mainValue": 2
+    },
+    {
+      "id": "core_frame",
+      "name": "拡張核",
+      "desc": "スキルコア / 素材4枠",
+      "type": "Skill",
+      "rangeType": "None",
+      "range": 0,
+      "cost": 1,
+      "buyPrice": 160,
+      "sellPrice": 30,
+      "modSlots": 4,
+      "mainType": "Block",
+      "mainValue": 1,
+      "layer": 2
+    },
+    {
+      "id": "core_void",
+      "name": "虚核",
+      "desc": "攻撃コア / 素材5枠",
+      "type": "Attack",
+      "rangeType": "Adjacent",
+      "range": 1,
+      "cost": 2,
+      "buyPrice": 200,
+      "sellPrice": 40,
+      "modSlots": 5,
+      "mainType": "Damage",
+      "mainValue": 1,
+      "layer": 3
     }
   ],
 
@@ -92,6 +128,7 @@
       "id": "sword_fragment",
       "name": "剣の破片",
       "tag": "鋭",
+      "layer": 1,
       "desc": "攻撃:ダメ+2 / スキル:攻撃UP / パワー:永続攻撃UP",
       "cost": 0,
       "buyPrice": 120,
@@ -104,14 +141,14 @@
         "slot": "sub",
         "type": "ApplyBuff",
         "buffType": "AttackUp",
-        "value": 3,
-        "duration": 3
+        "value": 2,
+        "duration": 2
       },
       "Power": {
         "slot": "main",
         "type": "ApplyBuff",
         "buffType": "AttackUp",
-        "value": 3,
+        "value": 2,
         "duration": -1
       }
     },
@@ -119,6 +156,7 @@
       "id": "light_stone",
       "name": "軽量化石",
       "tag": "軽",
+      "layer": 1,
       "desc": "コスト-1",
       "cost": -1,
       "buyPrice": 150,
@@ -129,6 +167,7 @@
       "id": "combo_shard",
       "name": "連撃の欠片",
       "tag": "連",
+      "layer": 2,
       "desc": "攻撃回数+1（攻撃土台のみ）",
       "cost": 1,
       "buyPrice": 150,
@@ -142,6 +181,7 @@
       "id": "venom_fang",
       "name": "毒牙",
       "tag": "毒",
+      "layer": 1,
       "desc": "攻撃:命中時に毒2を付与",
       "cost": 0,
       "buyPrice": 130,
@@ -158,6 +198,7 @@
       "id": "iron_shard",
       "name": "鉄片",
       "tag": "盾",
+      "layer": 1,
       "desc": "攻撃:ブロック+2 / スキル:ブロック+2",
       "cost": 0,
       "buyPrice": 120,
@@ -176,6 +217,7 @@
       "id": "spark_chip",
       "name": "電片",
       "tag": "引",
+      "layer": 1,
       "desc": "カードを1枚引く（全コア）",
       "cost": 0,
       "buyPrice": 140,
@@ -184,13 +226,21 @@
         "slot": "sub",
         "type": "Draw",
         "value": 1
+      },
+      "Power": {
+        "slot": "main",
+        "type": "ApplyBuff",
+        "buffType": "DrawPerTurn",
+        "value": 1,
+        "duration": -1
       }
     },
     {
       "id": "dull_stone",
       "name": "鈍石",
-      "tag": "鈍",
-      "desc": "攻撃:命中時に弱体(1ターン)を付与",
+      "tag": "脱",
+      "layer": 1,
+      "desc": "攻撃:命中時に脱力(1ターン)を付与",
       "cost": 0,
       "buyPrice": 120,
       "sellPrice": 15,
@@ -206,7 +256,8 @@
       "id": "vuln_shard",
       "name": "脆片",
       "tag": "脆",
-      "desc": "攻撃:命中時に脆弱(1ターン)を付与",
+      "layer": 1,
+      "desc": "攻撃:命中時に弱体(1ターン)を付与",
       "cost": 0,
       "buyPrice": 140,
       "sellPrice": 15,
@@ -222,6 +273,7 @@
       "id": "life_shard",
       "name": "生片",
       "tag": "生",
+      "layer": 1,
       "desc": "使用時にHPを2回復（全コア）",
       "cost": 0,
       "buyPrice": 150,
@@ -230,6 +282,170 @@
         "slot": "sub",
         "type": "Heal",
         "value": 2
+      }
+    },
+    {
+      "id": "thorn_seed",
+      "name": "棘の種",
+      "tag": "棘",
+      "layer": 2,
+      "desc": "スキル:棘+1 / パワー:永続で棘+1",
+      "cost": 0,
+      "buyPrice": 150,
+      "sellPrice": 20,
+      "Skill": {
+        "slot": "sub",
+        "type": "ApplyBuff",
+        "buffType": "Thorns",
+        "value": 1,
+        "duration": 2
+      },
+      "Power": {
+        "slot": "main",
+        "type": "ApplyBuff",
+        "buffType": "Thorns",
+        "value": 1,
+        "duration": -1
+      }
+    },
+    {
+      "id": "drive_stone",
+      "name": "推進石",
+      "tag": "推",
+      "layer": 2,
+      "desc": "攻撃:チャージ+1 / パワー:永続でチャージ+1（移動で次攻撃+）",
+      "cost": 0,
+      "buyPrice": 150,
+      "sellPrice": 20,
+      "Attack": {
+        "slot": "sub",
+        "type": "ApplyBuff",
+        "buffType": "Charge",
+        "value": 1,
+        "duration": 2
+      },
+      "Power": {
+        "slot": "main",
+        "type": "ApplyBuff",
+        "buffType": "Charge",
+        "value": 1,
+        "duration": -1
+      }
+    },
+    {
+      "id": "toxic_echo",
+      "name": "毒の共鳴",
+      "tag": "響",
+      "layer": 2,
+      "desc": "攻撃:毒の脈動+1 / パワー:永続で毒の脈動+1（毒の発生回数↑）",
+      "cost": 0,
+      "buyPrice": 160,
+      "sellPrice": 20,
+      "Attack": {
+        "slot": "sub",
+        "type": "ApplyBuff",
+        "buffType": "ToxicRhythm",
+        "value": 1,
+        "duration": 2
+      },
+      "Power": {
+        "slot": "main",
+        "type": "ApplyBuff",
+        "buffType": "ToxicRhythm",
+        "value": 1,
+        "duration": -1
+      }
+    },
+    {
+      "id": "guard_core",
+      "name": "守核片",
+      "tag": "守",
+      "layer": 2,
+      "desc": "パワー:永続で防御UP+2（ブロック獲得時に上乗せ）",
+      "cost": 0,
+      "buyPrice": 160,
+      "sellPrice": 20,
+      "Power": {
+        "slot": "main",
+        "type": "ApplyBuff",
+        "buffType": "DefenseUp",
+        "value": 2,
+        "duration": -1
+      }
+    },
+    {
+      "id": "fume_core",
+      "name": "瘴気核片",
+      "tag": "瘴",
+      "layer": 3,
+      "desc": "パワー:毎ターン全敵に毒1(永続)",
+      "cost": 3,
+      "buyPrice": 180,
+      "sellPrice": 25,
+      "Power": {
+        "slot": "main",
+        "type": "ApplyBuff",
+        "buffType": "NoxiousFumes",
+        "value": 1,
+        "duration": -1
+      }
+    },
+    {
+      "id": "growth_stone",
+      "name": "成長石",
+      "tag": "成",
+      "layer": 3,
+      "desc": "パワー:毎ターン攻撃+1(永続)",
+      "cost": 3,
+      "buyPrice": 180,
+      "sellPrice": 25,
+      "Power": {
+        "slot": "main",
+        "type": "ApplyBuff",
+        "buffType": "AttackGrowth",
+        "value": 1,
+        "duration": -1
+      }
+    },
+    {
+      "id": "spark_plus",
+      "name": "電片・改",
+      "tag": "引改",
+      "layer": 3,
+      "desc": "パワー:毎ターン+2ドロー(永続)",
+      "cost": 3,
+      "buyPrice": 190,
+      "sellPrice": 25,
+      "Power": {
+        "slot": "main",
+        "type": "ApplyBuff",
+        "buffType": "DrawPerTurn",
+        "value": 2,
+        "duration": -1
+      }
+    },
+    {
+      "id": "riposte_edge",
+      "name": "返しの刃",
+      "tag": "返",
+      "layer": 3,
+      "desc": "スキル:受け返し / パワー:永続で受け返し",
+      "cost": 2,
+      "buyPrice": 180,
+      "sellPrice": 25,
+      "Skill": {
+        "slot": "sub",
+        "type": "ApplyBuff",
+        "buffType": "Riposte",
+        "value": 1,
+        "duration": 2
+      },
+      "Power": {
+        "slot": "main",
+        "type": "ApplyBuff",
+        "buffType": "Riposte",
+        "value": 1,
+        "duration": -1
       }
     },
     {

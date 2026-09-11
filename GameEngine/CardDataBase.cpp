@@ -199,28 +199,45 @@ static void applyEntry(CardData& c, const MaterialDef& m, const std::string& bas
 {
     const MatEntry* e = m.entryFor(baseType);
     if (!e) return;
-    if (e->slot == "amplifyMain")
-        c.mainEffect.value += e->value;
-    else if (e->slot == "sub") {
-        c.subEffect.hasEffect = true;
-        c.subEffect.type = StringToCardEffectType(e->type);
-        c.subEffect.value = e->value; c.subEffect.duration = e->duration;
-        c.subEffect.buffType = e->buffType;
+    CardEffectType et = StringToCardEffectType(e->type);
+
+    if (e->slot == "amplifyMain") c.mainEffect.value += e->value;
+    else if (e->slot == "hits")   c.hits += e->value;
+    else if (e->slot == "main")
+    {
+        c.mainEffect.hasEffect = true; c.mainEffect.type = et;
+        c.mainEffect.value = e->value; c.mainEffect.duration = e->duration; c.mainEffect.buffType = e->buffType;
     }
-    else if (e->slot == "onHit") {
-        c.onHitEffect.hasEffect = true;
-        c.onHitEffect.type = StringToCardEffectType(e->type);
-        c.onHitEffect.value = e->value; c.onHitEffect.duration = e->duration;
-        c.onHitEffect.buffType = e->buffType;
+    else if (e->slot == "sub")
+    {
+        if (c.subEffect.hasEffect && c.subEffect.type == et && c.subEffect.buffType == e->buffType)
+        {
+            c.subEffect.value += e->value; c.subEffect.duration += e->duration;
+        }   // 同種は加算
+        else if (!c.subEffect.hasEffect)
+        {
+            c.subEffect.hasEffect = true; c.subEffect.type = et;
+            c.subEffect.value = e->value; c.subEffect.duration = e->duration; c.subEffect.buffType = e->buffType;
+        }
+        else c.subEffect.value += e->value;   // sub枠は1つ→別種でも値だけ加算
     }
-    else if (e->slot == "main") {
-        c.mainEffect.type = StringToCardEffectType(e->type);
-        c.mainEffect.value = e->value; c.mainEffect.duration = e->duration;
-        c.mainEffect.buffType = e->buffType;
+    else if (e->slot == "onHit")
+    {
+        if (c.onHitEffect.hasEffect && c.onHitEffect.type == et && c.onHitEffect.buffType == e->buffType)
+        {
+            c.onHitEffect.value += e->value; c.onHitEffect.duration += e->duration; return;
+        }
+        if (c.onHitEffect2.hasEffect && c.onHitEffect2.type == et && c.onHitEffect2.buffType == e->buffType)
+        {
+            c.onHitEffect2.value += e->value; c.onHitEffect2.duration += e->duration; return;
+        }
+        CardEffectData* slot = !c.onHitEffect.hasEffect ? &c.onHitEffect
+            : (!c.onHitEffect2.hasEffect ? &c.onHitEffect2 : nullptr);
+        if (!slot) { c.onHitEffect.value += e->value; return; }   // 両方埋→値だけ加算
+        slot->hasEffect = true; slot->type = et;
+        slot->value = e->value; slot->duration = e->duration; slot->buffType = e->buffType;
     }
-    else if (e->slot == "hits")
-        c.hits += e->value;
-    // none / onArrival は v1 では無視（onArrivalは移動核実装時）
+    // none / onArrival は据え置き
 }
 
 CardData CardDataBase::BuildCrafted(const std::string& id)
@@ -291,7 +308,7 @@ CardData CardDataBase::BuildCrafted(const std::string& id)
     {
     case CardEffectType::Damage:    c.description = L"{value}ダメージ" + hitSuffix; break;
     case CardEffectType::Block:     c.description = L"{value}ブロック"; break;
-    case CardEffectType::ApplyBuff: c.description = L"攻撃力+{value}"; break;
+    case CardEffectType::ApplyBuff: c.description = fxText(c.mainEffect); break;
     default:                        c.description = L"特殊カード"; break;
     }
     if (c.subEffect.hasEffect)   c.description += L" / " + fxText(c.subEffect);

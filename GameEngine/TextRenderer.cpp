@@ -102,6 +102,31 @@ void TextRenderer::DrawText(const wchar_t* text,
     m_d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 }
 
+void TextRenderer::DrawTextGradientV(const wchar_t* text, float x, float y, float size,
+    D2D1_COLOR_F color, float aTop, float aBot)
+{
+    ComPtr<IDWriteTextFormat> format;
+    m_dwriteFactory->CreateTextFormat(L"Arial", nullptr,
+        DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL,
+        size, L"ja-JP", format.GetAddressOf());
+
+    D2D1_GRADIENT_STOP stops[2];
+    stops[0].position = 0.0f; stops[0].color = D2D1::ColorF(color.r, color.g, color.b, color.a * aTop);
+    stops[1].position = 1.0f; stops[1].color = D2D1::ColorF(color.r, color.g, color.b, color.a * aBot);
+    ComPtr<ID2D1GradientStopCollection> coll;
+    if (FAILED(m_d2dRenderTarget->CreateGradientStopCollection(stops, 2, coll.GetAddressOf()))) return;
+    ComPtr<ID2D1LinearGradientBrush> grad;
+    D2D1_LINEAR_GRADIENT_BRUSH_PROPERTIES gp = { D2D1::Point2F(x, y), D2D1::Point2F(x, y + size) };
+    if (FAILED(m_d2dRenderTarget->CreateLinearGradientBrush(gp, coll.Get(), grad.GetAddressOf()))) return;
+
+    float sx = (float)g_renderWidth / (float)LOGICAL_WIDTH;
+    float sy = (float)g_renderHeight / (float)LOGICAL_HEIGHT;
+    m_d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Scale(sx, sy));
+    D2D1_RECT_F rect = D2D1::RectF(x, y, x + 500.0f, y + 200.0f);
+    m_d2dRenderTarget->DrawTextW(text, (UINT32)wcslen(text), format.Get(), rect, grad.Get());
+    m_d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+}
+
 void TextRenderer::DrawOutlinedText(const wchar_t* text,
     float x, float y, float size,
     D2D1_COLOR_F color, D2D1_COLOR_F outline, float thickness)

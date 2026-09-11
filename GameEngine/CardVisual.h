@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "CardData.h"
 #include "Player.h"
 #include "SpriteRenderer.h"
@@ -23,9 +23,9 @@ public:
     static constexpr float CARD_W = 100.0f;
     static constexpr float CARD_H = 140.0f;
 
-    static constexpr float CARD_SPACING = 75.0f;   // èD‚ÌŠÔŠui•100‚È‚Ì‚Å25d‚È‚éj
+    static constexpr float CARD_SPACING = 75.0f;   // æ‰‹æœ­ã®é–“éš”ï¼ˆå¹…100ãªã®ã§25é‡ãªã‚‹ï¼‰
 
-    // èD index ”Ô–Ú‚ÌŠî€Xi’†‰›‘µ‚¦j
+    // æ‰‹æœ­ index ç•ªç›®ã®åŸºæº–Xï¼ˆä¸­å¤®æƒãˆï¼‰
     static float HandSlotX(int index, int handSize, float screenWidth)
     {
         return screenWidth / 2.0f - (handSize * CARD_SPACING) / 2.0f + index * CARD_SPACING;
@@ -57,7 +57,7 @@ public:
         return false;
     }
 
-    // N•¶š‚²‚Æ‚É‰üs‚ğ·‚µ‚ŞiŠù‘¶‚Ì\n‚Í‚»‚Ì‚Ü‚Ü‘¸dj
+    // Næ–‡å­—ã”ã¨ã«æ”¹è¡Œã‚’å·®ã—è¾¼ã‚€ï¼ˆæ—¢å­˜ã®\nã¯ãã®ã¾ã¾å°Šé‡ï¼‰
     static std::wstring WrapText(const std::wstring& s, int n)
     {
         if (n <= 0) return s;
@@ -123,7 +123,7 @@ public:
         {
             int ov = data->onHitEffect.value;
             if (data->onHitEffect.buffType == "Poison")
-                ov += RelicManager::SumValue("poisonAdd");   // “Å‚ÌS“¾‚Ô‚ñ‚à•\¦
+                ov += RelicManager::SumValue("poisonAdd");   // æ¯’ã®å¿ƒå¾—ã¶ã‚“ã‚‚è¡¨ç¤º
             result.replace(op, 7, std::to_wstring(ov));
         }
 
@@ -132,9 +132,9 @@ public:
         {
             int hits = data->hits;
             if (data->type == CardType::Attack)
-                hits += RelicManager::SumValue("multiHit");   // combo_blade“™
+                hits += RelicManager::SumValue("multiHit");   // combo_bladeç­‰
             if (hits < 1) hits = 1;
-            result.replace(hp, 6, std::to_wstring(hits));      // "{hits}"=6•¶š
+            result.replace(hp, 6, std::to_wstring(hits));      // "{hits}"=6æ–‡å­—
         }
 
         size_t dp = result.find(L"{ondiscard}");
@@ -142,12 +142,12 @@ public:
             result.replace(dp, 11, std::to_wstring(data->onDiscardEffect.value));
 
         if (data->exhaust)
-            result += L" \n[”pŠü]";
+            result += L" \n[å»ƒæ£„]";
 
         return WrapText(result, wrapChars);
     }
 
-    // ’†SŠî€ƒXƒP[ƒ‹‚Ì‹éŒ`
+    // ä¸­å¿ƒåŸºæº–ã‚¹ã‚±ãƒ¼ãƒ«ã®çŸ©å½¢
     static void GetRect(float baseX, float baseY, float scale,
         float& x, float& y, float& w, float& h)
     {
@@ -156,7 +156,7 @@ public:
         y = baseY - (h - CARD_H) / 2.0f;
     }
 
-    // ƒXƒvƒ‰ƒCƒgƒpƒX‚ÅŒÄ‚Ô
+    // ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆãƒ‘ã‚¹ã§å‘¼ã¶
     static void DrawBase(SpriteRenderer* sr, ID3D11ShaderResourceView* white,
         float baseX, float baseY, float scale, float rot, const XMFLOAT4& color,
         const CardData* data = nullptr, float time = 0.0f)
@@ -170,11 +170,11 @@ public:
         {
             switch (data->rarity)
             {
-            case CardRarity::Uncommon: frameCol = XMFLOAT4(0.1f, 0.8f, 0.85f, 1.0f); break;     // …F
+            case CardRarity::Uncommon: frameCol = XMFLOAT4(0.1f, 0.8f, 0.85f, 1.0f); break;     // æ°´è‰²
 
             case CardRarity::Rare:     frameCol = XMFLOAT4(1.0f, 0.85f, 0.2f, 1.0f); break;
 
-            default:                   frameCol = XMFLOAT4(0.6f, 0.6f, 0.58f, 1.0f); break; // ”’‚Á‚Û‚¢ŠD
+            default:                   frameCol = XMFLOAT4(0.6f, 0.6f, 0.58f, 1.0f); break; // ç™½ã£ã½ã„ç°
             }
             frameCol.w = color.w;
             fw = 4.0f * scale;
@@ -182,7 +182,7 @@ public:
 
         if (hasFrame && rot == 0.0f)
         {
-            // ‰ñ“]‚È‚µi‰‰o’†‚È‚ÇjFƒŠƒ“ƒOó‚É•`‚¢‚Ä’†‰›‚ğd‚Ë‚È‚¢
+            // å›è»¢ãªã—ï¼ˆæ¼”å‡ºä¸­ãªã©ï¼‰ï¼šãƒªãƒ³ã‚°çŠ¶ã«æã„ã¦ä¸­å¤®ã‚’é‡ã­ãªã„
             sr->DrawSprite(white, x, y, w, fw, 0.0f, frameCol);
             sr->DrawSprite(white, x, y + h - fw, w, fw, 0.0f, frameCol);
             sr->DrawSprite(white, x, y + fw, fw, h - fw * 2, 0.0f, frameCol);
@@ -190,14 +190,14 @@ public:
         }
         else if (hasFrame)
         {
-            sr->DrawSprite(white, x, y, w, h, rot, frameCol);   // ‰ñ“]‚Í”w–Ê‚É‘S–Êi•s“§–¾‚È‚Ì‚Å–â‘è‚È‚µj
+            sr->DrawSprite(white, x, y, w, h, rot, frameCol);   // å›è»¢æ™‚ã¯èƒŒé¢ã«å…¨é¢ï¼ˆä¸é€æ˜ãªã®ã§å•é¡Œãªã—ï¼‰
         }
 
-        // –{‘ÌiƒJ[ƒhƒeƒNƒXƒ`ƒƒ‚ğƒ^ƒCƒvF‚ÅtintB–¢ƒ[ƒh‚Í]—ˆ‚Ì’PFj
+        // æœ¬ä½“ï¼ˆã‚«ãƒ¼ãƒ‰ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’ã‚¿ã‚¤ãƒ—è‰²ã§tintã€‚æœªãƒ­ãƒ¼ãƒ‰æ™‚ã¯å¾“æ¥ã®å˜è‰²ï¼‰
         auto cardTex = TextureManager::Get("ui_card");
         sr->DrawSprite(cardTex ? cardTex : white, x + fw, y + fw, w - fw * 2, h - fw * 2, rot, color);
 
-        // ƒŒƒA‚ÍƒLƒ‰ƒLƒ‰
+        // ãƒ¬ã‚¢ã¯ã‚­ãƒ©ã‚­ãƒ©
         if (data && data->rarity == CardRarity::Rare)
         {
             for (int i = 0; i < 5; i++)
@@ -211,38 +211,38 @@ public:
             }
         }
 
-        // ƒRƒXƒg‚ÌƒI[ƒu
+        // ã‚³ã‚¹ãƒˆã®ã‚ªãƒ¼ãƒ–
         if (data)
         {
             float px = x + w / 2.0f, py = y + h / 2.0f;
             float os = 30.0f * scale;
-            float ocx = x + 4.0f * scale + os / 2.0f;   // –¢‰ñ“]‚ÌƒI[ƒu’†S
+            float ocx = x + 4.0f * scale + os / 2.0f;   // æœªå›è»¢æ™‚ã®ã‚ªãƒ¼ãƒ–ä¸­å¿ƒ
             float ocy = y + 4.0f * scale + os / 2.0f;
-            float cs = cosf(rot), sn = sinf(rot);        // ƒJ[ƒh’†S‚Ü‚í‚è‚É‰ñ‚·i‰ñ“]èD‘Î‰j
+            float cs = cosf(rot), sn = sinf(rot);        // ã‚«ãƒ¼ãƒ‰ä¸­å¿ƒã¾ã‚ã‚Šã«å›ã™ï¼ˆå›è»¢æ‰‹æœ­å¯¾å¿œï¼‰
             float rx = px + (ocx - px) * cs - (ocy - py) * sn;
             float ry = py + (ocx - px) * sn + (ocy - py) * cs;
             auto orb = TextureManager::Get("ui_cost");
             sr->DrawSprite(orb ? orb : white, rx - os / 2.0f, ry - os / 2.0f, os, os, rot,
                 orb ? XMFLOAT4(1, 1, 1, color.w) : XMFLOAT4(0.15f, 0.13f, 0.25f, color.w));
         }
-        // UŒ‚”ÍˆÍ‚Ìƒ~ƒj”Õ–Ê}
+        // æ”»æ’ƒç¯„å›²ã®ãƒŸãƒ‹ç›¤é¢å›³
         if (data)
         {
-            bool selfOnly = (data->rangeType == RangeType::None);   // Œø‰Ê‚ª©•ª‚¾‚¯
-            bool hitAll = (data->rangeType == RangeType::Area       // ”ÍˆÍ‘S•”‚É“–‚½‚éi‰ñ“]Ø‚è“™j
+            bool selfOnly = (data->rangeType == RangeType::None);   // åŠ¹æœãŒè‡ªåˆ†ã ã‘
+            bool hitAll = (data->rangeType == RangeType::Area       // ç¯„å›²å…¨éƒ¨ã«å½“ãŸã‚‹ï¼ˆå›è»¢åˆ‡ã‚Šç­‰ï¼‰
                 || data->rangeType == RangeType::Cone
                 || data->pierce);
-            float px = x + w / 2.0f, py = y + h / 2.0f;                       // ƒJ[ƒh’†S
-            int R = selfOnly ? 1 : (data->range < 1 ? 1 : (data->range > 4 ? 4 : data->range)); // •\¦”¼ŒaiË’ö‚É‡‚í‚¹‚é/Å‘å4j
+            float px = x + w / 2.0f, py = y + h / 2.0f;                       // ã‚«ãƒ¼ãƒ‰ä¸­å¿ƒ
+            int R = selfOnly ? 1 : (data->range < 1 ? 1 : (data->range > 4 ? 4 : data->range)); // è¡¨ç¤ºåŠå¾„ï¼ˆå°„ç¨‹ã«åˆã‚ã›ã‚‹/æœ€å¤§4ï¼‰
             int n = 2 * R + 1;
-            float foot = 34.0f * scale;                                       // ƒOƒŠƒbƒh‘S‘Ì‚Ì•iŒÅ’èj
+            float foot = 34.0f * scale;                                       // ã‚°ãƒªãƒƒãƒ‰å…¨ä½“ã®å¹…ï¼ˆå›ºå®šï¼‰
             float step = foot / n;
-            float cell = step * 0.78f;                                        // ƒZƒ‹iŒ„ŠÔ‚ğc‚·j
-            float ux0 = x + (w - foot) / 2.0f;                                // –¢‰ñ“]ƒOƒŠƒbƒh¶ã
+            float cell = step * 0.78f;                                        // ã‚»ãƒ«ï¼ˆéš™é–“ã‚’æ®‹ã™ï¼‰
+            float ux0 = x + (w - foot) / 2.0f;                                // æœªå›è»¢ã‚°ãƒªãƒƒãƒ‰å·¦ä¸Š
             float uy0 = y + 39.0f * scale;   
             float cs = cosf(rot), sn = sinf(rot);
             auto put = [&](float ucx, float ucy, float sz, const XMFLOAT4& col) {
-                float rcx = px + (ucx - px) * cs - (ucy - py) * sn;          // ƒJ[ƒh’†S‚Ü‚í‚è‚É‰ñ“]
+                float rcx = px + (ucx - px) * cs - (ucy - py) * sn;          // ã‚«ãƒ¼ãƒ‰ä¸­å¿ƒã¾ã‚ã‚Šã«å›è»¢
                 float rcy = py + (ucx - px) * sn + (ucy - py) * cs;
                 sr->DrawSprite(white, rcx - sz / 2.0f, rcy - sz / 2.0f, sz, sz, rot, col);
                 };
@@ -255,7 +255,7 @@ public:
                 return !selfOnly && RangeShape::Contains(0, 0, ddc, ddr, data->rangeType, R, 0, 0, -1);
                 };
             put(ux0 + foot / 2.0f, uy0 + foot / 2.0f, foot + 4.0f * scale,
-                XMFLOAT4(0.0f, 0.0f, 0.0f, 0.35f * color.w));                 // ”wŒiƒpƒlƒ‹
+                XMFLOAT4(0.0f, 0.0f, 0.0f, 0.35f * color.w));                 // èƒŒæ™¯ãƒ‘ãƒãƒ«
             for (int dr = -R; dr <= R; dr++)
                 for (int dc = -R; dc <= R; dc++)
                 {
@@ -263,32 +263,32 @@ public:
                     float ucy = uy0 + (dr + R + 0.5f) * step;
                     XMFLOAT4 cc;
                     if (dc == 0 && dr == 0)
-                        cc = XMFLOAT4(0.9f, 0.95f, 1.0f, color.w);           // ƒvƒŒƒCƒ„[
+                        cc = XMFLOAT4(0.9f, 0.95f, 1.0f, color.w);           // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼
                     else if (inR(dc, dr))
-                        cc = XMFLOAT4(1.0f, 0.85f, 0.30f, color.w);          // UŒ‚”ÍˆÍƒ}ƒX
+                        cc = XMFLOAT4(1.0f, 0.85f, 0.30f, color.w);          // æ”»æ’ƒç¯„å›²ãƒã‚¹
                     else
-                        cc = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.12f * color.w);   // ‹óƒ}ƒX
+                        cc = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.12f * color.w);   // ç©ºãƒã‚¹
                     put(ucx, ucy, cell, cc);
                 }
-            if (hitAll)   // ‘S‘ÌUŒ‚F—×‚è‡‚¤”ÍˆÍƒ}ƒX‚ğƒo[‚ÅŒq‚®
+            if (hitAll)   // å…¨ä½“æ”»æ’ƒï¼šéš£ã‚Šåˆã†ç¯„å›²ãƒã‚¹ã‚’ãƒãƒ¼ã§ç¹‹ã
             {
-                const XMFLOAT4 link(1.0f, 0.85f, 0.30f, color.w);   // ƒ}ƒX‚Æ“¯F
+                const XMFLOAT4 link(1.0f, 0.85f, 0.30f, color.w);   // ãƒã‚¹ã¨åŒè‰²
                 for (int dr = -R; dr <= R; dr++)
                     for (int dc = -R; dc <= R; dc++)
                     {
                         if (!inR(dc, dr)) continue;
                         float cx = ux0 + (dc + R + 0.5f) * step;
                         float cy = uy0 + (dr + R + 0.5f) * step;
-                        if (inR(dc + 1, dr))   // ‰E‚Ö˜AŒ‹
+                        if (inR(dc + 1, dr))   // å³ã¸é€£çµ
                             putR(cx + step * 0.5f, cy, step * 0.30f, cell * 0.42f, link);
-                        if (inR(dc, dr + 1))   // ‰º‚Ö˜AŒ‹
+                        if (inR(dc, dr + 1))   // ä¸‹ã¸é€£çµ
                             putR(cx, cy + step * 0.5f, cell * 0.42f, step * 0.30f, link);
                     }
             }
         }
     }
 
-    // ƒeƒLƒXƒgƒpƒX‚ÅŒÄ‚Ô
+    // ãƒ†ã‚­ã‚¹ãƒˆãƒ‘ã‚¹ã§å‘¼ã¶
     static void DrawTexts(TextRenderer* tr, const CardData* data, const Player* player,
         float baseX, float baseY, float scale, float rot, float alpha = 1.0f)
     {
@@ -299,12 +299,21 @@ public:
 
         bool upgraded = !data->id.empty() && data->id.back() == '+';
         D2D1_COLOR_F nameCol = upgraded
-            ? D2D1::ColorF(0.4f, 1.0f, 0.5f, alpha)     // ‹­‰»F—Î
+            ? D2D1::ColorF(0.4f, 1.0f, 0.5f, alpha)     // å¼·åŒ–ï¼šç·‘
             : D2D1::ColorF(1, 1, 1, alpha);
-        // –¼‘O‚ÍƒI[ƒu‚Ì‰E‚Ö
-        tr->DrawText(data->name.c_str(), x + 34 * s, y + 11 * s, 13 * s, nameCol, rot, px, py);
+        // åå‰ã¯ã‚ªãƒ¼ãƒ–ã®å³ã¸
+        // åå‰ï¼ˆé•·ã„ã¨è‡ªå‹•ç¸®å°ï¼‰ã€‚å…¨è§’â‰’0.95 / åŠè§’â‰’0.5 ã§æ¦‚ç®—ã—ã€ã‚«ãƒ¼ãƒ‰å¹…ã«åã‚ã‚‹
+        float nameFont = 13.0f * s;
+        {
+            float avail = w - 40.0f * s;          // ã‚ªãƒ¼ãƒ–å³ã€œã‚«ãƒ¼ãƒ‰å³ç«¯
+            float est = 0.0f;
+            for (wchar_t c : data->name) est += (c < 0x100 ? 0.5f : 0.95f) * nameFont;
+            if (est > avail && est > 0.0f) nameFont *= avail / est;
+            if (nameFont < 7.0f * s) nameFont = 7.0f * s;   // ä¸‹é™
+        }
+        tr->DrawText(data->name.c_str(), x + 34 * s, y + 11 * s, nameFont, nameCol, rot, px, py);
 
-        // ƒRƒXƒg‚Í¶ãƒI[ƒu‚Ìã‚Éu”š‚¾‚¯v
+        // ã‚³ã‚¹ãƒˆã¯å·¦ä¸Šã‚ªãƒ¼ãƒ–ã®ä¸Šã«ã€Œæ•°å­—ã ã‘ã€
         wchar_t cost[16];
         swprintf_s(cost, L"%d", data->cost);
         float os = 30.0f * s;
@@ -322,7 +331,7 @@ public:
             x + 12 * s, y + 82 * s, 10 * s, dc, rot, px, py);
     }
 
-    // ƒJ[ƒh‚ªQÆ‚·‚éƒoƒt/ƒfƒoƒt‚ÌƒL[ƒ[ƒhi–¼‘O, à–¾j‚ğd•¡‚È‚µ‚Å
+    // ã‚«ãƒ¼ãƒ‰ãŒå‚ç…§ã™ã‚‹ãƒãƒ•/ãƒ‡ãƒãƒ•ã®ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰ï¼ˆåå‰, èª¬æ˜ï¼‰ã‚’é‡è¤‡ãªã—ã§
     static std::vector<std::pair<std::wstring, std::wstring>> GetKeywords(const CardData* d)
     {
         std::vector<std::pair<std::wstring, std::wstring>> out;
