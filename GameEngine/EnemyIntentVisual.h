@@ -154,6 +154,13 @@ public:
             body = std::wstring(where) + L"に お邪魔カードを " + std::to_wstring(e.value) + L" 枚追加";
             break;
         }
+        case EffectKind::Hazard:
+            title = L"地形";
+            body = (e.value > 0)
+                ? L"マスに危険地形を設置\n踏むと " + std::to_wstring(e.value) + L" ダメージ"
+                : L"マスに危険地形を設置\n踏むと効果を受ける";
+            { std::wstring r = RangeText(a.target); if (!r.empty()) body += L"\n範囲: " + r; }
+            break;
         default: title = L""; body = L""; break;
         }
     }
@@ -235,6 +242,8 @@ public:
         case EffectKind::Summon:            return "icon_summon";
         case EffectKind::Coil:              return "icon_coil";
         case EffectKind::AddCard:           return "icon_curse";
+        case EffectKind::Hazard:            return "icon_hazard";
+        case EffectKind::Heal:              return "icon_buff";
         default:                            return "";
         }
     }

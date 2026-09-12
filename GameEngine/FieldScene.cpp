@@ -371,9 +371,9 @@ void FieldScene::Update(float deltaTime)
         m_hoverIdxPrev = hov;
     }
 
-    m_highlightTimer += deltaTime * 2.0f;
+    m_highlightTimer += deltaTime * 2.0f; 
     if (m_highlightTimer > 3.14159f * 2.0f)
-        m_highlightTimer = 0.0f;
+        m_highlightTimer = 0.0f; 
 }
 
 void FieldScene::Draw()
@@ -524,18 +524,36 @@ void FieldScene::Draw()
             bool hovMove = m_hoverEnabled && CanMove(col, row)
                 && mp.x >= pos.x && mp.x <= pos.x + CELL_SIZE
                 && mp.y >= pos.y && mp.y <= pos.y + CELL_SIZE;
-            float ny = hovMove ? pos.y - 8.0f : pos.y;   // ホバーで浮く
-            m_spriteRenderer->DrawSprite(TextureManager::Get("ui_node"), pos.x, ny, CELL_SIZE, CELL_SIZE, 0.0f, color);
+            float ny = hovMove ? pos.y - 8.0f : pos.y;
 
-            // 種類アイコン（現在地はプレイヤー駒）
+            // 移動可能マス：ゆっくり脈動（サイズ＋明るさを同位相で）
+            float scale = 1.0f;
+            if (canMoveTo)
+                scale = 1.0f + 0.08f * pulse;
+            float cs = CELL_SIZE * scale;
+            float cx = pos.x + CELL_SIZE * 0.5f;
+            float cy = ny + CELL_SIZE * 0.5f;
+
+            // 現在地リング（中心基準）
+            if (col == m_playerCol && row == m_playerRow)
+            {
+                float rs = cs + 18.0f;
+                m_spriteRenderer->DrawSprite(TextureManager::Get("ui_node"),
+                    cx - rs / 2.0f, cy - rs / 2.0f, rs, rs, 0.0f, XMFLOAT4(0.35f, 0.9f, 1.0f, 1.0f));
+            }
+
+            // ノード（中心基準・脈動サイズ）
+            m_spriteRenderer->DrawSprite(TextureManager::Get("ui_node"),
+                cx - cs / 2.0f, cy - cs / 2.0f, cs, cs, 0.0f, color);
+
+            // 種類アイコン（同じ中心・同じ scale）
             const char* icon = (col == m_playerCol && row == m_playerRow)
                 ? "node_player" : NodeIconName(node.type);
             if (icon[0])
             {
-                float isz = 36.0f;
-                float ix = pos.x + (CELL_SIZE - isz) / 2.0f;
-                float iy = ny + (CELL_SIZE - isz) / 2.0f;
-                m_spriteRenderer->DrawSprite(TextureManager::Get(icon), ix, iy, isz, isz, 0.0f, XMFLOAT4(1, 1, 1, 1));
+                float isz = 36.0f * scale;
+                m_spriteRenderer->DrawSprite(TextureManager::Get(icon),
+                    cx - isz / 2.0f, cy - isz / 2.0f, isz, isz, 0.0f, XMFLOAT4(1, 1, 1, 1));
             }
         }
     }

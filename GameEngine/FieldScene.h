@@ -73,7 +73,7 @@ private:
     std::string m_currentEnemyId;
     void AvoidConsecutive(int idx);
 
-    float m_highlightTimer;
+    float m_highlightTimer = 0.0f;
 
     static constexpr int   GRID_COLS = 12;
     static constexpr int   GRID_ROWS = 7;
