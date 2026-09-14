@@ -40,7 +40,19 @@ void CardDataBase::Init()
             data.description = ToWString(c["description"]);
             data.generated = c.value("generated", false);
             data.starter = c.value("starter", false);
-            data.vfx = c.value("vfx", std::string(""));
+            data.vfx.clear();
+            if (c.contains("vfx"))
+            {
+                auto& v = c["vfx"];
+                if (v.is_array())       for (auto& s : v) data.vfx.push_back(s.get<std::string>());
+                else if (v.is_string()) data.vfx.push_back(v.get<std::string>());
+            }
+            if (c.contains("vfxColor"))
+            {
+                auto& vc = c["vfxColor"];
+                data.vfxColor[0] = vc[0]; data.vfxColor[1] = vc[1]; data.vfxColor[2] = vc[2];
+                data.vfxColor[3] = vc.size() > 3 ? (float)vc[3] : 1.0f;
+            }
             data.scaleByTrapCount = c.value("scaleByTrapCount", false);
 
             std::string rarityStr = c.value("rarity", "Common");
@@ -199,6 +211,7 @@ static void applyEntry(CardData& c, const MaterialDef& m, const std::string& bas
 {
     const MatEntry* e = m.entryFor(baseType);
     if (!e) return;
+    if (!e->vfx.empty()) c.vfx.push_back(e->vfx);
     CardEffectType et = StringToCardEffectType(e->type);
 
     if (e->slot == "amplifyMain") c.mainEffect.value += e->value;
@@ -237,6 +250,18 @@ static void applyEntry(CardData& c, const MaterialDef& m, const std::string& bas
         slot->hasEffect = true; slot->type = et;
         slot->value = e->value; slot->duration = e->duration; slot->buffType = e->buffType;
     }
+    else if (e->slot == "pierce")   c.pierce = true;
+    else if (e->slot == "dash") {
+        c.dash = true;
+        if (c.rangeType == RangeType::Adjacent) c.rangeType = RangeType::Cross; // 近接→直線dash化
+        c.range += e->value;                    // 突進距離
+    }
+    else if (e->slot == "range") {
+        if (c.rangeType == RangeType::Adjacent) { c.rangeType = RangeType::Area; c.range = 1; } // 近接→範囲化
+        c.range += e->value;                    // 範囲/射程+
+    }
+    else if (e->slot == "exhaust") { c.exhaust = true; c.mainEffect.value += e->value; }
+    else if (e->slot == "reckless") { c.mainEffect.value += e->value; c.selfDamage += e->duration; }
     // none / onArrival は据え置き
 }
 
@@ -264,6 +289,7 @@ CardData CardDataBase::BuildCrafted(const std::string& id)
     c.mainEffect.hasEffect = true;
     c.mainEffect.type = StringToCardEffectType(base->mainType);
     c.mainEffect.value = base->mainValue;
+    if (!base->vfx.empty()) c.vfx.push_back(base->vfx);
 
     std::wstring nm = ToWString(base->name);
     std::wstring tags;
@@ -272,6 +298,7 @@ CardData CardDataBase::BuildCrafted(const std::string& id)
         if (!m) continue;
         c.cost += m->cost;
         applyEntry(c, *m, base->type);
+        if (!m->vfx.empty()) c.vfx.push_back(m->vfx);
         if (!tags.empty()) tags += L"・";
         tags += ToWString(m->tag);
     }
@@ -309,6 +336,10 @@ CardData CardDataBase::BuildCrafted(const std::string& id)
     case CardEffectType::Damage:    c.description = L"{value}ダメージ" + hitSuffix; break;
     case CardEffectType::Block:     c.description = L"{value}ブロック"; break;
     case CardEffectType::ApplyBuff: c.description = fxText(c.mainEffect); break;
+        if (c.pierce)         c.description += L" / 貫通";
+        if (c.dash)           c.description += L" / 移動";
+        if (c.exhaust)        c.description += L" / 消耗";
+        if (c.selfDamage > 0) c.description += L" / 自傷" + std::to_wstring(c.selfDamage);
     default:                        c.description = L"特殊カード"; break;
     }
     if (c.subEffect.hasEffect)   c.description += L" / " + fxText(c.subEffect);

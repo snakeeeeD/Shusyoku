@@ -559,29 +559,29 @@
      }
     },
     {
-     "description": "滅びの息吹、{0}ダメージ、脆弱{1}付与",
-     "target": {
-      "rangeType": "Area",
-      "range": 3
-     },
-     "vfx": "explosion",
-     "effects": [
-      {
-       "kind": "Damage",
-       "value": 22
+      "description": "滅びの息吹、{0}ダメージ、弱体{1}付与",
+      "target": {
+        "rangeType": "Area",
+        "range": 3
       },
-      {
-       "kind": "Debuff",
-       "buff": "Vulnerable",
-       "value": 2,
-       "duration": 2
+      "vfx": "explosion",
+      "effects": [
+        {
+          "kind": "Damage",
+          "value": 22
+        },
+        {
+          "kind": "Debuff",
+          "buff": "Vulnerable",
+          "value": 2,
+          "duration": 2
+        }
+      ],
+      "select": {
+        "condition": "hpBelow",
+        "conditionValue": 30,
+        "chance": 100
       }
-     ],
-     "select": {
-      "condition": "hpBelow",
-      "conditionValue": 30,
-      "chance": 100
-     }
     }
    ]
   },
@@ -1256,28 +1256,28 @@
      }
     },
     {
-     "description": "呪詛、{0}ダメージ、弱体{1}付与",
-     "target": {
-      "rangeType": "Area",
-      "range": 4,
-      "minRange": 2
-     },
-     "effects": [
-      {
-       "kind": "Damage",
-       "value": 7
+      "description": "呪詛、{0}ダメージ、脱力{1}付与",
+      "target": {
+        "rangeType": "Area",
+        "range": 4,
+        "minRange": 2
       },
-      {
-       "kind": "Debuff",
-       "buff": "Weak",
-       "value": 1,
-       "duration": 2,
-       "applyTo": "Player"
+      "effects": [
+        {
+          "kind": "Damage",
+          "value": 7
+        },
+        {
+          "kind": "Debuff",
+          "buff": "Weak",
+          "value": 1,
+          "duration": 2,
+          "applyTo": "Player"
+        }
+      ],
+      "select": {
+        "chance": 50
       }
-     ],
-     "select": {
-      "chance": 50
-     }
     },
     {
      "description": "毒の霧、毒{0}付与",
@@ -1300,25 +1300,25 @@
      }
     },
     {
-     "description": "脆弱化、脆弱{0}付与",
-     "target": {
-      "rangeType": "Area",
-      "range": 5
-     },
-     "effects": [
-      {
-       "kind": "Debuff",
-       "buff": "Vulnerable",
-       "value": 1,
-       "duration": 2,
-       "applyTo": "Player"
+      "description": "脆弱化、弱体{0}付与",
+      "target": {
+        "rangeType": "Area",
+        "range": 5
+      },
+      "effects": [
+        {
+          "kind": "Debuff",
+          "buff": "Vulnerable",
+          "value": 1,
+          "duration": 2,
+          "applyTo": "Player"
+        }
+      ],
+      "select": {
+        "condition": "turnMultiple",
+        "conditionValue": 3,
+        "chance": 100
       }
-     ],
-     "select": {
-      "condition": "turnMultiple",
-      "conditionValue": 3,
-      "chance": 100
-     }
     },
     {
      "description": "呪詛、手札にノイズ",
@@ -1653,28 +1653,28 @@
      }
     },
     {
-     "description": "酸を吐く、{0}ダメージ、脆弱{1}付与",
-     "target": {
-      "rangeType": "Cross",
-      "range": 2,
-      "approach": "Align",
-      "moveRange": 2
-     },
-     "effects": [
-      {
-       "kind": "Damage",
-       "value": 7
+      "description": "酸を吐く、{0}ダメージ、弱体{1}付与",
+      "target": {
+        "rangeType": "Cross",
+        "range": 2,
+        "approach": "Align",
+        "moveRange": 2
       },
-      {
-       "kind": "Debuff",
-       "buff": "Vulnerable",
-       "value": 1,
-       "duration": 2
+      "effects": [
+        {
+          "kind": "Damage",
+          "value": 7
+        },
+        {
+          "kind": "Debuff",
+          "buff": "Vulnerable",
+          "value": 1,
+          "duration": 2
+        }
+      ],
+      "select": {
+        "chance": 40
       }
-     ],
-     "select": {
-      "chance": 40
-     }
     },
     {
      "description": "粘着質、{0}ダメージ、捨て札にガラクタ",
@@ -1795,28 +1795,28 @@
      }
     },
     {
-     "description": "糸を吐く、{0}ダメージ、弱体{1}付与",
-     "target": {
-      "rangeType": "Cross",
-      "range": 3,
-      "approach": "Align",
-      "moveRange": 2
-     },
-     "effects": [
-      {
-       "kind": "Damage",
-       "value": 7
+      "description": "糸を吐く、{0}ダメージ、脱力{1}付与",
+      "target": {
+        "rangeType": "Cross",
+        "range": 3,
+        "approach": "Align",
+        "moveRange": 2
       },
-      {
-       "kind": "Debuff",
-       "buff": "Weak",
-       "value": 1,
-       "duration": 2
+      "effects": [
+        {
+          "kind": "Damage",
+          "value": 7
+        },
+        {
+          "kind": "Debuff",
+          "buff": "Weak",
+          "value": 1,
+          "duration": 2
+        }
+      ],
+      "select": {
+        "chance": 45
       }
-     ],
-     "select": {
-      "chance": 45
-     }
     }
    ],
    "drops": [
@@ -2119,28 +2119,28 @@
      }
     },
     {
-     "description": "衰弱の霧、{0}ダメージ、脆弱{1}付与",
-     "target": {
-      "rangeType": "Cross",
-      "range": 3,
-      "approach": "Align",
-      "moveRange": 2
-     },
-     "effects": [
-      {
-       "kind": "Damage",
-       "value": 6
+      "description": "衰弱の霧、{0}ダメージ、弱体{1}付与",
+      "target": {
+        "rangeType": "Cross",
+        "range": 3,
+        "approach": "Align",
+        "moveRange": 2
       },
-      {
-       "kind": "Debuff",
-       "buff": "Vulnerable",
-       "value": 2,
-       "duration": 2
+      "effects": [
+        {
+          "kind": "Damage",
+          "value": 6
+        },
+        {
+          "kind": "Debuff",
+          "buff": "Vulnerable",
+          "value": 2,
+          "duration": 2
+        }
+      ],
+      "select": {
+        "chance": 30
       }
-     ],
-     "select": {
-      "chance": 30
-     }
     },
     {
      "description": "後退",
@@ -2327,28 +2327,28 @@
      }
     },
     {
-     "description": "糸縛り、{0}ダメージ、弱体{1}付与",
-     "target": {
-      "rangeType": "Cross",
-      "range": 3,
-      "approach": "Align",
-      "moveRange": 2
-     },
-     "effects": [
-      {
-       "kind": "Damage",
-       "value": 8
+      "description": "糸縛り、{0}ダメージ、脱力{1}付与",
+      "target": {
+        "rangeType": "Cross",
+        "range": 3,
+        "approach": "Align",
+        "moveRange": 2
       },
-      {
-       "kind": "Debuff",
-       "buff": "Weak",
-       "value": 1,
-       "duration": 2
+      "effects": [
+        {
+          "kind": "Damage",
+          "value": 8
+        },
+        {
+          "kind": "Debuff",
+          "buff": "Weak",
+          "value": 1,
+          "duration": 2
+        }
+      ],
+      "select": {
+        "chance": 40
       }
-     ],
-     "select": {
-      "chance": 40
-     }
     }
    ],
    "drops": [
@@ -2980,28 +2980,28 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "精神照射、{0}ダメージ、脆弱{1}付与",
-     "target": {
-      "rangeType": "Cross",
-      "range": 4,
-      "approach": "Align",
-      "moveRange": 2
-     },
-     "effects": [
-      {
-       "kind": "Damage",
-       "value": 5
+      "description": "精神照射、{0}ダメージ、弱体{1}付与",
+      "target": {
+        "rangeType": "Cross",
+        "range": 4,
+        "approach": "Align",
+        "moveRange": 2
       },
-      {
-       "kind": "Debuff",
-       "buff": "Vulnerable",
-       "value": 2,
-       "duration": 2
+      "effects": [
+        {
+          "kind": "Damage",
+          "value": 5
+        },
+        {
+          "kind": "Debuff",
+          "buff": "Vulnerable",
+          "value": 2,
+          "duration": 2
+        }
+      ],
+      "select": {
+        "chance": 55
       }
-     ],
-     "select": {
-      "chance": 55
-     }
     },
     {
      "description": "後退",
@@ -3144,26 +3144,26 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "グリッチ斬、{0}ダメージ、弱体{1}付与",
-     "target": {
-      "rangeType": "Adjacent",
-      "range": 1
-     },
-     "effects": [
-      {
-       "kind": "Damage",
-       "value": 7
+      "description": "グリッチ斬、{0}ダメージ、脱力{1}付与",
+      "target": {
+        "rangeType": "Adjacent",
+        "range": 1
       },
-      {
-       "kind": "Debuff",
-       "buff": "Weak",
-       "value": 2,
-       "duration": 2
+      "effects": [
+        {
+          "kind": "Damage",
+          "value": 7
+        },
+        {
+          "kind": "Debuff",
+          "buff": "Weak",
+          "value": 2,
+          "duration": 2
+        }
+      ],
+      "select": {
+        "chance": 40
       }
-     ],
-     "select": {
-      "chance": 40
-     }
     },
     {
      "description": "データ注入、手札に過負荷",
@@ -3233,26 +3233,26 @@
      }
     },
     {
-     "description": "咆哮弾、{0}ダメージ、脆弱{1}付与",
-     "target": {
-      "rangeType": "Area",
-      "range": 2
-     },
-     "effects": [
-      {
-       "kind": "Damage",
-       "value": 8
+      "description": "咆哮弾、{0}ダメージ、弱体{1}付与",
+      "target": {
+        "rangeType": "Area",
+        "range": 2
       },
-      {
-       "kind": "Debuff",
-       "buff": "Vulnerable",
-       "value": 2,
-       "duration": 2
+      "effects": [
+        {
+          "kind": "Damage",
+          "value": 8
+        },
+        {
+          "kind": "Debuff",
+          "buff": "Vulnerable",
+          "value": 2,
+          "duration": 2
+        }
+      ],
+      "select": {
+        "chance": 35
       }
-     ],
-     "select": {
-      "chance": 35
-     }
     },
     {
      "description": "突進、{0}ダメージ、ノックバック",
@@ -3286,32 +3286,32 @@
    "height": 1.0,
    "actions": [
     {
-     "description": "データ侵蝕、{0}ダメージ、弱体{1}付与、捨て札にノイズ",
-     "target": {
-      "rangeType": "Area",
-      "range": 3
-     },
-     "effects": [
-      {
-       "kind": "Damage",
-       "value": 6
+      "description": "データ侵蝕、{0}ダメージ、脱力{1}付与、捨て札にノイズ",
+      "target": {
+        "rangeType": "Area",
+        "range": 3
       },
-      {
-       "kind": "Debuff",
-       "buff": "Weak",
-       "value": 2,
-       "duration": 2
-      },
-      {
-       "kind": "AddCard",
-       "summonId": "curse_static",
-       "buff": "discard",
-       "value": 2
+      "effects": [
+        {
+          "kind": "Damage",
+          "value": 6
+        },
+        {
+          "kind": "Debuff",
+          "buff": "Weak",
+          "value": 2,
+          "duration": 2
+        },
+        {
+          "kind": "AddCard",
+          "summonId": "curse_static",
+          "buff": "discard",
+          "value": 2
+        }
+      ],
+      "select": {
+        "chance": 40
       }
-     ],
-     "select": {
-      "chance": 40
-     }
     },
     {
      "description": "ドローン、召喚",
@@ -3386,26 +3386,26 @@
      }
     },
     {
-     "description": "虚無の波、{0}ダメージ、脆弱{1}付与",
-     "target": {
-      "rangeType": "Area",
-      "range": 2
-     },
-     "effects": [
-      {
-       "kind": "Damage",
-       "value": 9
+      "description": "虚無の波、{0}ダメージ、弱体{1}付与",
+      "target": {
+        "rangeType": "Area",
+        "range": 2
       },
-      {
-       "kind": "Debuff",
-       "buff": "Vulnerable",
-       "value": 2,
-       "duration": 2
+      "effects": [
+        {
+          "kind": "Damage",
+          "value": 9
+        },
+        {
+          "kind": "Debuff",
+          "buff": "Vulnerable",
+          "value": 2,
+          "duration": 2
+        }
+      ],
+      "select": {
+        "chance": 35
       }
-     ],
-     "select": {
-      "chance": 35
-     }
     },
     {
      "description": "接近",

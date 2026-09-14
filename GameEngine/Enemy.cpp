@@ -347,6 +347,8 @@ void Enemy::TakeDamage(int damage, DamageFeel feel)
 
 void Enemy::AddBlock(int amount)
 {
+    if (amount > 0)
+        EffectManager::Play("defend", worldX, worldY + height * 0.5f, worldZ);
     m_block += amount;
 }
 
@@ -730,9 +732,12 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
 
     }
 
-    // 命中したらプリセットのエフェクトを命中点で再生
-    if (hitPlayer && !act.vfx.empty() && player)
-        EffectManager::Play(act.vfx, player->worldX, player->worldY + 0.5f, player->worldZ);
+    // 命中したらエフェクトを命中点で再生（未指定ならスマッシュ）
+    if (hitPlayer && player)
+    {
+        std::string fx = act.vfx.empty() ? "smash" : act.vfx;
+        EffectManager::Play(fx, player->worldX, player->worldY + 0.5f, player->worldZ);
+    }
 
     // この行動がダメージ攻撃なら、命中したか(=避けられなかったか)を記録
     bool isAttack = false;

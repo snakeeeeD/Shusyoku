@@ -91,7 +91,11 @@ bool Player::UseEnergy(int cost)
 
 void Player::AddBlock(int amount)
 {
-    if (amount > 0) Audio::PlaySE("Assets/Sound/se/shield.mp3");
+    if (amount > 0)
+    {
+        Audio::PlaySE("Assets/Sound/se/shield.mp3");
+        EffectManager::Play("defend", worldX, worldY + 0.4f, worldZ);
+    }
     m_block += amount;
 }
 

@@ -16,6 +16,7 @@ static MatEntry parseEntry(const json& j) {
     e.trapType = j.value("trapType", "");
     e.value = j.value("value", 0);
     e.duration = j.value("duration", 0);
+    e.vfx = j.value("vfx", "");
     return e;
 }
 
@@ -35,6 +36,7 @@ void MaterialDataBase::Load(const std::string& path) {
         d.buyPrice = b.value("buyPrice", 120);
         d.sellPrice = b.value("sellPrice", 60);
         d.layer = b.value("layer", 0);
+        d.vfx = b.value("vfx", "");
         s_bases[d.id] = d;
     }
     for (auto& m : j["materials"]) {

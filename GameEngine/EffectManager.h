@@ -38,6 +38,17 @@ class EffectManager
 public:
     static void Update(float dt)
     {
+        for (size_t i = 0; i < m_pending.size(); )
+        {
+            m_pending[i].delay -= dt;
+            if (m_pending[i].delay <= 0.0f)
+            {
+                PendingPlay p = m_pending[i];
+                m_pending[i] = m_pending.back(); m_pending.pop_back();
+                Play(p.id, p.x, p.y, p.z, p.rot, 0.0f, p.tint);   // 遅延到来→即再生
+            }
+            else ++i;
+        }
         for (auto& p : m_particles)
         {
             p.life -= dt;
@@ -90,7 +101,9 @@ public:
 
         for (auto& s : m_sprites)
         {
+            if (s.elapsed < 0.0f) continue;   // 遅延中はまだ出さない
             int f = (int)(s.elapsed * s.fps);
+
             if (s.loop && s.frames > 0) f %= s.frames;
             if (f >= s.frames) f = s.frames - 1;
             int col = (s.cols > 0) ? f % s.cols : 0;
@@ -151,8 +164,14 @@ public:
     }
 
     // 名前でエフェクトを再生（effects.jsonのプリセット）
-    static int Play(const std::string& id, float x, float y, float z, float rot = 0.0f)
+    static int Play(const std::string& id, float x, float y, float z, float rot = 0.0f, float delay = 0.0f,
+        XMFLOAT4 tint = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f))
     {
+        if (delay > 0.0f)
+        {
+            m_pending.push_back({ id, x, y, z, rot, tint, delay });
+            return s_nextHandle++;
+        }
         int handle = s_nextHandle++;
         const EffectDef* def = EffectDataBase::Get(id);
         if (!def) return handle;
@@ -170,8 +189,10 @@ public:
             si.cols = s.cols; si.rows = s.rows;
             si.frames = (s.frames > 0) ? s.frames : s.cols * s.rows;
             si.fps = s.fps; si.size = s.scale;
-            si.color = s.color; si.loop = s.loop;
-            si.elapsed = 0.0f;
+            si.color = s.color;
+            si.color.x *= tint.x; si.color.y *= tint.y; si.color.z *= tint.z; si.color.w *= tint.w;
+            si.loop = s.loop;
+            si.elapsed = -delay;   // 遅延ぶんマイナスから開始（0未満の間は未表示）
             si.handle = handle;   // ← このPlayで出した全シートに同じIDを付与
             si.rot = rot;
             m_sprites.push_back(si);
@@ -197,6 +218,8 @@ public:
 private:
     static inline std::vector<Particle> m_particles;
     static inline std::vector<SpriteInstance> m_sprites;
+    struct PendingPlay { std::string id; float x, y, z, rot; XMFLOAT4 tint; float delay; };
+    static inline std::vector<PendingPlay> m_pending;
     static inline int s_nextHandle = 1;
     static float Rand01() { return (float)rand() / RAND_MAX; }
 };

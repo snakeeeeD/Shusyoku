@@ -27,6 +27,7 @@
       "tags": [
         "Strike"
       ],
+      "vfx": "slash",
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -63,6 +64,7 @@
         "type": "Damage",
         "value": 10
       },
+      "vfx": "slash_spin",
       "starter": true
     },
     {
@@ -73,6 +75,7 @@
       "tags": [
         "Strike"
       ],
+      "vfx": "slash_fan",
       "cost": 1,
       "range": 2,
       "rangeType": "Cone",
@@ -93,6 +96,7 @@
       "tags": [
         "Strike"
       ],
+      "vfx": "smash",
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -114,6 +118,7 @@
       "tags": [
         "Strike"
       ],
+      "vfx": "smash",
       "cost": 3,
       "range": 1,
       "rangeType": "Adjacent",
@@ -135,6 +140,7 @@
       "tags": [
         "Bulwark"
       ],
+      "vfx": "smash",
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -155,6 +161,7 @@
       "tags": [
         "Bulwark"
       ],
+      "vfx": "smash",
       "cost": 3,
       "range": 1,
       "rangeType": "Adjacent",
@@ -174,6 +181,8 @@
       "type": "Attack",
       "rarity": "Common",
       "tags": "Poison",
+      "vfx": "slash",
+      "vfxColor": [ 0.7, 0.3, 1.0 ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -227,6 +236,8 @@
       "tags": [
         "Poison"
       ],
+      "vfx": "smash",
+      "vfxColor": [ 0.7, 0.3, 1.0 ],
       "cost": 1,
       "range": 1,
       "rangeType": "Area",
@@ -253,6 +264,8 @@
       "tags": [
         "Poison"
       ],
+      "vfx": "smash",
+      "vfxColor": [ 0.7, 0.3, 1.0 ],
       "cost": 1,
       "range": 3,
       "rangeType": "Cross",
@@ -280,6 +293,8 @@
       "tags": [
         "Poison"
       ],
+      "vfx": "smash",
+      "vfxColor": [ 0.7, 0.3, 1.0 ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -312,6 +327,8 @@
       "tags": [
         "Poison"
       ],
+      "vfx": "slash_fan",
+      "vfxColor": [ 0.7, 0.3, 1.0 ],
       "cost": 1,
       "range": 2,
       "rangeType": "Cone",
@@ -382,6 +399,8 @@
       "tags": [
         "Poison"
       ],
+      "vfx": "slash_spin",
+      "vfxColor": [ 0.7, 0.3, 1.0 ],
       "cost": 3,
       "range": 2,
       "rangeType": "Area",
@@ -408,6 +427,8 @@
       "tags": [
         "Poison"
       ],
+      "vfx": "smash",
+      "vfxColor": [ 0.7, 0.3, 1.0 ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -439,6 +460,8 @@
       "tags": [
         "Poison"
       ],
+      "vfx": "smash",
+      "vfxColor": [ 0.7, 0.3, 1.0 ],
       "cost": 2,
       "range": 1,
       "rangeType": "Adjacent",
@@ -458,6 +481,7 @@
       "tags": [
         "Knife"
       ],
+      "vfx": "knife",
       "cost": 0,
       "range": 1,
       "rangeType": "Adjacent",
@@ -480,6 +504,7 @@
       "tags": [
         "Knife"
       ],
+      "vfx": "slash",
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -511,7 +536,7 @@
       "rangeType": "Cross",
       "description": "4マス以内に突進し{value}ダメージ",
       "dash": true,
-      "vfx": "explosion",
+      "vfx": "smash",
       "upgrade": {
         "mainValue": 5
       },
@@ -550,6 +575,7 @@
       "tags": [
         "Trap"
       ],
+      "vfx": "smash",
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -574,6 +600,7 @@
       "tags": [
         "Trap"
       ],
+      "vfx": "smash",
       "cost": 1,
       "range": 1,
       "rangeType": "Area",
@@ -598,6 +625,7 @@
       "tags": [
         "Trap"
       ],
+      "vfx": "smash",
       "cost": 2,
       "range": 1,
       "rangeType": "Adjacent",
@@ -622,6 +650,7 @@
       "tags": [
         "Trap"
       ],
+      "vfx": "slash",
       "cost": 1,
       "range": 2,
       "rangeType": "Cross",
@@ -648,6 +677,7 @@
         "Strike",
         "Berserk"
       ],
+      "vfx": "smash",
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -669,6 +699,7 @@
       "tags": [
         "Berserk"
       ],
+      "vfx": "slash",
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -693,6 +724,7 @@
       "tags": [
         "Berserk"
       ],
+      "vfx": "smash",
       "cost": 2,
       "range": 1,
       "rangeType": "Adjacent",
@@ -711,6 +743,7 @@
       "id": "ATK_piercing_beam",
       "name": "貫通ビーム",
       "type": "Attack",
+      "vfx": "smash",
       "rarity": "Uncommon",
       "cost": 2,
       "range": 5,
@@ -734,7 +767,7 @@
       "range": 20,
       "rangeType": "Area",
       "description": "全ての敵に{value}ダメージ",
-      "vfx": "explosion",
+      "vfx": "explosion_all",
       "upgrade": {
         "cost": -1
       },
@@ -753,7 +786,7 @@
       "rangeType": "Area",
       "hits": 3,
       "description": "周囲の敵に{value}ダメージ×{hits}",
-      "vfx": "hit",
+      "vfx": "slash_spin",
       "upgrade": {
         "hits": 1
       },
@@ -770,6 +803,7 @@
       "tags": [
         "Strike"
       ],
+      "vfx": "smash",
       "cost": 2,
       "range": 1,
       "rangeType": "Cross",
@@ -798,6 +832,7 @@
       "tags": [
         "Strike"
       ],
+      "vfx": "smash",
       "cost": 5,
       "range": 1,
       "rangeType": "Adjacent",
@@ -818,6 +853,7 @@
       "tags": [
         "Strike"
       ],
+      "vfx": "slash",
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -844,6 +880,7 @@
       "tags": [
         "Strike"
       ],
+      "vfx": "smash",
       "cost": 0,
       "range": 1,
       "rangeType": "Adjacent",
@@ -871,6 +908,7 @@
       "tags": [
         "Strike"
       ],
+      "vfx": "slash",
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -895,6 +933,7 @@
       "tags": [
         "Strike"
       ],
+      "vfx": "slash_spin",
       "cost": 1,
       "range": 1,
       "rangeType": "Area",
@@ -915,18 +954,19 @@
       "tags": [
         "Strike"
       ],
+      "vfx": "slash",
       "cost": 3,
       "range": 1,
       "rangeType": "Adjacent",
-      "description": "{value}ダメージ、\n弱体・脆弱を付与",
+      "description": "{value}ダメージ、\n弱体{onhitdur}ターン・脱力{onhit2dur}ターン",
       "mainEffect": {
         "type": "Damage",
-        "value": 8
+        "value": 11
       },
       "onHitEffect": {
         "type": "ApplyDebuff",
-        "value": 1,
-        "duration": 1,
+        "value": 2,
+        "duration": 2,
         "buffType": "Weak"
       },
       "upgrade": {
@@ -934,8 +974,8 @@
       },
       "onHitEffect2": {
         "type": "ApplyDebuff",
-        "value": 1,
-        "duration": 1,
+        "value": 2,
+        "duration": 2,
         "buffType": "Vulnerable"
       }
     },
@@ -1748,7 +1788,7 @@
       "cost": 4,
       "range": 0,
       "rangeType": "None",
-      "description": "毎ターン、攻撃力が{value}上昇",
+      "description": "2ターンに一度、攻撃力が{value}上昇",
       "upgrade": {
         "mainValue": 1
       },
@@ -1784,7 +1824,7 @@
     {
       "id": "POW_battle_thirst",
       "name": "戦いの渇き",
-      "type": "Power",
+      "type": "Skill",
       "rarity": "Uncommon",
       "tags": [
         "Strike"
@@ -1926,7 +1966,7 @@
       "cost": 2,
       "range": 0,
       "rangeType": "None",
-      "description": "毎ターン全ての敵に毒{value}",
+      "description": "2ターンに一度全ての敵に毒{value}",
       "upgrade": {
         "mainValue": 1
       },

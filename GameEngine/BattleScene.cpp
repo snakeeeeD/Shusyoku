@@ -223,18 +223,22 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             }
             m_player->GetBuffManager().OnTurnEnd();
 
-            // 攻撃力成長
-            int grow = m_player->GetBuffManager().GetBuffValue(BuffType::AttackGrowth)
-                + RelicManager::SumValue("turnBuffAtk");
-            if (grow > 0)
+            // 攻撃力成長（2ターンに1回）
+            if ((m_turnCount % 2) == 0)
             {
-                Buff gb; gb.type = BuffType::AttackUp; gb.value = grow; gb.duration = -1;
-                gb.name = L""; gb.description = L"";
-                m_player->GetBuffManager().AddBuff(gb);
+                int grow = m_player->GetBuffManager().GetBuffValue(BuffType::AttackGrowth)
+                    + RelicManager::SumValue("turnBuffAtk");
+                if (grow > 0)
+                {
+                    Buff gb; gb.type = BuffType::AttackUp; gb.value = grow; gb.duration = -1;
+                    gb.name = L""; gb.description = L"";
+                    m_player->GetBuffManager().AddBuff(gb);
+                }
             }
 
-            // 毒の瘴気：毎ターン開始時、全敵に毒を付与
-            int nox = m_player->GetBuffManager().GetBuffValue(BuffType::NoxiousFumes);
+            // 毒の瘴気：2ターンに1回、全敵に毒を付与
+            int nox = ((m_turnCount % 2) == 0)
+                ? m_player->GetBuffManager().GetBuffValue(BuffType::NoxiousFumes) : 0;
             if (nox > 0)
                 for (auto enemy : m_enemies)
                 {

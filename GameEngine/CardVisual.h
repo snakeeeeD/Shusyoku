@@ -127,6 +127,18 @@ public:
             result.replace(op, 7, std::to_wstring(ov));
         }
 
+        size_t odp = result.find(L"{onhitdur}");
+        if (odp != std::wstring::npos)
+            result.replace(odp, 10, std::to_wstring(data->onHitEffect.duration));
+
+        size_t o2v = result.find(L"{onhit2}");
+        if (o2v != std::wstring::npos)
+            result.replace(o2v, 8, std::to_wstring(data->onHitEffect2.value));
+
+        size_t o2d = result.find(L"{onhit2dur}");
+        if (o2d != std::wstring::npos)
+            result.replace(o2d, 11, std::to_wstring(data->onHitEffect2.duration));
+
         size_t hp = result.find(L"{hits}");
         if (hp != std::wstring::npos)
         {

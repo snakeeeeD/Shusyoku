@@ -962,25 +962,82 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     hand.RemoveCard(cardIndex);
     result.pendingDiscard = pendingDiscard;      // 選択はシーン側に任せる
     result.success = true;
-    if (data.selfDamage > 0)
-        player->LoseHp(data.selfDamage);
-    result.cardUsed = true;
 
-    if (!data.vfx.empty())
+    if (data.selfDamage > 0)
     {
-        // 敵(対象マス)の中心を基準に、角度(方向)に沿ってプレイヤー側へ一定距離寄せる
-        float vx = (targetCol - gridMap->GetCols() / 2.0f) * 1.1f;
-        float vz = (targetRow - gridMap->GetRows() / 2.0f) * 1.1f;
+        player->LoseHp(data.selfDamage);
         float px = (playerCol - gridMap->GetCols() / 2.0f) * 1.1f;
         float pz = (playerRow - gridMap->GetRows() / 2.0f) * 1.1f;
-        float dx = px - vx, dz = pz - vz;                 // 対象→プレイヤー方向
-        float len = sqrtf(dx * dx + dz * dz);
-        if (len > 1e-4f) { dx /= len; dz /= len; }        // 正規化
-        float d = 0.55f;                                  // プレイヤー側への寄せ距離(≒半マス)
-        vx += dx * d;
-        vz += dz * d;
-        float rot = atan2f(-(float)(targetRow - playerRow), (float)(targetCol - playerCol));
-        EffectManager::Play(data.vfx, vx, 0.5f, vz, rot);
+        EffectManager::Play("bleed", px + 0.5, 0.6f, pz + 0.5);
+    }
+
+    result.cardUsed = true;
+    XMFLOAT4 vcol(data.vfxColor[0], data.vfxColor[1], data.vfxColor[2], data.vfxColor[3]);
+    for (const std::string& fx : data.vfx)
+    {
+        if (fx.empty()) continue;
+
+        if (fx == "slash_spin")
+        {
+            float px = (playerCol - gridMap->GetCols() / 2.0f) * 1.1f;
+            float pz = (playerRow - gridMap->GetRows() / 2.0f) * 1.1f;
+            const int N = 6;
+            for (int i = 0; i < N; i++)
+            {
+                float ang = 6.2831853f * i / N;
+                EffectManager::Play("slash", px + cosf(ang) * 0.7f, 0.6f, pz + sinf(ang) * 0.7f, ang, i * 0.05f, vcol);
+            }
+        }
+        else if (fx == "slash_fan")
+        {
+            int adx = 0, ady = 0;
+            if (data.rangeType == RangeType::Cone)
+                RangeShape::CardinalAim(playerCol, playerRow, targetCol, targetRow, adx, ady);
+            float rot = atan2f(-(float)(targetRow - playerRow), (float)(targetCol - playerCol));
+            for (int r = 0; r < gridMap->GetRows(); r++)
+                for (int c = 0; c < gridMap->GetCols(); c++)
+                {
+                    if (c == playerCol && r == playerRow) continue;
+                    if (!RangeShape::Contains(playerCol, playerRow, c, r, data.rangeType, data.range, 0, adx, ady)) continue;
+                    float wx = (c - gridMap->GetCols() / 2.0f) * 1.1f;
+                    float wz = (r - gridMap->GetRows() / 2.0f) * 1.1f;
+                    EffectManager::Play("slash", wx, 0.6f, wz, rot, (float)rand() / RAND_MAX * 0.30f, vcol);
+                }
+        }
+        else if (fx == "explosion_all")
+        {
+            float halfX = gridMap->GetCols() * 1.1f * 0.5f;
+            float halfZ = gridMap->GetRows() * 1.1f * 0.5f;
+            const int N = 24;                       // 爆発の数
+            for (int i = 0; i < N; i++)
+            {
+                float x = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * halfX;
+                float z = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * halfZ;
+                float delay = (float)rand() / RAND_MAX * 0.8f;
+                EffectManager::Play("explosion", x, 0.5f, z, 0.0f, delay, vcol);
+            }
+        }
+        else   // 単発（敵寄り＋多段＋位置ランダム）
+        {
+            float vx = (targetCol - gridMap->GetCols() / 2.0f) * 1.1f;
+            float vz = (targetRow - gridMap->GetRows() / 2.0f) * 1.1f;
+            float px = (playerCol - gridMap->GetCols() / 2.0f) * 1.1f;
+            float pz = (playerRow - gridMap->GetRows() / 2.0f) * 1.1f;
+            float dx = px - vx, dz = pz - vz;
+            float len = sqrtf(dx * dx + dz * dz);
+            if (len > 1e-4f) { dx /= len; dz /= len; }
+            float d = 0.20f;
+            vx += dx * d; vz += dz * d;
+            float rot = atan2f(-(float)(targetRow - playerRow), (float)(targetCol - playerCol));
+
+            int hits = EffectiveHits(data); if (hits < 1) hits = 1;
+            for (int i = 0; i < hits; i++)
+            {
+                float ox = ((float)rand() / RAND_MAX - 0.5f) * 0.5f;
+                float oz = ((float)rand() / RAND_MAX - 0.5f) * 0.5f;
+                EffectManager::Play(fx, vx + ox, 0.5f, vz + oz, rot, i * 0.08f, vcol);
+            }
+        }
     }
 
     return result;

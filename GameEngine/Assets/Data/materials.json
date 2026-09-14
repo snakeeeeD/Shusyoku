@@ -13,7 +13,8 @@
       "sellPrice": 20,
       "modSlots": 2,
       "mainType": "Damage",
-      "mainValue": 3
+      "mainValue": 3,
+      "vfx": "slash"
     },
     {
       "id": "core_slash_h",
@@ -28,7 +29,8 @@
       "sellPrice": 30,
       "modSlots": 3,
       "mainType": "Damage",
-      "mainValue": 6
+      "mainValue": 6,
+      "vfx": "slash"
     },
     {
       "id": "core_shield",
@@ -43,7 +45,8 @@
       "sellPrice": 20,
       "modSlots": 2,
       "mainType": "Block",
-      "mainValue": 4
+      "mainValue": 4,
+      "vfx": "defend"
     },
     {
       "id": "core_power",
@@ -73,7 +76,8 @@
       "sellPrice": 20,
       "modSlots": 2,
       "mainType": "Damage",
-      "mainValue": 2
+      "mainValue": 2,
+      "vfx": "knife"
     },
     {
       "id": "core_sweep",
@@ -88,7 +92,8 @@
       "sellPrice": 20,
       "modSlots": 2,
       "mainType": "Damage",
-      "mainValue": 2
+      "mainValue": 2,
+      "vfx": "slash_fan"
     },
     {
       "id": "core_frame",
@@ -129,13 +134,14 @@
       "name": "剣の破片",
       "tag": "鋭",
       "layer": 1,
-      "desc": "攻撃:ダメ+2 / スキル:攻撃UP / パワー:永続攻撃UP",
+      "desc": "攻撃:ダメ+3 / スキル:攻撃UP / パワー:永続攻撃UP",
       "cost": 0,
       "buyPrice": 120,
       "sellPrice": 10,
       "Attack": {
         "slot": "amplifyMain",
-        "value": 2
+        "value": 3,
+        "vfx": "slash"
       },
       "Skill": {
         "slot": "sub",
@@ -182,7 +188,7 @@
       "name": "毒牙",
       "tag": "毒",
       "layer": 1,
-      "desc": "攻撃:命中時に毒2を付与",
+      "desc": "攻撃:命中時に毒3を付与",
       "cost": 0,
       "buyPrice": 130,
       "sellPrice": 15,
@@ -190,8 +196,9 @@
         "slot": "onHit",
         "type": "ApplyDebuff",
         "buffType": "Poison",
-        "value": 2,
-        "duration": 2
+        "value": 3,
+        "duration": 2,
+        "vfx": "poison_apply"
       }
     },
     {
@@ -199,7 +206,7 @@
       "name": "鉄片",
       "tag": "盾",
       "layer": 1,
-      "desc": "攻撃:ブロック+2 / スキル:ブロック+2",
+      "desc": "攻撃:ブロック+3 / スキル:ブロック+3",
       "cost": 0,
       "buyPrice": 120,
       "sellPrice": 15,
@@ -210,7 +217,7 @@
       },
       "Skill": {
         "slot": "amplifyMain",
-        "value": 2
+        "value": 3
       }
     },
     {
@@ -289,7 +296,7 @@
       "name": "棘の種",
       "tag": "棘",
       "layer": 2,
-      "desc": "スキル:棘+1 / パワー:永続で棘+1",
+      "desc": "スキル:棘+2 / パワー:永続で棘+2",
       "cost": 0,
       "buyPrice": 150,
       "sellPrice": 20,
@@ -297,14 +304,14 @@
         "slot": "sub",
         "type": "ApplyBuff",
         "buffType": "Thorns",
-        "value": 1,
+        "value": 2,
         "duration": 2
       },
       "Power": {
         "slot": "main",
         "type": "ApplyBuff",
         "buffType": "Thorns",
-        "value": 1,
+        "value": 2,
         "duration": -1
       }
     },
@@ -362,7 +369,7 @@
       "tag": "守",
       "layer": 2,
       "desc": "パワー:永続で防御UP+2（ブロック獲得時に上乗せ）",
-      "cost": 0,
+      "cost": 1,
       "buyPrice": 160,
       "sellPrice": 20,
       "Power": {
@@ -446,6 +453,78 @@
         "buffType": "Riposte",
         "value": 1,
         "duration": -1
+      }
+    },
+    {
+      "id": "pierce_crystal",
+      "name": "貫通結晶",
+      "tag": "貫",
+      "layer": 2,
+      "desc": "攻撃:貫通（直線上の敵を貫く）",
+      "cost": 0,
+      "buyPrice": 150,
+      "sellPrice": 20,
+      "Attack": {
+        "slot": "pierce",
+        "vfx": "knife"
+      }
+    },
+    {
+      "id": "expand_lens",
+      "name": "拡張レンズ",
+      "tag": "広",
+      "layer": 2,
+      "desc": "攻撃:範囲/射程+1（近接は範囲化）",
+      "cost": 1,
+      "buyPrice": 150,
+      "sellPrice": 20,
+      "Attack": {
+        "slot": "range",
+        "value": 1
+      }
+    },
+    {
+      "id": "gale_boots",
+      "name": "疾風の足",
+      "tag": "疾",
+      "layer": 2,
+      "desc": "攻撃:直線に突進して斬る（近接は突進化）",
+      "cost": 0,
+      "buyPrice": 140,
+      "sellPrice": 20,
+      "Attack": {
+        "slot": "dash",
+        "value": 3
+      }
+    },
+    {
+      "id": "moment_core",
+      "name": "刹那核",
+      "tag": "刹",
+      "layer": 3,
+      "desc": "攻撃:ダメ+8 / 消耗",
+      "cost": 0,
+      "buyPrice": 180,
+      "sellPrice": 25,
+      "Attack": {
+        "slot": "exhaust",
+        "value": 8,
+        "vfx": "slash_spin"
+      }
+    },
+    {
+      "id": "twin_edge",
+      "name": "諸刃の刃",
+      "tag": "諸",
+      "layer": 3,
+      "desc": "攻撃:ダメ+10 / 自傷3",
+      "cost": 1,
+      "buyPrice": 180,
+      "sellPrice": 25,
+      "Attack": {
+        "slot": "reckless",
+        "value": 10,
+        "duration": 3
       }
     },
     {

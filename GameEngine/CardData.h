@@ -64,7 +64,7 @@ struct CardData
     int          range;                             // 射程距離
     RangeType    rangeType;                         // 効果範囲の種類
     std::wstring description;                       // カードの説明文
-    std::string  vfx;                               // 使用時に再生するエフェクト名（effects.json）
+    std::vector<std::string> vfx;                   // 使用時に再生するエフェクト名（effects.json）
     CardRarity rarity = CardRarity::Common;         // レアリティ
     std::vector<std::string> tags;                  // カードの軸用のタグ
     bool generated = false;                         // 生成専用（ナイフ等）＝報酬/店/変化に出さない
@@ -88,4 +88,6 @@ struct CardData
     int  endTurnDamage = 0;    // ターン終了時、手札にあると受けるダメージ
 
     bool scaleByTrapCount = false;
+
+    float vfxColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };   // vfxの色(tint)。既定は白=無着色
 };

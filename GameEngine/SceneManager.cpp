@@ -138,6 +138,10 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 
 		TextureManager::Load("fx_test", L"Assets/Particles/fx_test.png");
 		TextureManager::Load("fx_slash", L"Assets/Particles/Slash.png");
+		TextureManager::Load("fx_blood", L"Assets/Particles/blood.png");
+		TextureManager::Load("fx_defend", L"Assets/Particles/defend.png");
+		TextureManager::Load("fx_knife", L"Assets/Particles/knife.png");
+		TextureManager::Load("fx_smash", L"Assets/Particles/smash.png");
 	}
 
 	// フィールド
@@ -860,6 +864,20 @@ void SceneManager::DrawImGui()
 	float mv = pd.masterVolume, bv = pd.bgmVolume;
 	if (ImGui::SliderFloat("Master", &mv, 0.0f, 1.0f)) { pd.masterVolume = mv; Audio::SetMasterVolume(mv); PlayerDataManager::Save(); }
 	if (ImGui::SliderFloat("BGM", &bv, 0.0f, 1.0f)) { pd.bgmVolume = bv;    Audio::SetBgmVolume(bv);    PlayerDataManager::Save(); }
+
+	ImGui::Separator();
+	{
+		// チェックON=チュートリアルを表示する（＝各フラグを未表示に戻す）
+		bool showTut = !(pd.tutorialField && pd.tutorialBattle && pd.tutorialCardSelect
+			&& pd.tutorialShop && pd.tutorialRest && pd.tutorialCraft);
+		if (ImGui::Checkbox("Show Tutorials", &showTut))
+		{
+			bool seen = !showTut;   // 表示する→フラグfalse / 出さない→true
+			pd.tutorialField = pd.tutorialBattle = pd.tutorialCardSelect =
+				pd.tutorialShop = pd.tutorialRest = pd.tutorialCraft = seen;
+			PlayerDataManager::Save();
+		}
+	}
 
 	if (ImGui::CollapsingHeader("Relics"))
 	{
