@@ -602,6 +602,172 @@
           "outcomes": []
         }
       ]
+    },
+    {
+      "id": "scavenger_pile",
+      "title": "廃品の山",
+      "desc": "打ち捨てられた武具の山。使える部品が埋もれていそうだ。",
+      "layer": 1,
+      "choices": [
+        {
+          "label": "漁る（素材1つ）",
+          "result": "使えそうな部品を見つけた。",
+          "outcomes": [
+            {
+              "type": "randomMaterial",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "label": "深く漁る（-6HP, 素材2つ）",
+          "result": "手を切ったが、掘り出し物だ。",
+          "outcomes": [
+            {
+              "type": "hp",
+              "value": -6
+            },
+            {
+              "type": "randomMaterial",
+              "value": 1
+            },
+            {
+              "type": "randomMaterial",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "label": "立ち去る",
+          "result": "先へ進んだ。",
+          "outcomes": []
+        }
+      ]
+    },
+    {
+      "id": "wandering_artisan",
+      "title": "旅の職人",
+      "desc": "「カードでも部品でも、望むものを用意しよう。」",
+      "layer": 1,
+      "choices": [
+        {
+          "label": "1枚強化してもらう（-60G）",
+          "result": "カードが鍛えられた。",
+          "outcomes": [
+            { "type": "upgradeCard" },
+            {
+              "type": "gold",
+              "value": -60
+            }
+          ]
+        },
+        {
+          "label": "部品を分けてもらう（-30G, 素材1つ）",
+          "result": "使える部品を受け取った。",
+          "outcomes": [
+            {
+              "type": "gold",
+              "value": -30
+            },
+            {
+              "type": "randomMaterial",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "label": "立ち去る",
+          "result": "職人は去っていった。",
+          "outcomes": []
+        }
+      ]
+    },
+    {
+      "id": "transmute_forge",
+      "title": "錬成の炉",
+      "desc": "怪しく燃える炉。素材を投じれば、より良いものに化けるという。",
+      "layer": 2,
+      "choices": [
+        {
+          "label": "素材を投じる（-40G, 素材ランダム）",
+          "result": "炉が唸り、部品が生まれた。",
+          "outcomes": [
+            {
+              "type": "gold",
+              "value": -40
+            },
+            {
+              "type": "randomMaterial",
+              "value": 2
+            }
+          ]
+        },
+        {
+          "label": "じっくり錬成（-10HP, 上層素材ランダム）",
+          "result": "熱に炙られたが、稀少な部品を得た。",
+          "outcomes": [
+            {
+              "type": "hp",
+              "value": -10
+            },
+            {
+              "type": "randomMaterial",
+              "value": 3
+            }
+          ]
+        },
+        {
+          "label": "火を落とす",
+          "result": "先へ進んだ。",
+          "outcomes": []
+        }
+      ]
+    },
+    {
+      "id": "alchemist_deal",
+      "title": "闇市の錬金術師",
+      "desc": "「秘薬か、部品か…対価はいただくがね。」",
+      "layer": 3,
+      "random": true,
+      "choices": [
+        {
+          "label": "秘薬を飲む（最大HP+6, -80G）",
+          "result": "身体が造り変えられた。",
+          "outcomes": [
+            {
+              "type": "maxHp",
+              "value": 6
+            },
+            {
+              "type": "gold",
+              "value": -40
+            }
+          ]
+        },
+        {
+          "label": "怪しい取引（-12HP, 素材2つ）",
+          "result": "痛みと引き換えに、稀少な部品を得た。",
+          "outcomes": [
+            {
+              "type": "hp",
+              "value": -8
+            },
+            {
+              "type": "randomMaterial",
+              "value": 3
+            },
+            {
+              "type": "randomMaterial",
+              "value": 3
+            }
+          ]
+        },
+        {
+          "label": "取引しない",
+          "result": "錬金術師は闇に消えた。",
+          "outcomes": []
+        }
+      ]
     }
   ]
 }

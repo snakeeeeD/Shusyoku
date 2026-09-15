@@ -345,6 +345,9 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             for (auto card : m_hand.GetCards())
                 m_deck.DiscardCard(card->GetId());
             m_hand.Clear();
+            m_selectedCardIndex = -1;   // 手札が消えたので選択も無効化
+            m_hoveredCardIndex = -1;    // ホバーも無効化
+            m_cardSelecting = false;
             m_battleUI->ClearCardAnimations();
 
             m_enemyPhase = EnemyTurnPhase::WaitStart;
@@ -2848,6 +2851,7 @@ void BattleScene::HandleInput()
         if (result.cell && !isOnCard)
         {
             if (m_selectedCardIndex >= 0
+                && m_selectedCardIndex < (int)m_hand.GetCards().size()
                 && m_hand.GetCards()[m_selectedCardIndex]->GetData()->type != CardType::Move)
             {
                 const Card* card = m_hand.GetCards()[m_selectedCardIndex];
@@ -3100,6 +3104,8 @@ void BattleScene::HandleInput()
                     && mp.y >= btnY && mp.y <= btnY + btnH)
                 {
                     Audio::PlaySE("Assets/Sound/se/click.mp3");
+                    m_selectedCardIndex = -1;   // 選択解除してからターン終了
+                    m_cardSelecting = false;    // ドロー/捨札選択も解除
                     m_turnManager.EndTurn();
                 }
             }

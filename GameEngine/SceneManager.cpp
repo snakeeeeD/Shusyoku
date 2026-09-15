@@ -2494,6 +2494,10 @@ void SceneManager::ApplyOutcomes(const EventChoice& c)
 		else if (o.type == "maxHp") { pd.maxHp += o.value; pd.hp += o.value; if (pd.hp < 1) pd.hp = 1; }
 		else if (o.type == "gold") { pd.gold += o.value; if (pd.gold < 0) pd.gold = 0; }
 		else if (o.type == "material") { PlayerDataManager::AddMaterial(o.param, o.value > 0 ? o.value : 1); }
+		else if (o.type == "randomMaterial") {
+			std::string mid = MaterialDataBase::RandomId(o.value);   // value=層(0=全)
+			if (!mid.empty()) PlayerDataManager::AddMaterial(mid, 1);
+		}
 		else if (o.type == "relic")
 		{
 			std::string rid = o.param.empty() ? RelicManager::RandomUnowned("event") : o.param;

@@ -1138,7 +1138,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     DrawEnemyInfoPanel(ctx);
     DrawEnemyKeywords(ctx);
 
-    if (ctx.hoveredCardIndex >= 0)
+    if (ctx.hoveredCardIndex >= 0 && ctx.hoveredCardIndex < (int)ctx.hand->GetCards().size())
     {
         float cx, cy, cw, ch; GetCardRect(ctx.hoveredCardIndex, cx, cy, cw, ch);
         CardTooltip::Draw(m_spriteRenderer, m_textRenderer, m_whiteTexture,

@@ -9,6 +9,8 @@ public:
     static const BaseDef* GetBase(const std::string& id);
     static const MaterialDef* GetMaterial(const std::string& id);
 
+    static std::string RandomId(int layer = 0);   // クラフト可能素材からランダム（layer=0で全層）
+
     static const std::unordered_map<std::string, BaseDef>& AllBases() { return s_bases; }
     static const std::unordered_map<std::string, MaterialDef>& AllMaterials() { return s_materials; }
 

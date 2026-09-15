@@ -1,5 +1,7 @@
 #include "MaterialDataBase.h"
 #include <fstream>
+#include <vector>
+#include <cstdlib>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
@@ -61,4 +63,19 @@ const BaseDef* MaterialDataBase::GetBase(const std::string& id) {
 const MaterialDef* MaterialDataBase::GetMaterial(const std::string& id) {
     auto it = s_materials.find(id);
     return it != s_materials.end() ? &it->second : nullptr;
+}
+
+std::string MaterialDataBase::RandomId(int layer) {
+    std::vector<std::string> pool;
+    for (auto& kv : s_materials) {
+        const MaterialDef& m = kv.second;
+        if (m.entries.empty()) continue;               // Œø‰Ê‚È‚µ(Š·‹à—p‚È‚Ç)‚ÍœŠO
+        if (layer != 0 && m.layer != layer) continue;   // ‘ww’è
+        pool.push_back(kv.first);
+    }
+    if (pool.empty() && layer != 0)                      // ŠY“–‘w‚ª–³‚¯‚ê‚Î‘S‘Ì‚©‚ç
+        for (auto& kv : s_materials)
+            if (!kv.second.entries.empty()) pool.push_back(kv.first);
+    if (pool.empty()) return "";
+    return pool[rand() % pool.size()];
 }
