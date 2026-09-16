@@ -29,6 +29,7 @@ inline CardType StringToCardType(const std::string& str)
     if (str == "Move")   return CardType::Move;
     if (str == "Power")  return CardType::Power;
     if (str == "Status") return CardType::Status;
+    if (str == "Curse")  return CardType::Curse;
     return CardType::Attack;
 }
 

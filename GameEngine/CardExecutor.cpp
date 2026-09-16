@@ -689,7 +689,8 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
 
            break;
        }
-    case CardType::Status:   // お邪魔もスキルと同じ再生処理（効果なし→廃棄/捨て札へ）
+    case CardType::Status:   // 妨害＝スキルと同じ再生処理（効果なし＝廃棄/捨て札へ）
+    case CardType::Curse:
     case CardType::Skill:
     {
         // 設置カード：エナジー消費前に対象セルを検証

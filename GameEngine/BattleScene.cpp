@@ -297,7 +297,10 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
             // 残りを時間差で引く（引く→山札が尽きたらリシャッフル演出→残りを引く）
             int extraDraw = m_player->GetBuffManager().GetBuffValue(BuffType::DrawPerTurn);
-            StartDrawSequence(HAND_SIZE - 1 + extraDraw);
+            int keep = m_hand.GetCardCount();                   // 保留で残っている枚数
+            int drawN = HAND_SIZE - 1 + extraDraw - keep;
+            if (drawN < 0) drawN = 0;
+            StartDrawSequence(drawN);
     
         };
     m_turnManager.onEnemyTurnStart = [this]()
@@ -329,26 +332,41 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
                 const CardData* dd = CardDataBase::Get(m_hand.GetCards()[i]->GetId());
                 if (dd && dd->endTurnDamage > 0)
                 {
-                    m_battleUI->StartPlayCardEffectFromHand(dd, i, seq, true);      // ← 手札からシームレス
-                    m_burnHits.push_back({ seq + 0.36f * 0.75f, dd->endTurnDamage });
-                    burnEnd = seq + 0.75f;     // この過負荷が終わる時刻
+                    if (dd->retain)
+                        m_battleUI->StartHandCardPeek(i, seq);                     // 保留：中央→手札へ戻る
+                    else
+                        m_battleUI->StartPlayCardEffectFromHand(dd, i, seq, true); // 非保留：中央→退場
+                    m_burnHits.push_back({ seq + 0.36f * 0.75f, dd->endTurnDamage,
+                       dd->type == CardType::Curse });
+                    burnEnd = seq + 0.75f;
                     seq += BURN_GAP;
                 }
             }
-            // 残り（過負荷以外）は通常の捨てアニメ（過負荷の後に）
+
+            // 残り（過負荷以外）は通常の捨てアニメ（保留はアニメ無し）
             for (int i = 0; i < (int)m_hand.GetCards().size(); i++)
             {
                 const CardData* dd = CardDataBase::Get(m_hand.GetCards()[i]->GetId());
                 if (dd && dd->endTurnDamage > 0) continue;
-                m_battleUI->StartDiscardEffectAt(i, dd, seq);
+                if (dd && dd->retain) continue;
+                bool ex = (dd && dd->ethereal);
+                m_battleUI->StartDiscardEffectAt(i, dd, seq, ex);   // エセリアル=その場で溶ける
             }
-            for (auto card : m_hand.GetCards())
-                m_deck.DiscardCard(card->GetId());
-            m_hand.Clear();
+           
+            // 非保留カードだけ手札から取り除く（保留はスロット/アニメ状態を維持）
+            for (int i = (int)m_hand.GetCards().size() - 1; i >= 0; i--)
+            {
+                const CardData* dd = CardDataBase::Get(m_hand.GetCards()[i]->GetId());
+                if (dd && dd->retain) continue;                               // 保留：残す
+                if (dd && dd->ethereal) m_deck.ExhaustCard(m_hand.GetCards()[i]->GetId());
+                else                    m_deck.DiscardCard(m_hand.GetCards()[i]->GetId());
+                m_hand.RemoveCard(i);
+                m_battleUI->OnCardRemoved(i);                                 // アニメ側も同indexを除去
+            }
             m_selectedCardIndex = -1;   // 手札が消えたので選択も無効化
             m_hoveredCardIndex = -1;    // ホバーも無効化
             m_cardSelecting = false;
-            m_battleUI->ClearCardAnimations();
+           // m_battleUI->ClearCardAnimations();
 
             m_enemyPhase = EnemyTurnPhase::WaitStart;
             m_currentEnemyIdx = 0;
@@ -880,7 +898,14 @@ void BattleScene::Update(float deltaTime)
             m_burnClock += deltaTime;
             for (auto it = m_burnHits.begin(); it != m_burnHits.end(); )
             {
-                if (m_burnClock >= it->atTime) { m_player->TakeDamage(it->dmg); it = m_burnHits.erase(it); }
+                if (m_burnClock >= it->atTime)
+                {
+                    m_player->TakeDamage(it->dmg);
+                    if (it->curse)
+                        EffectManager::Play("curse_skull",
+                            m_player->worldX, m_player->worldY + 0.7f, m_player->worldZ);
+                    it = m_burnHits.erase(it);
+                }
                 else ++it;
             }
         }

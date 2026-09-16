@@ -142,6 +142,8 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("fx_defend", L"Assets/Particles/defend.png");
 		TextureManager::Load("fx_knife", L"Assets/Particles/knife.png");
 		TextureManager::Load("fx_smash", L"Assets/Particles/smash.png");
+		TextureManager::Load("card_mark_curse", L"Assets/UI/card_mark_curse.png");
+		TextureManager::Load("card_mark_status", L"Assets/UI/card_mark_status.png");
 	}
 
 	// フィールド

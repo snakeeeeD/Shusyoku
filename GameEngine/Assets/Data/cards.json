@@ -1246,8 +1246,8 @@
       "rangeType": "None",
       "description": "攻撃力を+{value}。\nただし敵全体の攻撃力+1",
       "upgrade": {
-      "mainValue": 1
-       },
+        "mainValue": 1
+      },
       "mainEffect": {
         "type": "ApplyBuff",
         "value": 2,
@@ -2427,14 +2427,14 @@
       }
     },
     {
-      "id": "curse_junk",
+      "id": "status_junk",
       "name": "ガラクタ",
       "type": "Status",
       "rarity": "Common",
       "cost": 1,
       "range": 0,
       "rangeType": "None",
-      "description": "使用すると廃棄される（1コスト）。持っていても役に立たない",
+      "description": "使用すると廃棄される",
       "generated": true,
       "exhaust": true,
       "mainEffect": {
@@ -2443,14 +2443,14 @@
       }
     },
     {
-      "id": "curse_static",
+      "id": "status_static",
       "name": "ノイズ",
       "type": "Status",
       "rarity": "Common",
       "cost": 0,
       "range": 0,
       "rangeType": "None",
-      "description": "効果なし。手札と山札を圧迫する",
+      "description": "効果なし",
       "generated": true,
       "mainEffect": {
         "type": "None",
@@ -2458,17 +2458,104 @@
       }
     },
     {
-      "id": "curse_burn",
+      "id": "status_burn",
       "name": "過負荷",
       "type": "Status",
       "rarity": "Common",
       "cost": 0,
       "range": 0,
       "rangeType": "None",
-      "description": "使用不可。ターン終了時に手札にあると2ダメージを受けて捨て札へ",
+      "description": "使用不可。\nターン終了時に手札にあると2ダメージを受けて捨て札へ",
       "generated": true,
       "unplayable": true,
       "endTurnDamage": 2,
+      "mainEffect": {
+        "type": "None",
+        "value": 0
+      }
+    },
+    {
+      "id": "status_haze",
+      "name": "もや",
+      "type": "Status",
+      "rarity": "Common",
+      "cost": 0,
+      "range": 0,
+      "rangeType": "None",
+      "description": "効果なし。\nターン終了時に廃棄される",
+      "generated": true,
+      "unplayable": true,
+      "ethereal": true,
+      "mainEffect": {
+        "type": "None",
+        "value": 0
+      }
+    },
+
+
+    {
+      "id": "cursed_burden",
+      "name": "呪い・重荷",
+      "type": "Curse",
+      "rarity": "Common",
+      "cost": 0,
+      "range": 0,
+      "rangeType": "None",
+      "description": "使用不可。",
+      "generated": true,
+      "unplayable": true,
+      "mainEffect": {
+        "type": "None",
+        "value": 0
+      }
+    },
+    {
+      "id": "cursed_ache",
+      "name": "呪い・疼き",
+      "type": "Curse",
+      "rarity": "Common",
+      "cost": 0,
+      "range": 0,
+      "rangeType": "None",
+      "description": "使用不可。\nターン終了時、手札にあると2ダメージを受ける",
+      "generated": true,
+      "unplayable": true,
+      "endTurnDamage": 2,
+      "mainEffect": {
+        "type": "None",
+        "value": 0
+      }
+    },
+    {
+      "id": "cursed_decay",
+      "name": "呪い・蝕み",
+      "type": "Curse",
+      "rarity": "Common",
+      "cost": 0,
+      "range": 0,
+      "rangeType": "None",
+      "description": "使用不可。\nターン終了時、手札にあると4ダメージを受ける",
+      "generated": true,
+      "unplayable": true,
+      "endTurnDamage": 4,
+      "mainEffect": {
+        "type": "None",
+        "value": 0
+      }
+    },
+    {
+      "id": "cursed_cling",
+      "name": "呪い・纏わり",
+      "type": "Curse",
+      "rarity": "Common",
+      "cost": 0,
+      "range": 0,
+      "rangeType": "None",
+      "description": "使用不可・保留。\n手札に居座り続け、毎ターン1ダメージ",
+      "generated": true,
+      "unplayable": true,
+      "retain": true,
+      "endTurnDamage": 1,
       "mainEffect": {
         "type": "None",
         "value": 0

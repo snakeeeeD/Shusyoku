@@ -41,6 +41,7 @@ public:
         case CardType::Move:   color = XMFLOAT4(0.2f, 0.6f, 0.3f, 1.0f); break;
         case CardType::Power:  color = XMFLOAT4(0.8f, 0.2f, 1.0f, 1.0f); break;
         case CardType::Status: color = XMFLOAT4(0.45f, 0.40f, 0.50f, 1.0f); break;
+        case CardType::Curse:  color = XMFLOAT4(0.30f, 0.08f, 0.14f, 1.0f); break;
         default:               color = XMFLOAT4(0.7f, 0.7f, 0.7f, 1.0f); break;
         }
         if (hovered) color = XMFLOAT4(0.2f, 0.4f, 0.8f, 1.0f);
@@ -237,8 +238,25 @@ public:
             sr->DrawSprite(orb ? orb : white, rx - os / 2.0f, ry - os / 2.0f, os, os, rot,
                 orb ? XMFLOAT4(1, 1, 1, color.w) : XMFLOAT4(0.15f, 0.13f, 0.25f, color.w));
         }
+       
+         // 状態異常/呪いは範囲無関係 → 専用画像を置く
+        if (data && (data->type == CardType::Status || data->type == CardType::Curse))
+        {
+            auto mark = TextureManager::Get(data->type == CardType::Curse ? "card_mark_curse" : "card_mark_status");
+            float foot = 34.0f * scale;
+            float px = x + w / 2.0f, py = y + h / 2.0f;
+            float ux = x + w / 2.0f;                      // 中央
+            float uy = y + 39.0f * scale + foot / 2.0f;   // グリッドと同じ縦位置
+            float cs = cosf(rot), sn = sinf(rot);
+            float rcx = px + (ux - px) * cs - (uy - py) * sn;
+            float rcy = py + (ux - px) * sn + (uy - py) * cs;
+            if (mark)
+                sr->DrawSprite(mark, rcx - foot / 2.0f, rcy - foot / 2.0f, foot, foot, rot, XMFLOAT4(1, 1, 1, color.w));
+            else   // 画像未ロード時の保険（暗いパネル）
+                sr->DrawSprite(white, rcx - foot / 2.0f, rcy - foot / 2.0f, foot, foot, rot, XMFLOAT4(0, 0, 0, 0.35f * color.w));
+        }
         // 攻撃範囲のミニ盤面図
-        if (data)
+        else if (data)
         {
             bool selfOnly = (data->rangeType == RangeType::None);   // 効果が自分だけ
             bool hitAll = (data->rangeType == RangeType::Area       // 範囲全部に当たる（回転切り等）

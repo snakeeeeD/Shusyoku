@@ -1201,7 +1201,7 @@
       },
       {
        "kind": "AddCard",
-       "summonId": "curse_junk",
+       "summonId": "status_junk",
        "buff": "deck",
        "value": 1
       }
@@ -1329,7 +1329,7 @@
      "effects": [
       {
        "kind": "AddCard",
-       "summonId": "curse_static",
+       "summonId": "status_static",
        "buff": "hand",
        "value": 1
       }
@@ -1689,7 +1689,7 @@
       },
       {
        "kind": "AddCard",
-       "summonId": "curse_junk",
+       "summonId": "status_junk",
        "buff": "discard",
        "value": 1
       }
@@ -1916,7 +1916,7 @@
       },
       {
        "kind": "AddCard",
-       "summonId": "curse_static",
+       "summonId": "status_static",
        "buff": "deck",
        "value": 1
       }
@@ -2173,7 +2173,7 @@
       },
       {
        "kind": "AddCard",
-       "summonId": "curse_burn",
+       "summonId": "status_burn",
        "buff": "hand",
        "value": 1
       }
@@ -2873,7 +2873,7 @@
       },
       {
        "kind": "AddCard",
-       "summonId": "curse_junk",
+       "summonId": "status_junk",
        "buff": "hand",
        "value": 1
       }
@@ -2942,7 +2942,7 @@
       },
       {
        "kind": "AddCard",
-       "summonId": "curse_static",
+       "summonId": "status_static",
        "buff": "deck",
        "value": 2
       }
@@ -3174,7 +3174,7 @@
      "effects": [
       {
        "kind": "AddCard",
-       "summonId": "curse_burn",
+       "summonId": "status_burn",
        "buff": "hand",
        "value": 1
       }
@@ -3304,7 +3304,7 @@
         },
         {
           "kind": "AddCard",
-          "summonId": "curse_static",
+          "summonId": "status_static",
           "buff": "discard",
           "value": 2
         }
@@ -3339,7 +3339,7 @@
      "effects": [
       {
        "kind": "AddCard",
-       "summonId": "curse_burn",
+       "summonId": "status_burn",
        "buff": "hand",
        "value": 1
       }

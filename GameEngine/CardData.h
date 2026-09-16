@@ -84,7 +84,9 @@ struct CardData
     bool drawBeforeDiscard = false;   // 捨てる前に1ドローする（攻撃＋捨て系の救済）
     int selfDamage = 0;     // 自傷ダメージ
     int hits = 1;         // 攻撃回数（マルチヒット）
-    bool unplayable = false;   // 使用不可（お邪魔C）
+    bool unplayable = false;   // 使用不可（妨害/呪い）
+    bool ethereal = false;     // ターン終了時、手札にあると廃棄（消滅）
+    bool retain = false;       // ターン終了時に捨てず手札に保持
     int  endTurnDamage = 0;    // ターン終了時、手札にあると受けるダメージ
 
     bool scaleByTrapCount = false;

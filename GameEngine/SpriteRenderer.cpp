@@ -240,6 +240,7 @@ void SpriteRenderer::DrawSprite(ID3D11ShaderResourceView* texture,
     cb.Projection = XMMatrixTranspose(m_projectionMatrix);
     cb.Color = color;
     cb.UVRect = uvRect;
+    cb.Fade = m_fade;
     m_context->UpdateSubresource(m_constantBuffer.Get(), 0, nullptr, &cb, 0, 0);
 
     // 定数バッファ設定
@@ -253,7 +254,17 @@ void SpriteRenderer::DrawSprite(ID3D11ShaderResourceView* texture,
     m_context->DrawIndexed(6, 0, 0);
 
 }
+
 bool SpriteRenderer::LoadTexture(const wchar_t* filename, ID3D11ShaderResourceView** texture)
 {
     return TextureLoader::LoadFromFile(m_device, filename, texture);
 }
+
+void SpriteRenderer::SetCardFade(float topY, float bottomY, float progress, float feather)
+{
+    if (feather < 1.0f) feather = 1.0f;
+    // 透明化する境界線Yを下端から上端へ動かす（progress 0→1）
+    float lineY = bottomY + feather - progress * ((bottomY - topY) + feather);
+    m_fade = XMFLOAT4(lineY, feather, 1.0f, 0.0f);
+}
+void SpriteRenderer::ClearCardFade() { m_fade = XMFLOAT4(0, 0, 0, 0); }

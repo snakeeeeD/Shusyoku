@@ -768,6 +768,81 @@
           "outcomes": []
         }
       ]
+    },
+    {
+      "id": "devil_bargain",
+      "title": "囁く悪魔",
+      "desc": "「力をやろう。ほんの少しの“おまけ”付きでな。」",
+      "layer": 2,
+      "choices": [
+        {
+          "label": "契約する（レリック獲得 / 呪い・重荷）",
+          "result": "力を得た。だが胸に重いものが残った。",
+          "outcomes": [
+            { "type": "relic" },
+            {
+              "type": "addCard",
+              "param": "cursed_burden"
+            }
+          ]
+        },
+        {
+          "label": "深く契約する（レアカード / 呪い・疼き）",
+          "result": "強大な力と、疼く痛みを得た。",
+          "outcomes": [
+            {
+              "type": "pickCard",
+              "param": "rare"
+            },
+            {
+              "type": "addCard",
+              "param": "cursed_ache"
+            }
+          ]
+        },
+        {
+          "label": "断る",
+          "result": "悪魔は嗤って消えた。",
+          "outcomes": []
+        }
+      ]
+    },
+    {
+      "id": "forbidden_hoard",
+      "title": "禁断の宝物庫",
+      "desc": "莫大な富。だが手を触れた者には災いが降りかかるという。",
+      "layer": 3,
+      "choices": [
+        {
+          "label": "全て奪う（+200G / 呪い・蝕み）",
+          "result": "富を掴んだ。代償は重い。",
+          "outcomes": [
+            {
+              "type": "gold",
+              "value": 200
+            },
+            {
+              "type": "addCard",
+              "param": "cursed_decay"
+            }
+          ]
+        },
+        {
+          "label": "少しだけ頂く（+60G）",
+          "result": "分をわきまえ、無事に立ち去った。",
+          "outcomes": [
+            {
+              "type": "gold",
+              "value": 60
+            }
+          ]
+        },
+        {
+          "label": "触れない",
+          "result": "先へ進んだ。",
+          "outcomes": []
+        }
+      ]
     }
   ]
 }

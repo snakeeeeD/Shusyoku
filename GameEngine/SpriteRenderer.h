@@ -34,6 +34,9 @@ public:
         const XMFLOAT4& color = XMFLOAT4(1, 1, 1, 1),
         const XMFLOAT4& uvRect = XMFLOAT4(0, 0, 1, 1));
 
+    void SetCardFade(float topY, float bottomY, float progress, float feather);
+    void ClearCardFade();
+
     void Begin();
     void End();
 
@@ -59,6 +62,8 @@ private:
     int m_screenHeight;
 
     ComPtr<ID3D11DepthStencilState> m_depthStencilState;
+
+    XMFLOAT4 m_fade = XMFLOAT4(0, 0, 0, 0);
 };
 
 // 定数バッファ
@@ -68,4 +73,6 @@ struct ConstantBuffer
     XMMATRIX Projection;
     XMFLOAT4 Color;
     XMFLOAT4 UVRect;
+    XMFLOAT4 Fade;  // x=境界Y, y=ぼかし幅(px), z=有効(1/0), w=未使用
+
 };

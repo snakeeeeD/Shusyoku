@@ -46,6 +46,8 @@ struct DiscardCardEffect {
     float delay = 0.0f;                     // 開始遅延（過負荷の先出し用）
     const CardData* data = nullptr;
     bool  fromCenter = false;               // 中央スタート（過負荷）
+    bool exhaust = false;
+    bool sparked = false;
 };
 
 
@@ -53,6 +55,7 @@ struct CardAnimState {
     float currentX, currentY;
     float currentScale = 1.0f;
     float currentRot = 0.0f;
+    float peekTimer = -1000.0f;   // 呪い(保留)の中央往復。-1000=無効 / -delay~で予約
 };
 
 struct PlayCardEffect {
@@ -65,7 +68,9 @@ struct PlayCardEffect {
     CardType cardType;
     const CardData* data = nullptr;
     float delay = 0.0f;
-    bool isBurn = false;    // 過負荷専用モーション（ため＋メリハリ）
+    bool isBurn = false;
+    bool exhaust = false;
+    bool sparked = false;
 };
 
 struct HPBarInfo
@@ -127,6 +132,11 @@ struct BattleUIContext
     const std::string* rewardRelic = nullptr;
 };
 
+struct UiEmber 
+{
+    float x, y, vx, vy, life, maxLife, size; 
+};
+
 class BattleUI
 {
 public:
@@ -148,6 +158,7 @@ public:
         int selectedIndex, POINT mousePos, bool selectedNeedsTarget,
         const std::vector<int>* discardSelected = nullptr);
     void OnCardRemoved(int index);
+    void StartHandCardPeek(int index, float delay);   // 保留カードを中央へ往復させて手札に戻す
     void UpdatePlayCardEffects(float deltaTime);
 
     void ClearCardAnimations() { m_cardAnims.clear(); }
@@ -176,7 +187,7 @@ public:
     void GetDiscardViewRect(float& x, float& y, float& w, float& h) const;
     bool IsOnDiscardConfirm(POINT p) const;
     bool IsOnDiscardView(POINT p) const;
-    void StartDiscardEffectAt(int cardIndex, const CardData* data = nullptr, float delay = 0.0f);
+    void StartDiscardEffectAt(int cardIndex, const CardData* data = nullptr, float delay = 0.0f, bool exhaust = false);
     void StartBurnDiscard(const CardData* data, float delay);
     void StartPlayCardEffectFromHand(const CardData* data, int cardIndex, float delay = 0.0f, bool isBurn = false);
 
@@ -250,9 +261,15 @@ private:
     void DrawPlayCardEffectsFull(const BattleUIContext& ctx);
     void DrawDiscardEffectTexts(const BattleUIContext& ctx);
     void DrawDiscardEffectsFull(const BattleUIContext& ctx);
+    void SpawnExhaustEmbers(float cx, float cy, float w, float h);
+    void UpdateExhaustEmbers(float dt);
+    void DrawExhaustEmbers();
+    void DrawDissolveCard(float baseX, float baseY, float scale,
+        const CardData* data, CardType type, float progress);
 
     static constexpr float PLAY_EFFECT_DUR = 0.45f;
     static constexpr float DISCARD_EFFECT_DUR = 0.55f;
+    static constexpr float EXHAUST_FADE_DUR = 0.3f;   // 廃棄フェード時間（大=遅い）
 
     bool WorldToScreen(float wx, float wy, float wz, Renderer3D* renderer3D,
         float& outX, float& outY) const;
@@ -265,4 +282,7 @@ private:
 
     std::string m_hoverDropId;
     float m_hoverDropX = 0.0f, m_hoverDropY = 0.0f;
+
+    std::vector<UiEmber> m_exhaustEmbers;
+
 };
