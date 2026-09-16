@@ -191,6 +191,11 @@ public:
     void StartBurnDiscard(const CardData* data, float delay);
     void StartPlayCardEffectFromHand(const CardData* data, int cardIndex, float delay = 0.0f, bool isBurn = false);
 
+    void StartAddedCardEffect(const CardData* data, const std::string& target, int idx, int count);
+    void UpdateAddedCardEffects(float dt);
+    void DrawAddedCardEffectsFull(const BattleUIContext& ctx);
+    void DrawAddedCardsTop(const BattleUIContext& ctx);   // 敵アイコン等の上に最前面で
+
     void DrawUnitStatusSprites(float footX, float footY, float scale, bool isBoss,
         const HPBarInfo& bar, BuffManager& bm, POINT mousePos, float timer);
     void DrawUnitStatusText(float footX, float footY, float scale, bool isBoss,
@@ -266,6 +271,18 @@ private:
     void DrawExhaustEmbers();
     void DrawDissolveCard(float baseX, float baseY, float scale,
         const CardData* data, CardType type, float progress);
+
+    struct AddedCardEffect {
+        const CardData* data = nullptr;
+        CardType cardType = CardType::Status;
+        float sx, sy, tx, ty;
+        float timer = 0.0f;
+        bool done = false;
+    };
+    std::vector<AddedCardEffect> m_addedCardEffects;
+
+    static constexpr float ADD_HOLD = 0.55f;   // カードを見せる時間
+    static constexpr float ADD_FLY = 0.45f;   // パイルへ飛ぶ時間
 
     static constexpr float PLAY_EFFECT_DUR = 0.45f;
     static constexpr float DISCARD_EFFECT_DUR = 0.55f;

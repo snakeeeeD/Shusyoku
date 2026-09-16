@@ -621,22 +621,44 @@
      }
     },
     {
-     "description": "薙ぎ払い、{0}ダメージ",
-     "target": {
-      "rangeType": "Area",
-      "range": 2,
-      "approach": "Toward",
-      "moveRange": 2
-     },
-     "effects": [
-      {
-       "kind": "Damage",
-       "value": 7
+      "description": "薙ぎ払い、{0}ダメージ",
+      "target": {
+        "rangeType": "Area",
+        "range": 2,
+        "approach": "Toward",
+        "moveRange": 2
+      },
+      "effects": [
+        {
+          "kind": "Damage",
+          "value": 7
+        }
+      ],
+      "select": {
+        "chance": 40
       }
-     ],
-     "select": {
-      "chance": 40
-     }
+    },
+    {
+      "description": "叩き込み、{0}ダメージ、山札にガラクタ",
+      "target": {
+        "rangeType": "Area",
+        "range": 1,
+        "approach": "Toward",
+        "moveRange": 2
+      },
+      "effects": [
+        {
+          "kind": "Damage",
+          "value": 9
+        },
+        {
+          "kind": "AddCard",
+          "summonId": "status_junk",
+          "buff": "deck",
+          "value": 1
+        }
+      ],
+      "select": { "chance": 30 }
     }
    ]
   },
@@ -1203,7 +1225,7 @@
        "kind": "AddCard",
        "summonId": "status_junk",
        "buff": "deck",
-       "value": 1
+       "value": 2
       }
      ],
      "select": {
@@ -1321,7 +1343,7 @@
       }
     },
     {
-     "description": "呪詛、手札にノイズ",
+     "description": "呪詛、山札にもや",
      "target": {
       "rangeType": "None",
       "range": 1
@@ -1329,9 +1351,9 @@
      "effects": [
       {
        "kind": "AddCard",
-       "summonId": "status_static",
-       "buff": "hand",
-       "value": 1
+       "summonId": "status_haze",
+       "buff": "deck",
+       "value": 2
       }
      ],
      "select": {
@@ -1531,22 +1553,38 @@
      }
     },
     {
-     "description": "噛みつき、{0}ダメージ",
-     "target": {
-      "rangeType": "Area",
-      "range": 1,
-      "approach": "Toward",
-      "moveRange": 1
-     },
-     "effects": [
-      {
-       "kind": "Damage",
-       "value": 6
+      "description": "噛みつき、{0}ダメージ",
+      "target": {
+        "rangeType": "Area",
+        "range": 1,
+        "approach": "Toward",
+        "moveRange": 1
+      },
+      "effects": [
+        {
+          "kind": "Damage",
+          "value": 6
+        }
+      ],
+      "select": {
+        "chance": 30
       }
-     ],
-     "select": {
-      "chance": 30
-     }
+    },
+    {
+      "description": "遠吠え、捨て札にノイズ",
+      "target": {
+        "rangeType": "None",
+        "range": 1
+      },
+      "effects": [
+        {
+          "kind": "AddCard",
+          "summonId": "status_static",
+          "buff": "discard",
+          "value": 1
+        }
+      ],
+      "select": { "chance": 25 }
     },
     {
      "description": "唸る、攻撃力↑付与",
@@ -1600,20 +1638,36 @@
      }
     },
     {
-     "description": "接近",
-     "target": {
-      "rangeType": "None",
-      "range": 1
-     },
-     "effects": [
-      {
-       "kind": "MoveToward",
-       "value": 3
+      "description": "接近",
+      "target": {
+        "rangeType": "None",
+        "range": 1
+      },
+      "effects": [
+        {
+          "kind": "MoveToward",
+          "value": 3
+        }
+      ],
+      "select": {
+        "chance": 40
       }
-     ],
-     "select": {
-      "chance": 40
-     }
+    },
+    {
+      "description": "甲高い声、手札に過負荷",
+      "target": {
+        "rangeType": "None",
+        "range": 1
+      },
+      "effects": [
+        {
+          "kind": "AddCard",
+          "summonId": "status_burn",
+          "buff": "hand",
+          "value": 1
+        }
+      ],
+      "select": { "chance": 25 }
     }
    ],
    "drops": [
@@ -1918,7 +1972,7 @@
        "kind": "AddCard",
        "summonId": "status_static",
        "buff": "deck",
-       "value": 1
+       "value": 2
       }
      ],
      "select": {
@@ -2175,7 +2229,7 @@
        "kind": "AddCard",
        "summonId": "status_burn",
        "buff": "hand",
-       "value": 1
+       "value": 3
       }
      ],
      "select": {
@@ -2859,7 +2913,7 @@
      }
     },
     {
-     "description": "制圧射撃、{0}ダメージ、手札にガラクタ",
+     "description": "制圧射撃、{0}ダメージ、山札にガラクタ",
      "target": {
       "rangeType": "Cross",
       "range": 4,
@@ -2874,8 +2928,8 @@
       {
        "kind": "AddCard",
        "summonId": "status_junk",
-       "buff": "hand",
-       "value": 1
+       "buff": "deck",
+       "value": 3
       }
      ],
      "select": {
@@ -3176,7 +3230,7 @@
        "kind": "AddCard",
        "summonId": "status_burn",
        "buff": "hand",
-       "value": 1
+       "value": 2
       }
      ],
      "select": {
@@ -3331,7 +3385,7 @@
      }
     },
     {
-     "description": "過負荷注入、手札に過負荷",
+     "description": "過負荷注入、捨て札に過負荷",
      "target": {
       "rangeType": "None",
       "range": 1
@@ -3340,8 +3394,8 @@
       {
        "kind": "AddCard",
        "summonId": "status_burn",
-       "buff": "hand",
-       "value": 1
+       "buff": "discard",
+       "value": 3
       }
      ],
      "select": {

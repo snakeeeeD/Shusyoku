@@ -2450,8 +2450,9 @@
       "cost": 0,
       "range": 0,
       "rangeType": "None",
-      "description": "効果なし",
+      "description": "効果なし、使用不可",
       "generated": true,
+      "unplayable": true,
       "mainEffect": {
         "type": "None",
         "value": 0

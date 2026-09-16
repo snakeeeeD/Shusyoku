@@ -924,6 +924,7 @@ void BattleScene::Update(float deltaTime)
             m_selectedCardIndex, m_input.GetMousePos(), selectedNeedsTarget,
             &m_discardSelected);
         m_battleUI->UpdateDiscardEffects(deltaTime);
+        m_battleUI->UpdateAddedCardEffects(deltaTime);
 
         // 勝利判定
         if (m_enemies.empty())
@@ -1155,12 +1156,17 @@ void BattleScene::Update(float deltaTime)
                 int damage = enemy->ExecuteAction(ai, m_playerCol, m_playerRow, m_gridMap, m_player, m_enemies, tC, tR, &atk);
 
                 for (auto& pc : enemy->PendingCurses())
+                {
+                    const CardData* cd = CardDataBase::Get(pc.cardId);
                     for (int k = 0; k < pc.count; k++)
                     {
                         if (pc.target == "hand")         m_hand.AddCard(pc.cardId);
                         else if (pc.target == "discard")  m_deck.DiscardCard(pc.cardId);
                         else                              m_deck.AddCard(pc.cardId);
+                        if (pc.target != "hand")          // 山札/捨て札は見せてから飛ばす
+                            m_battleUI->StartAddedCardEffect(cd, pc.target, k, pc.count);
                     }
+                }
                 enemy->PendingCurses().clear();
 
                 for (auto& sm : enemy->TakePendingSummons())
@@ -2047,6 +2053,7 @@ void BattleScene::Draw()
     ctx.rewardRelic = &m_rewardRelic;
 
     m_battleUI->Draw(ctx);
+    m_battleUI->DrawAddedCardsTop(ctx);
 }
 
 void BattleScene::HandleInput()

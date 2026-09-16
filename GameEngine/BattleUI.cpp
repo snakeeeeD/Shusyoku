@@ -2925,3 +2925,71 @@ void BattleUI::DrawDissolveCard(float baseX, float baseY, float scale,
             0.0f, bc, XMFLOAT4(0.0f, vTop, 1.0f, vBot));
     }
 }
+
+void BattleUI::StartAddedCardEffect(const CardData* data, const std::string& target, int idx, int count)
+{
+    AddedCardEffect e;
+    e.data = data;
+    e.cardType = data ? data->type : CardType::Status;
+
+    float spacing = CARD_WIDTH * 1.5f;                 // 枚数ぶん横に並べる
+    float totalW = spacing * (count - 1);
+    float cx = m_screenWidth / 2.0f - CARD_WIDTH / 2.0f;
+    e.sx = cx - totalW / 2.0f + idx * spacing;
+    e.sy = m_screenHeight * 0.40f;
+
+    float py = m_screenHeight - 60.0f;                  // 各パイルの位置
+    if (target == "deck") { e.tx = 20.0f; e.ty = py; }   // 山札
+    else if (target == "discard") { e.tx = 80.0f; e.ty = py; }   // 捨て札
+    else { e.tx = cx;    e.ty = py; }   // hand(保険)
+
+    m_addedCardEffects.push_back(e);
+}
+
+void BattleUI::UpdateAddedCardEffects(float dt)
+{
+    for (auto& e : m_addedCardEffects)
+    {
+        e.timer += dt;
+        if (e.timer >= ADD_HOLD + ADD_FLY) e.done = true;
+    }
+    m_addedCardEffects.erase(
+        std::remove_if(m_addedCardEffects.begin(), m_addedCardEffects.end(),
+            [](const AddedCardEffect& e) { return e.done; }),
+        m_addedCardEffects.end());
+}
+
+void BattleUI::DrawAddedCardEffectsFull(const BattleUIContext& ctx)
+{
+    for (auto& e : m_addedCardEffects)
+    {
+        float x = e.sx, y = e.sy, s = 1.0f, a = 1.0f;
+        if (e.timer < ADD_HOLD)
+        {
+            float u = min(1.0f, e.timer / 0.15f);
+            s = 0.9f + 0.5f * u;
+        }
+        else
+        {
+            float u = min(1.0f, (e.timer - ADD_HOLD) / ADD_FLY);
+            float ease = u * u;
+            x = e.sx + (e.tx - e.sx) * ease;
+            y = e.sy + (e.ty - e.sy) * ease - sinf(u * 3.14159f) * 40.0f;
+            s = 1.4f - 0.9f * u;
+            a = 1.0f - u * 0.9f;
+        }
+        XMFLOAT4 c = CardVisual::GetCardColor(e.cardType, false); c.w = a;
+        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, x, y, s, 0.0f, c, e.data, 0.0f);
+        m_spriteRenderer->End(); m_textRenderer->Begin();
+        CardVisual::DrawTexts(m_textRenderer, e.data, ctx.player, x, y, s, 0.0f, a);
+        m_textRenderer->End(); m_spriteRenderer->Begin();
+    }
+}
+
+void BattleUI::DrawAddedCardsTop(const BattleUIContext& ctx)
+{
+    if (m_addedCardEffects.empty()) return;
+    m_spriteRenderer->Begin();
+    DrawAddedCardEffectsFull(ctx);
+    m_spriteRenderer->End();
+}
