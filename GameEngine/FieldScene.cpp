@@ -176,6 +176,13 @@ void FieldScene::GenerateMap()
         std::swap(positions[i], positions[j]);
     }
 
+    // 財宝/休憩/エリート/ショップは「特殊マス」扱い（同士を隣接させない・ボス前休憩の隣も避ける）
+    auto isSpecial = [](FieldNodeType t) 
+        {
+            return t == FieldNodeType::Rest || t == FieldNodeType::Shop
+            || t == FieldNodeType::Elite || t == FieldNodeType::Treasure;
+        };
+
     // シャッフルした順に配置
     for (auto& [col, row] : positions)
     {
@@ -188,15 +195,28 @@ void FieldScene::GenerateMap()
 
         // 配置可能なタイプを重みで選ぶ
         std::vector<std::pair<FieldNodeType, int>> available;
+
+        // 隣接に特殊マスが既にあるか
+        const int nd[4][2] = { {1,0},{-1,0},{0,1},{0,-1} };
+        bool adjSpecial = false;
+        for (auto& d : nd)
+        {
+            int nc = col + d[0], nr = row + d[1];
+            if (nc < 0 || nc >= GRID_COLS || nr < 0 || nr >= GRID_ROWS) continue;
+            if (isSpecial(m_nodes[GetNodeIndex(nc, nr)].type)) { adjSpecial = true; break; }
+        }
+
         for (auto& limit : config.typeLimits)
         {
             if (limit.maxCount >= 0 && typeCounts[limit.type] >= limit.maxCount) continue;
-            // スタート付近(左3列)はRest/Shopを置かない
+            // スタート付近(左3列)はRest/Shop/Elite/Treasureを置かない
             if (col < 3 && (limit.type == FieldNodeType::Rest
                 || limit.type == FieldNodeType::Shop
                 || limit.type == FieldNodeType::Elite
                 || limit.type == FieldNodeType::Treasure))
                 continue;
+            // 特殊マス同士は隣接させない
+            if (adjSpecial && isSpecial(limit.type)) continue;
             available.push_back({ limit.type, limit.weight });
         }
 
@@ -281,6 +301,24 @@ void FieldScene::GenerateMap()
         int idx = GetNodeIndex(1, row);
         if (m_nodes[idx].type != FieldNodeType::Empty)
             m_nodes[idx].type = FieldNodeType::Battle;
+    }
+
+    // ボスの前のマスは必ず休憩に（ボスは最右列中央なので、その1つ左）
+    {
+        int bossRow = GRID_ROWS / 2;
+        int frontIdx = GetNodeIndex(GRID_COLS - 2, bossRow);
+        m_nodes[frontIdx].type = FieldNodeType::Rest;
+
+        // ボス前休憩の隣に特殊マスが来ないよう、隣接する特殊マスは戦闘に降格
+        const int nd2[4][2] = { {1,0},{-1,0},{0,1},{0,-1} };
+        for (auto& d : nd2)
+        {
+            int nc = (GRID_COLS - 2) + d[0], nr = bossRow + d[1];
+            if (nc < 0 || nc >= GRID_COLS || nr < 0 || nr >= GRID_ROWS) continue;
+            int ni = GetNodeIndex(nc, nr);
+            if (ni == GetNodeIndex(GRID_COLS - 1, bossRow)) continue;   // ボス本体は除外
+            if (isSpecial(m_nodes[ni].type)) m_nodes[ni].type = FieldNodeType::Battle;
+        }
     }
 
     // エンカウントを生成時に確定→ノードに保存（＝コンティニューで不変、かつ連続同一を回避）

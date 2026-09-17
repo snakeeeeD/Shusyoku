@@ -102,6 +102,7 @@ public:
 
     void SetForceHitmark(bool b) { m_forceHitmark = b; }
     bool GetHitmarkRect(float& x, float& y, float& w, float& h) const;
+    bool GetEnemyPanelRect(float& x, float& y, float& w, float& h) const;
 
     void OnCardPlayed(const CardData* d);
 

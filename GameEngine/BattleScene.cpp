@@ -2058,16 +2058,6 @@ void BattleScene::Draw()
 
 void BattleScene::HandleInput()
 {
-#ifdef _DEBUG
-    static int s_dbgFx = 0;
-    if (m_input.GetKeyTrigger('1'))                       // 1キー：ループ再生を開始
-        s_dbgFx = EffectManager::Play("fx_test", m_player->worldX, 1.0f, m_player->worldZ);
-    if (m_input.GetKeyTrigger('2'))                       // 2キー：止める
-    {
-        EffectManager::Stop(s_dbgFx);
-        s_dbgFx = 0;
-    }
-#endif
     // 勝敗後はターンに関係なくクリックで進める
     if (m_battleResult == BattleResult::Win)
     {
@@ -3347,7 +3337,7 @@ void BattleScene::FreeLookStep(Input& in, float deltaTime)
     if (wd != 0) { m_cameraZoom -= wd > 0 ? ZOOM_SPEED : -ZOOM_SPEED; m_cameraZoom = max(ZOOM_MIN, min(ZOOM_MAX, m_cameraZoom)); }
 
     // パン（中ボタンドラッグ）
-    if (in.GetMouseButtonPress(2)) {
+    if (in.GetMouseButtonPress(1)) {
         POINT mp = in.GetMousePos();
         if (!m_isDraggingCamera) { m_isDraggingCamera = true; m_dragStartPos = mp; }
         else {
@@ -3415,6 +3405,18 @@ bool BattleScene::GetHitmarkRect(float& x, float& y, float& w, float& h) const
 {
     if (m_enemies.empty() || !m_battleUI) return false;
     return m_battleUI->GetHitmarkRect(m_enemies[0], m_renderer3D, x, y, w, h);
+}
+
+bool BattleScene::GetEnemyPanelRect(float& x, float& y, float& w, float& h) const
+{
+    if (m_enemies.empty()) return false;
+    int n = (int)m_enemies.size();
+    const float panelW = 240.0f, entryH = 90.0f, gap = 5.0f;
+    x = m_screenWidth - 250.0f - 6.0f;
+    y = 50.0f + RelicManager::BarTotalHeight(m_screenWidth) - 6.0f;
+    w = panelW + 12.0f;
+    h = n * entryH + (n - 1) * gap + 12.0f;     // 敵数ぶんの高さ
+    return true;
 }
 
 void BattleScene::OnCardPlayed(const CardData* d)

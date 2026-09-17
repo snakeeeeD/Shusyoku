@@ -559,8 +559,8 @@ void SceneManager::DoChangeScene(SceneType type)
 			  (float)m_screenWidth - 168.0f, (float)m_screenHeight - 66.0f, 156.0f, 52.0f },
 			{ L"HPが0になると敗北",                                   20,  85, 220,  90 },
 			{ L"カメラ操作\nマウスホイール：ズーム / 右クリックドラッグ：カメラ移動\nホイールをクリック：自分中心にリセット", 170, 130, 940, 540 },
-			{ L"敵をクリック（右上の敵ウィンドウでもOK）で\nその敵の攻撃範囲が表示される", 1028, 46, 246, 200 },
-						{ L"頭上に赤い警告が出ている敵は\n今の位置に攻撃が当たる。移動して避けよう", 170, 130, 940, 540, -1, false, true },
+			{ L"敵をクリック（右上の敵ウィンドウでもOK）で\nその敵の攻撃範囲が表示される",1028, 46, 246, 200, -1, false, false, true },
+			{ L"頭上に赤い警告が出ている敵は\n今の位置に攻撃が当たる。移動して避けよう", 170, 130, 940, 540, -1, false, true },
 			}, 1.2f);
 	}
 
@@ -1257,6 +1257,12 @@ void SceneManager::DrawTutorial()
 			float x, y, w, h;
 			if (battle->GetHitmarkRect(x, y, w, h)) { hx = x; hy = y; hw = w; hh = h; }
 		}
+	if (pg.enemyPanel)
+		if (auto battle = dynamic_cast<BattleScene*>(m_currentScene))
+		{
+			float x, y, w, h;
+			if (battle->GetEnemyPanelRect(x, y, w, h)) { hx = x; hy = y; hw = w; hh = h; }
+		}
 	ID3D11ShaderResourceView* white = TextureManager::Get("white");
 	float sw = (float)m_screenWidth, sh = (float)m_screenHeight;
 	XMFLOAT4 dim(0, 0, 0, 0.7f);
@@ -1276,6 +1282,18 @@ void SceneManager::DrawTutorial()
 		m_uiSprite->DrawSprite(white, x + w, y, 3, h + 3, 0.0f, fr);
 	}
 	else m_uiSprite->DrawSprite(white, 0, 0, sw, sh, 0.0f, dim);
+
+	// 攻撃範囲の説明ページ：危険マークを中央に大きく見せる
+	if (pg.showHitmark)
+	{
+		auto hm = TextureManager::Get("ui_hitmark");
+		if (hm)
+		{
+			float sz = 120.0f;
+			m_uiSprite->DrawSprite(hm, sw / 2.0f - sz / 2.0f, sh * 0.40f - sz / 2.0f,
+				sz, sz, 0.0f, XMFLOAT4(1, 1, 1, 1));
+		}
+	}
 
 	// テキストボックス（対象が上なら下側、下なら上側に置く）
 	float bw = 560.0f, bh = 150.0f, bx = sw / 2.0f - bw / 2.0f;
