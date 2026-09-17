@@ -282,7 +282,10 @@ public:
                 sr->DrawSprite(white, rcx - sw / 2.0f, rcy - sh / 2.0f, sw, sh, rot, col);
                 };
             auto inR = [&](int ddc, int ddr) {
-                return !selfOnly && RangeShape::Contains(0, 0, ddc, ddr, data->rangeType, R, 0, 0, -1);
+                if (selfOnly) return false;
+                if (data->type == CardType::Move)   // 移動＝マンハッタン距離R以内（BFSハイライトに合わせる）
+                    return (ddc != 0 || ddr != 0) && (abs(ddc) + abs(ddr) <= R);
+                return RangeShape::Contains(0, 0, ddc, ddr, data->rangeType, R, 0, 0, -1);
                 };
             put(ux0 + foot / 2.0f, uy0 + foot / 2.0f, foot + 4.0f * scale,
                 XMFLOAT4(0.0f, 0.0f, 0.0f, 0.35f * color.w));                 // 背景パネル

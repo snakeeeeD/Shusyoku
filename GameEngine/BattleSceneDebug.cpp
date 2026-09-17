@@ -19,6 +19,14 @@ void BattleScene::DrawImGui()
         for (auto enemy : m_enemies)
             enemy->SetHp(0);
 
+    ImGui::Separator();
+    ImGui::Text("Hand costs:");
+    for (auto c : m_hand.GetCards())
+    {
+        const CardData* d = c->GetData();
+        ImGui::Text("%s : cost=%d", c->GetId().c_str(), d ? d->cost : -1);
+    }
+
     // --- エンカウンター選択 ---
     ImGui::Text("Encounter");
     ImGui::SliderInt("Template", &m_debugEncounterIndex, -1, EncounterDataBase::GetCount() - 1);

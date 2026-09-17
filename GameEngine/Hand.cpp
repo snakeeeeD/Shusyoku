@@ -43,6 +43,7 @@ void Hand::UpgradeAll()
 	{
 		std::string id = card->GetId();
 		if (!id.empty() && id.back() == '+') continue;      // 既に強化済み
+		if (id.rfind("CRAFT:", 0) == 0) continue;           // 合成カードは強化不可（+でIDが壊れる）
 		if (!CardDataBase::Get(id + "+")) continue;         // 強化版が無いカード
 		delete card;
 		card = new Card(id + "+");

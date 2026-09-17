@@ -867,10 +867,10 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     // ターンエンドボタン
     if (ctx.battleResult == BattleResult::None && ctx.isPlayerTurn)
     {
-        float btnX = ctx.screenWidth - 160.0f;
-        float btnY = ctx.screenHeight - 60.0f;
-        float btnW = 140.0f;
-        float btnH = 40.0f;
+        float btnW = 180.0f;
+        float btnH = 56.0f;
+        float btnX = ctx.screenWidth - btnW - 20.0f;
+        float btnY = ctx.screenHeight - btnH - 20.0f;
 
         bool hoverEnd = UiHoverB(btnX, btnY, btnW, btnH, ctx.mousePos, "turnend");
         float bey = hoverEnd ? btnY - 6.0f : btnY;
@@ -2288,9 +2288,29 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
             std::wstring dispText =
                 EnemyIntentVisual::GetActionText(*action, enemy->GetBuffManager());
 
-            m_textRenderer->DrawText(dispText.c_str(),
-                panelX + iconSize + 10.0f, entryY + 32.0f, 14.0f,
-                D2D1::ColorF(D2D1::ColorF::Orange));
+            const size_t MAXCH = 11;                     // 1行の最大文字数
+            float tx = panelX + iconSize + 10.0f;
+            float ty = entryY + 30.0f;
+
+            size_t start = 0;
+            while (start < dispText.size())
+            {
+                // 「、」までを1節として取り出す
+                size_t comma = dispText.find(L'、', start);
+                size_t clauseEnd = (comma == std::wstring::npos) ? dispText.size() : comma + 1;
+                // 節が長ければMAXCHごとに折り返す
+                size_t p = start;
+                while (p < clauseEnd)
+                {
+                    size_t len = min(MAXCH, clauseEnd - p);
+                    std::wstring line = dispText.substr(p, len);
+                    m_textRenderer->DrawText(line.c_str(), tx, ty, 13.0f,
+                        D2D1::ColorF(D2D1::ColorF::Orange));
+                    ty += 15.0f;
+                    p += len;
+                }
+                start = clauseEnd;
+            }
         }
 
         // ホバー中の詳細テキスト

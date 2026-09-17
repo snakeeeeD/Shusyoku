@@ -2482,10 +2482,32 @@ void BattleScene::HandleInput()
             int targetRow = m_playerRow;
             bool canTry = !moveCanceled;
 
-            // 敵が1体だけなら、アタックはどこで離しても自動でその敵を狙う（スキル/パワー同様）
-            Enemy* soleEnemy = nullptr; int aliveCount = 0;
-            for (auto e : m_enemies) if (e && e->GetHp() > 0) { aliveCount++; soleEnemy = e; }
-            bool autoAttack = (ct == CardType::Attack && aliveCount == 1 && soleEnemy);
+            // 攻撃カードの射程内にいる敵を数える。1体だけなら自動ターゲット
+            Enemy* soleEnemy = nullptr; int inRangeCount = 0;
+            if (ct == CardType::Attack)
+            {
+                int rng = dataCopy.range;
+                if (m_player->GetBuffManager().HasBuff(BuffType::Reposition))
+                    rng += m_player->GetBuffManager().GetBuffValue(BuffType::Reposition);
+                for (auto e : m_enemies)
+                {
+                    if (!e || e->GetHp() <= 0) continue;
+                    bool inR = false;
+                    for (auto& [dc, dr] : e->GetGridShape())   // 敵の占有マスのどれかが射程内か
+                    {
+                        int ec = e->gridCol + dc, er = e->gridRow + dr;
+                        int adx = 0, ady = 0;
+                        if (dataCopy.rangeType == RangeType::Cone)
+                            RangeShape::CardinalAim(m_playerCol, m_playerRow, ec, er, adx, ady);
+                        if (RangeShape::Contains(m_playerCol, m_playerRow, ec, er,
+                            dataCopy.rangeType, rng, 0, adx, ady)) {
+                            inR = true; break;
+                        }
+                    }
+                    if (inR) { inRangeCount++; soleEnemy = e; }
+                }
+            }
+            bool autoAttack = (ct == CardType::Attack && inRangeCount == 1 && soleEnemy);
 
             CardEffectType met = cards[m_selectedCardIndex]->GetData()->mainEffect.type;
             bool needCell = (met == CardEffectType::PlaceTrap || met == CardEffectType::DetonateAt
@@ -3114,10 +3136,10 @@ void BattleScene::HandleInput()
         // ターンエンドボタン（右下）
         if (m_battleResult == BattleResult::None)
         {
-            float btnX = m_screenWidth - 160.0f;
-            float btnY = m_screenHeight - 60.0f;
-            float btnW = 140.0f;
-            float btnH = 40.0f;
+            float btnW = 180.0f;
+            float btnH = 56.0f;
+            float btnX = m_screenWidth - btnW - 20.0f;
+            float btnY = m_screenHeight - btnH - 20.0f;
 
             if (m_input.GetMouseButtonTrigger(0))
             {
