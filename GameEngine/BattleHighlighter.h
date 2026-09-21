@@ -49,6 +49,11 @@ public:
     std::vector<ThreatMark> m_enemyThreatMarks;
     const std::vector<ThreatMark>& GetThreatMarks() const { return m_enemyThreatMarks; }
 
+    // 敵ごとの範囲の外周線（dir:0=上/1=下/2=左/3=右）
+    struct ThreatEdge { int col, row, dir; DirectX::XMFLOAT4 color; };
+    std::vector<ThreatEdge> m_enemyThreatEdges;
+    const std::vector<ThreatEdge>& GetThreatEdges() const { return m_enemyThreatEdges; }
+
     std::vector<std::pair<int, int>> m_playerReachCells;   // 攻撃カードの射程（オーバーレイ用）
     const std::vector<std::pair<int, int>>& GetReachCells() const { return m_playerReachCells; }
 

@@ -82,6 +82,8 @@ public:
 
 	bool IsBoss() const { return m_isBoss; }
 	bool IsImmovable() const { return m_immovable; }
+	void SetInvulnerable(bool v);
+	bool IsInvulnerable() const { return m_buffManager.HasBuff(BuffType::Invincible); }
 	bool IsInRange(int targetCol, int targetRow, int range, RangeType rangeType, int minRange = 0) const;
 
 	void StartDeath();

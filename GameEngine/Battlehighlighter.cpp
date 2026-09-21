@@ -51,6 +51,7 @@ void BattleHighlighter::ClearEnemyHighlight(GridMap* gridMap)
     }
     m_enemyHighlightCells.clear();
     m_enemyThreatMarks.clear();
+    m_enemyThreatEdges.clear();
     m_enemyHighlightCells.clear();
 }
 
@@ -436,36 +437,53 @@ void BattleHighlighter::UpdateEnemyHighlight(
         }
     }
 
-    m_enemyCycleTimer += 0.025f;
+    // 塗り：単独マスは所有敵色、重なりマスはゆっくり敵色をクロスフェード
     for (auto& [pos, info] : cellOwner)
     {
-        int dist = info.first;
-        int ei = info.second;
-        float phase = m_enemyCycleTimer - dist * 0.8f;    // このマスの波の位相
+        bool sel = selCells.count(pos) > 0;
         auto& threats = cellThreats[pos];
-        XMFLOAT4 hue = HighlightPalette::EnemyHue(ei);    // 単独マスはそのまま
-        if ((int)threats.size() > 1 && !selCells.count(pos))   // 重なりマスは色をグラデ遷移
+        float a = sel ? 0.70f : 0.50f;
+
+        XMFLOAT4 h;
+        if ((int)threats.size() <= 1 || sel)
+        {
+            h = HighlightPalette::EnemyHue(info.second);      // 単独／選択中は固定色
+        }
+        else
         {
             int n = (int)threats.size();
-            const float PERIOD = 6.2831853f;               // 2π = 波1周
-            float cyc = phase / PERIOD;
-            float frac = cyc - floorf(cyc);                // この周期の進み 0..1
-            int ia = ((int)floorf(cyc) % n + n) % n;       // 今の色
-            int ib = (ia + 1) % n;                         // 次の色
-            // 波が暗くなる辺り(0.55〜0.95)でだけ滑らかに乗り換え
-            float t = (frac - 0.55f) / 0.40f;
-            t = t < 0.0f ? 0.0f : (t > 1.0f ? 1.0f : t);
-            t = t * t * (3.0f - 2.0f * t);                 // smoothstep（イーズ）
+            const float speed = 0.25f;                        // ゆっくり（大きいほど速い）
+            float scaled = (timer * speed + (pos.first + pos.second) * 0.05f) * n;
+            int ia = ((int)floorf(scaled) % n + n) % n;       // 今の色
+            int ib = (ia + 1) % n;                            // 次の色
+            float t = scaled - floorf(scaled);                // 0..1
+            t = t * t * (3.0f - 2.0f * t);                    // smoothstep（滑らかに）
             const XMFLOAT4& ca = HighlightPalette::EnemyHue(threats[ia]);
             const XMFLOAT4& cb = HighlightPalette::EnemyHue(threats[ib]);
-            hue = XMFLOAT4(ca.x + (cb.x - ca.x) * t,
+            h = XMFLOAT4(ca.x + (cb.x - ca.x) * t,
                 ca.y + (cb.y - ca.y) * t,
-                ca.z + (cb.z - ca.z) * t,
-                ca.w + (cb.w - ca.w) * t);
+                ca.z + (cb.z - ca.z) * t, 1.0f);
         }
-        float w = 0.5f + 0.5f * sin(phase);
-        float br = selCells.count(pos) ? (0.7f + 0.3f * w) : (0.5f + 0.3f * w);
-        m_enemyThreatMarks.push_back({ pos.first, pos.second, HighlightPalette::Scale(hue, br) });
+        m_enemyThreatMarks.push_back({ pos.first, pos.second, XMFLOAT4(h.x, h.y, h.z, a) });
         m_enemyHighlightCells.push_back(pos);
+    }
+
+    // 敵ごとに範囲の外周線を引く（その敵の領土を一筆で囲う＝誰の範囲か一目で分かる）
+    std::map<int, std::set<std::pair<int, int>>> enemyCells;
+    for (auto& [pos, list] : cellThreats)
+        for (int ei : list) enemyCells[ei].insert(pos);
+
+    const int dcol[4] = { 0, 0, -1, 1 };   // 上,下,左,右
+    const int drow[4] = { -1, 1, 0, 0 };
+    for (auto& [ei, cells] : enemyCells)
+    {
+        XMFLOAT4 hue = HighlightPalette::EnemyHue(ei);
+        for (auto& pos : cells)
+            for (int d = 0; d < 4; d++)
+            {
+                std::pair<int, int> nb = { pos.first + dcol[d], pos.second + drow[d] };
+                if (cells.count(nb) == 0)   // 自分の範囲外に接する辺＝外周
+                    m_enemyThreatEdges.push_back({ pos.first, pos.second, d, hue });
+            }
     }
 }

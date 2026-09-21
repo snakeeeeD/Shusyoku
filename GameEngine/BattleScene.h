@@ -141,6 +141,15 @@ private:
 
     int m_turnCount = 0;
 
+    bool m_bossAwakened = false;   // 3層ボス：楔全滅で覚醒済みか
+    bool m_bossAwakenPending = false;   // 次のボス手番を「覚醒ターン（何もしない＋演出）」にする
+    bool m_bossHadWedges = false;
+    float m_awakenCinematic = 0.0f;   // 覚醒演出の残り時間（>0で操作/ターン停止）
+    float m_awakenRingTimer = 0.0f;   // 円を追加する間隔
+    std::vector<float> m_awakenRings; // 拡大中の円の経過時間リスト
+    void UpdateBossGimmick();      // 楔の生存でボス無敵/覚醒を制御
+    void BossInvulnAction(Enemy* boss);   // 無敵中の妨害・溜め（ダメージなし）
+
     TurnManager m_turnManager;
 
     BattleResult m_battleResult;

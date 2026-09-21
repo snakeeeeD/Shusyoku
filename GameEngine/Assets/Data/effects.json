@@ -97,6 +97,31 @@
       ]
     },
     {
+      "id": "roar",
+      "bursts": [
+        {
+          "count": 70,
+          "speed": 9.0,
+          "life": 0.7,
+          "scale": 0.32,
+          "gravity": 0.0,
+          "drag": 0.015,
+          "colorStart": [ 1.0, 0.35, 0.2, 1.0 ],
+          "colorEnd": [ 0.8, 0.1, 0.0, 0.0 ]
+        },
+        {
+          "count": 40,
+          "speed": 5.0,
+          "life": 0.9,
+          "scale": 0.5,
+          "gravity": 0.0,
+          "drag": 0.03,
+          "colorStart": [ 1.0, 0.7, 0.3, 0.8 ],
+          "colorEnd": [ 0.6, 0.1, 0.0, 0.0 ]
+        }
+      ]
+    },
+    {
       "id": "poison",
       "bursts": [
         {

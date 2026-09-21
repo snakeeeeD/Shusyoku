@@ -1269,23 +1269,37 @@
    ]
   },
   {
-   "id": "l3boss",
-   "layer": 3,
-   "tier": 1,
-   "category": "boss",
-   "weight": 100,
-   "enemies": [
-    {
-     "id": "elite_void_weaver",
-     "col": 5,
-     "row": 2
-    },
-    {
-     "id": "elite_corrupted_core",
-     "col": 6,
-     "row": 4
-    }
-   ]
+    "id": "l3boss",
+    "layer": 3,
+    "category": "boss",
+    "weight": 100,
+    "enemies": [
+      {
+        "id": "l3_sovereign",
+        "col": 4,
+        "row": 0
+      },
+      {
+        "id": "wedge_sword",
+        "col": 1,
+        "row": 1
+      },
+      {
+        "id": "wedge_venom",
+        "col": 7,
+        "row": 1
+      },
+      {
+        "id": "wedge_shield",
+        "col": 1,
+        "row": 5
+      },
+      {
+        "id": "wedge_hex",
+        "col": 7,
+        "row": 5
+      }
+    ]
   }
  ]
 }

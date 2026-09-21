@@ -58,4 +58,5 @@ enum class BuffType
     DeepStand,      // HP1/4で攻撃アップ
     EmberTrail,     // 移動した通り道に炎ハザードを残す
     DrawPerTurn,    // 毎ターン開始時、追加でカードを引く
+    Invincible,     // 無敵：ダメージ完全無効（3層ボス）
 };

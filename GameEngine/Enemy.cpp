@@ -316,6 +316,14 @@ void Enemy::MoveToCenter(GridMap* gridMap, int steps)
 
 void Enemy::TakeDamage(int damage, DamageFeel feel)
 {
+    if (IsInvulnerable())
+    {
+        // 無敵：ダメージ完全無効（表記0＋ガード演出）
+        EffectManager::Play("defend", worldX, worldY + height * 0.5f, worldZ);
+        DamageFeedback::Play(DamageFeel::Hit, worldX, worldY + height * 0.5f, worldZ, 0, 0);
+        return;
+    }
+
     Audio::PlaySE("Assets/Sound/se/hit.mp3");
 
     if (m_isSnake && m_lastHitHead) damage *= 2;   // 頭は弱点（2倍）
@@ -343,6 +351,13 @@ void Enemy::TakeDamage(int damage, DamageFeel feel)
         HitStop::Add(0.05f);
     }
     DamageFeedback::Play(feel, worldX, worldY + height * 0.5f, worldZ, damage, blocked);
+}
+
+void Enemy::SetInvulnerable(bool v)
+{
+    bool has = m_buffManager.HasBuff(BuffType::Invincible);
+    if (v && !has)       m_buffManager.AddBuff({ BuffType::Invincible, 0, -1 });   // 永続
+    else if (!v && has)  m_buffManager.RemoveBuff(BuffType::Invincible);
 }
 
 void Enemy::AddBlock(int amount)
@@ -445,6 +460,8 @@ bool Enemy::ConditionMet(const EnemyAction& a, int playerCol, int playerRow, int
     if (a.select.condition == "afterDodge") return m_lastAttackWhiffed;
     if (a.select.condition == "allyBelow") return m_allyCount < a.select.conditionValue;
     if (a.select.condition == "coiled") return m_coilComplete;
+    if (a.select.condition == "invuln") return IsInvulnerable();   // 無敵中のみ
+    if (a.select.condition == "awake")  return !IsInvulnerable();  // 覚醒後のみ
     return true;
 }
 
@@ -647,7 +664,15 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
             break;
 
         case EffectKind::Block:
-            AddBlock(m_buffManager.GetFinalBlock(e.value));
+            if (e.applyTo == ApplyTo::Allies)
+            {
+                int blk = m_buffManager.GetFinalBlock(e.value);
+                for (auto ally : enemies)
+                    if (ally && ally->GetHp() > 0 && !ally->IsDying())
+                        ally->AddBlock(blk);   // 自分含む全味方に付与
+            }
+            else
+                AddBlock(m_buffManager.GetFinalBlock(e.value));
             break;
 
         case EffectKind::Buff:
@@ -669,13 +694,13 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
                 if (hitPlayer && player && !fullyBlocked)
                     player->GetBuffManager().AddBuff(b);
             }
-            else // Allies：範囲内の他の敵
+            else // Allies：全ての味方に付与（範囲無視・自分は除く）
             {
                 for (auto other : enemies)
                 {
-                    if (other == this || other->GetHp() <= 0) continue;
-                    if (IsInRange(other->gridCol, other->gridRow, tg.range, tg.rangeType, tg.minRange))
-                        other->GetBuffManager().AddBuff(b);
+                    if (other == this || !other) continue;
+                    if (other->GetHp() <= 0 || other->IsDying()) continue;
+                    other->GetBuffManager().AddBuff(b);
                 }
             }
             break;

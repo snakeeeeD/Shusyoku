@@ -680,6 +680,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             float buffIconY = barY + barHeight + 4.0f;
             float buffIconX = barX;
             float buffMaxX = barX + barWidth + 40.0f;
+
             for (auto& buff : enemy->GetBuffManager().GetBuffs())
             {
                 float iconSize = 16.0f;

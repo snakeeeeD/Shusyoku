@@ -51,7 +51,8 @@ struct BuffInfo
             { L"火事場の力",          L"HP半分以下で攻撃+{value}",                               {0.9f, 0.4f, 0.2f, 1.0f},	  "buff_laststand" },     // LastStand
             { L"決死の覚悟",          L"HP1/4以下で攻撃+{value}",                                {0.9f, 0.2f, 0.2f, 1.0f},	  "buff_deepstand" },     // DeepStand
             { L"炎の軌跡",            L"移動した通り道に炎を残す",                               {1.0f, 0.4f, 0.1f, 1.0f},	  "buff_embertrail" },    // EmberTrail
-            { L"追加ドロー+",          L"毎ターン開始時 カードを{value}枚多く引く",               {0.4f, 0.8f, 0.9f, 1.0f},    "buff_knifegen" },      // DrawPerTurn
+            { L"追加ドロー+",         L"毎ターン開始時 カードを{value}枚多く引く",               {0.4f, 0.8f, 0.9f, 1.0f},    "buff_knifegen" },      // DrawPerTurn
+             { L"無敵",                L"ダメージを完全に無効化する",                            {0.55f, 0.8f, 1.0f, 1.0f},   "buff_barricade" },     // Invincible
         };
         return infos[static_cast<int>(type)];
     }

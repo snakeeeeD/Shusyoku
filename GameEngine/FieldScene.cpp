@@ -88,7 +88,8 @@ bool FieldScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             || curNode.type == FieldNodeType::Elite))
     {
         m_currentEnemyId = (curNode.type == FieldNodeType::Boss)
-            ? (PlayerDataManager::GetData().layer == 2 ? "l2boss" : "dragon")
+            ? (PlayerDataManager::GetData().layer == 3 ? "l3boss"
+                : PlayerDataManager::GetData().layer == 2 ? "l2boss" : "dragon")
             : curNode.enemyId;
         m_currentBattleSeed = cur;
         m_currentBattleOverflow = (m_steps < 0) ? -m_steps : 0;
@@ -688,7 +689,8 @@ void FieldScene::HandleInput()
                     case FieldNodeType::Battle:
                     case FieldNodeType::Boss:
                         m_currentEnemyId = (node.type == FieldNodeType::Boss)
-                            ? (PlayerDataManager::GetData().layer == 2 ? "l2boss" : "dragon")
+                            ? (PlayerDataManager::GetData().layer == 3 ? "l3boss"
+                                : PlayerDataManager::GetData().layer == 2 ? "l2boss" : "dragon")
                             : node.enemyId;
                         m_currentBattleSeed = idx;
                         m_currentBattleTier = 1 + node.col * 3 / GRID_COLS; if (m_currentBattleTier > 3) m_currentBattleTier = 3;

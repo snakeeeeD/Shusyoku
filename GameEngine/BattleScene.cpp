@@ -506,6 +506,7 @@ void BattleScene::AddEnemy(int col, int row, const std::string& id)
 
     if (enemy->IsSnake()) enemy->InitSnake(m_gridMap);
 
+    if (id == "l3_sovereign") enemy->SetInvulnerable(true);   // 初手決定前から無敵に
     m_enemies.push_back(enemy);
 }
 
@@ -537,9 +538,87 @@ void BattleScene::OnPlayerMoved()
     // 今後の「移動時○○」レリックはここに追記
 }
 
+void BattleScene::UpdateBossGimmick()
+{
+    Enemy* boss = nullptr;
+    int wedgesAlive = 0;
+    for (auto e : m_enemies)
+    {
+        if (!e || e->IsDying()) continue;
+        const std::string& id = e->GetId();
+        if (id.rfind("wedge_", 0) == 0) wedgesAlive++;
+        else if (id == "l3_sovereign") boss = e;
+    }
+    if (!boss) return;   // このバトルに3層ボスがいなければ何もしない
+
+    if (wedgesAlive > 0) m_bossHadWedges = true;
+
+    if (!m_bossAwakened)
+    {
+        if (m_bossHadWedges && wedgesAlive == 0)
+        {
+            // 楔全滅 → 次のボス手番を「覚醒ターン」に予約
+            m_bossAwakened = true;
+            m_bossAwakenPending = true;
+        }
+        else
+        {
+            boss->SetInvulnerable(true);   // 覚醒前は常に無敵
+        }
+    }
+}
+
+void BattleScene::BossInvulnAction(Enemy* boss)
+{
+    if (m_turnCount % 2 != 0)
+        return;   // 溜めターン（何もしない）
+
+    if (((m_turnCount / 2) % 2) == 0)
+    {
+        // 楔の攻撃力を永続アップ
+        for (auto e : m_enemies)
+        {
+            if (!e || e->IsDying()) continue;
+            if (e->GetId().rfind("wedge_", 0) == 0)
+                e->GetBuffManager().AddBuff({ BuffType::AttackUp, 2, -1 });   // +2・永続
+        }
+        EffectManager::Play("explosion_all",
+            boss->worldX, boss->worldY + boss->height * 0.5f, boss->worldZ);
+    }
+    else
+    {
+        // お邪魔カードを山札に挿入
+        const char* junk = "status_static";
+        m_deck.AddCard(junk);
+        m_battleUI->StartAddedCardEffect(CardDataBase::Get(junk), "deck", 0, 1);
+    }
+}
+
 void BattleScene::Update(float deltaTime)
 {
     m_input.Update();
+    UpdateBossGimmick();   // 3層ボス：楔の生存で無敵/覚醒を制御
+    if (m_awakenCinematic > 0.0f)
+    {
+        m_awakenCinematic -= deltaTime;
+
+        // 画面全体の円を一定間隔で追加し、経過時間を進める
+        m_awakenRingTimer -= deltaTime;
+        if (m_awakenRingTimer <= 0.0f) { m_awakenRings.push_back(0.0f); m_awakenRingTimer = 0.32f; }
+        for (auto& a : m_awakenRings) a += deltaTime;
+        m_awakenRings.erase(
+            std::remove_if(m_awakenRings.begin(), m_awakenRings.end(),
+                [](float a) { return a > 1.1f; }),   // 寿命1.1秒
+            m_awakenRings.end());
+
+        ScreenShake::Add(0.6f);              // ずっと揺らす（グワングワン）
+
+        // 演出だけ更新（操作・ターン遷移・時間経過は止める）
+        ScreenShake::Update(deltaTime);
+        EffectManager::Update(deltaTime);
+        FloatingTextManager::Update(deltaTime);
+        return;
+    }
     if (m_freeLook) return;
 
 #ifdef _DEBUG
@@ -1153,7 +1232,20 @@ void BattleScene::Update(float deltaTime)
                 // 現在の行動を実行
                 bool targetedDecoy = (m_decoyCol >= 0 && tC == m_decoyCol && tR == m_decoyRow);
                 bool atk = false;
-                int damage = enemy->ExecuteAction(ai, m_playerCol, m_playerRow, m_gridMap, m_player, m_enemies, tC, tR, &atk);
+                int damage = 0;
+                if (enemy->GetId() == "l3_sovereign" && m_bossAwakenPending)
+                {
+                    m_bossAwakenPending = false;
+                    enemy->SetInvulnerable(false);
+                    m_awakenCinematic = 2.5f;   // 演出の長さ
+                    m_awakenRingTimer = 0.0f;
+                    m_awakenRings.clear();
+                    ScreenShake::Add(1.0f);     // 開始の一撃
+                }
+                else
+                {
+                    damage = enemy->ExecuteAction(ai, m_playerCol, m_playerRow, m_gridMap, m_player, m_enemies, tC, tR, &atk);
+                }
 
                 for (auto& pc : enemy->PendingCurses())
                 {
@@ -1595,26 +1687,69 @@ void BattleScene::Draw()
     }
     m_renderer3D->SetDepthWrite(true);
 
-    for (int row = 0; row < m_gridMap->GetRows(); row++)
+    // 明るくするのは「何も表示していない空マス」だけ（範囲・ハイライトは素の色のまま）
     {
-        for (int col = 0; col < m_gridMap->GetCols(); col++)
-        {
-            float x = (col - m_gridMap->GetCols() / 2.0f) * 1.1f;
-            float z = (row - m_gridMap->GetRows() / 2.0f) * 1.1f;
-            auto& cell = m_gridMap->GetCell(col, row);
-            float t = cell.gameObject.worldY / 0.10f;              // 0=通常, 1=浮ききった状態
-            float size = 1.0f + 0.02f * t;                          // 少しだけ拡大
-            m_renderer3D->DrawTile(cell.gameObject.texture, x, z, size, cell.gameObject.color, cell.gameObject.worldY);
-        }
+        int cols = m_gridMap->GetCols(), rows = m_gridMap->GetRows();
+        std::vector<char> shown(cols * rows, 0);
+        for (auto& mk : m_highlighter.GetThreatMarks())
+            if (mk.col >= 0 && mk.col < cols && mk.row >= 0 && mk.row < rows)
+                shown[mk.row * cols + mk.col] = 1;
+        for (auto& p : m_highlighter.GetPlayerHighlightCells())
+            if (p.first >= 0 && p.first < cols && p.second >= 0 && p.second < rows)
+                shown[p.second * cols + p.first] = 1;
+
+        for (int row = 0; row < rows; row++)
+            for (int col = 0; col < cols; col++)
+            {
+                float x = (col - cols / 2.0f) * 1.1f;
+                float z = (row - rows / 2.0f) * 1.1f;
+                auto& cell = m_gridMap->GetCell(col, row);
+                float t = cell.gameObject.worldY / 0.10f;
+                float size = 1.0f + 0.02f * t;
+
+                XMFLOAT4 cc = cell.gameObject.color;
+                if (cell.type == CellType::Empty && !shown[row * cols + col])
+                {
+                    cc.x = min(1.0f, cc.x * 1.3f);   // 空マスだけ明るく
+                    cc.y = min(1.0f, cc.y * 1.3f);
+                    cc.z = min(1.0f, cc.z * 1.3f);
+                }
+                m_renderer3D->DrawTile(cell.gameObject.texture, x, z, size, cc, cell.gameObject.worldY);
+            }
     }
 
-    // 敵の攻撃範囲マーカー（半透明の四角＋四隅ブラケット）をマスの上に重ねる
+    // 敵の攻撃範囲：所有敵の色でハザード模様を薄く塗る
+    ID3D11ShaderResourceView* rangeTex = TextureManager::Get("ui_hazard");
     for (auto& mk : m_highlighter.GetThreatMarks())
     {
         float x = (mk.col - m_gridMap->GetCols() / 2.0f) * 1.1f;
         float z = (mk.row - m_gridMap->GetRows() / 2.0f) * 1.1f;
         float wy = m_gridMap->GetCell(mk.col, mk.row).gameObject.worldY + 0.02f;
-        m_renderer3D->DrawTile(TextureManager::Get("ui_threat"), x, z, 0.98f, mk.color, wy);
+        m_renderer3D->DrawTile(rangeTex, x, z, 0.94f, mk.color, wy);
+    }
+
+    // 敵ごとの色で範囲の外周線（内側の線ほど短く。重なる辺はずらして両方見せる）
+    {
+        m_renderer3D->SetDepthEnabled(false);
+        const float HALF = 0.5f, T = 0.07f;
+        const float BASE = HALF - T * 0.5f;    // 一番外側の線の内寄せ量
+        const float LEN = 1.0f - T;            // 一番外側の線の長さ
+        std::map<int, int> edgeStack;          // 同じ辺に既に何本引いたか
+        for (auto& e : m_highlighter.GetThreatEdges())
+        {
+            int key = (e.col * 64 + e.row) * 4 + e.dir;
+            int k = edgeStack[key]++;           // この辺での重なり順（0,1,2...）
+            float inset = BASE - k * T;         // 重なるごとに内側へ
+            float len = LEN - 2.0f * T * k;     // 内側ほど短く（角が入れ子になる）
+            if (len < T) len = T;               // 短くなりすぎ防止
+            float cx = (e.col - m_gridMap->GetCols() / 2.0f) * 1.1f;
+            float cz = (e.row - m_gridMap->GetRows() / 2.0f) * 1.1f;
+            if (e.dir == 0)      m_renderer3D->DrawTileEx(m_whiteTexture, cx, cz - inset, len, T, 0.0f, e.color);
+            else if (e.dir == 1) m_renderer3D->DrawTileEx(m_whiteTexture, cx, cz + inset, len, T, 0.0f, e.color);
+            else if (e.dir == 2) m_renderer3D->DrawTileEx(m_whiteTexture, cx - inset, cz, T, len, 0.0f, e.color);
+            else                 m_renderer3D->DrawTileEx(m_whiteTexture, cx + inset, cz, T, len, 0.0f, e.color);
+        }
+        m_renderer3D->SetDepthEnabled(true);
     }
 
     // プレイヤーの攻撃範囲マーカー（水色ブラケット＋クロスヘア）
@@ -2051,6 +2186,44 @@ void BattleScene::Draw()
     ctx.discardSelected = &m_discardSelected;
     ctx.discardViewMode = m_discardViewMode;
     ctx.rewardRelic = &m_rewardRelic;
+
+    if (m_awakenCinematic > 0.0f)
+    {
+        float cx = m_screenWidth * 0.5f, cy = m_screenHeight * 0.5f;
+        float maxR = sqrtf((float)(m_screenWidth * m_screenWidth + m_screenHeight * m_screenHeight)) * 0.65f;
+        float ph = m_awakenCinematic;                 // フレーム毎に変化＝ゆらぎ用
+        m_spriteRenderer->Begin();
+
+        // 集中線（中心へ放射状の黒い線）
+        auto white = TextureManager::Get("white");
+        const int LINES = 84;
+        for (int i = 0; i < LINES; i++)
+        {
+            float ang = (float)i / LINES * 6.2831853f
+                + sinf(ph * 30.0f + i * 12.9898f) * 0.02f;   // 軽い揺らぎ
+            float Ri = maxR * (0.34f + 0.06f * sinf(i * 7.13f));    // 中心の空き（ばらつき）
+            float Ro = maxR * 1.4f;
+            float len = Ro - Ri;
+            float mx = cx + cosf(ang) * (Ri + Ro) * 0.5f;
+            float my = cy + sinf(ang) * (Ri + Ro) * 0.5f;
+            float th = 2.0f + 5.0f * (0.5f + 0.5f * sinf(i * 3.7f));  // 太さばらつき
+            m_spriteRenderer->DrawSprite(white, mx - len * 0.5f, my - th * 0.5f, len, th,
+                ang, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.5f));
+        }
+
+        // 画面全体に拡大する円
+        auto ring = TextureManager::Get("ui_hitring");
+        for (float a : m_awakenRings)
+        {
+            float t = a / 1.1f;
+            float R = t * maxR;
+            float alpha = (1.0f - t) * 0.85f;
+            m_spriteRenderer->DrawSprite(ring, cx - R, cy - R, R * 2.0f, R * 2.0f,
+                0.0f, XMFLOAT4(1.0f, 0.35f, 0.2f, alpha));
+        }
+
+        m_spriteRenderer->End();
+    }
 
     m_battleUI->Draw(ctx);
     m_battleUI->DrawAddedCardsTop(ctx);
