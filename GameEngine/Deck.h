@@ -10,6 +10,7 @@ public:
     Deck();
 
     void AddCard(const std::string& id);
+    void AddCardRandom(const std::string& id);   // ŽRŽD‚Ìƒ‰ƒ“ƒ_ƒ€‚ÈˆÊ’u‚É‘}“ü
     std::string DrawCard();
     std::string DrawSpecificCard(const std::string& id);
     std::string SalvageCard(const std::string& id);

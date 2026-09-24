@@ -1331,7 +1331,7 @@
             {
               "kind": "Debuff",
               "buff": "Vulnerable",
-              "value": 1,
+              "value": 2,
               "duration": 2,
               "applyTo": "Player"
             }

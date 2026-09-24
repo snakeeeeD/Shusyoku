@@ -80,6 +80,7 @@ struct HPBarInfo
     float displayHP;
     int block;
     int poisonDmg;
+    bool poisonBoosted = false;   // ToxicRhythm‚Å“Å‚ª•¡”‰ñ‰»‚µ‚Ä‚¢‚é‚©
     bool hasBurn;
 };
 

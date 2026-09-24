@@ -110,7 +110,7 @@ void BattleUI::DrawHPBar(float x, float y, float w, float h, const HPBarInfo& in
     m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, w * hpRatio, h,
         0.0f, barColor);
 
-    // 毒ダメージ予測（紫）
+    // 毒ダメージ予測（紫。長さ＝ToxicRhythm込みの合計）
     if (info.poisonDmg > 0 && hpRatio > 0.0f)
     {
         float poisonW = w * min(poisonRatio, hpRatio);
@@ -566,7 +566,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             HPBarInfo eBar;
             eBar.currentHP = enemy->GetHp(); eBar.maxHP = enemy->GetMaxHp();
             eBar.displayHP = enemy->GetDisplayHp(); eBar.block = enemy->GetBlock();
-            eBar.poisonDmg = psumE; eBar.hasBurn = enemy->GetBuffManager().HasBuff(BuffType::Burn);
+            eBar.poisonDmg = psumE; eBar.poisonBoosted = (trE > 1); eBar.hasBurn = enemy->GetBuffManager().HasBuff(BuffType::Burn);
 
             DrawUnitStatusSprites(footX, footY, scale, enemy->IsBoss(), eBar,
                 enemy->GetBuffManager(), ctx.mousePos, ctx.highlightTimer);
@@ -2203,7 +2203,7 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
         int pp = enemy->GetBuffManager().GetBuffValue(BuffType::Poison);
         int psum = 0;
         for (int i = 0; i < tr; i++) { int v = pp - i; if (v <= 0) break; psum += v; }
-        panelBar.poisonDmg = psum;
+        panelBar.poisonDmg = psum; panelBar.poisonBoosted = (tr > 1);
         panelBar.hasBurn = enemy->GetBuffManager().HasBuff(BuffType::Burn);
         DrawHPBar(barX, barY, barW, barH, panelBar, ctx.highlightTimer);
 

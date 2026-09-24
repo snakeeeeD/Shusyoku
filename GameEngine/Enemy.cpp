@@ -324,6 +324,15 @@ void Enemy::TakeDamage(int damage, DamageFeel feel)
         return;
     }
 
+    if (feel == DamageFeel::Poison)
+    {
+        // 毒はブロック/弱体を無視して表示値通り与える
+        m_HP -= damage;
+        if (m_HP < 0) m_HP = 0;
+        DamageFeedback::Play(feel, worldX, worldY + height * 0.5f, worldZ, damage, 0);
+        return;
+    }
+
     Audio::PlaySE("Assets/Sound/se/hit.mp3");
 
     if (m_isSnake && m_lastHitHead) damage *= 2;   // 頭は弱点（2倍）
@@ -750,7 +759,8 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
             break;
         }
         case EffectKind::AddCard:
-            m_pendingCurses.push_back({ e.summonId, e.buff.empty() ? "deck" : e.buff, e.value > 0 ? e.value : 1 });
+            if (hitPlayer || tg.rangeType == RangeType::None)   // 範囲系は命中時だけ／None(必中的)は常時
+                m_pendingCurses.push_back({ e.summonId, e.buff.empty() ? "deck" : e.buff, e.value > 0 ? e.value : 1 });
             break;
         }
 

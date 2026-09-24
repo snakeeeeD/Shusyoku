@@ -7,6 +7,13 @@ void Deck::AddCard(const std::string& id)
     m_drawPile.push_back(id);
 }
 
+void Deck::AddCardRandom(const std::string& id)
+{
+    if (m_drawPile.empty()) { m_drawPile.push_back(id); return; }
+    int idx = rand() % ((int)m_drawPile.size() + 1);   // 0~size ‚Ì‚Ç‚±‚©
+    m_drawPile.insert(m_drawPile.begin() + idx, id);
+}
+
 std::string Deck::DrawCard()
 {
     // ŽRŽD‚ª‹ó‚È‚çŽÌ‚ÄŽD‚ðƒVƒƒƒbƒtƒ‹‚µ‚ÄŽRŽD‚É–ß‚·

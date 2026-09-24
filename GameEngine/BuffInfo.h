@@ -38,9 +38,9 @@ struct BuffInfo
             { L"毒",                  L"毎ターン{value}ダメージを受け、1ずつ減少",    {0.5f,0.0f,0.8f,1.0f},    "buff_poison" },       // Poison
 
             { L"攻撃UP(今)",          L"このターン攻撃力が{value}上昇する",                      {0.9f, 0.45f, 0.15f, 1.0f},  "buff_attackupturn" },  // AttackUpTurn
-            { L"闘気",                L"毎ターン開始時、攻撃力が{value}上昇する",                {0.95f, 0.35f, 0.05f, 1.0f}, "buff_attackgrowth" },  // AttackGrowth
+            { L"闘気",                L"2ターンに一度、攻撃力が{value}上昇する",                {0.95f, 0.35f, 0.05f, 1.0f}, "buff_attackgrowth" },  // AttackGrowth
             { L"狂乱",                L"与ダメージ+{pct}%／被ダメージ+{pct}%／移動で自傷{self}", {0.85f, 0.15f, 0.15f, 1.0f}, "buff_frenzy" },        // Frenzy
-            { L"毒の瘴気",            L"毎ターン開始時 全ての敵に毒{value}",                     {0.6f, 0.3f, 0.9f, 1.0f},    "buff_noxiousfumes" },  // NoxiousFumes
+            { L"毒の瘴気",            L"2ターンに一度 全ての敵に毒{value}",                     {0.6f, 0.3f, 0.9f, 1.0f},    "buff_noxiousfumes" },  // NoxiousFumes
             { L"毒の脈動",            L"毒のダメージ回数+{value}",                               {0.65f, 0.4f, 0.95f, 1.0f}, 	  "buff_toxicrhythm" },   // ToxicRhythm
             { L"移動不可",            L"このターン移動できない",                                 {0.5f, 0.5f, 0.6f, 1.0f},    "buff_movelock" },      // MoveLock
             { L"受け返し",            L"攻撃を完全に防ぐと 敵に{value}ダメージ",                 {0.4f, 0.7f, 1.0f, 1.0f}, 	  "buff_riposte" },       // Riposte

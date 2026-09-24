@@ -2199,28 +2199,6 @@
     },
     {
       "id": "SKL_Trap_expose",
-      "name": "脆弱の罠",
-      "type": "Skill",
-      "rarity": "Common",
-      "tags": [
-        "Trap"
-      ],
-      "cost": 1,
-      "range": 2,
-      "rangeType": "Diamond",
-      "description": "踏むと脆弱になる罠を設置",
-      "upgrade": {
-        "range": 1
-      },
-      "mainEffect": {
-        "type": "PlaceTrap",
-        "value": 1,
-        "duration": 3,
-        "trapType": "expose"
-      }
-    },
-    {
-      "id": "SKL_Trap_weaken",
       "name": "弱体の罠",
       "type": "Skill",
       "rarity": "Common",
@@ -2230,13 +2208,35 @@
       "cost": 1,
       "range": 2,
       "rangeType": "Diamond",
-      "description": "踏むと弱体化する罠を設置",
+      "description": "踏むと弱体{value}を付与する罠を設置",
       "upgrade": {
         "range": 1
       },
       "mainEffect": {
         "type": "PlaceTrap",
-        "value": 1,
+        "value": 3,
+        "duration": 3,
+        "trapType": "expose"
+      }
+    },
+    {
+      "id": "SKL_Trap_weaken",
+      "name": "脱力の罠",
+      "type": "Skill",
+      "rarity": "Common",
+      "tags": [
+        "Trap"
+      ],
+      "cost": 1,
+      "range": 2,
+      "rangeType": "Diamond",
+      "description": "踏むと脱力{value}を付与する罠を設置",
+      "upgrade": {
+        "range": 1
+      },
+      "mainEffect": {
+        "type": "PlaceTrap",
+        "value": 3,
         "duration": 3,
         "trapType": "weaken"
       }

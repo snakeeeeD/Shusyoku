@@ -1267,7 +1267,7 @@ void BattleScene::Update(float deltaTime)
                     {
                         if (pc.target == "hand")         m_hand.AddCard(pc.cardId);
                         else if (pc.target == "discard")  m_deck.DiscardCard(pc.cardId);
-                        else                              m_deck.AddCard(pc.cardId);
+                        else                              m_deck.AddCardRandom(pc.cardId);
                         if (pc.target != "hand")          // 山札/捨て札は見せてから飛ばす
                             m_battleUI->StartAddedCardEffect(cd, pc.target, k, pc.count);
                     }

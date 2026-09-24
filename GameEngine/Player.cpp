@@ -37,6 +37,14 @@ void Player::Draw3D(Renderer3D* renderer)
 
 void Player::TakeDamage(int damage, DamageFeel feel)
 {
+    if (feel == DamageFeel::Poison)
+    {
+        m_hp -= damage;
+        if (m_hp < 0) m_hp = 0;
+        DamageFeedback::Play(feel, worldX, worldY + height * 0.5f, worldZ, damage, 0);
+        return;
+    }
+
     Audio::PlaySE("Assets/Sound/se/shield.mp3");
 
     // Vulnerable: 50%‘
