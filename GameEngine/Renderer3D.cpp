@@ -16,6 +16,11 @@ Renderer3D::Renderer3D()
 
 Renderer3D::~Renderer3D() {}
 
+namespace {
+    struct BlurCB { XMFLOAT2 texel; float radius; float pad; };
+    struct BlurVtx { XMFLOAT2 pos; XMFLOAT2 uv; };
+}
+
 bool Renderer3D::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     int screenWidth, int screenHeight)
 {
@@ -393,4 +398,103 @@ void Renderer3D::DrawShadow(ID3D11ShaderResourceView* texture,
     m_context->IASetVertexBuffers(0, 1, m_billboardVertexBuffer.GetAddressOf(), &stride, &offset);
     m_context->DrawIndexed(6, 0, 0);
     m_context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
+}
+
+bool Renderer3D::InitPostProcess()
+{
+    D3D11_TEXTURE2D_DESC td = {};
+    td.Width = m_screenWidth; td.Height = m_screenHeight;
+    td.MipLevels = 1; td.ArraySize = 1;
+    td.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    td.SampleDesc.Count = 1;
+    td.Usage = D3D11_USAGE_DEFAULT;
+    td.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    if (FAILED(m_device->CreateTexture2D(&td, nullptr, m_ppTex.GetAddressOf()))) return false;
+    if (FAILED(m_device->CreateRenderTargetView(m_ppTex.Get(), nullptr, m_ppRTV.GetAddressOf()))) return false;
+    if (FAILED(m_device->CreateShaderResourceView(m_ppTex.Get(), nullptr, m_ppSRV.GetAddressOf()))) return false;
+
+    ComPtr<ID3DBlob> vs, ps, err;
+    if (FAILED(D3DCompileFromFile(L"Shaders/Blur_VS.hlsl", nullptr, nullptr, "main", "vs_5_0", 0, 0, vs.GetAddressOf(), err.GetAddressOf()))) return false;
+    m_device->CreateVertexShader(vs->GetBufferPointer(), vs->GetBufferSize(), nullptr, m_blurVS.GetAddressOf());
+    if (FAILED(D3DCompileFromFile(L"Shaders/Blur_PS.hlsl", nullptr, nullptr, "main", "ps_5_0", 0, 0, ps.GetAddressOf(), err.GetAddressOf()))) return false;
+    m_device->CreatePixelShader(ps->GetBufferPointer(), ps->GetBufferSize(), nullptr, m_blurPS.GetAddressOf());
+
+    D3D11_BUFFER_DESC bd = {};
+    bd.ByteWidth = sizeof(BlurCB); bd.Usage = D3D11_USAGE_DEFAULT;
+    bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    if (FAILED(m_device->CreateBuffer(&bd, nullptr, m_blurCB.GetAddressOf()))) return false;
+
+    D3D11_SAMPLER_DESC sd = {};
+    sd.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    sd.AddressU = sd.AddressV = sd.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+    sd.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    sd.MaxLOD = D3D11_FLOAT32_MAX;
+    m_device->CreateSamplerState(&sd, m_ppSampler.GetAddressOf());
+
+    D3D11_INPUT_ELEMENT_DESC il[] = {
+    { "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 8, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    };
+    if (FAILED(m_device->CreateInputLayout(il, 2, vs->GetBufferPointer(), vs->GetBufferSize(),
+        m_blurLayout.GetAddressOf()))) return false;
+
+    BlurVtx verts[6] = {
+        {{-1.f,-1.f},{0.f,1.f}}, {{-1.f, 1.f},{0.f,0.f}}, {{ 1.f, 1.f},{1.f,0.f}},
+        {{-1.f,-1.f},{0.f,1.f}}, {{ 1.f, 1.f},{1.f,0.f}}, {{ 1.f,-1.f},{1.f,1.f}},
+    };
+    D3D11_BUFFER_DESC vbd = {};
+    vbd.ByteWidth = sizeof(verts); vbd.Usage = D3D11_USAGE_DEFAULT;
+    vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    D3D11_SUBRESOURCE_DATA vsd = {}; vsd.pSysMem = verts;
+    if (FAILED(m_device->CreateBuffer(&vbd, &vsd, m_blurVB.GetAddressOf()))) return false;
+
+    return true;
+}
+
+void Renderer3D::BeginOffscreen()
+{
+    if (!m_blurCB) return;
+    m_context->OMGetRenderTargets(1, &m_savedRTV, nullptr);
+    UINT vpn = 1; m_context->RSGetViewports(&vpn, &m_savedVP);              // 現在のVPを保存
+    D3D11_VIEWPORT vp = { 0.0f, 0.0f, (float)m_screenWidth, (float)m_screenHeight, 0.0f, 1.0f };
+    m_context->RSSetViewports(1, &vp);                                     // オフスクリーンに合わせる
+    float clr[4] = { 0, 0, 0, 1 };
+    m_context->ClearRenderTargetView(m_ppRTV.Get(), clr);
+    m_context->OMSetRenderTargets(1, m_ppRTV.GetAddressOf(), nullptr);
+}
+
+void Renderer3D::EndOffscreenBlur(float radius)
+{
+    if (!m_blurCB) return;
+    m_context->RSSetViewports(1, &m_savedVP);
+    m_context->OMSetRenderTargets(1, &m_savedRTV, nullptr);   // バックバッファへ戻す
+
+    BlurCB cb; cb.texel = XMFLOAT2(1.0f / m_screenWidth, 1.0f / m_screenHeight); cb.radius = radius; cb.pad = 0;
+    m_context->UpdateSubresource(m_blurCB.Get(), 0, nullptr, &cb, 0, 0);
+
+    m_context->OMSetDepthStencilState(m_depthDisabledState.Get(), 0);
+    m_context->IASetInputLayout(nullptr);
+    m_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    m_context->VSSetShader(m_blurVS.Get(), nullptr, 0);
+    m_context->PSSetShader(m_blurPS.Get(), nullptr, 0);
+    m_context->PSSetConstantBuffers(0, 1, m_blurCB.GetAddressOf());
+    m_context->PSSetShaderResources(0, 1, m_ppSRV.GetAddressOf());
+    m_context->PSSetSamplers(0, 1, m_ppSampler.GetAddressOf());
+    m_context->OMSetDepthStencilState(m_depthDisabledState.Get(), 0);
+    m_context->IASetInputLayout(m_blurLayout.Get());
+    UINT stride = sizeof(BlurVtx), offset = 0;
+    m_context->IASetVertexBuffers(0, 1, m_blurVB.GetAddressOf(), &stride, &offset);
+    m_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    m_context->VSSetShader(m_blurVS.Get(), nullptr, 0);
+    m_context->PSSetShader(m_blurPS.Get(), nullptr, 0);
+    m_context->PSSetConstantBuffers(0, 1, m_blurCB.GetAddressOf());
+    m_context->PSSetShaderResources(0, 1, m_ppSRV.GetAddressOf());
+    m_context->PSSetSamplers(0, 1, m_ppSampler.GetAddressOf());
+    float bf[4] = {};
+    m_context->OMSetBlendState(nullptr, bf, 0xffffffff);
+    m_context->Draw(6, 0);
+
+    ID3D11ShaderResourceView* nullSRV = nullptr;   // 入力を外す
+    m_context->PSSetShaderResources(0, 1, &nullSRV);
+    if (m_savedRTV) { m_savedRTV->Release(); m_savedRTV = nullptr; }
 }

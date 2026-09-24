@@ -160,6 +160,7 @@ private:
 
     Player* m_player;
     std::vector<Enemy*> m_enemies;
+    Enemy* m_awakenBoss = nullptr;
 
     std::vector<std::string> m_defeatedEnemyIds;
 

@@ -144,6 +144,8 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     if (!m_renderer3D->Init(device, context, screenWidth, screenHeight))
         return false;
 
+    m_renderer3D->InitPostProcess();
+
     m_spriteRenderer = new SpriteRenderer();
     m_spriteRenderer->Init(device, context, screenWidth, screenHeight);
 
@@ -617,6 +619,16 @@ void BattleScene::Update(float deltaTime)
         ScreenShake::Update(deltaTime);
         EffectManager::Update(deltaTime);
         FloatingTextManager::Update(deltaTime);
+        // 演出中：ボス付近にズームイン
+        if (m_awakenBoss)
+        {
+            float camZ = 0.6f;                        // ズーム（小さいほど寄る）
+            float tx = m_awakenBoss->worldX;
+            float tz = m_awakenBoss->worldZ + 1.5f;   // 見る点を少し手前に→ボスを上寄りに収める
+            XMFLOAT3 tgt(tx, -2.0f, tz);
+            XMFLOAT3 pos(tx, tgt.y + 17.0f * camZ, tz + 6.0f * camZ);
+            m_renderer3D->SetCamera(pos, tgt, XMFLOAT3(0.0f, 1.0f, 0.0f));
+        }
         return;
     }
     if (m_freeLook) return;
@@ -1240,6 +1252,7 @@ void BattleScene::Update(float deltaTime)
                     m_awakenCinematic = 2.5f;   // 演出の長さ
                     m_awakenRingTimer = 0.0f;
                     m_awakenRings.clear();
+                    m_awakenBoss = enemy;
                     ScreenShake::Add(1.0f);     // 開始の一撃
                 }
                 else
@@ -1471,6 +1484,9 @@ void BattleScene::Update(float deltaTime)
 
 void BattleScene::Draw()
 {
+
+    bool blurScene = (m_awakenCinematic > 0.0f);
+    if (blurScene) m_renderer3D->BeginOffscreen();
     // 背景
     m_spriteRenderer->Begin();
     m_spriteRenderer->DrawSprite(
@@ -2189,29 +2205,68 @@ void BattleScene::Draw()
 
     if (m_awakenCinematic > 0.0f)
     {
+        m_renderer3D->EndOffscreenBlur(2.0f);
+
+        // ボスだけブラーの上にくっきり再描画（フォーカス）
+        if (m_awakenBoss)
+        {
+            m_renderer3D->Begin();               // バックバッファ＋深度に3Dパイプラインを再設定
+            m_renderer3D->SetDepthEnabled(false); // ブラーの上に無条件で乗せる
+            m_awakenBoss->Draw3D(m_renderer3D);
+            m_renderer3D->SetDepthEnabled(true);
+            m_renderer3D->End();
+        }
+
+        // 中心＝ボスの画面位置（HPバーと同じ投影：worldX, 0, worldZ+0.5）
         float cx = m_screenWidth * 0.5f, cy = m_screenHeight * 0.5f;
-        float maxR = sqrtf((float)(m_screenWidth * m_screenWidth + m_screenHeight * m_screenHeight)) * 0.65f;
-        float ph = m_awakenCinematic;                 // フレーム毎に変化＝ゆらぎ用
+        if (m_awakenBoss)
+        {
+            float xOff = 0.0f;
+            float zOff = 0.0f;   // ボス本体へ少しだけ（微調整）
+            XMFLOAT4 clip;
+            XMStoreFloat4(&clip, XMVector4Transform(
+                XMVectorSet(m_awakenBoss->worldX + xOff, 0.0f, m_awakenBoss->worldZ + zOff, 1.0f),
+                m_renderer3D->GetViewMatrix() * m_renderer3D->GetProjectionMatrix()));
+            if (clip.w > 0.0f)
+            {
+                cx = (clip.x / clip.w + 1.0f) * 0.5f * m_screenWidth;
+                cy = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;
+            }
+        }
+        {
+            char dbg[160];
+            sprintf_s(dbg, "AWAKEN wx=%.2f wz=%.2f grid=%d,%d cx=%.0f cy=%.0f scr=%dx%d\n",
+                m_awakenBoss ? m_awakenBoss->worldX : -999.f, m_awakenBoss ? m_awakenBoss->worldZ : -999.f,
+                m_awakenBoss ? m_awakenBoss->gridCol : -1, m_awakenBoss ? m_awakenBoss->gridRow : -1,
+                cx, cy, m_screenWidth, m_screenHeight);
+            OutputDebugStringA(dbg);
+        }
+
+        float maxR = 0.0f;
+        maxR = max(maxR, hypotf(cx, cy));
+        maxR = max(maxR, hypotf(m_screenWidth - cx, cy));
+        maxR = max(maxR, hypotf(cx, m_screenHeight - cy));
+        maxR = max(maxR, hypotf(m_screenWidth - cx, m_screenHeight - cy));
+        maxR *= 1.1f;
+        float ph = m_awakenCinematic;
+
         m_spriteRenderer->Begin();
 
-        // 集中線（中心へ放射状の黒い線）
         auto white = TextureManager::Get("white");
         const int LINES = 84;
         for (int i = 0; i < LINES; i++)
         {
-            float ang = (float)i / LINES * 6.2831853f
-                + sinf(ph * 30.0f + i * 12.9898f) * 0.02f;   // 軽い揺らぎ
-            float Ri = maxR * (0.34f + 0.06f * sinf(i * 7.13f));    // 中心の空き（ばらつき）
+            float ang = (float)i / LINES * 6.2831853f + sinf(ph * 30.0f + i * 12.9898f) * 0.02f;
+            float Ri = maxR * (0.34f + 0.06f * sinf(i * 7.13f));
             float Ro = maxR * 1.4f;
             float len = Ro - Ri;
             float mx = cx + cosf(ang) * (Ri + Ro) * 0.5f;
             float my = cy + sinf(ang) * (Ri + Ro) * 0.5f;
-            float th = 2.0f + 5.0f * (0.5f + 0.5f * sinf(i * 3.7f));  // 太さばらつき
+            float th = 2.0f + 5.0f * (0.5f + 0.5f * sinf(i * 3.7f));
             m_spriteRenderer->DrawSprite(white, mx - len * 0.5f, my - th * 0.5f, len, th,
                 ang, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.5f));
         }
 
-        // 画面全体に拡大する円
         auto ring = TextureManager::Get("ui_hitring");
         for (float a : m_awakenRings)
         {

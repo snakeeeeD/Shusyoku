@@ -68,6 +68,10 @@ public:
     void SetDepthWrite(bool enabled);
     void SetDepthEnabled(bool enabled);
 
+    bool InitPostProcess();
+    void BeginOffscreen();               // 以降の描画をオフスクリーンへ
+    void EndOffscreenBlur(float radius); // ぼかしてバックバッファへ合成
+
 private:
     bool CreateShaders();
     bool CreateBuffers();
@@ -90,6 +94,19 @@ private:
     ComPtr<ID3D11DepthStencilState> m_depthDisabledState;
 
     ComPtr<ID3D11Buffer> m_billboardVertexBuffer;
+
+    // ポストプロセス（ブラー）
+    ComPtr<ID3D11Texture2D>          m_ppTex;
+    ComPtr<ID3D11RenderTargetView>   m_ppRTV;
+    ComPtr<ID3D11ShaderResourceView> m_ppSRV;
+    ComPtr<ID3D11VertexShader>       m_blurVS;
+    ComPtr<ID3D11PixelShader>        m_blurPS;
+    ComPtr<ID3D11Buffer>             m_blurCB;
+    ComPtr<ID3D11SamplerState>       m_ppSampler;
+    ID3D11RenderTargetView* m_savedRTV = nullptr;
+    ComPtr<ID3D11Buffer>       m_blurVB;
+    ComPtr<ID3D11InputLayout>  m_blurLayout;
+    D3D11_VIEWPORT m_savedVP = {};
 
     XMMATRIX m_viewMatrix;
     XMMATRIX m_projectionMatrix;

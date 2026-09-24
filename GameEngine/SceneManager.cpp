@@ -236,6 +236,10 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("enemy_chimera", L"Assets/Enemy/chimera.png");
 		TextureManager::Load("enemy_corrupted_core", L"Assets/Enemy/corrupted_core.png");
 		TextureManager::Load("enemy_void_weaver", L"Assets/Enemy/void_weaver.png");
+		TextureManager::Load("enemy_boss3_piller1", L"Assets/Enemy/boss3_piller1.png");
+		TextureManager::Load("enemy_boss3_piller2", L"Assets/Enemy/boss3_piller2.png");
+		TextureManager::Load("enemy_boss3_piller3", L"Assets/Enemy/boss3_piller3.png");
+		TextureManager::Load("enemy_boss3_piller4", L"Assets/Enemy/boss3_piller4.png");
 	}
 
 	// UI

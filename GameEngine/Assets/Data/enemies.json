@@ -3481,7 +3481,7 @@
     },
     {
       "id": "wedge_sword",
-      "texture": "enemy_mutant_stalker",
+      "texture": "enemy_boss3_piller1",
       "hp": 55,
       "width": 1.0,
       "height": 1.0,
@@ -3516,7 +3516,7 @@
     },
     {
       "id": "wedge_venom",
-      "texture": "enemy_toxic_bloom",
+      "texture": "enemy_boss3_piller2",
       "hp": 50,
       "width": 1.0,
       "height": 1.0,
@@ -3562,44 +3562,8 @@
       ]
     },
     {
-      "id": "wedge_shield",
-      "texture": "enemy_crystalguard",
-      "hp": 70,
-      "width": 1.0,
-      "height": 1.0,
-      "immovable": true,
-      "actions": [
-        {
-          "description": "石弾、{0}ダメージ",
-          "target": {
-            "rangeType": "Area",
-            "range": 6
-          },
-          "effects": [
-            {
-              "kind": "Damage",
-              "value": 8
-            }
-          ],
-          "select": { "chance": 60 }
-        },
-        {
-          "description": "守りを固める、{0}ブロック",
-          "target": { "rangeType": "None" },
-          "effects": [
-            {
-              "kind": "Block",
-              "value": 15,
-              "applyTo": "Allies"
-            }
-          ],
-          "select": { "chance": 40 }
-        }
-      ]
-    },
-    {
       "id": "wedge_hex",
-      "texture": "enemy_glitch_phantom",
+      "texture": "enemy_boss3_piller3",
       "hp": 45,
       "width": 1.0,
       "height": 1.0,
@@ -3639,6 +3603,42 @@
             }
           ],
           "select": { "chance": 50 }
+        }
+      ]
+    },
+    {
+      "id": "wedge_shield",
+      "texture": "enemy_boss3_piller4",
+      "hp": 70,
+      "width": 1.0,
+      "height": 1.0,
+      "immovable": true,
+      "actions": [
+        {
+          "description": "石弾、{0}ダメージ",
+          "target": {
+            "rangeType": "Area",
+            "range": 6
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 8
+            }
+          ],
+          "select": { "chance": 60 }
+        },
+        {
+          "description": "守りを固める、{0}ブロック",
+          "target": { "rangeType": "None" },
+          "effects": [
+            {
+              "kind": "Block",
+              "value": 15,
+              "applyTo": "Allies"
+            }
+          ],
+          "select": { "chance": 40 }
         }
       ]
     },
@@ -3702,28 +3702,28 @@
             "chance": 50
           }
         },
-        
-          {
-            "description": "虚無の侵蝕、{0}ダメージ、弱体{1}付与",
-            "target": { "unavoidable": true },
-            "effects": [
-              {
-                "kind": "Damage",
-                "value": 8
-              },
-              {
-                "kind": "Debuff",
-                "buff": "Vulnerable",
-                "value": 2,
-                "duration": 2
-              }
-            ],
-            "select": {
-              "condition": "awake",
-              "chance": 50
+
+        {
+          "description": "虚無の侵蝕、{0}ダメージ、弱体{1}付与",
+          "target": { "unavoidable": true },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 18
+            },
+            {
+              "kind": "Debuff",
+              "buff": "Vulnerable",
+              "value": 2,
+              "duration": 2
             }
+          ],
+          "select": {
+            "condition": "awake",
+            "chance": 50
           }
-        
+        }
+
       ]
     }
   ]
