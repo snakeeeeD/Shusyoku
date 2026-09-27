@@ -314,11 +314,11 @@ void Renderer3D::DrawTile(ID3D11ShaderResourceView* texture,
 
 void Renderer3D::DrawTileEx(ID3D11ShaderResourceView* texture,
     float x, float z, float width, float depth,
-    float rotationY, const XMFLOAT4& color)
+    float rotationY, const XMFLOAT4& color ,float y)
 {
     XMMATRIX world = XMMatrixScaling(width, 1.0f, depth) *
         XMMatrixRotationY(rotationY) *
-        XMMatrixTranslation(x, 0.03f, z);
+        XMMatrixTranslation(x, y, z);
 
     ConstantBuffer3D cb;
     cb.World = XMMatrixTranspose(world);

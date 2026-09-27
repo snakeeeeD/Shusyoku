@@ -112,6 +112,7 @@ void EnemyDataBase::Init()
                 data.hp = e["hp"];
                 data.width = e["width"];
                 data.height = e["height"];
+                data.drawZ = e.contains("drawZ") ? (float)e["drawZ"] : 0.4f;
                 data.isBoss = e.value("isBoss", false);
                 data.immovable = e.value("immovable", false);
                 data.sequential = e.value("sequential", false);

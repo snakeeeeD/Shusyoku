@@ -30,7 +30,7 @@ void Player::Draw3D(Renderer3D* renderer)
     if (!isActive) return;
     renderer->DrawBillboard(
         TextureManager::Get("player"),
-        worldX, worldY, worldZ + 0.10f,
+        worldX, worldY, worldZ + 0.4f,
         width, height, m_BillboardRotation, GetDrawColor()
     );
 }

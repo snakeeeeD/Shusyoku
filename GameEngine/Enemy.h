@@ -29,6 +29,7 @@ public:
 	float GetDisplayHp() const { return m_displayHp; }
 	BuffManager& GetBuffManager() { return m_buffManager; }
 	const std::string& GetTextureName() const { return m_textureName; }
+	void SetTexture(const std::string& t) { m_textureName = t; }
 	const std::string& GetId() const { return m_id; }
 	const std::vector<std::pair<int, int>>& GetMovePath() const { return m_movePath; }
 
@@ -60,6 +61,7 @@ public:
 	void TakeDamage(int damage, DamageFeel feel = DamageFeel::Hit);
 
 	void DecideNextAction(int playerCol, int playerRow, int turn);               // 次の行動を決定
+	void SetAwakenIntent();   // 予告を「覚醒」に差し替え（覚醒ターン用）
 	const EnemyAction* GetNextAction() const
 	{
 		return m_plannedActions.empty() ? nullptr : &m_plannedActions[0];
@@ -137,6 +139,8 @@ private:
 	int m_block;
 	bool m_isBoss;
 	float m_displayHp;
+
+	float m_drawZ = 0.4f;
 
 	int m_aimDx = 0, m_aimDy = 0;
 

@@ -143,7 +143,10 @@ private:
 
     bool m_bossAwakened = false;   // 3層ボス：楔全滅で覚醒済みか
     bool m_bossAwakenPending = false;   // 次のボス手番を「覚醒ターン（何もしない＋演出）」にする
+    int m_bossAwakenAtTurn = -1;   // この敵ターン以降に覚醒（-1=未予約）
     bool m_bossHadWedges = false;
+    std::vector<std::pair<int, int>> m_wedgeCorners;   // 楔の四隅スロット（初期位置）
+    void SwapWedges();                                 // 楔の位置交換（4ターン毎）
     float m_awakenCinematic = 0.0f;   // 覚醒演出の残り時間（>0で操作/ターン停止）
     float m_awakenRingTimer = 0.0f;   // 円を追加する間隔
     std::vector<float> m_awakenRings; // 拡大中の円の経過時間リスト

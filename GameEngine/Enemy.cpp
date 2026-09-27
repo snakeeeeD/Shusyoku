@@ -35,6 +35,7 @@ void Enemy::Init(const std::string& id)
     m_immovable = data->immovable;
 	m_textureName = data->textureName;
     m_gridShape = data->gridShape;
+    m_drawZ = data->drawZ;
     m_isSnake = data->snake;
 }
 
@@ -48,9 +49,7 @@ void Enemy::Draw3D(Renderer3D* renderer)
     if (!isActive) return;
     if (m_isSnake) return;
 
-    XMFLOAT4 drawColor = m_isBoss
-        ? XMFLOAT4(1.0f, 0.6f, 0.6f, 1.0f)
-        : GetDrawColor();
+    XMFLOAT4 drawColor = GetDrawColor();
 
     float y = worldY;
     float s = GetJumpScale();
@@ -63,7 +62,7 @@ void Enemy::Draw3D(Renderer3D* renderer)
 
     renderer->DrawBillboard(
         TextureManager::Get(m_textureName),
-        worldX, y, worldZ + 0.10f,
+        worldX, y, worldZ + m_drawZ,
         width * s, height * s, 0.0f, drawColor);
 }
 
@@ -594,6 +593,16 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
         }
         m_missStreak = 0;   // 移動したのでリセット
     }
+}
+
+void Enemy::SetAwakenIntent()
+{
+    EnemyAction a;
+    a.description = L"覚醒";
+    a.target.rangeType = RangeType::None;   // 範囲なし＝脅威マーク・ダメージ予告が出ない
+    m_plannedActions.clear();
+    m_plannedActions.push_back(a);
+    m_actionIndex = 0;
 }
 
 int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,

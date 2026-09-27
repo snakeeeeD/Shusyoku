@@ -17,6 +17,7 @@ struct EnemyData
     int hp;
     float width;
     float height;
+    float drawZ = 0.4f;   // 描画のZオフセット（大型キャラの足元合わせ用）
     bool isBoss;
     bool immovable;
     bool sequential = false;   // trueなら行動を定義順に1つずつ回す

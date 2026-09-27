@@ -3644,10 +3644,19 @@
     },
     {
       "id": "l3_sovereign",
-      "texture": "enemy_void_weaver",
+      "texture": "darkload",
       "hp": 370,
-      "width": 1.4,
-      "height": 1.4,
+      "width": 3.4,
+      "height": 3.4,
+      "drawZ": 1.0,
+      "gridShape": [
+        [ -1, 0 ],
+        [ 0, 0 ],
+        [ 1, 0 ],
+        [ -1, 1 ],
+        [ 0, 1 ],
+        [ 1, 1 ]
+      ],
       "isBoss": true,
       "actions": [
         {

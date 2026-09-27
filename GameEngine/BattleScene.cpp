@@ -177,7 +177,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     m_player->worldZ = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
 
     m_cameraOffsetX = m_player->worldX;
-    m_cameraOffsetZ = m_player->worldZ;
+    m_cameraOffsetZ = m_player->worldZ - 0.7f;
 
     // PlayerDataManagerからHPを引き継ぐ
     m_player->SetMaxHp(playerData.maxHp);   // 最大HPをPlayerDataから同期
@@ -264,6 +264,13 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
             m_turnCount++;
 
+            m_turnCount++;
+
+            // 3層ボス：4ターン毎に楔が位置交換
+            if ((m_turnCount % 4) == 0 && !m_bossAwakened)
+                SwapWedges();
+
+
             for (auto enemy : m_enemies)
             {
                 int tC = (m_decoyCol >= 0) ? m_decoyCol : m_playerCol;
@@ -272,6 +279,11 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
                 enemy->SetAllyCount(allies);
                 enemy->DecideNextAction(tC, tR, m_turnCount);
             }
+
+            // 覚醒ターンのボスは予告を「覚醒」に差し替える
+            if (m_bossAwakenAtTurn >= 0 && m_turnCount >= m_bossAwakenAtTurn && !m_bossAwakened)
+                for (auto enemy : m_enemies)
+                    if (enemy->GetId() == "l3_sovereign") enemy->SetAwakenIntent();
 
             m_arrowRevealTimer = 0.1f;   // 敵の動作直後に次矢印が出ないよう一拍おく
 
@@ -386,6 +398,11 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     {
         for (auto& ee : encounter->enemies)
             AddEnemy(ee.col, ee.row, ee.id);
+
+        // 3層ボス：楔の四隅スロットを記録
+        for (auto e : m_enemies)
+            if (e->GetId().rfind("wedge_", 0) == 0)
+                m_wedgeCorners.push_back({ e->gridCol, e->gridRow });
 
         const auto& ladder = encounter->escalation.empty()
             ? EncounterDataBase::DefaultEscalation()
@@ -557,16 +574,67 @@ void BattleScene::UpdateBossGimmick()
 
     if (!m_bossAwakened)
     {
-        if (m_bossHadWedges && wedgesAlive == 0)
+        if (wedgesAlive > 0) m_bossHadWedges = true;
+
+        if (!m_bossAwakened)
         {
-            // 楔全滅 → 次のボス手番を「覚醒ターン」に予約
-            m_bossAwakened = true;
-            m_bossAwakenPending = true;
+            boss->SetInvulnerable(true);   // 覚醒するまでは無敵維持
+            if (m_bossHadWedges && wedgesAlive == 0 && m_bossAwakenAtTurn < 0)
+                m_bossAwakenAtTurn = m_turnCount + 1;   // 楔全滅→次の敵ターンで覚醒
         }
         else
         {
             boss->SetInvulnerable(true);   // 覚醒前は常に無敵
         }
+    }
+}
+
+void BattleScene::SwapWedges()
+{
+    if (m_wedgeCorners.empty()) return;
+
+    // プレイヤーが四隅にいるターンは重なり防止でスキップ
+    for (auto& s : m_wedgeCorners)
+        if (s.first == m_playerCol && s.second == m_playerRow) return;
+
+    std::vector<Enemy*> wedges;
+    for (auto e : m_enemies)
+        if (e && !e->IsDying() && e->GetHp() > 0 && e->GetId().rfind("wedge_", 0) == 0)
+            wedges.push_back(e);
+    int n = (int)wedges.size();
+    if (n < 2) return;   // 1体以下は交換なし
+
+    // 使う四隅をシャッフルして先頭n個（4=四隅/3=三角/2=ランダム2）
+    std::vector<std::pair<int, int>> slots = m_wedgeCorners;
+    for (int i = (int)slots.size() - 1; i > 0; i--) std::swap(slots[i], slots[rand() % (i + 1)]);
+    if ((int)slots.size() > n) slots.resize(n);
+
+    // 楔の並びもシャッフル（位置が入れ替わる）
+    for (int i = n - 1; i > 0; i--) std::swap(wedges[i], wedges[rand() % (i + 1)]);
+
+    // 全楔のセルをクリア → 新座標へ一括配置（同時交換の衝突回避）
+    for (auto w : wedges)
+        for (auto& [dc, dr] : w->GetGridShape())
+        {
+            int c = w->gridCol + dc, r = w->gridRow + dr;
+            if (c >= 0 && c < m_gridMap->GetCols() && r >= 0 && r < m_gridMap->GetRows())
+                m_gridMap->SetCellType(c, r, CellType::Empty);
+        }
+
+    for (int i = 0; i < n; i++)
+    {
+        Enemy* w = wedges[i];
+        int nc = slots[i].first, nr = slots[i].second;
+        w->gridCol = nc; w->gridRow = nr;
+        for (auto& [dc, dr] : w->GetGridShape())
+        {
+            int c = nc + dc, r = nr + dr;
+            if (c >= 0 && c < m_gridMap->GetCols() && r >= 0 && r < m_gridMap->GetRows())
+                m_gridMap->SetCellType(c, r, CellType::Enemy);
+        }
+        float wx = (nc - m_gridMap->GetCols() / 2.0f) * 1.1f;
+        float wz = (nr - m_gridMap->GetRows() / 2.0f) * 1.1f;
+        w->StartMove(wx, wz, 0.35f);   // グライドで移動
     }
 }
 
@@ -622,9 +690,9 @@ void BattleScene::Update(float deltaTime)
         // 演出中：ボス付近にズームイン
         if (m_awakenBoss)
         {
-            float camZ = 0.6f;                        // ズーム（小さいほど寄る）
+            float camZ = 0.4f;                        // ズーム（小さいほど寄る）
             float tx = m_awakenBoss->worldX;
-            float tz = m_awakenBoss->worldZ + 1.5f;   // 見る点を少し手前に→ボスを上寄りに収める
+            float tz = m_awakenBoss->worldZ - 1.5f;
             XMFLOAT3 tgt(tx, -2.0f, tz);
             XMFLOAT3 pos(tx, tgt.y + 17.0f * camZ, tz + 6.0f * camZ);
             m_renderer3D->SetCamera(pos, tgt, XMFLOAT3(0.0f, 1.0f, 0.0f));
@@ -862,7 +930,7 @@ void BattleScene::Update(float deltaTime)
             float gridHalfH = (m_gridMap->GetRows() / 2.0f) * 1.1f;
             float zoomFactor = (m_cameraZoom > 1.0f) ? 1.0f / m_cameraZoom : 1.0f;  // ズームアウト時に制限が狭くなる
             m_cameraOffsetX = max((-gridHalfW + 2.0f) * zoomFactor, min((gridHalfW - 3.0f) * zoomFactor, m_cameraOffsetX));
-            m_cameraOffsetZ = max((-gridHalfH + 1.0f) * zoomFactor, min((gridHalfH - 2.0f) * zoomFactor, m_cameraOffsetZ));
+            m_cameraOffsetZ = max((-gridHalfH - 1.0f) * zoomFactor, min((gridHalfH - 2.0f) * zoomFactor, m_cameraOffsetZ));
 
             m_dragStartPos = mousePos;
         }
@@ -885,7 +953,7 @@ void BattleScene::Update(float deltaTime)
     {
         m_cameraZoom = ZOOM_MAX;
         m_cameraOffsetX = m_player->worldX;
-        m_cameraOffsetZ = m_player->worldZ;
+        m_cameraOffsetZ = m_player->worldZ - 0.7f;
     }
 
     // カメラ更新（ズーム or パンが変わったら毎フレーム適用）
@@ -1245,15 +1313,19 @@ void BattleScene::Update(float deltaTime)
                 bool targetedDecoy = (m_decoyCol >= 0 && tC == m_decoyCol && tR == m_decoyRow);
                 bool atk = false;
                 int damage = 0;
-                if (enemy->GetId() == "l3_sovereign" && m_bossAwakenPending)
+                if (enemy->GetId() == "l3_sovereign" && !m_bossAwakened
+                    && m_bossAwakenAtTurn >= 0 && m_turnCount >= m_bossAwakenAtTurn)
                 {
-                    m_bossAwakenPending = false;
+                    // 覚醒ターン：何もせず演出＋無敵解除
+                    m_bossAwakened = true;
+                    m_bossAwakenAtTurn = -1;
                     enemy->SetInvulnerable(false);
-                    m_awakenCinematic = 2.5f;   // 演出の長さ
+                    enemy->SetTexture("darkload_awaken");
+                    m_awakenCinematic = 2.5f;
                     m_awakenRingTimer = 0.0f;
                     m_awakenRings.clear();
                     m_awakenBoss = enemy;
-                    ScreenShake::Add(1.0f);     // 開始の一撃
+                    ScreenShake::Add(1.0f);
                 }
                 else
                 {
@@ -1527,6 +1599,14 @@ void BattleScene::Draw()
                             m_hoveredCell.first, m_hoveredCell.second, d->rangeType, rng, 0, adx, ady);
                     if (!hoverInRange)
                         hov = { sole->gridCol, sole->gridRow };   // 射程内マス以外は敵を自動
+
+                    // 狙う敵の占有マスを全部浮かせる（スネークは頭＋体）
+                    raised.insert({ sole->gridCol, sole->gridRow });
+                    if (sole->IsSnake())
+                        for (auto& b : sole->GetBodyCells()) raised.insert(b);
+                    else
+                        for (auto& [dc, dr] : sole->GetGridShape())
+                            raised.insert({ sole->gridCol + dc, sole->gridRow + dr });
                 }
             }
             if (d->type == CardType::Move)
@@ -1654,12 +1734,17 @@ void BattleScene::Draw()
     struct Theme { const char* ground; const char* tex[3]; float w[3]; float h[3]; };
     int themeLayer = PlayerDataManager::GetData().layer;
     Theme th;
-    if (m_category == EncCategory::Boss && themeLayer == 2)
+    if (m_category == EncCategory::Boss && m_battleEnemyId == "l3boss")
+    {
+        if (m_bossAwakened)
+            th = { "ground_void_awake", { "deco_rift","deco_debris","deco_throne" }, { 2.6f,2.4f,3.4f }, { 3.2f,2.2f,4.2f } };
+        else
+            th = { "ground_void",       { "deco_rift","deco_debris","deco_throne" }, { 2.6f,2.4f,3.4f }, { 3.2f,2.2f,4.2f } };
+    }
+    else if (m_category == EncCategory::Boss && m_battleEnemyId == "l2boss")
         th = { "ground_snakepit", { "deco_darkspike","deco_bones","deco_egg" }, { 2.6f,2.4f,2.6f }, { 3.8f,3.4f,2.1f } };
     else if (m_category == EncCategory::Boss)
-        th = { "ground_scorched", { "deco_deadtree","deco_ember","deco_darkrock" }, { 2.8f,2.6f,2.6f }, { 3.8f,2.1f,2.1f } };
-    else if (m_category == EncCategory::Boss && themeLayer <= 1)
-        th = { "ground_scorched", { "deco_deadtree","deco_ember","deco_darkrock" }, { 2.8f,2.6f,2.6f }, { 3.8f,2.1f,2.1f } };
+        th = { "ground_scorched", { "deco_deadtree","deco_ember","deco_darkrock" }, { 2.8f,2.6f,2.6f }, { 3.8f,2.1f,2.1f } };   // dragon(1層)
     else if (themeLayer <= 1)
         th = { "ground_grass",    { "deco_tree","deco_bush","deco_rock" },          { 3.0f,2.4f,2.6f }, { 3.8f,1.8f,2.1f } };
     else if (themeLayer == 2)
@@ -1853,18 +1938,19 @@ void BattleScene::Draw()
                 x += bdx * off;                                // 進行方向へずらす
                 z += bdy * off;
             }
-            else if (bdx == fdx && bdy == fdy) { tex = (bdx != 0) ? "snake_body_h" : "snake_body_v"; rot = 0.0f; } // 直線
+            else if (bdx == fdx && bdy == fdy) { tex = "snake_body"; rot = (bdx != 0) ? 1.5708f : 0.0f; } // 直線
             else   // 角
             {
-                tex = "snake_corner_l";
-                // 繋がる2辺：尾側(-bd) と 頭側(fd)
+                tex = "snake_corner";
                 auto has = [&](int x, int y) { return (-bdx == x && -bdy == y) || (fdx == x && fdy == y); };
-                rot = (has(-1, 0) && has(0, 1)) ? 3.1416f     // +180 (0 → 3.1416)
-                    : (has(0, -1) && has(-1, 0)) ? 1.5708f     // +180 (4.7124 → 1.5708)
-                    : (has(1, 0) && has(0, -1)) ? 0.0f         // +180 (3.1416 → 0)
-                    : 4.7124f;    // +180 (1.5708 → 4.7124)
+                rot = (has(-1, 0) && has(0, 1)) ? 3.1416f 
+                    : (has(0, -1) && has(-1, 0)) ? 1.5708f 
+                    : (has(1, 0) && has(0, -1)) ? 0.0f  
+                    : 4.7124f; 
             }
-            m_renderer3D->DrawTileEx(TextureManager::Get(tex), x, z, size, size, rot, XMFLOAT4(1, 1, 1, 1));
+            float cyLift = m_gridMap->GetCell(chain[i].first, chain[i].second).gameObject.worldY + 0.12f;
+            m_renderer3D->DrawTileEx(TextureManager::Get(tex), x, z, size, size, rot,
+                XMFLOAT4(1, 1, 1, 1), cyLift);
         }
     }
     m_renderer3D->SetDepthWrite(true);
@@ -1876,9 +1962,22 @@ void BattleScene::Draw()
         m_renderer3D->DrawBillboard(TextureManager::Get("kakashi"), x, 0.05f, z , 0.8f, 0.8f, 0.0f, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
     }
 
-    // 敵は乗っているマスの高さに合わせる
+    // 敵は乗っているマスの高さに合わせる（占有マスの最大の浮きに追従）
     for (auto enemy : m_enemies)
-        enemy->worldY = 0.05f + m_gridMap->GetCell(enemy->gridCol, enemy->gridRow).gameObject.worldY;
+    {
+        auto safeY = [&](int c, int r) -> float {
+            if (c < 0 || c >= m_gridMap->GetCols() || r < 0 || r >= m_gridMap->GetRows()) return 0.0f;
+            return m_gridMap->GetCell(c, r).gameObject.worldY;
+            };
+        float maxY = safeY(enemy->gridCol, enemy->gridRow);
+        if (enemy->IsSnake())
+            for (auto& b : enemy->GetBodyCells())
+                maxY = max(maxY, safeY(b.first, b.second));
+        else
+            for (auto& [dc, dr] : enemy->GetGridShape())
+                maxY = max(maxY, safeY(enemy->gridCol + dc, enemy->gridRow + dr));
+        enemy->worldY = 0.05f + maxY;
+    }
 
     // 移動不可マスの×マーク（深度テストOFF、敵より先に描画）
     auto& blockedCells = m_highlighter.GetOutOfRangeCells();
@@ -2205,27 +2304,13 @@ void BattleScene::Draw()
 
     if (m_awakenCinematic > 0.0f)
     {
-        m_renderer3D->EndOffscreenBlur(2.0f);
-
-        // ボスだけブラーの上にくっきり再描画（フォーカス）
-        if (m_awakenBoss)
-        {
-            m_renderer3D->Begin();               // バックバッファ＋深度に3Dパイプラインを再設定
-            m_renderer3D->SetDepthEnabled(false); // ブラーの上に無条件で乗せる
-            m_awakenBoss->Draw3D(m_renderer3D);
-            m_renderer3D->SetDepthEnabled(true);
-            m_renderer3D->End();
-        }
-
-        // 中心＝ボスの画面位置（HPバーと同じ投影：worldX, 0, worldZ+0.5）
+        // 中心＝ボスの画面位置（ブラー前に計算：カメラは同じ）
         float cx = m_screenWidth * 0.5f, cy = m_screenHeight * 0.5f;
         if (m_awakenBoss)
         {
-            float xOff = 0.0f;
-            float zOff = 0.0f;   // ボス本体へ少しだけ（微調整）
             XMFLOAT4 clip;
             XMStoreFloat4(&clip, XMVector4Transform(
-                XMVectorSet(m_awakenBoss->worldX + xOff, 0.0f, m_awakenBoss->worldZ + zOff, 1.0f),
+                XMVectorSet(m_awakenBoss->worldX, 0.0f, m_awakenBoss->worldZ, 1.0f),
                 m_renderer3D->GetViewMatrix() * m_renderer3D->GetProjectionMatrix()));
             if (clip.w > 0.0f)
             {
@@ -2233,15 +2318,6 @@ void BattleScene::Draw()
                 cy = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;
             }
         }
-        {
-            char dbg[160];
-            sprintf_s(dbg, "AWAKEN wx=%.2f wz=%.2f grid=%d,%d cx=%.0f cy=%.0f scr=%dx%d\n",
-                m_awakenBoss ? m_awakenBoss->worldX : -999.f, m_awakenBoss ? m_awakenBoss->worldZ : -999.f,
-                m_awakenBoss ? m_awakenBoss->gridCol : -1, m_awakenBoss ? m_awakenBoss->gridRow : -1,
-                cx, cy, m_screenWidth, m_screenHeight);
-            OutputDebugStringA(dbg);
-        }
-
         float maxR = 0.0f;
         maxR = max(maxR, hypotf(cx, cy));
         maxR = max(maxR, hypotf(m_screenWidth - cx, cy));
@@ -2250,10 +2326,10 @@ void BattleScene::Draw()
         maxR *= 1.1f;
         float ph = m_awakenCinematic;
 
-        m_spriteRenderer->Begin();
-
+        // 集中線をオフスクリーン（ブラー前）に描く → ブラー対象に
         auto white = TextureManager::Get("white");
         const int LINES = 84;
+        m_spriteRenderer->Begin();
         for (int i = 0; i < LINES; i++)
         {
             float ang = (float)i / LINES * 6.2831853f + sinf(ph * 30.0f + i * 12.9898f) * 0.02f;
@@ -2266,7 +2342,23 @@ void BattleScene::Draw()
             m_spriteRenderer->DrawSprite(white, mx - len * 0.5f, my - th * 0.5f, len, th,
                 ang, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.5f));
         }
+        m_spriteRenderer->End();
 
+        // ブラー合成（シーン＋集中線をまとめてぼかす）
+        m_renderer3D->EndOffscreenBlur(2.0f);
+
+        // ボスだけシャープ再描画
+        if (m_awakenBoss)
+        {
+            m_renderer3D->Begin();
+            m_renderer3D->SetDepthEnabled(false);
+            m_awakenBoss->Draw3D(m_renderer3D);
+            m_renderer3D->SetDepthEnabled(true);
+            m_renderer3D->End();
+        }
+
+        // 円はシャープ（ブラー後）
+        m_spriteRenderer->Begin();
         auto ring = TextureManager::Get("ui_hitring");
         for (float a : m_awakenRings)
         {
@@ -2276,7 +2368,6 @@ void BattleScene::Draw()
             m_spriteRenderer->DrawSprite(ring, cx - R, cy - R, R * 2.0f, R * 2.0f,
                 0.0f, XMFLOAT4(1.0f, 0.35f, 0.2f, alpha));
         }
-
         m_spriteRenderer->End();
     }
 
@@ -2710,31 +2801,33 @@ void BattleScene::HandleInput()
             int targetRow = m_playerRow;
             bool canTry = !moveCanceled;
 
-            // 攻撃カードの射程内にいる敵を数える。1体だけなら自動ターゲット
+            // 射程判定ヘルパー（スネークは頭＋体、多セル敵は占有マス全部）
+            int rng = dataCopy.range;
+            if (m_player->GetBuffManager().HasBuff(BuffType::Reposition))
+                rng += m_player->GetBuffManager().GetBuffValue(BuffType::Reposition);
+            auto cellInRng = [&](int ec, int er) {
+                int adx = 0, ady = 0;
+                if (dataCopy.rangeType == RangeType::Cone)
+                    RangeShape::CardinalAim(m_playerCol, m_playerRow, ec, er, adx, ady);
+                return RangeShape::Contains(m_playerCol, m_playerRow, ec, er, dataCopy.rangeType, rng, 0, adx, ady);
+                };
+            auto enemyCells = [](Enemy* e) {
+                std::vector<std::pair<int, int>> v;
+                if (e->IsSnake()) { v.push_back({ e->gridCol, e->gridRow }); for (auto& b : e->GetBodyCells()) v.push_back(b); }
+                else for (auto& [dc, dr] : e->GetGridShape()) v.push_back({ e->gridCol + dc, e->gridRow + dr });
+                return v;
+                };
+
+            // 射程内の敵を数える。1体だけなら自動ターゲット
             Enemy* soleEnemy = nullptr; int inRangeCount = 0;
             if (ct == CardType::Attack)
-            {
-                int rng = dataCopy.range;
-                if (m_player->GetBuffManager().HasBuff(BuffType::Reposition))
-                    rng += m_player->GetBuffManager().GetBuffValue(BuffType::Reposition);
                 for (auto e : m_enemies)
                 {
                     if (!e || e->GetHp() <= 0) continue;
                     bool inR = false;
-                    for (auto& [dc, dr] : e->GetGridShape())   // 敵の占有マスのどれかが射程内か
-                    {
-                        int ec = e->gridCol + dc, er = e->gridRow + dr;
-                        int adx = 0, ady = 0;
-                        if (dataCopy.rangeType == RangeType::Cone)
-                            RangeShape::CardinalAim(m_playerCol, m_playerRow, ec, er, adx, ady);
-                        if (RangeShape::Contains(m_playerCol, m_playerRow, ec, er,
-                            dataCopy.rangeType, rng, 0, adx, ady)) {
-                            inR = true; break;
-                        }
-                    }
+                    for (auto& [ec, er] : enemyCells(e)) if (cellInRng(ec, er)) { inR = true; break; }
                     if (inR) { inRangeCount++; soleEnemy = e; }
                 }
-            }
             bool autoAttack = (ct == CardType::Attack && inRangeCount == 1 && soleEnemy);
 
             CardEffectType met = cards[m_selectedCardIndex]->GetData()->mainEffect.type;
@@ -2744,37 +2837,33 @@ void BattleScene::HandleInput()
                 && !usePath && !moveCanceled)
             {
                 auto result = m_gridMap->GetClickedCell3D(
-                    releasePos,
-                    m_renderer3D->GetViewMatrix(),
-                    m_renderer3D->GetProjectionMatrix(),
-                    m_screenWidth,
-                    m_screenHeight
-                );
-                bool cellInRange = false;
-                if (result.cell)
-                {
-                    int rng = dataCopy.range;
-                    if (m_player->GetBuffManager().HasBuff(BuffType::Reposition))
-                        rng += m_player->GetBuffManager().GetBuffValue(BuffType::Reposition);
-                    int adx = 0, ady = 0;
-                    if (dataCopy.rangeType == RangeType::Cone)
-                        RangeShape::CardinalAim(m_playerCol, m_playerRow, result.col, result.row, adx, ady);
-                    cellInRange = RangeShape::Contains(m_playerCol, m_playerRow,
-                        result.col, result.row, dataCopy.rangeType, rng, 0, adx, ady);
-                }
-                if (result.cell && (cellInRange || !autoAttack))   // マス上（複数敵）or 射程内マス
+                    releasePos, m_renderer3D->GetViewMatrix(), m_renderer3D->GetProjectionMatrix(),
+                    m_screenWidth, m_screenHeight);
+                bool cellInRange = (result.cell && cellInRng(result.col, result.row));
+                if (result.cell && (cellInRange || !autoAttack))
                 {
                     targetCol = result.col;
                     targetRow = result.row;
                 }
-                else if (autoAttack)                               // 射程外/マス外 → 敵を自動
+                else if (autoAttack)
                 {
-                    targetCol = soleEnemy->gridCol;
-                    targetRow = soleEnemy->gridRow;
+                    // 頭優先：頭(gridCol/Row)が射程内ならそこ、無ければ射程内マスの最寄り
+                    int tc = soleEnemy->gridCol, tr = soleEnemy->gridRow;
+                    if (!cellInRng(tc, tr))
+                    {
+                        int best = 1 << 30;
+                        for (auto& [ec, er] : enemyCells(soleEnemy))
+                        {
+                            if (!cellInRng(ec, er)) continue;
+                            int d = abs(ec - m_playerCol) + abs(er - m_playerRow);
+                            if (d < best) { best = d; tc = ec; tr = er; }
+                        }
+                    }
+                    targetCol = tc; targetRow = tr;
                 }
-                else                                               // 通常（複数敵）: マス外は不発
+                else
                 {
-                    if (!dataCopy.allEnemyEffect.hasEffect)        // ← 全敵効果カードは対象なしでも撃てる
+                    if (!dataCopy.allEnemyEffect.hasEffect)
                         canTry = false;
                 }
             }

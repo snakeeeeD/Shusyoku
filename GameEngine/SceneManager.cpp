@@ -177,11 +177,17 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("deco_shadow", L"Assets/Field/deco_shadow.png");
 		TextureManager::Load("map_bg", L"Assets/Field/Map.jpg");
 		TextureManager::Load("cardSelect_bg", L"Assets/Field/CardSelect.jpeg");
+
+		TextureManager::Load("ground_void", L"Assets/Field/ground_void.png");
+		TextureManager::Load("ground_void_awake", L"Assets/Field/ground_void_awake.png");
+		TextureManager::Load("deco_rift", L"Assets/Field/deco_rift.png");
+		TextureManager::Load("deco_debris", L"Assets/Field/deco_debris.png");
+		TextureManager::Load("deco_throne", L"Assets/Field/deco_throne.png");
 	}
 
 	// プレイヤー
 	{
-		TextureManager::Load("player", L"Assets/Player/yuusya_game.png");
+		TextureManager::Load("player", L"Assets/Player/player.png");
 		TextureManager::Load("kakashi", L"Assets/Player/kakashi.png");
 	}
 
@@ -218,10 +224,8 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("enemy_stonelord", L"Assets/Enemy/stonelord.png");
 		TextureManager::Load("enemy_gloomwing", L"Assets/Enemy/gloomwing.png");
 		TextureManager::Load("snake_head", L"Assets/Enemy/snake_head.png");
-		TextureManager::Load("snake_body_h", L"Assets/Field/snake_body_h.png");
-		TextureManager::Load("snake_body_v", L"Assets/Field/snake_body_v.png");
-		TextureManager::Load("snake_corner_l", L"Assets/Field/snake_corner_l.png");
-		TextureManager::Load("snake_corner_r", L"Assets/Field/snake_corner_r.png");
+		TextureManager::Load("snake_body", L"Assets/Enemy/snake_body.png");
+		TextureManager::Load("snake_corner", L"Assets/Enemy/snake_corner.png");
 		TextureManager::Load("snake_tail", L"Assets/Field/snake_tail.png");
 		TextureManager::Load("enemy_orochi", L"Assets/Enemy/orochi.png");  // 頭。仮なら既存絵に向けてOK
 		TextureManager::Load("enemy_mutant_stalker", L"Assets/Enemy/mutant_stalker.png");
@@ -240,6 +244,8 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("enemy_boss3_piller2", L"Assets/Enemy/boss3_piller2.png");
 		TextureManager::Load("enemy_boss3_piller3", L"Assets/Enemy/boss3_piller3.png");
 		TextureManager::Load("enemy_boss3_piller4", L"Assets/Enemy/boss3_piller4.png");
+		TextureManager::Load("darkload", L"Assets/Enemy/finai_boss.png");
+		TextureManager::Load("darkload_awaken", L"Assets/Enemy/final_boss_awaken.png");
 	}
 
 	// UI
