@@ -174,12 +174,6 @@ private:
     int m_selectedCardIndex;
     int m_hoveredCardIndex;
 
-    // カード表示定数（HandleInputで使用）
-    static constexpr float CARD_WIDTH = 100.0f;
-    static constexpr float CARD_HEIGHT = 110.0f;
-    static constexpr float CARD_HIDE_Y_OFFSET = 30.0f;
-    static constexpr float CARD_HOVER_Y_OFFSET = 60.0f;
-
     int m_prevHoveredCardIndex;
 
     std::vector<Enemy*> m_multiHitTargets;
@@ -270,7 +264,6 @@ private:
     float m_drawSeqTimer = 0.0f; // 次の1枚までの間隔
     float m_reshuffleFxTimer = 0.0f; // >0の間はリシャッフル演出中でドロー停止
     static constexpr float DRAW_SEQ_INTERVAL = 0.10f; // 1枚ごとの間隔（秒）
-    static constexpr float RESHUFFLE_FX_DUR = 0.6f;  // リシャッフル演出の長さ（秒）
     void StartDrawSequence(int count);
     void OnDrawSequenceComplete();
 

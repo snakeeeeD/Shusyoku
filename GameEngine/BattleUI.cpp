@@ -167,8 +167,8 @@ bool BattleUI::GetEnemyFootPos(Enemy* enemy, Renderer3D* renderer3D, float& outX
 
 void BattleUI::Draw(const BattleUIContext& ctx)
 {
-    const float cardHideY = m_screenHeight - CARD_HIDE_Y_OFFSET;
-    const float cardHoverY = m_screenHeight - CARD_HEIGHT - CARD_HOVER_Y_OFFSET;
+    const float cardHideY = m_screenHeight - CardVisual::CARD_HIDE_Y_OFFSET;
+    const float cardHoverY = m_screenHeight - CardVisual::CARD_H - CardVisual::CARD_HOVER_Y_OFFSET;
     const auto& cards = ctx.hand->GetCards();
 
     m_hasHoveredBuff = false;
@@ -1543,11 +1543,6 @@ void BattleUI::DrawTargetIndicators(const BattleUIContext& ctx)
 
 void BattleUI::DrawArrowIndicator(float sx, float sy, const XMFLOAT4& color, float highlightTimer)
 {
-
-    /*float cardAreaY = m_screenHeight - CARD_HEIGHT - CARD_HIDE_Y_OFFSET;
-    if (sy > cardAreaY)
-        return;*/
-
     float bob = sin(highlightTimer * 3.0f) * 6.0f;
     float ay = sy - 40.0f + bob;
 
@@ -1661,7 +1656,7 @@ void BattleUI::StartDrawCardEffect(const std::string& cardId)
     effect.x = 20.0f;
     effect.y = m_screenHeight - 60.0f;
     effect.targetX = m_screenWidth / 2.0f;
-    effect.targetY = m_screenHeight - CARD_HIDE_Y_OFFSET;
+    effect.targetY = m_screenHeight - CardVisual::CARD_HIDE_Y_OFFSET;
     effect.alpha = 1.0f;
     effect.timer = 0.0f;
     effect.done = false;
@@ -1678,13 +1673,13 @@ void BattleUI::UpdateReshuffleEffect(float deltaTime)
 {
     if (!m_reshuffleFx.active) return;
     m_reshuffleFx.timer += deltaTime;
-    if (m_reshuffleFx.timer >= RESHUFFLE_FX_DUR) m_reshuffleFx.active = false;
+    if (m_reshuffleFx.timer >= CardVisual::RESHUFFLE_FX_DUR) m_reshuffleFx.active = false;
 }
 
 void BattleUI::DrawReshuffleEffect()
 {
     if (!m_reshuffleFx.active) return;
-    float t = m_reshuffleFx.timer / RESHUFFLE_FX_DUR;   // 0→1
+    float t = m_reshuffleFx.timer / CardVisual::RESHUFFLE_FX_DUR;   // 0→1
     float fade = 1.0f - fabsf(0.5f - t) * 2.0f;            // 中盤で最大
     float baseX = 60.0f, baseY = m_screenHeight - 90.0f;   // 山札あたり（左下）
     const int N = 5;
@@ -1755,7 +1750,7 @@ void BattleUI::StartDiscardEffects()
 void BattleUI::StartOverflowDiscardEffect()
 {
     DiscardCardEffect effect;
-    effect.startX = m_screenWidth / 2.0f - CARD_WIDTH / 2.0f;   // 手札の位置から
+    effect.startX = m_screenWidth / 2.0f - CardVisual::CARD_W / 2.0f;   // 手札の位置から
     effect.startY = m_screenHeight - 320.0f;   // 手札より上から（隠れないように）
     effect.alpha = 1.0f;
     effect.timer = 0.0f;
@@ -1771,8 +1766,8 @@ void BattleUI::UpdateDiscardEffects(float deltaTime)
         if (e.delay > 0.0f) { e.delay -= deltaTime; continue; }   // 遅延中は待機
         if (e.exhaust && !e.sparked)
         {
-            SpawnExhaustEmbers(e.startX + CARD_WIDTH * 0.5f, e.startY + CARD_HEIGHT * 0.5f,
-                CARD_WIDTH, CARD_HEIGHT);
+            SpawnExhaustEmbers(e.startX + CardVisual::CARD_W * 0.5f, e.startY + CardVisual::CARD_H * 0.5f,
+                CardVisual::CARD_W, CardVisual::CARD_H);
             e.sparked = true;
         }
         e.timer += deltaTime;
@@ -1885,7 +1880,7 @@ void BattleUI::UpdatePlayCardEffects(float deltaTime)
                 if (e.exhaust && !e.sparked)     // 廃棄：燃え始めに火の粉
                 {
                     SpawnExhaustEmbers(m_screenWidth / 2.0f,
-                        m_screenHeight / 2.0f + g_animTune.playCenterY, CARD_WIDTH, CARD_HEIGHT);
+                        m_screenHeight / 2.0f + g_animTune.playCenterY, CardVisual::CARD_W, CardVisual::CARD_H);
                     e.sparked = true;
                 }
                 if (et >= holdEnd + EXHAUST_FADE_DUR) e.done = true;
@@ -1920,8 +1915,8 @@ void BattleUI::UpdateCardAnimations(float deltaTime, int handSize, int hoveredIn
     while ((int)m_cardAnims.size() > handSize)
         m_cardAnims.pop_back();
 
-    float cardHideY = m_screenHeight - CARD_HIDE_Y_OFFSET;
-    float cardHoverY = m_screenHeight - CARD_HEIGHT - CARD_HOVER_Y_OFFSET;
+    float cardHideY = m_screenHeight - CardVisual::CARD_HIDE_Y_OFFSET;
+    float cardHoverY = m_screenHeight - CardVisual::CARD_H - CardVisual::CARD_HOVER_Y_OFFSET;
     float speed = 12.0f;
     float dt = min(deltaTime, 0.03f);
 
@@ -1936,8 +1931,8 @@ void BattleUI::UpdateCardAnimations(float deltaTime, int handSize, int hoveredIn
                 const float HOLD = 0.55f;   // 接近＋中央保持の長さ(秒)
                 if (m_cardAnims[i].peekTimer < HOLD)
                 {
-                    float cxT = m_screenWidth / 2.0f - CARD_WIDTH / 2.0f;
-                    float cyT = m_screenHeight / 2.0f - CARD_HEIGHT / 2.0f + g_animTune.playCenterY;
+                    float cxT = m_screenWidth / 2.0f - CardVisual::CARD_W / 2.0f;
+                    float cyT = m_screenHeight / 2.0f - CardVisual::CARD_H / 2.0f + g_animTune.playCenterY;
                     float k = min(1.0f, 14.0f * dt);
                     m_cardAnims[i].currentX += (cxT - m_cardAnims[i].currentX) * k;
                     m_cardAnims[i].currentY += (cyT - m_cardAnims[i].currentY) * k;
@@ -1985,19 +1980,19 @@ void BattleUI::UpdateCardAnimations(float deltaTime, int handSize, int hoveredIn
 
                 if (m_cardLockedToCenter)
                 {
-                    targetX = m_screenWidth / 2.0f - CARD_WIDTH / 2.0f;
+                    targetX = m_screenWidth / 2.0f - CardVisual::CARD_W / 2.0f;
                     targetY = cardHoverY + 40.0f;
                 }
                 else
                 {
-                    targetX = (float)mousePos.x - CARD_WIDTH / 2.0f;
-                    targetY = (float)mousePos.y - CARD_HEIGHT / 2.0f;
+                    targetX = (float)mousePos.x - CardVisual::CARD_W / 2.0f;
+                    targetY = (float)mousePos.y - CardVisual::CARD_H / 2.0f;
                 }
             }
             else
             {
-                targetX = (float)mousePos.x - CARD_WIDTH / 2.0f;
-                targetY = (float)mousePos.y - CARD_HEIGHT / 2.0f;
+                targetX = (float)mousePos.x - CardVisual::CARD_W / 2.0f;
+                targetY = (float)mousePos.y - CardVisual::CARD_H / 2.0f;
             }
 
             if (i < prevSize)
@@ -2051,7 +2046,7 @@ int BattleUI::GetCardAtScreenPos(POINT p) const
     if (n == 0) return -1;
 
     // 縦は余裕を持たせる（下は画面外まで）
-    float topY = m_screenHeight - CARD_HIDE_Y_OFFSET - 40.0f;
+    float topY = m_screenHeight - CardVisual::CARD_HIDE_Y_OFFSET - 40.0f;
     // 上に描かれている（右・ホバー中）カードを優先 → 逆順で最初のヒット
     for (int i = n - 1; i >= 0; i--)
     {
@@ -2489,8 +2484,8 @@ void BattleUI::StartPlayCardEffect(CardType type, int cardIndex)
     }
     else
     {
-        effect.startX = m_screenWidth / 2.0f - CARD_WIDTH / 2.0f;
-        effect.startY = (float)m_screenHeight - CARD_HEIGHT;
+        effect.startX = m_screenWidth / 2.0f - CardVisual::CARD_W / 2.0f;
+        effect.startY = (float)m_screenHeight - CardVisual::CARD_H;
     }
     effect.alpha = 1.0f;
     effect.timer = 0.0f;
@@ -2507,7 +2502,7 @@ void BattleUI::StartPlayCardEffect(const CardData* data, int cardIndex)
         effect.startX = m_cardAnims[cardIndex].currentX;
         effect.startY = m_cardAnims[cardIndex].currentY;
     }
-    else { effect.startX = m_screenWidth / 2.0f; effect.startY = (float)m_screenHeight - CARD_HEIGHT; }
+    else { effect.startX = m_screenWidth / 2.0f; effect.startY = (float)m_screenHeight - CardVisual::CARD_H; }
     effect.alpha = 1.0f;
     effect.timer = 0.0f;
     effect.done = false;
@@ -2539,8 +2534,8 @@ void BattleUI::StartPlayCardEffectFromHand(const CardData* data, int cardIndex, 
         e.startRot = m_cardAnims[cardIndex].currentRot;
     }
     else {
-        e.startX = m_screenWidth / 2.0f - CARD_WIDTH / 2.0f;
-        e.startY = (float)m_screenHeight - CARD_HEIGHT;
+        e.startX = m_screenWidth / 2.0f - CardVisual::CARD_W / 2.0f;
+        e.startY = (float)m_screenHeight - CardVisual::CARD_H;
     }
     e.alpha = 1.0f; e.timer = 0.0f; e.done = false;
     e.cardType = data ? data->type : CardType::Status;
@@ -2551,8 +2546,8 @@ void BattleUI::StartPlayCardEffectFromHand(const CardData* data, int cardIndex, 
 
 void BattleUI::GetPlayEffectTransform(const PlayCardEffect& e, float& x, float& y, float& scale, float& rot)
 {
-    float tx = m_screenWidth / 2.0f - CARD_WIDTH / 2.0f;
-    float ty = m_screenHeight / 2.0f - CARD_HEIGHT / 2.0f + g_animTune.playCenterY;
+    float tx = m_screenWidth / 2.0f - CardVisual::CARD_W / 2.0f;
+    float ty = m_screenHeight / 2.0f - CardVisual::CARD_H / 2.0f + g_animTune.playCenterY;
 
     float et = e.timer - e.delay;   // 遅延を反映した実時間
     if (et < 0.0f) et = 0.0f;
@@ -2577,9 +2572,9 @@ void BattleUI::GetPlayEffectTransform(const PlayCardEffect& e, float& x, float& 
         }
         float bx = e.startX + (tx - e.startX) * posT;
         float by = e.startY + (ty - e.startY) * posT;
-        float w = CARD_WIDTH * scl, h = CARD_HEIGHT * scl;
-        x = bx - (w - CARD_WIDTH) / 2.0f;
-        y = by - (h - CARD_HEIGHT) / 2.0f;
+        float w = CardVisual::CARD_W * scl, h = CardVisual::CARD_H * scl;
+        x = bx - (w - CardVisual::CARD_W) / 2.0f;
+        y = by - (h - CardVisual::CARD_H) / 2.0f;
         scale = scl; rot = rt;
         return;
     }
@@ -2612,9 +2607,9 @@ void BattleUI::GetPlayEffectTransform(const PlayCardEffect& e, float& x, float& 
             scl = g_animTune.playScale + (e.startScale - g_animTune.playScale) * u;
         }
     }
-    float w = CARD_WIDTH * scl, h = CARD_HEIGHT * scl;
-    x = bx - (w - CARD_WIDTH) / 2.0f;
-    y = by - (h - CARD_HEIGHT) / 2.0f;
+    float w = CardVisual::CARD_W * scl, h = CardVisual::CARD_H * scl;
+    x = bx - (w - CardVisual::CARD_W) / 2.0f;
+    y = by - (h - CardVisual::CARD_H) / 2.0f;
     scale = scl; rot = outRot;
 }
 
@@ -2749,8 +2744,8 @@ void BattleUI::StartDiscardEffectAt(int cardIndex, const CardData* data, float d
 void BattleUI::StartBurnDiscard(const CardData* data, float delay)
 {
     DiscardCardEffect e;
-    e.startX = m_screenWidth / 2.0f - CARD_WIDTH / 2.0f;
-    e.startY = m_screenHeight / 2.0f - CARD_HEIGHT / 2.0f;   // 画面中央
+    e.startX = m_screenWidth / 2.0f - CardVisual::CARD_W / 2.0f;
+    e.startY = m_screenHeight / 2.0f - CardVisual::CARD_H / 2.0f;   // 画面中央
     e.alpha = 1.0f; e.timer = 0.0f; e.done = false;
     e.cardType = data ? data->type : CardType::Status;
     e.delay = delay; e.fromCenter = true;
@@ -2953,9 +2948,9 @@ void BattleUI::StartAddedCardEffect(const CardData* data, const std::string& tar
     e.data = data;
     e.cardType = data ? data->type : CardType::Status;
 
-    float spacing = CARD_WIDTH * 1.5f;                 // 枚数ぶん横に並べる
+    float spacing = CardVisual::CARD_W * 1.5f;                 // 枚数ぶん横に並べる
     float totalW = spacing * (count - 1);
-    float cx = m_screenWidth / 2.0f - CARD_WIDTH / 2.0f;
+    float cx = m_screenWidth / 2.0f - CardVisual::CARD_W / 2.0f;
     e.sx = cx - totalW / 2.0f + idx * spacing;
     e.sy = m_screenHeight * 0.40f;
 

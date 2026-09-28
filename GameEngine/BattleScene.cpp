@@ -988,10 +988,10 @@ void BattleScene::Update(float deltaTime)
             if (!m_hand.GetCards().empty())
             {
                 int numCards = (int)m_hand.GetCards().size();
-                float totalW = numCards * (CARD_WIDTH + 10.0f);
+                float totalW = numCards * (CardVisual::CARD_W + 10.0f);
                 float leftX = m_screenWidth / 2.0f - totalW / 2.0f;
                 float rightX = leftX + totalW;
-                float topY = m_screenHeight - CARD_HIDE_Y_OFFSET;
+                float topY = m_screenHeight - CardVisual::CARD_HIDE_Y_OFFSET;
                 cardArea = { (LONG)leftX, (LONG)topY, (LONG)rightX, (LONG)m_screenHeight };
             }
 
@@ -1038,7 +1038,7 @@ void BattleScene::Update(float deltaTime)
                     m_deck.Reset();
                     m_battleUI->StartReshuffleEffect();
                     Audio::PlaySE("Assets/Sound/se/card.mp3");
-                    m_reshuffleFxTimer = RESHUFFLE_FX_DUR;
+                    m_reshuffleFxTimer = CardVisual::RESHUFFLE_FX_DUR;
                 }
                 else
                 {
@@ -1531,10 +1531,10 @@ void BattleScene::Update(float deltaTime)
             if (!m_hand.GetCards().empty())
             {
                 int numCards = (int)m_hand.GetCards().size();
-                float totalW = numCards * (CARD_WIDTH + 10.0f);
+                float totalW = numCards * (CardVisual::CARD_W + 10.0f);
                 float leftX = m_screenWidth / 2.0f - totalW / 2.0f;
                 float rightX = leftX + totalW;
-                float topY = m_screenHeight - CARD_HEIGHT - CARD_HOVER_Y_OFFSET;
+                float topY = m_screenHeight - CardVisual::CARD_H - CardVisual::CARD_HOVER_Y_OFFSET;
                 cardArea = { (LONG)leftX, (LONG)topY, (LONG)rightX, (LONG)m_screenHeight };
             }
 
@@ -2527,8 +2527,8 @@ void BattleScene::HandleInput()
         return;
     }
 
-    const float cardHideY = m_screenHeight - CARD_HIDE_Y_OFFSET;
-    const float cardHoverY = m_screenHeight - CARD_HEIGHT - CARD_HOVER_Y_OFFSET;
+    const float cardHideY = m_screenHeight - CardVisual::CARD_HIDE_Y_OFFSET;
+    const float cardHoverY = m_screenHeight - CardVisual::CARD_H - CardVisual::CARD_HOVER_Y_OFFSET;
 
     const auto& cards = m_hand.GetCards();
 

@@ -223,12 +223,7 @@ private:
 
     struct ReshuffleFx { bool active = false; float timer = 0.0f; };
     ReshuffleFx m_reshuffleFx;
-    static constexpr float RESHUFFLE_FX_DUR = 0.6f;   // BattleSceneë§Ç∆çáÇÌÇπÇÈ
 
-    static constexpr float CARD_WIDTH = 100.0f;
-    static constexpr float CARD_HEIGHT = 140.0f;
-    static constexpr float CARD_HIDE_Y_OFFSET = 120.0f;
-    static constexpr float CARD_HOVER_Y_OFFSET = 60.0f;
     static constexpr float CARD_HOVER_W = 110.0f;
     static constexpr float CARD_HOVER_H = 140.0f;
     static constexpr float DRAW_EFFECT_DURATION = 0.25f;

@@ -7,7 +7,6 @@
 #include "RangeShape.h"
 #include "TerrainDataBase.h"
 #include "TextureManager.h"
-#include "RelicManager.h"
 #include "BuffInfo.h"
 #include "GameUtils.h" 
 
@@ -23,7 +22,10 @@ public:
     static constexpr float CARD_W = 100.0f;
     static constexpr float CARD_H = 140.0f;
 
-    static constexpr float CARD_SPACING = 75.0f;   // 手札の間隔（幅100なので25重なる）
+    static constexpr float CARD_SPACING = 75.0f;   // 手札の間隔
+    static constexpr float CARD_HIDE_Y_OFFSET = 120.0f;  // 非ホバー時の手札の見える高さ
+    static constexpr float CARD_HOVER_Y_OFFSET = 60.0f;   // ホバー時の追加リフト
+    static constexpr float RESHUFFLE_FX_DUR = 0.6f;
 
     // 手札 index 番目の基準X（中央揃え）
     static float HandSlotX(int index, int handSize, float screenWidth)
