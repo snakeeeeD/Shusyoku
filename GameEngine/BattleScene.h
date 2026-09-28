@@ -237,8 +237,10 @@ private:
     float m_cameraOffsetX;
     float m_cameraOffsetZ;
 
+#ifdef _DEBUG
     int m_debugRank;
     int m_debugEncounterIndex;
+#endif
     std::string m_currentEncounterId;  // 今のテンプレート情報を覚えておく
 
     bool m_pathBuilding = false;

@@ -85,9 +85,10 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     m_isDraggingCamera = false;
     m_dragStartPos = { 0, 0 };
 
+#ifdef _DEBUG
     m_debugRank = 1;
-
-    m_debugEncounterIndex = -1;  // -1 = ランダム
+    m_debugEncounterIndex = -1;
+#endif
 
     m_battleResult = BattleResult::None;
 

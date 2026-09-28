@@ -135,8 +135,6 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("fx_defend", L"Assets/Particles/defend.png");
 		TextureManager::Load("fx_knife", L"Assets/Particles/knife.png");
 		TextureManager::Load("fx_smash", L"Assets/Particles/smash.png");
-		TextureManager::Load("card_mark_curse", L"Assets/UI/card_mark_curse.png");
-		TextureManager::Load("card_mark_status", L"Assets/UI/card_mark_status.png");
 	}
 
 	// フィールド
@@ -219,8 +217,6 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("snake_head", L"Assets/Enemy/snake_head.png");
 		TextureManager::Load("snake_body", L"Assets/Enemy/snake_body.png");
 		TextureManager::Load("snake_corner", L"Assets/Enemy/snake_corner.png");
-		TextureManager::Load("snake_tail", L"Assets/Field/snake_tail.png");
-		TextureManager::Load("enemy_orochi", L"Assets/Enemy/orochi.png");  // 頭。仮なら既存絵に向けてOK
 		TextureManager::Load("enemy_mutant_stalker", L"Assets/Enemy/mutant_stalker.png");
 		TextureManager::Load("enemy_plasma_wraith", L"Assets/Enemy/plasma_wraith.png");
 		TextureManager::Load("enemy_toxic_bloom", L"Assets/Enemy/toxic_bloom.png");
