@@ -7,6 +7,7 @@
 #include "UiWindow.h"
 #include "Audio.h"
 #include "Telemetry.h"
+#include "URect.h"
 
 #include <cstdlib>
 #include <algorithm>
@@ -21,14 +22,7 @@ static int SellPriceOf(const std::string& id)
     return 0;
 }
 
-static std::string s_shopHoverKey;
-static bool UiHoverS(float x, float y, float w, float h, POINT mp, const char* key)
-{
-    bool over = mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h;
-    if (over && s_shopHoverKey != key) { Audio::PlaySE("Assets/Sound/se/hover.mp3"); s_shopHoverKey = key; }
-    else if (!over && s_shopHoverKey == key) s_shopHoverKey.clear();
-    return over;
-}
+static std::string s_hoverKey;
 
 bool ShopScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     int screenWidth, int screenHeight, HWND hWnd, IDXGISwapChain* swapChain)
@@ -179,21 +173,21 @@ void ShopScene::Draw()
 
     // ƒJ[ƒhíœ
     float rmX = 40.0f, rmY = m_screenHeight - 70.0f, rmW = 220.0f, rmH = 44.0f;
-    bool rmHov = !m_removedThisShop && UiHoverS(rmX, rmY, rmW, rmH, mp, "rm");
+    bool rmHov = !m_removedThisShop && UiHover(rmX, rmY, rmW, rmH, mp, "rm", s_hoverKey);
     float rmYY = rmHov ? rmY - 6.0f : rmY;
     UiWindow::Button(m_spriteRenderer, m_whiteTexture, rmX, rmYY, rmW, rmH,
         m_removedThisShop ? XMFLOAT4(0.25f, 0.25f, 0.25f, 0.95f) : XMFLOAT4(0.5f, 0.25f, 0.25f, 0.95f));
 
     // ”„‹p
     float slX = 280.0f, slY = m_screenHeight - 70.0f, slW = 160.0f, slH = 44.0f;
-    bool slHov = UiHoverS(slX, slY, slW, slH, mp, "sell");
+    bool slHov = UiHover(slX, slY, slW, slH, mp, "sell", s_hoverKey);
     float slYY = slHov ? slY - 6.0f : slY;
     UiWindow::Button(m_spriteRenderer, m_whiteTexture, slX, slYY, slW, slH, XMFLOAT4(0.25f, 0.42f, 0.25f, 0.95f));
 
     // Leave
     float leaveW = 160.0f, leaveH = 44.0f;
     float leaveX = (m_screenWidth - leaveW) / 2.0f, leaveY = m_screenHeight - 90.0f;
-    bool lvHov = UiHoverS(leaveX, leaveY, leaveW, leaveH, mp, "leave");
+    bool lvHov = UiHover(leaveX, leaveY, leaveW, leaveH, mp, "leave", s_hoverKey);
     float lvYY = lvHov ? leaveY - 6.0f : leaveY;
     UiWindow::Button(m_spriteRenderer, m_whiteTexture, leaveX, lvYY, leaveW, leaveH, XMFLOAT4(0.3f, 0.3f, 0.35f, 0.95f));
 

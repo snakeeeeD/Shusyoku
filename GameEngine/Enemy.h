@@ -18,7 +18,7 @@ public:
 
 	
 	// ƒQƒbƒ^[
-	int GetHp() const { return m_HP; }
+	int GetHp() const override { return m_HP; }
 	int GetMaxHp() const { return m_maxHP; }
 	int GetBlock() const { return m_block; }
 	int GetAimDx() const { return m_aimDx; }
@@ -26,7 +26,6 @@ public:
 	int GetActionIndex() const { return m_actionIndex; }
 	int GetLastHitDamage() const { return m_lastHitDamage; }
 	int GetLastHitCount()  const { return m_lastHitCount; }
-	float GetDisplayHp() const { return m_displayHp; }
 	BuffManager& GetBuffManager() { return m_buffManager; }
 	const std::string& GetTextureName() const { return m_textureName; }
 	void SetTexture(const std::string& t) { m_textureName = t; }
@@ -44,18 +43,6 @@ public:
 	bool IsActionUnavoidable(int idx) const {
 		return idx >= 0 && idx < (int)m_plannedActions.size()
 			&& m_plannedActions[idx].target.unavoidable;
-	}
-
-	void UpdateDisplayHp(float deltaTime) {
-		float speed = 0.5f;        // ”ä—á•ªi·‚ª‘å‚«‚¢‚Ù‚Ç‘¬‚¢j
-		float minSpeed = 15.0f;    // Å’á‘¬“x(HP/•b) ¨ ’x‰„‚ð–h‚®
-		if (m_displayHp > (float)GetHp())
-		{
-			float rate = speed * (m_displayHp - GetHp());
-			if (rate < minSpeed) rate = minSpeed;
-			m_displayHp -= rate * deltaTime;
-			if (m_displayHp < (float)GetHp()) m_displayHp = (float)GetHp();
-		}
 	}
 
 	void TakeDamage(int damage, DamageFeel feel = DamageFeel::Hit);
@@ -138,7 +125,6 @@ private:
 	int m_maxHP;
 	int m_block;
 	bool m_isBoss;
-	float m_displayHp;
 
 	float m_drawZ = 0.4f;
 

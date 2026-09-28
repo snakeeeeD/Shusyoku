@@ -283,6 +283,9 @@
     <Filter Include="ソース ファイル\01-描画関連\10-AnimTune">
       <UniqueIdentifier>{9fd637c0-8ffd-44cf-bef6-f5626bddafc9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\11-URect">
+      <UniqueIdentifier>{87c80f1b-836c-48a0-b991-fdceadec0941}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -527,6 +530,9 @@
     </ClInclude>
     <ClInclude Include="AnimTune.h">
       <Filter>ソース ファイル\01-描画関連\10-AnimTune</Filter>
+    </ClInclude>
+    <ClInclude Include="URect.h">
+      <Filter>ソース ファイル\01-描画関連\11-URect</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

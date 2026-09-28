@@ -247,7 +247,6 @@ private:
 
 
     BuffType m_hoveredBuffType = BuffType::AttackUp;
-    int m_hoveredBuffEnemy = -1;
     int m_hoveredBuffValue = 0;
     float m_hoveredBuffX = 0;
     float m_hoveredBuffY = 0;

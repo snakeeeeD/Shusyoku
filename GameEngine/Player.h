@@ -11,12 +11,11 @@ public:
     void Draw3D(class Renderer3D* renderer) override;
 
     // ƒQƒbƒ^[
-    int GetHp() const { return m_hp; }
+    int GetHp() const override { return m_hp; }
     int GetMaxHp() const { return m_maxHp; }
     int GetEnergy() const { return m_energy; }
     int GetBlock() const { return m_block; }
     int GetMaxEnergy() const { return m_maxEnergy; }
-    float GetDisplayHp() const { return m_displayHp; }
     BuffManager& GetBuffManager() { return m_buffManager; }
     const BuffManager& GetBuffManager() const { return m_buffManager; }
     int GetMoveRange(int baseRange) const;   // ƒoƒt{ƒŒƒŠƒbƒNž‚Ý‚ÌˆÚ“®”ÍˆÍ
@@ -38,20 +37,6 @@ public:
 
     void ResetBlock() { if (!m_buffManager.HasBuff(BuffType::Barricade)) m_block = 0; }
 
-    void UpdateDisplayHp(float deltaTime) {
-        float speed = 0.5f;        // ”ä—á•ªi·‚ª‘å‚«‚¢‚Ù‚Ç‘¬‚¢j
-        float minSpeed = 15.0f;    // Å’á‘¬“x(HP/•b) © ‚±‚±‚Å’²®
-        if (m_displayHp > (float)GetHp())
-        {
-            float rate = speed * (m_displayHp - GetHp());   // HP/•b
-            if (rate < minSpeed) rate = minSpeed;            // ’x‚·‚¬–hŽ~
-            m_displayHp -= rate * deltaTime;
-            if (m_displayHp < (float)GetHp()) m_displayHp = (float)GetHp();
-        }
-    }
-
-    void SnapDisplayHp() { m_displayHp = (float)m_hp; }
-
     void LoseHp(int amount) { m_hp -= amount; if (m_hp < 0) m_hp = 0; }   // 0‚Ü‚Å‹–‰ÂŽ©‚ÅŽ€‚Ê
 
 private:
@@ -62,7 +47,6 @@ private:
     int m_maxEnergy;
     int m_block;
     float m_BillboardRotation = 0.0;
-    float m_displayHp;
 
     BuffManager m_buffManager;
 };

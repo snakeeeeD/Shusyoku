@@ -15,6 +15,7 @@
 #include "UiWindow.h"
 #include "Audio.h"
 #include "AnimTune.h"
+#include "URect.h"
 #include <algorithm>
 #include <cmath>
 
@@ -28,14 +29,7 @@ BattleUI::~BattleUI()
     delete m_textRenderer;
 }
 
-static std::string s_hoverKeyB;
-static bool UiHoverB(float x, float y, float w, float h, POINT mp, const char* key)
-{
-    bool over = mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h;
-    if (over && s_hoverKeyB != key) { Audio::PlaySE("Assets/Sound/se/hover.mp3"); s_hoverKeyB = key; }
-    else if (!over && s_hoverKeyB == key) s_hoverKeyB.clear();
-    return over;
-}
+static std::string s_hoverKey;
 
 bool BattleUI::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     int screenWidth, int screenHeight, IDXGISwapChain* swapChain)
@@ -211,7 +205,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     float drawPileY = m_screenHeight - 60.0f;
     float drawPileW = 50.0f;
     float drawPileH = 40.0f;
-    bool hoverDrawPile = UiHoverB(drawPileX, drawPileY, drawPileW, drawPileH, ctx.mousePos, "drawpile");
+    bool hoverDrawPile = UiHover(drawPileX, drawPileY, drawPileW, drawPileH, ctx.mousePos, "drawpile", s_hoverKey);
     float dpy = hoverDrawPile ? drawPileY - 6.0f : drawPileY;
     XMFLOAT4 drawPileColor = hoverDrawPile ? XMFLOAT4(0.3f, 0.3f, 0.9f, 1.0f) : XMFLOAT4(0.2f, 0.2f, 0.6f, 1.0f);
     XMFLOAT4 dpTint = hoverDrawPile ? XMFLOAT4(1, 1, 1, 1) : XMFLOAT4(0.82f, 0.82f, 0.82f, 1);
@@ -224,7 +218,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     float discardY = m_screenHeight - 60.0f;
     float discardW = 50.0f;
     float discardH = 40.0f;
-    bool hoverDiscard = UiHoverB(discardX, discardY, discardW, discardH, ctx.mousePos, "discardpile");
+    bool hoverDiscard = UiHover(discardX, discardY, discardW, discardH, ctx.mousePos, "discardpile", s_hoverKey);
     float ddy = hoverDiscard ? discardY - 6.0f : discardY;
     XMFLOAT4 discardColor = hoverDiscard ? XMFLOAT4(0.8f, 0.3f, 0.3f, 1.0f) : XMFLOAT4(0.5f, 0.2f, 0.2f, 1.0f);
     XMFLOAT4 dcTint = hoverDiscard ? XMFLOAT4(1, 1, 1, 1) : XMFLOAT4(0.82f, 0.82f, 0.82f, 1);
@@ -238,7 +232,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         float exhaustY = m_screenHeight - 60.0f;
         float exhaustW = 50.0f;
         float exhaustH = 40.0f;
-        bool hoverExhaust = UiHoverB(exhaustX, exhaustY, exhaustW, exhaustH, ctx.mousePos, "exhaustpile");
+        bool hoverExhaust = UiHover(exhaustX, exhaustY, exhaustW, exhaustH, ctx.mousePos, "exhaustpile", s_hoverKey);
         float epy = hoverExhaust ? exhaustY - 6.0f : exhaustY;
         XMFLOAT4 exhaustColor = hoverExhaust ? XMFLOAT4(0.6f, 0.6f, 0.3f, 1.0f) : XMFLOAT4(0.4f, 0.4f, 0.2f, 1.0f);
         XMFLOAT4 exTint = hoverExhaust ? XMFLOAT4(1, 1, 1, 1) : XMFLOAT4(0.82f, 0.82f, 0.82f, 1);
@@ -873,7 +867,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         float btnX = ctx.screenWidth - btnW - 20.0f;
         float btnY = ctx.screenHeight - btnH - 20.0f;
 
-        bool hoverEnd = UiHoverB(btnX, btnY, btnW, btnH, ctx.mousePos, "turnend");
+        bool hoverEnd = UiHover(btnX, btnY, btnW, btnH, ctx.mousePos, "turnend", s_hoverKey);
         float bey = hoverEnd ? btnY - 6.0f : btnY;
         XMFLOAT4 btnColor = hoverEnd ? XMFLOAT4(0.3f, 0.7f, 1.0f, 1.0f) : XMFLOAT4(0.2f, 0.5f, 0.8f, 1.0f);
         XMFLOAT4 teTint = hoverEnd ? XMFLOAT4(1, 1, 1, 1) : XMFLOAT4(0.85f, 0.85f, 0.85f, 1);

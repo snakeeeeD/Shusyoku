@@ -68,13 +68,6 @@ static const wchar_t* MapNodeLabel(FieldNodeType t, bool isPlayer)
 static std::string EventPickerType(const EventChoice& c);
 
 static std::string s_lastHoverKey;
-static bool UiHover(float x, float y, float w, float h, POINT mp, const char* key)
-{
-	bool over = mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h;
-	if (over && s_lastHoverKey != key) { Audio::PlaySE("Assets/Sound/se/hover.mp3"); s_lastHoverKey = key; }
-	else if (!over && s_lastHoverKey == key) s_lastHoverKey.clear();
-	return over;   // これで「浮かせるか」を判定
-}
 
 SceneManager::SceneManager() : m_currentScene(nullptr)
 {
@@ -1770,7 +1763,7 @@ void SceneManager::DrawCraft()
 		{
 			float x, y, w, h; GetCraftBtnRect(x, y, w, h);
 			bool ready = !m_craftBase.empty() && (int)m_craftMods.size() >= CraftModSlots();
-			bool hov = UiHover(x, y, w, h, m_uiInput.GetMousePos(), "craftmake");   // ホバーSE＋判定
+			bool hov = UiHover(x, y, w, h, m_uiInput.GetMousePos(), "craftmake", s_lastHoverKey);   // ホバーSE＋判定
 			float dy = hov ? -4.0f : 0.0f;
 			UiWindow::Button(m_uiSprite, white, x, y + dy, w, h,
 				ready ? XMFLOAT4(0.3f, 0.55f, 0.3f, 1.0f) : XMFLOAT4(0.25f, 0.25f, 0.25f, 1.0f));
@@ -2559,7 +2552,7 @@ void SceneManager::DrawEvent()
 			float x, y, w, h; GetEventChoiceRect(i, x, y, w, h);
 			bool en = ChoiceEnabled(e->choices[i]);
 			char key[16]; sprintf_s(key, "evc%d", i);
-			bool hov = en && UiHover(x, y, w, h, mp, key);   // ← ホバーSE＋判定
+			bool hov = en && UiHover(x, y, w, h, mp, key, s_lastHoverKey);   // ← ホバーSE＋判定
 			float yy = hov ? y - 6.0f : y;                   // ← 浮く
 			UiWindow::Draw(m_uiSprite, white, x, yy, w, h);
 			if (!en)

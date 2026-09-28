@@ -73,7 +73,6 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
     m_selectedCardIndex = -1;
     m_hoveredCardIndex  = -1;
-    m_prevHoveredCardIndex = -1;
 
     m_showDrawPile = false;
     m_showDiscardPile = false;

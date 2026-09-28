@@ -169,6 +169,25 @@ public:
         return 1.0f + sinf(t * 3.14159f) * 0.18f;   // 跳ねる瞬間に一瞬大きく
     }
 
+    // HP表示アニメーション
+    float m_displayHp = 0.0f;
+    virtual int GetHp() const { return 0; }
+    float GetDisplayHp() const { return m_displayHp; }
+    void SnapDisplayHp() { m_displayHp = (float)GetHp(); }
+
+    void UpdateDisplayHp(float deltaTime)
+    {
+        float speed = 0.5f;
+        float minSpeed = 15.0f;
+        if (m_displayHp > (float)GetHp())
+        {
+            float rate = speed * (m_displayHp - GetHp());
+            if (rate < minSpeed) rate = minSpeed;
+            m_displayHp -= rate * deltaTime;
+            if (m_displayHp < (float)GetHp()) m_displayHp = (float)GetHp();
+        }
+    }
+
     // 被弾フラッシュ
     float m_hitFlash = 0.0f;
     static constexpr float HIT_FLASH_DUR = 0.25f;

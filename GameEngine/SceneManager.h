@@ -19,10 +19,9 @@
 #include "FieldScene.h"
 #include "ShopScene.h"
 #include "ResultScene.h"
+#include "URect.h"
 
 #include <functional>
-
-struct URect { float x, y, w, h; bool has(POINT p) const { return p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h; } };
 struct SettingsUI { URect panel, disp, bgmTrack, seTrack, shake, title, gameEnd, close, gear, cfmPanel, cfmYes, cfmNo; };
 
 class SceneManager

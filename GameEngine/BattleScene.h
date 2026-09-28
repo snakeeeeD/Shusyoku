@@ -174,8 +174,6 @@ private:
     int m_selectedCardIndex;
     int m_hoveredCardIndex;
 
-    int m_prevHoveredCardIndex;
-
     std::vector<Enemy*> m_multiHitTargets;
     int    m_multiHitRemain = 0;
     int    m_multiHitDamage = 0;
@@ -217,9 +215,6 @@ private:
 
     float m_highlightTimer;
     float m_arrowRevealTimer = 0.0f;   // プレイヤーターン開始後、次矢印を出すまでの猶予
-
-    float m_berserkFxTimer = 0.0f;
-    float m_emberTimer = 0.0f;
 
     void ProcessDeadEnemies();
 
