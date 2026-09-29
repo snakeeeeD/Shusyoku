@@ -9,6 +9,13 @@ using json = nlohmann::json;
 
 std::unordered_map<std::string, EnemyData> EnemyDataBase::m_data;
 
+static AnchorType StringToAnchor(const std::string& s)
+{
+    if (s == "player") return AnchorType::Player;
+    if (s == "fixed")  return AnchorType::Fixed;
+    return AnchorType::Self;
+}
+
 static TargetSpec ParseTarget(const json& j)
 {
     TargetSpec t;
@@ -19,6 +26,9 @@ static TargetSpec ParseTarget(const json& j)
     t.unavoidable = j.value("unavoidable", false);
     t.approach = StringToApproach(j.value("approach", "None"));
     t.moveRange = j.value("moveRange", 1);
+    t.anchor = StringToAnchor(j.value("anchor", "self"));
+    t.anchorCol = j.value("anchorCol", 0);
+    t.anchorRow = j.value("anchorRow", 0);
     return t;
 }
 
@@ -55,6 +65,9 @@ static EnemyAction ParseAction(const json& a)
     act.description = ToWString(a.value("description", std::string("")));
     act.vfx = a.value("vfx", std::string(""));
     if (a.contains("target")) act.target = ParseTarget(a["target"]);
+    if (a.contains("extraTargets") && a["extraTargets"].is_array())
+        for (const auto& t : a["extraTargets"])
+            act.extraTargets.push_back(ParseTarget(t));
     if (a.contains("select")) act.select = ParseSelect(a["select"]);
     if (a.contains("effects") && a["effects"].is_array())
         for (const auto& e : a["effects"])

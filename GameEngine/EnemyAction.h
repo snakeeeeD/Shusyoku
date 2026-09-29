@@ -5,6 +5,8 @@
 
 // 効果を当てるための移動（効果の"前"に起きる／予告の危険範囲に含む）
 enum class ApproachType { None, Toward, Dash, Align };
+// 範囲の中心をどこに置くか
+enum class AnchorType { Self, Player, Fixed };
 
 // 何が起きるか
 enum class EffectKind {
@@ -24,6 +26,8 @@ struct TargetSpec
     bool unavoidable = false;                 // 位置に関係なく必中
     ApproachType approach = ApproachType::None;
     int  moveRange = 1;                       // approach で動くマス数
+    AnchorType anchor = AnchorType::Self;   // 範囲の中心（Self=敵中心/Player=プレイヤー/Fixed=座標）
+    int  anchorCol = 0, anchorRow = 0;      // Fixed用のグリッド座標
 };
 
 struct Effect
@@ -49,7 +53,8 @@ struct EnemyAction
 {
     std::wstring description;
     std::string  vfx;
-    TargetSpec   target;
+    TargetSpec   target;                   // 主ターゲット
+    std::vector<TargetSpec> extraTargets;  // 追加の範囲
     std::vector<Effect> effects;
     SelectRule   select;
 };

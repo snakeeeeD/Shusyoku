@@ -189,6 +189,7 @@ void Enemy::MoveAway(int playerCol, int playerRow, GridMap* gridMap, int steps)
     {
         int curDist = abs(playerCol - gridCol) + abs(playerRow - gridRow);
 
+        // 4方向を「同じ現在地」から評価して、一番離れられる隣へ
         int bestCol = gridCol, bestRow = gridRow, bestDist = curDist;
         for (int d = 0; d < 4; d++)
         {
@@ -196,24 +197,20 @@ void Enemy::MoveAway(int playerCol, int playerRow, GridMap* gridMap, int steps)
             int nr = gridRow + dirs[d][1];
             if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) continue;
             if (!CanOccupy(gridMap, nc, nr)) continue;
-
-            // 移動確定部：
-            ClearFootprint(gridMap);
-            gridCol = bestCol; gridRow = bestRow;
-            MarkFootprint(gridMap);
-
             int nd = abs(playerCol - nc) + abs(playerRow - nr);
-            if (nd > bestDist) { bestDist = nd; bestCol = nc; bestRow = nr; }   // 一番離れられる所へ
+            if (nd > bestDist) { bestDist = nd; bestCol = nc; bestRow = nr; }
         }
 
         if (bestDist == curDist) break;   // どこへ動いても離れられない＝行き止まり
-        gridMap->SetCellType(gridCol, gridRow, CellType::Empty);
+
+        // ここで初めて実際に移動（footprintで多マスも安全に）
+        ClearFootprint(gridMap);
         gridCol = bestCol; gridRow = bestRow;
-        gridMap->SetCellType(gridCol, gridRow, CellType::Enemy);
+        MarkFootprint(gridMap);
         m_movePath.push_back({ gridCol, gridRow });
 
         pts.push_back({ (gridCol - gridMap->GetCols() / 2.0f) * 1.1f,
-                        (gridRow - gridMap->GetRows() / 2.0f) * 1.1f });   // ← 通過マスを記録
+                        (gridRow - gridMap->GetRows() / 2.0f) * 1.1f });   // 通過マス
     }
 
 
@@ -480,6 +477,8 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
     {
        return;
     }
+
+    m_lockC = playerCol; m_lockR = playerRow;   // Playerアンカーの中心を記録
 
     // 前回の決定時から動いたか（棒立ち検知）
     if (gridCol == m_lastDecideCol && gridRow == m_lastDecideRow) m_idleTurns++;
@@ -816,17 +815,31 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
     return damage;
 }
 
-bool Enemy::IsThreateningCell(int col, int row, const EnemyAction& a) const
+bool Enemy::IsCellInTarget(int col, int row, const TargetSpec& tg) const
 {
-    const TargetSpec& tg = a.target;
-    if (tg.unavoidable) return true;          // どこにいても当たる
+    if (tg.unavoidable) return true;
     if (tg.approach == ApproachType::Dash)
     {
         for (int i = 1; i <= tg.moveRange; i++)
             if (gridCol + m_aimDx * i == col && gridRow + m_aimDy * i == row) return true;
         return false;
     }
+    if (tg.anchor != AnchorType::Self)
+    {
+        int ac = (tg.anchor == AnchorType::Player) ? m_lockC : tg.anchorCol;
+        int ar = (tg.anchor == AnchorType::Player) ? m_lockR : tg.anchorRow;
+        int rng = tg.range + m_buffManager.GetBuffValue(BuffType::RangeUp);
+        return RangeShape::Contains(ac, ar, col, row, tg.rangeType, rng, tg.minRange, m_aimDx, m_aimDy);
+    }
     return IsInRange(col, row, tg.range, tg.rangeType, tg.minRange);
+}
+
+bool Enemy::IsThreateningCell(int col, int row, const EnemyAction& a) const
+{
+    if (IsCellInTarget(col, row, a.target)) return true;
+    for (auto& t : a.extraTargets)
+        if (IsCellInTarget(col, row, t)) return true;
+    return false;
 }
 
 std::vector<std::pair<int, int>> Enemy::GetThreatCells(const EnemyAction& a, GridMap* gridMap) const
@@ -958,6 +971,17 @@ std::vector<std::pair<int, int>> Enemy::PlannedMovePath(int targetCol, int targe
                 }
                 if (bd == curD) break;
                 c = bc; r = br; path.push_back({ c, r });
+            }
+            return path;
+        }
+        if (e.kind == EffectKind::Coil)
+        {
+            if (m_coilReached) return path;                 // 中央到達後はもう巻かない
+            for (int s = 1; s <= e.value; s++)
+            {
+                int idx = m_spiralIdx + s;
+                if (idx >= (int)m_spiral.size()) break;
+                path.push_back(m_spiral[idx]);
             }
             return path;
         }

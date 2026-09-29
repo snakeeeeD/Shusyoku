@@ -44,6 +44,18 @@ namespace RangeShape
             int perp = abs(oc * aimDy - orr * aimDx);
             return along >= 1 && along <= range && perp <= along - 1;
         }
+        case RangeType::Square:
+        {
+            int cheb = (dc > dr ? dc : dr);
+            return cheb >= minRange && cheb <= range;   // 中心含む(minRange=0)塗り正方形
+        }
+        case RangeType::Grid:
+        {
+            int cheb = (dc > dr ? dc : dr);
+            return cheb >= minRange && cheb <= range && (((col + row) & 1) == 0);   // 市松（盤面座標で固定）
+        }
+        case RangeType::Row:    return dr == 0;   // 中心と同じ行（横列）全体
+        case RangeType::Column: return dc == 0;   // 中心と同じ列（縦列）全体
         default: return false;
         }
     }

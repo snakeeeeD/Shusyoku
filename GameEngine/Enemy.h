@@ -84,6 +84,7 @@ public:
 		GridMap* gridMap, Player* player, std::vector<Enemy*>& enemies,
 		int moveTargetCol = -1, int moveTargetRow = -1, bool* didAttack = nullptr);
 
+	bool IsCellInTarget(int col, int row, const TargetSpec& tg) const;
 	bool IsThreateningCell(int col, int row, const EnemyAction& a) const;
 	std::vector<std::pair<int, int>> GetThreatCells(const EnemyAction& a, class GridMap* gridMap) const;
 
@@ -142,6 +143,7 @@ private:
 
 	int m_idleTurns = 0;
 	int m_lastDecideCol = -999, m_lastDecideRow = -999;
+	int m_lockC = 0, m_lockR = 0;   // Playerアンカー：行動決定時のプレイヤー位置
 
 	int m_lastHitDamage = 0;
 	int m_lastHitCount = 1;

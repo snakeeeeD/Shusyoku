@@ -21,5 +21,9 @@ enum class RangeType
     DiagonalCross, // 十字＋斜め（全8方向）
     Line,       // 直線（貫通）
     Cone,       // 扇形（プレイヤー方向）
+    Square,     // 塗り正方形（中心含む・地点AoE向け）
+    Grid,       // 格子状（市松：範囲内の1マスおき）
+    Row,        // 横列（同じ行を端から端まで）
+    Column,     // 縦列（同じ列を端から端まで）
 };
 

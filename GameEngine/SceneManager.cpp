@@ -337,6 +337,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 			TextureManager::Load("buff_laststand", L"Assets/UI/buff_laststand.png");
 			TextureManager::Load("buff_deepstand", L"Assets/UI/buff_deepstand.png");
 			TextureManager::Load("buff_embertrail", L"Assets/UI/buff_embertrail.png");
+			TextureManager::Load("buff_headweak", L"Assets/UI/buff_headweak.png");
 		}
 	}
 

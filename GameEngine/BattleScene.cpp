@@ -523,7 +523,11 @@ void BattleScene::AddEnemy(int col, int row, const std::string& id)
     for (auto& [dc, dr] : enemy->GetGridShape())
         m_gridMap->SetCellType(col + dc, row + dr, cellType);
 
-    if (enemy->IsSnake()) enemy->InitSnake(m_gridMap);
+    if (enemy->IsSnake())
+    {
+        enemy->InitSnake(m_gridMap);
+        enemy->GetBuffManager().AddBuff({ BuffType::HeadWeak, 2, -1 });   // 頭弱点マーク（表示用・永続）
+    }
 
     if (id == "l3_sovereign") enemy->SetInvulnerable(true);   // 初手決定前から無敵に
     m_enemies.push_back(enemy);
@@ -1949,6 +1953,26 @@ void BattleScene::Draw()
                     : 4.7124f; 
             }
             float cyLift = m_gridMap->GetCell(chain[i].first, chain[i].second).gameObject.worldY + 0.12f;
+
+            // 頭が脅威中：頭と同じ回転・位置で後ろにグローを敷く（立て看板グローの平置き版）
+            if (i == n - 1 && enemy->hitsPlayer && !m_turnManager.IsEnemyTurn())
+            {
+                float thPulse = 0.5f + 0.5f * sinf(m_highlightTimer * 6.0f);
+                float gsc = size * (1.18f + 0.12f * thPulse);   // 少し大きく
+                float rr = 0.05f + 0.02f * thPulse;            // 円状のにじみ半径
+                float ga = (0.55f + 0.35f * thPulse) / 8.0f * 2.2f;
+                XMFLOAT4 gcol(enemy->hueColor.x * 1.3f, enemy->hueColor.y * 1.3f,
+                    enemy->hueColor.z * 1.3f, ga);
+                auto htex = TextureManager::Get("snake_head");
+                for (int k = 0; k < 8; k++)                     // 8枚を円状にズラして重ねる
+                {
+                    float ang = (float)k / 8.0f * 6.2831853f;
+                    m_renderer3D->DrawTileEx(htex,
+                        x + cosf(ang) * rr, z + sinf(ang) * rr, gsc, gsc, rot,
+                        gcol, cyLift - 0.01f);                  // 頭より少し下＝後ろ
+                }
+            }
+
             m_renderer3D->DrawTileEx(TextureManager::Get(tex), x, z, size, size, rot,
                 XMFLOAT4(1, 1, 1, 1), cyLift);
         }
@@ -2083,6 +2107,7 @@ void BattleScene::Draw()
         for (auto enemy : drawOrder)
         {
             if (!enemy->hitsPlayer || enemy->GetHp() <= 0) continue;
+            if (enemy->IsSnake()) continue;   // 蛇は頭タイル側で回転付きグローを出す
             auto tex = TextureManager::Get(enemy->GetTextureName());
             float sc = 1.18f + 0.12f * thPulse;
             float r = 0.05f + 0.02f * thPulse;                        // ぼかし半径

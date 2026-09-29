@@ -292,8 +292,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 return true;
                 };
 
-            float dwx, dwz; GridToWorld(ctx.gridMap, path.back().first, path.back().second, dwx, dwz);
-            // 敵の見た目マス（Enemy座標系 → マス番号）が移動先に着いたら消す
+            // 敵の見た目マスが最終目的地に着いたら消す
             int evc = (int)lroundf(enemy->worldX / 1.1f + ctx.gridMap->GetCols() / 2.0f);
             int evr = (int)lroundf(enemy->worldZ / 1.1f + ctx.gridMap->GetRows() / 2.0f);
             if (evc == path.back().first && evr == path.back().second) continue;
@@ -304,48 +303,76 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 GridToWorld(ctx.gridMap, enemy->gridCol, enemy->gridRow, swx, swz);
             else
             {
-                // 敵のworld → 連続グリッド座標 → GridToWorld系へ
                 float fcol = enemy->worldX / 1.1f + ctx.gridMap->GetCols() / 2.0f;
                 float frow = enemy->worldZ / 1.1f + ctx.gridMap->GetRows() / 2.0f;
                 float w0x, w0z, w1x, w1z;
                 GridToWorld(ctx.gridMap, 0, 0, w0x, w0z);
                 GridToWorld(ctx.gridMap, 1, 1, w1x, w1z);
-                swx = w0x + (w1x - w0x) * fcol;     // マス→ワールドの線形変換
+                swx = w0x + (w1x - w0x) * fcol;
                 swz = w0z + (w1z - w0z) * frow;
             }
             float esx, esy; if (!proj(swx, swz, esx, esy)) continue;
-            float dsx, dsy; if (!proj(dwx, dwz, dsx, dsy)) continue;
 
-            float vx = dsx - esx, vy = dsy - esy;
-            float L = sqrtf(vx * vx + vy * vy);
-            float ang = atan2f(vy, vx);
-
-            // 先端の三角
-            float hw = 0.5f + 0.5f * sinf(ctx.highlightTimer * 2.5f - L * 0.035f);
-            float hs = 40.0f + 8.0f * hw;
-            m_spriteRenderer->DrawSprite(TextureManager::Get("ui_arrowhead"), dsx - hs / 2, dsy - hs / 2, hs, hs, ang,
-                XMFLOAT4(hue.x, hue.y, hue.z, 0.75f + 0.25f * hw));
-
-            // シャフト＝均等な破線（パーツが滑らかに大小して波打つ）
-            const float headLen = 26.0f, step = 26.0f, baseLen = 16.0f, baseThick = 13.0f;
-            float scroll = fmodf(ctx.highlightTimer * 50.0f, step);
-            float breath = 0.5f + 0.5f * sinf(ctx.highlightTimer * 3.0f);   // ← 全体が一緒に脈動（整数倍＝ラップも滑らか）
-            for (float d = 6.0f + scroll; d < L - headLen; d += step)
+            // 経路の各マスを画面座標へ（始点＝敵→各マス）＝角でカクッと折れるポリライン
+            std::vector<std::pair<float, float>> pts;
+            pts.push_back({ esx, esy });
+            for (auto& cell : path)
             {
-                float cx = esx + (vx / L) * d;
-                float cy = esy + (vy / L) * d;
+                float wx, wz; GridToWorld(ctx.gridMap, cell.first, cell.second, wx, wz);
+                float px, py; if (proj(wx, wz, px, py)) pts.push_back({ px, py });
+            }
+            if ((int)pts.size() < 2) continue;
 
-                float dl = baseLen * (0.8f + 0.35f * breath);   // 時間で大小（全□同じ）
-                float dt = baseThick * (0.8f + 0.35f * breath);
+            float totalL = 0.0f;
+            for (int i = 1; i < (int)pts.size(); i++)
+            {
+                float dx = pts[i].first - pts[i - 1].first, dy = pts[i].second - pts[i - 1].second;
+                totalL += sqrtf(dx * dx + dy * dy);
+            }
 
-                float a = 1.0f;
-                float fromStart = d - 6.0f, toHead = (L - headLen) - d;
-                if (fromStart < step) a *= fromStart / step;
-                if (toHead < step) a *= toHead / step;
-                if (a < 0.0f) a = 0.0f;
+            const float headLen = 26.0f, step = 26.0f, baseLen = 16.0f, baseThick = 13.0f;
 
-                m_spriteRenderer->DrawSprite(m_whiteTexture, cx - dl / 2, cy - dt / 2, dl, dt, ang,
-                    XMFLOAT4(hue.x, hue.y, hue.z, 0.85f * a));
+            // 先端の三角（最終セグメントの向き）
+            {
+                int lp = (int)pts.size() - 1;
+                float avx = pts[lp].first - pts[lp - 1].first, avy = pts[lp].second - pts[lp - 1].second;
+                float ang = atan2f(avy, avx);
+                float hw = 0.5f + 0.5f * sinf(ctx.highlightTimer * 2.5f - totalL * 0.035f);
+                float hs = 40.0f + 8.0f * hw;
+                m_spriteRenderer->DrawSprite(TextureManager::Get("ui_arrowhead"),
+                    pts[lp].first - hs / 2, pts[lp].second - hs / 2, hs, hs, ang,
+                    XMFLOAT4(hue.x, hue.y, hue.z, 0.75f + 0.25f * hw));
+            }
+
+            // シャフト＝ポリラインに沿った破線（各セグメントの向きで折れる）
+            float scroll = fmodf(ctx.highlightTimer * 50.0f, step);
+            float breath = 0.5f + 0.5f * sinf(ctx.highlightTimer * 3.0f);
+            for (float d = 6.0f + scroll; d < totalL - headLen; d += step)
+            {
+                float acc = 0.0f;
+                for (int si = 1; si < (int)pts.size(); si++)
+                {
+                    float dx = pts[si].first - pts[si - 1].first, dy = pts[si].second - pts[si - 1].second;
+                    float sl = sqrtf(dx * dx + dy * dy); if (sl < 1e-3f) sl = 1e-3f;
+                    if (acc + sl >= d)
+                    {
+                        float t = (d - acc) / sl;
+                        float cx = pts[si - 1].first + dx * t;
+                        float cy = pts[si - 1].second + dy * t;
+                        float segAng = atan2f(dy, dx);
+                        float dl = baseLen * (0.8f + 0.35f * breath);
+                        float dt = baseThick * (0.8f + 0.35f * breath);
+                        float a = 1.0f;
+                        float fromStart = d - 6.0f, toHead = (totalL - headLen) - d;
+                        if (fromStart < step) a *= fromStart / step;
+                        if (toHead < step) a *= toHead / step;
+                        if (a < 0.0f) a = 0.0f;
+                        m_spriteRenderer->DrawSprite(m_whiteTexture, cx - dl / 2, cy - dt / 2, dl, dt, segAng,
+                            XMFLOAT4(hue.x, hue.y, hue.z, 0.85f * a));
+                        break;
+                    }
+                    acc += sl;
+                }
             }
         }
 
@@ -2341,7 +2368,9 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
             {
                 const auto& info = BuffInfo::Get(buff.type);
                 std::wstring buffText;
-                if (BuffInfo::IsDurationBased(buff.type))
+                if (buff.type == BuffType::HeadWeak)
+                    buffText = info.name;                       // 弱点は名前だけ（ターン表記なし）
+                else if (BuffInfo::IsDurationBased(buff.type))
                     buffText = info.name + L": " + std::to_wstring(buff.duration) + L"ターン";
                 else
                 {

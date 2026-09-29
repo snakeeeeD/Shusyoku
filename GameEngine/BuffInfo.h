@@ -38,10 +38,10 @@ struct BuffInfo
             { L"毒",                  L"毎ターン{value}ダメージを受け、1ずつ減少",    {0.5f,0.0f,0.8f,1.0f},    "buff_poison" },       // Poison
 
             { L"攻撃UP(今)",          L"このターン攻撃力が{value}上昇する",                      {0.9f, 0.45f, 0.15f, 1.0f},  "buff_attackupturn" },  // AttackUpTurn
-            { L"闘気",                L"2ターンに一度、攻撃力が{value}上昇する",                {0.95f, 0.35f, 0.05f, 1.0f}, "buff_attackgrowth" },  // AttackGrowth
+            { L"闘気",                L"2ターンに一度、攻撃力が{value}上昇する",                 {0.95f, 0.35f, 0.05f, 1.0f}, "buff_attackgrowth" },  // AttackGrowth
             { L"狂乱",                L"与ダメージ+{pct}%／被ダメージ+{pct}%／移動で自傷{self}", {0.85f, 0.15f, 0.15f, 1.0f}, "buff_frenzy" },        // Frenzy
-            { L"毒の瘴気",            L"2ターンに一度 全ての敵に毒{value}",                     {0.6f, 0.3f, 0.9f, 1.0f},    "buff_noxiousfumes" },  // NoxiousFumes
-            { L"毒の脈動",            L"毒のダメージ回数+{value}",                               {0.65f, 0.4f, 0.95f, 1.0f}, 	  "buff_toxicrhythm" },   // ToxicRhythm
+            { L"毒の瘴気",            L"2ターンに一度 全ての敵に毒{value}",                      {0.6f, 0.3f, 0.9f, 1.0f},    "buff_noxiousfumes" },  // NoxiousFumes
+            { L"毒の脈動",            L"毒のダメージ回数+{value}",                               {0.65f, 0.4f, 0.95f, 1.0f},  "buff_toxicrhythm" },   // ToxicRhythm
             { L"移動不可",            L"このターン移動できない",                                 {0.5f, 0.5f, 0.6f, 1.0f},    "buff_movelock" },      // MoveLock
             { L"受け返し",            L"攻撃を完全に防ぐと 敵に{value}ダメージ",                 {0.4f, 0.7f, 1.0f, 1.0f}, 	  "buff_riposte" },       // Riposte
             { L"研磨",                L"ナイフのダメージ+{value}",                               {0.7f, 0.7f, 0.8f, 1.0f},	  "buff_knifepower" },    // KnifePower
@@ -52,7 +52,8 @@ struct BuffInfo
             { L"決死の覚悟",          L"HP1/4以下で攻撃+{value}",                                {0.9f, 0.2f, 0.2f, 1.0f},	  "buff_deepstand" },     // DeepStand
             { L"炎の軌跡",            L"移動した通り道に炎を残す",                               {1.0f, 0.4f, 0.1f, 1.0f},	  "buff_embertrail" },    // EmberTrail
             { L"追加ドロー+",         L"毎ターン開始時 カードを{value}枚多く引く",               {0.4f, 0.8f, 0.9f, 1.0f},    "buff_knifegen" },      // DrawPerTurn
-             { L"無敵",                L"ダメージを完全に無効化する",                            {0.55f, 0.8f, 1.0f, 1.0f},   "buff_barricade" },     // Invincible
+            { L"無敵",                L"ダメージを完全に無効化する",                             {0.55f, 0.8f, 1.0f, 1.0f},   "buff_barricade" },     // Invincible
+            { L"弱点",                L"頭を攻撃すると 与ダメージ{value}倍",                     {0.9f, 0.3f, 0.3f, 1.0f},    "buff_headweak" },   // HeadWeak
         };
         return infos[static_cast<int>(type)];
     }

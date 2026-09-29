@@ -2624,7 +2624,7 @@
     },
     {
       "id": "orochi",
-      "texture": "enemy_orochi",
+      "texture": "snake_head",
       "isBoss": true,
       "hp": 512,
       "width": 1.4,
@@ -2637,7 +2637,7 @@
       ],
       "actions": [
         {
-          "description": "薙ぎ払い、{0}ダメージ、ノックバック、とぐろ",
+          "description": "薙ぎ払い、{0}ダメージ、ノックバック",
           "target": {
             "rangeType": "Area",
             "range": 2
@@ -2657,11 +2657,13 @@
             }
           ],
           "select": {
+            "condition": "near",
+            "conditionValue": 3,
             "chance": 50
           }
         },
         {
-          "description": "毒噴き、{0}ダメージ、毒{1}付与、とぐろ",
+          "description": "毒噴き、{0}ダメージ、毒{1}付与",
           "target": {
             "rangeType": "Area",
             "range": 1
@@ -2684,8 +2686,79 @@
             }
           ],
           "select": {
+            "condition": "near",
+            "conditionValue": 2,
             "chance": 50
           }
+        },
+        {
+          "description": "ウロコ飛ばし、{0}ダメージ、毒{1}付与",
+          "target": {
+            "rangeType": "Column",
+            "anchor": "player"
+          },
+          "vfx": "poison",
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 10
+            },
+            {
+              "kind": "Debuff",
+              "buff": "Poison",
+              "value": 2,
+              "duration": 3
+            },
+            {
+              "kind": "Coil",
+              "value": 3
+            }
+          ],
+          "select": { "chance": 35 }
+        },
+        {
+          "description": "ウロコ飛ばし、{0}ダメージ、毒{1}付与",
+          "target": {
+            "rangeType": "Row",
+            "anchor": "player"
+          },
+          "vfx": "poison",
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 10
+            },
+            {
+              "kind": "Debuff",
+              "buff": "Poison",
+              "value": 2,
+              "duration": 3
+            },
+            {
+              "kind": "Coil",
+              "value": 3
+            }
+          ],
+          "select": { "chance": 35 }
+        },
+        {
+          "description": "絞め上げ、{0}ダメージ",
+          "target": {
+            "rangeType": "Square",
+            "range": 1,
+            "anchor": "player"
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 13
+            },
+            {
+              "kind": "Coil",
+              "value": 3
+            }
+          ],
+          "select": { "chance": 30 }
         },
         {
           "description": "まるのみ、{0}ダメージ",
@@ -3730,6 +3803,100 @@
           "select": {
             "condition": "awake",
             "chance": 50
+          }
+        },
+        {
+          "description": "領域崩落",
+          "target": {
+            "rangeType": "Grid",
+            "range": 3,
+            "minRange": 1
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 12
+            }
+          ],
+          "select": {
+            "condition": "awake",
+            "chance": 50
+          }
+        },
+        {
+          "description": "次元十字、{0}ダメージ",
+          "target": {
+            "rangeType": "Column",
+            "anchor": "player"
+          },
+          "extraTargets": [
+            {
+              "rangeType": "Row",
+              "anchor": "player"
+            }
+          ],
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 16
+            }
+          ],
+          "select": {
+            "condition": "awake",
+            "chance": 40
+          }
+        },
+        {
+          "description": "次元圧壊、{0}ダメージ",
+          "target": {
+            "rangeType": "Square",
+            "range": 1,
+            "anchor": "player"
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 16
+            }
+          ],
+          "select": {
+            "condition": "awake",
+            "chance": 35
+          }
+        },
+        {
+          "description": "双柱、{0}ダメージ",
+          "target": {
+            "rangeType": "Column",
+            "anchor": "fixed",
+            "anchorCol": 3
+          },
+          "extraTargets": [
+            {
+              "rangeType": "Column",
+              "anchor": "fixed",
+              "anchorCol": 2
+            },
+            {
+              "rangeType": "Column",
+              "anchor": "fixed",
+              "anchorCol": 5
+            },
+            {
+              "rangeType": "Column",
+              "anchor": "fixed",
+              "anchorCol": 6
+            }
+          ],
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 14
+            }
+          ],
+          "select": {
+            "condition": "awake",
+            "chance": 35
           }
         }
 

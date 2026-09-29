@@ -18,6 +18,11 @@ inline RangeType StringToRangeType(const std::string& str)
     if (str == "DiagonalCross")  return RangeType::DiagonalCross;
     if (str == "Line")  return RangeType::Line;
     if (str == "Cone") return RangeType::Cone;
+    if (str == "Square") return RangeType::Square;
+    if (str == "Grid")   return RangeType::Grid;
+    if (str == "Grid")   return RangeType::Grid;
+    if (str == "Row")    return RangeType::Row;
+    if (str == "Column") return RangeType::Column;
     return RangeType::None;
 }
 

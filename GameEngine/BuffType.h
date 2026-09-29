@@ -59,4 +59,5 @@ enum class BuffType
     EmberTrail,     // 移動した通り道に炎ハザードを残す
     DrawPerTurn,    // 毎ターン開始時、追加でカードを引く
     Invincible,     // 無敵：ダメージ完全無効（3層ボス）
+    HeadWeak,       // 頭は弱点：頭に攻撃で2倍（表示用）
 };
