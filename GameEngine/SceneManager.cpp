@@ -473,7 +473,7 @@ void SceneManager::DoChangeScene(SceneType type)
 			auto scene = new FieldScene();
 			scene->onChangeScene = [this](SceneType type) { ChangeScene(type); };
 			scene->onRest = [this]() {
-				m_restOpen = true; m_restActive = true;
+				m_restOpen = true; m_restActive = true; m_restArmed = false;
 				Audio::PlayBGM("Assets/Sound/bgm/Rest.mp3");
 				auto& pd = PlayerDataManager::GetData();
 				if (!pd.tutorialRest)
@@ -1065,7 +1065,7 @@ void SceneManager::HandleInput()
 				{
 					Audio::PlaySE("Assets/Sound/se/click.mp3");
 					m_deckPreviewIdx = -1; m_deckOpen = false; m_deckUpgradeMode = false;
-					if (m_restActive) m_restOpen = true;   // 休憩から来ていたら休憩へ戻す
+					if (m_restActive) { m_restOpen = true; m_restArmed = false; }   // 休憩から来ていたら休憩へ戻す
 					return;
 				}
 
@@ -1121,8 +1121,10 @@ void SceneManager::HandleInput()
 
 	if (m_restOpen)
 	{
-		if (m_uiInput.GetMouseButtonTrigger(0))
+		if (m_uiInput.GetMouseButtonTrigger(0)) m_restArmed = true;   // 押下が休憩画面内で始まった時だけ武装
+		if (m_restArmed && m_uiInput.GetMouseButtonRelease(0))
 		{
+			m_restArmed = false;
 			if (BackBtnHit(m_uiInput.GetMousePos())) { FinishRest(); return; }  // 戻る＝休憩を終える
 			HandleRestClick(m_uiInput.GetMousePos());
 		}

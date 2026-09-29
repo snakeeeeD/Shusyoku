@@ -169,7 +169,8 @@ private:
     void DrawMap();
 
     bool m_restOpen = false;     // 3択画面 表示中
-    bool m_restActive = false;   // 休憩の行動が未消費（サブ画面を開いている間もtrue）
+    bool m_restActive = false;   // 休憩の行動が未確定（サブ画面を開いている間もtrue）
+    bool m_restArmed = false;    // 押下が休憩画面内で始まったクリックだけ有効にする
     static constexpr int REST_HEAL = 20;
     void DrawRest();
     void HandleRestClick(POINT m);

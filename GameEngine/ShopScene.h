@@ -58,8 +58,6 @@ private:
     static constexpr int   STOCK_COUNT = CARD_COUNT + CORE_COUNT + MAT_COUNT;
     static constexpr int   CORE_PRICE = 120;
     static constexpr int   MAT_PRICE = 40;
-    static constexpr float CARD_W = 150.0f;
-    static constexpr float CARD_H = 200.0f;
 
     static constexpr float SHOP_SCALE = 1.4f;
 
