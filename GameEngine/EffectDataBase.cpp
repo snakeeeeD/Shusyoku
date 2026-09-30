@@ -53,6 +53,7 @@ void EffectDataBase::Load(const std::string& path)
                 sa.startFrame = s.value("startFrame", 0);
                 sa.delay = s.value("delay", 0.0f);
                 sa.autoFlipX = s.value("autoFlipX", false);
+                sa.flipX = s.value("flipX", false);
                 sa.rotDeg = s.value("rotDeg", 0.0f);
                 sa.travel = s.value("travel", 0.0f);
                 if (s.contains("fromCamera"))

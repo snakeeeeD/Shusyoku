@@ -55,10 +55,24 @@ public:
         }
     }
 
+    // プレイヤー側の被ダメ補正を表示に反映するための参照（毎フレーム設定）
+    static inline const BuffManager* s_playerBuffs = nullptr;
+    static void SetPlayerBuffs(const BuffManager* pb) { s_playerBuffs = pb; }
+
+    // Player::TakeDamage と同じ補正を表示用に適用
+    static int ApplyIncoming(int dmg)
+    {
+        const BuffManager* pb = s_playerBuffs;
+        if (!pb) return dmg;
+        if (pb->HasBuff(BuffType::Vulnerable)) dmg = dmg * 150 / 100;
+        if (int fr = pb->GetBuffValue(BuffType::Frenzy)) dmg = dmg * (100 + 50 * fr) / 100;
+        return dmg;
+    }
+
     // バフ適用後の表示値
     static int GetDisplayValue(const Effect& e, const BuffManager& buffs)
     {
-        if (e.kind == EffectKind::Damage) return buffs.GetFinalAttack(e.value);
+        if (e.kind == EffectKind::Damage) return ApplyIncoming(buffs.GetFinalAttack(e.value));
         if (e.kind == EffectKind::Block)  return buffs.GetFinalBlock(e.value);
         return e.value;
     }
@@ -219,7 +233,7 @@ public:
         int sum = 0;
         for (auto& e : a.effects)
             if (e.kind == EffectKind::Damage)
-                sum += buffs.GetFinalAttack(e.value) * (e.hits > 1 ? e.hits : 1);
+                sum += ApplyIncoming(buffs.GetFinalAttack(e.value)) * (e.hits > 1 ? e.hits : 1);
         return sum;
     }
 

@@ -31,6 +31,7 @@ struct SheetAnim
     int   startFrame = 0;             // シート内の開始コマ
     float delay = 0.0f;               // このシートだけの遅延
     bool  autoFlipX = false;          // 発生位置(x<0)なら左右反転して反対側から出す
+    bool  flipX = false;              // 常に左右反転（autoFlipX とは独立）
     float rotDeg = 0.0f;              // このシート自体の回転(度)
     XMFLOAT3 fromCamera = { 0, 0, 0 };   // カメラ基準の発生位置(右, 上, 前)
     bool  useCamera = false;             // fromCamera を使うか

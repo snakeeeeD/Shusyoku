@@ -585,7 +585,8 @@
           "scale": 2.2,
           "rotDeg": 0,
           "fromCamera": [ -1.0, 1.0, 0.0 ],
-          "travel": 0.6
+          "travel": 0.6,
+          "flipX": true
         }
       ]
     },
@@ -606,7 +607,8 @@
           "scale": 2.0,
           "offset": [ 3.6, 6.0, -3.6 ],
           "vel": [ -6.0, -10.0, 6.0 ],
-          "autoFlipX": true
+          "autoFlipX": true,
+          "flipX": true
         }
       ]
     }

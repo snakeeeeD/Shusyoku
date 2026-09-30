@@ -118,6 +118,7 @@ public:
 
 	struct PendingCurse { std::string cardId, target; int count; };
 	std::vector<PendingCurse>& PendingCurses() { return m_pendingCurses; }
+	std::vector<Buff>& PendingPlayerBuffs() { return m_pendingPlayerBuffs; }
 
 	// 範囲の中心マス（演出の着弾点に使う）。Self の時は渡した既定値を返す
 	void GetAnchorCell(const EnemyAction& a, int defC, int defR, int& outC, int& outR) const
@@ -194,5 +195,6 @@ private:
 	int  m_coilStuck = 0;       // 到達後の経過ターン（フィニッシャー遅延）
 
 	std::vector<PendingCurse> m_pendingCurses;
+	std::vector<Buff> m_pendingPlayerBuffs;   // ダメージ適用後に付与する状態異常
 };
 

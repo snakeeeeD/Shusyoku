@@ -15,6 +15,7 @@
 #include "UiNotice.h"
 #include "Audio.h"
 #include "Telemetry.h"
+#include "EnemyIntentVisual.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -52,6 +53,7 @@ BattleScene::BattleScene()
 
 BattleScene::~BattleScene()
 {
+    EnemyIntentVisual::SetPlayerBuffs(nullptr);
     delete m_battleUI;
     delete m_gridMap;
     delete m_renderer3D;
@@ -261,8 +263,6 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             auto dmg = m_player->GetBuffManager().GetTurnEndDamage();
             if (dmg.total() > 0)
                 m_player->TakeDamage(dmg.total(), DamageFeel::Poison);
-
-            m_turnCount++;
 
             m_turnCount++;
 
@@ -671,6 +671,7 @@ void BattleScene::BossInvulnAction(Enemy* boss)
 void BattleScene::Update(float deltaTime)
 {
     m_input.Update();
+    if (m_player) EnemyIntentVisual::SetPlayerBuffs(&m_player->GetBuffManager());   // 予告表示に被ダメ補正を反映
     UpdateBossGimmick();   // 3層ボス：楔の生存で無敵/覚醒を制御
     if (m_awakenCinematic > 0.0f)
     {
@@ -755,6 +756,16 @@ void BattleScene::Update(float deltaTime)
             m_eMultiRemain--;
             m_eMultiTimer = MULTI_HIT_INTERVAL;
             if (m_eMultiRemain <= 0) m_eMultiEnemy = nullptr;
+        }
+        if (m_eMultiRemain <= 0)
+        {
+            if (m_eMultiEnemy)                      // 多段の最後 → ここで状態異常
+            {
+                for (auto& b : m_eMultiEnemy->PendingPlayerBuffs())
+                    m_player->GetBuffManager().AddBuff(b);
+                m_eMultiEnemy->PendingPlayerBuffs().clear();
+            }
+            m_eMultiEnemy = nullptr;
         }
     }
 
@@ -1335,6 +1346,18 @@ void BattleScene::Update(float deltaTime)
                 }
                 m_windupPlayed = false;
 
+                // 実行前の攻撃範囲を控える（移動を伴う攻撃でも予告と一致させる）
+                std::vector<std::pair<int, int>> preCells;
+                if (wa && !wa->target.unavoidable && wa->target.approach != ApproachType::Dash)
+                {
+                    for (auto& ef : wa->effects)
+                        if (ef.kind == EffectKind::Damage)
+                        {
+                            preCells = enemy->GetThreatCells(*wa, m_gridMap);
+                            break;
+                        }
+                }
+
                 // 現在の行動を実行
                 bool targetedDecoy = (m_decoyCol >= 0 && tC == m_decoyCol && tR == m_decoyRow);
                 bool atk = false;
@@ -1379,10 +1402,10 @@ void BattleScene::Update(float deltaTime)
                         const std::string afx = wa->areaVfx.empty() ? "area_burst" : wa->areaVfx;
                         bool isDash = (wa->target.approach == ApproachType::Dash);
 
-                        // 突進は「実際に走った経路」、それ以外は攻撃範囲
+                        // 突進は「実際に走った経路」、それ以外は実行前の攻撃範囲
                         std::vector<std::pair<int, int>> cells =
                             isDash ? enemy->GetMovePath()
-                            : enemy->GetThreatCells(*wa, m_gridMap);
+                            : preCells;
 
                         float step = isDash ? 0.10f : 0.04f;   // 突進はグライドに合わせて遅め
                         for (int k = 0; k < (int)cells.size(); k++)
@@ -1416,21 +1439,22 @@ void BattleScene::Update(float deltaTime)
 
                 m_playerCol = m_player->gridCol;
                 m_playerRow = m_player->gridRow;
+                bool fullyBlocked = false;
                 if (damage > 0)
                 {
                     if (enemy->GetLastHitCount() > 1)
                     {
-                        // 多段：1発ずつ時間差で適用（プレイヤー多段と同じ）
+                        // 多段：1発ずつ時間差で適用（状態異常は最後の1発の後）
                         m_eMultiRemain = enemy->GetLastHitCount();
                         m_eMultiDamage = enemy->GetLastHitDamage();
-                        m_eMultiTimer  = 0.0f;
-                        m_eMultiEnemy  = enemy;
+                        m_eMultiTimer = 0.0f;
+                        m_eMultiEnemy = enemy;
                     }
                     else
                     {
                         int hpBefore = m_player->GetHp();
                         m_player->TakeDamage(damage);
-                        bool fullyBlocked = (m_player->GetHp() == hpBefore);
+                        fullyBlocked = (m_player->GetHp() == hpBefore);
                         int th = m_player->GetBuffManager().GetBuffValue(BuffType::Thorns);
                         if (th > 0 && enemy->GetHp() > 0) enemy->TakeDamage(th);
                         int rip = m_player->GetBuffManager().GetBuffValue(BuffType::Riposte);
@@ -1443,6 +1467,15 @@ void BattleScene::Update(float deltaTime)
                             ScreenShake::Add(0.2f);
                         }
                     }
+                }
+
+                // 状態異常はダメージの後に付与（多段は最後の1発の後＝Update側で）
+                if (m_eMultiRemain <= 0)
+                {
+                    if (!fullyBlocked)
+                        for (auto& b : enemy->PendingPlayerBuffs())
+                            m_player->GetBuffManager().AddBuff(b);
+                    enemy->PendingPlayerBuffs().clear();
                 }
                 enemy->SetActionIndex(ai + 1);
 

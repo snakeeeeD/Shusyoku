@@ -613,6 +613,7 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
 
     if (actionIdx < 0 || actionIdx >= (int)m_plannedActions.size()) return 0;
     m_movePath.clear();
+    m_pendingPlayerBuffs.clear();
     m_lastHitCount = 1; m_lastHitDamage = 0;
     m_didDash = false;
     const EnemyAction& act = m_plannedActions[actionIdx];
@@ -706,10 +707,8 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
                 m_buffManager.AddBuff(b);
             else if (e.applyTo == ApplyTo::Player)
             {
-                // 攻撃をブロックで防ぎ切ったら状態異常(毒など)も食らわない
-                bool fullyBlocked = (damage > 0 && player && player->GetBlock() >= damage);
-                if (hitPlayer && player && !fullyBlocked)
-                    player->GetBuffManager().AddBuff(b);
+                // ダメージ適用後に付与する（弱体が自分の攻撃を強化しないように）
+                if (hitPlayer && player) m_pendingPlayerBuffs.push_back(b);
             }
             else // Allies：全ての味方に付与（範囲無視・自分は除く）
             {

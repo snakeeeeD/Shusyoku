@@ -122,8 +122,8 @@ public:
             int col = (s.cols > 0) ? f % s.cols : 0;
             int row = (s.cols > 0) ? f / s.cols : 0;
             XMFLOAT4 uv = s.flipX
-                ? XMFLOAT4((float)(col + 1) / s.cols, (float)row / s.rows, -1.0f / s.cols, 1.0f / s.rows)
-                : XMFLOAT4((float)col / s.cols, (float)row / s.rows, 1.0f / s.cols, 1.0f / s.rows);
+                ? XMFLOAT4((float)col / s.cols, (float)row / s.rows, 1.0f / s.cols, 1.0f / s.rows)
+                : XMFLOAT4((float)(col + 1) / s.cols, (float)row / s.rows, -1.0f / s.cols, 1.0f / s.rows);
             float a = s.fading ? (s.fade / s.fadeDur) : 1.0f;
             if (a < 0.0f) a = 0.0f;
             XMFLOAT4 c = s.color; c.w *= a;
@@ -234,7 +234,7 @@ public:
             si.handle = handle;
             si.rot = rot + XMConvertToRadians(s.rotDeg);
             si.vel = sv;
-            si.flipX = mir;
+            si.flipX = (s.flipX != mir);
             si.startFrame = s.startFrame;
             m_sprites.push_back(si);
         }
