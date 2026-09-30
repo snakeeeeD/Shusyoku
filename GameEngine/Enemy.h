@@ -119,6 +119,15 @@ public:
 	struct PendingCurse { std::string cardId, target; int count; };
 	std::vector<PendingCurse>& PendingCurses() { return m_pendingCurses; }
 
+	// 範囲の中心マス（演出の着弾点に使う）。Self の時は渡した既定値を返す
+	void GetAnchorCell(const EnemyAction& a, int defC, int defR, int& outC, int& outR) const
+	{
+		const TargetSpec& tg = a.target;
+		if (tg.anchor == AnchorType::Player) { outC = m_lockC;      outR = m_lockR; }
+		else if (tg.anchor == AnchorType::Fixed) { outC = tg.anchorCol; outR = tg.anchorRow; }
+		else { outC = defC;         outR = defR; }
+	}
+
 private:
 	bool IsAdjacentTo(int playerCol, int playerRow);
 

@@ -283,4 +283,7 @@ private:
     struct BurnHit { float atTime; int dmg; bool curse = false; };
     std::vector<BurnHit> m_burnHits;
     float m_burnClock = 0.0f;
+
+    float m_windupTimer = 0.0f;     // メテオ落下待ち
+    bool  m_windupPlayed = false;   // この行動の落下演出を出したか
 };

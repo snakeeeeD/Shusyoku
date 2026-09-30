@@ -38,7 +38,7 @@ public:
     }
 
 private:
-    static constexpr float DURATION = 0.4f;
+    static constexpr float DURATION = 0.9f;
     static constexpr float AMPLITUDE = 0.35f;
     static inline float m_power = 0.0f;
     static inline float m_time = 0.0f;

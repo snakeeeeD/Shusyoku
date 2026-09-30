@@ -6,6 +6,7 @@
 #include "Renderer3D.h"
 #include "EffectDataBase.h"
 #include "TextureManager.h"
+#include "ScreenShake.h"
 
 using namespace DirectX;
 
@@ -30,6 +31,9 @@ struct SpriteInstance
     bool fading = false;
     float fade = 0.0f, fadeDur = 0.3f; 
     float rot = 0.0f;
+    XMFLOAT3 vel = { 0, 0, 0 };
+    int startFrame = 0;
+    bool flipX = false;               // 既定の向きを左右反転する
 };
 
 // パーティクルの発生・更新・描画を1箇所に集約
@@ -71,6 +75,12 @@ public:
         for (auto& s : m_sprites)
         {
             s.elapsed += dt;
+            if (s.elapsed > 0.0f)                 // 遅延中は動かさない
+            {
+                s.pos.x += s.vel.x * dt;
+                s.pos.y += s.vel.y * dt;
+                s.pos.z += s.vel.z * dt;
+            }
             if (s.fading) s.fade -= dt;
         }
         for (size_t i = 0; i < m_sprites.size(); )
@@ -85,6 +95,9 @@ public:
 
     static void Draw(Renderer3D* r, ID3D11ShaderResourceView* tex)
     {
+        s_invView = XMMatrixInverse(nullptr, r->GetViewMatrix());   // 逆ビュー＝カメラの姿勢
+        s_hasCam = true;
+
         const float SCALE = 2.0f;   // 全体のエフェクト倍率（ここ1つで調整）
         for (auto& p : m_particles)
         {
@@ -108,8 +121,9 @@ public:
             if (f >= s.frames) f = s.frames - 1;
             int col = (s.cols > 0) ? f % s.cols : 0;
             int row = (s.cols > 0) ? f / s.cols : 0;
-            XMFLOAT4 uv((float)(col + 1) / s.cols, (float)row / s.rows,
-                -1.0f / s.cols, 1.0f / s.rows);
+            XMFLOAT4 uv = s.flipX
+                ? XMFLOAT4((float)(col + 1) / s.cols, (float)row / s.rows, -1.0f / s.cols, 1.0f / s.rows)
+                : XMFLOAT4((float)col / s.cols, (float)row / s.rows, 1.0f / s.cols, 1.0f / s.rows);
             float a = s.fading ? (s.fade / s.fadeDur) : 1.0f;
             if (a < 0.0f) a = 0.0f;
             XMFLOAT4 c = s.color; c.w *= a;
@@ -175,6 +189,7 @@ public:
         int handle = s_nextHandle++;
         const EffectDef* def = EffectDataBase::Get(id);
         if (!def) return handle;
+        if (def->shake > 0.0f) ScreenShake::Add(def->shake);
         for (auto& b : def->bursts)
         {
             ID3D11ShaderResourceView* t = b.texture.empty() ? nullptr : TextureManager::Get(b.texture);
@@ -184,7 +199,30 @@ public:
         for (auto& s : def->sheets)
         {
             SpriteInstance si;
-            si.pos = XMFLOAT3(x, y + s.yOffset, z);
+            bool mir = s.autoFlipX && (x > 0.0f);          // 盤面右半分なら反転
+            float ox = mir ? -s.offset.x : s.offset.x;
+
+            XMFLOAT3 sp(x + ox, y + s.yOffset + s.offset.y, z + s.offset.z);   // 既定(ワールド指定)
+            XMFLOAT3 sv = s.vel; if (mir) sv.x = -sv.x;
+
+            if (s.useCamera && s_hasCam && s.travel > 0.0f)                    // カメラ基準で発生
+            {
+                XMFLOAT3 rt, up, fw, eye;
+                XMStoreFloat3(&rt, s_invView.r[0]);   // カメラ右
+                XMStoreFloat3(&up, s_invView.r[1]);   // カメラ上
+                XMStoreFloat3(&fw, s_invView.r[2]);   // カメラ前
+                XMStoreFloat3(&eye, s_invView.r[3]);   // カメラ位置
+                float fcx = mir ? -s.fromCamera.x : s.fromCamera.x;
+                sp = XMFLOAT3(
+                    eye.x + rt.x * fcx + up.x * s.fromCamera.y + fw.x * s.fromCamera.z,
+                    eye.y + rt.y * fcx + up.y * s.fromCamera.y + fw.y * s.fromCamera.z,
+                    eye.z + rt.z * fcx + up.z * s.fromCamera.y + fw.z * s.fromCamera.z);
+                sv = XMFLOAT3((x - sp.x) / s.travel,                 // 着弾点へ向かう速度を自動計算
+                    (y + s.yOffset - sp.y) / s.travel,
+                    (z - sp.z) / s.travel);
+            }
+
+            si.pos = sp;
             si.tex = s.texture.empty() ? nullptr : TextureManager::Get(s.texture);
             si.cols = s.cols; si.rows = s.rows;
             si.frames = (s.frames > 0) ? s.frames : s.cols * s.rows;
@@ -192,11 +230,16 @@ public:
             si.color = s.color;
             si.color.x *= tint.x; si.color.y *= tint.y; si.color.z *= tint.z; si.color.w *= tint.w;
             si.loop = s.loop;
-            si.elapsed = -delay;   // 遅延ぶんマイナスから開始（0未満の間は未表示）
-            si.handle = handle;   // ← このPlayで出した全シートに同じIDを付与
-            si.rot = rot;
+            si.elapsed = -(delay + s.delay);
+            si.handle = handle;
+            si.rot = rot + XMConvertToRadians(s.rotDeg);
+            si.vel = sv;
+            si.flipX = mir;
+            si.startFrame = s.startFrame;
             m_sprites.push_back(si);
         }
+        if (!def->then.empty())
+            Play(def->then, x, y, z, rot, delay + def->thenDelay, tint);   // 着弾後に連鎖
         return handle;
     }
 
@@ -222,4 +265,6 @@ private:
     static inline std::vector<PendingPlay> m_pending;
     static inline int s_nextHandle = 1;
     static float Rand01() { return (float)rand() / RAND_MAX; }
+    static inline XMMATRIX s_invView = XMMatrixIdentity();
+    static inline bool s_hasCam = false;
 };

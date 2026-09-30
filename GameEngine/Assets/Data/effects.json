@@ -97,6 +97,22 @@
       ]
     },
     {
+      "id": "area_burst",
+      "bursts": [
+        {
+          "count": 6,
+          "speed": 1.6,
+          "life": 0.35,
+          "scale": 0.18,
+          "gravity": 1.0,
+          "drag": 0.05,
+          "colorStart": [ 1.0, 0.75, 0.35, 0.95 ],
+          "colorEnd": [ 0.9, 0.30, 0.15, 0.0 ],
+          "texture": "star"
+        }
+      ]
+    },
+    {
       "id": "roar",
       "bursts": [
         {
@@ -504,6 +520,93 @@
           "fps": 24,
           "scale": 1.0,
           "yOffset": 0.3
+        }
+      ]
+    },
+    {
+      "id": "meteor",
+      "bursts": [],
+      "sheets": [
+        {
+          "texture": "fx_meteor",
+          "cols": 4,
+          "rows": 3,
+          "startFrame": 0,
+          "frames": 4,
+          "fps": 6.7,
+          "scale": 2.2,
+          "offset": [ 4.8, 7.2, -4.8 ],
+          "vel": [ -8.0, -12.0, 8.0 ],
+          "autoFlipX": true
+        },
+        {
+          "texture": "fx_meteor",
+          "cols": 4,
+          "rows": 3,
+          "startFrame": 4,
+          "frames": 8,
+          "fps": 14,
+          "scale": 2.2,
+          "yOffset": 0.6,
+          "delay": 0.6
+        }
+      ]
+    },
+    {
+      "id": "meteor2",
+      "bursts": [],
+      "then": "explosion",
+      "thenDelay": 0.6,
+      "sheets": [
+        {
+          "texture": "fx_meteor2",
+          "cols": 1,
+          "rows": 1,
+          "frames": 1,
+          "fps": 1.667,
+          "scale": 2.0,
+          "rotDeg": 0,
+          "fromCamera": [ -1.0, 1.0, 0.0 ],
+          "travel": 0.6
+        }
+      ]
+    },
+    {
+      "id": "meteor_fall",
+      "bursts": [],
+      "sheets": [
+        {
+          "texture": "fx_meteor",
+          "cols": 4,
+          "rows": 3,
+          "startFrame": 0,
+          "frames": 4,
+          "fps": 6.67,
+          "scale": 2.2,
+          "rotDeg": 0,
+          "fromCamera": [ -1.0, 1.0, 0.0 ],
+          "travel": 0.6
+        }
+      ]
+    },
+    {
+      "id": "meteor_strike",
+      "bursts": [],
+      "then": "explosion",
+      "shake": 0.55,
+      "thenDelay": 0.6,
+      "sheets": [
+        {
+          "texture": "fx_meteor",
+          "cols": 4,
+          "rows": 3,
+          "startFrame": 0,
+          "frames": 4,
+          "fps": 6.67,
+          "scale": 2.0,
+          "offset": [ 3.6, 6.0, -3.6 ],
+          "vel": [ -6.0, -10.0, 6.0 ],
+          "autoFlipX": true
         }
       ]
     }

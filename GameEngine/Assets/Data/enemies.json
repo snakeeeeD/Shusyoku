@@ -541,6 +541,30 @@
           }
         },
         {
+          "description": "メテオ、{0}ダメージ、火傷{1}付与",
+          "windupVfx": "meteor_fall",
+          "windup": 0.6,
+          "impactVfx": "explosion",
+          "target": {
+            "rangeType": "Square",
+            "range": 1,
+            "anchor": "player"
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 16
+            },
+            {
+              "kind": "Debuff",
+              "buff": "Burn",
+              "value": 1,
+              "duration": 2
+            }
+          ],
+          "select": { "chance": 300 }
+        },
+        {
           "description": "噛み砕き、{0}ダメージ",
           "target": {
             "rangeType": "Area",

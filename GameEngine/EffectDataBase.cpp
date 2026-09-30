@@ -18,6 +18,9 @@ void EffectDataBase::Load(const std::string& path)
     {
         EffectDef def;
         def.id = e["id"];
+        def.then = e.value("then", "");
+        def.thenDelay = e.value("thenDelay", 0.0f);
+        def.shake = e.value("shake", 0.0f);
         for (auto& b : e["bursts"])
         {
             BurstDef bd;
@@ -47,6 +50,19 @@ void EffectDataBase::Load(const std::string& path)
                 sa.scale = s.value("scale", 1.0f);
                 sa.yOffset = s.value("yOffset", 0.0f);
                 sa.loop = s.value("loop", false);
+                sa.startFrame = s.value("startFrame", 0);
+                sa.delay = s.value("delay", 0.0f);
+                sa.autoFlipX = s.value("autoFlipX", false);
+                sa.rotDeg = s.value("rotDeg", 0.0f);
+                sa.travel = s.value("travel", 0.0f);
+                if (s.contains("fromCamera"))
+                {
+                    auto f = s["fromCamera"];
+                    sa.fromCamera = XMFLOAT3(f[0], f[1], f[2]);
+                    sa.useCamera = true;
+                }
+                if (s.contains("offset")) { auto o = s["offset"]; sa.offset = XMFLOAT3(o[0], o[1], o[2]); }
+                if (s.contains("vel")) { auto v = s["vel"];    sa.vel = XMFLOAT3(v[0], v[1], v[2]); }
                 if (s.contains("color"))
                 {
                     auto c = s["color"];

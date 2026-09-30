@@ -1018,6 +1018,19 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 EffectManager::Play("explosion", x, 0.5f, z, 0.0f, delay, vcol);
             }
         }
+        else if (fx == "meteor_rain")
+        {
+            float halfX = gridMap->GetCols() * 1.1f * 0.5f;
+            float halfZ = gridMap->GetRows() * 1.1f * 0.5f;
+            const int N = 24;                       // ~‚η‚Ή‚ιθ¦Ξ‚Μ”
+            for (int i = 0; i < N; i++)
+            {
+                float x = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * halfX;
+                float z = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * halfZ;
+                float delay = (float)rand() / RAND_MAX * 0.9f;   // ƒoƒ‰‚―‚Δ~‚ι
+                EffectManager::Play("meteor_strike", x, 0.5f, z, 0.0f, delay, vcol);
+            }
+        }
         else   // ’P”­i“Gρ‚θ{‘½’i{Κ’uƒ‰ƒ“ƒ_ƒ€j
         {
             float vx = (targetCol - gridMap->GetCols() / 2.0f) * 1.1f;

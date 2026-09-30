@@ -1284,10 +1284,18 @@ void BattleScene::Update(float deltaTime)
 
             case EnemyTurnPhase::ProcessEnemy:
             {
+                if (m_windupTimer > 0.0f)            // 落下中は行動を保留
+                {
+                    m_windupTimer -= deltaTime;
+                    if (m_windupTimer > 0.0f) break;
+                }
+
                 while (m_currentEnemyIdx < (int)m_enemies.size()
                     && (m_enemies[m_currentEnemyIdx]->GetHp() <= 0
                         || m_enemies[m_currentEnemyIdx]->TakeJustSummoned()))
-                    m_currentEnemyIdx++;
+                {
+                    m_currentEnemyIdx++; m_windupPlayed = false;
+                }
 
                 if (m_currentEnemyIdx >= (int)m_enemies.size())
                 {
@@ -1313,6 +1321,20 @@ void BattleScene::Update(float deltaTime)
                     }
                 }
 
+                // 予備動作：落下演出を出して、着弾まで実行を待つ
+                const EnemyAction* wa = enemy->GetNextAction();
+                if (wa && !wa->windupVfx.empty() && wa->windup > 0.0f && !m_windupPlayed)
+                {
+                    int ac, ar; enemy->GetAnchorCell(*wa, tC, tR, ac, ar);
+                    float wx = (ac - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                    float wz = (ar - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                    EffectManager::Play(wa->windupVfx, wx, 0.5f, wz);
+                    m_windupPlayed = true;
+                    m_windupTimer = wa->windup;
+                    break;
+                }
+                m_windupPlayed = false;
+
                 // 現在の行動を実行
                 bool targetedDecoy = (m_decoyCol >= 0 && tC == m_decoyCol && tR == m_decoyRow);
                 bool atk = false;
@@ -1334,6 +1356,45 @@ void BattleScene::Update(float deltaTime)
                 else
                 {
                     damage = enemy->ExecuteAction(ai, m_playerCol, m_playerRow, m_gridMap, m_player, m_enemies, tC, tR, &atk);
+                }
+                // 着弾点の演出（避けられても出す）
+                if (wa && !wa->impactVfx.empty())
+                {
+                    int ac, ar; enemy->GetAnchorCell(*wa, tC, tR, ac, ar);
+                    float ix = (ac - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                    float iz = (ar - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                    EffectManager::Play(wa->impactVfx, ix, 0.5f, iz);
+                    ScreenShake::Add(0.35f);
+                }
+
+                // 攻撃範囲に演出（当たり外れに関わらず出す）
+                if (wa && !wa->target.unavoidable)
+                {
+                    bool isAtkAction = false;
+                    for (auto& ef : wa->effects)
+                        if (ef.kind == EffectKind::Damage) { isAtkAction = true; break; }
+
+                    if (isAtkAction)
+                    {
+                        const std::string afx = wa->areaVfx.empty() ? "area_burst" : wa->areaVfx;
+                        bool isDash = (wa->target.approach == ApproachType::Dash);
+
+                        // 突進は「実際に走った経路」、それ以外は攻撃範囲
+                        std::vector<std::pair<int, int>> cells =
+                            isDash ? enemy->GetMovePath()
+                            : enemy->GetThreatCells(*wa, m_gridMap);
+
+                        float step = isDash ? 0.10f : 0.04f;   // 突進はグライドに合わせて遅め
+                        for (int k = 0; k < (int)cells.size(); k++)
+                        {
+                            int c = cells[k].first, r = cells[k].second;
+                            float ex = (c - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                            float ez = (r - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                            int d = isDash ? k                                     // 走った順に尾を引く
+                                : abs(c - enemy->gridCol) + abs(r - enemy->gridRow);
+                            EffectManager::Play(afx, ex, 0.15f, ez, 0.0f, step * d);
+                        }
+                    }
                 }
 
                 for (auto& pc : enemy->PendingCurses())

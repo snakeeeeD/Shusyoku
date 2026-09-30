@@ -57,4 +57,8 @@ struct EnemyAction
     std::vector<TargetSpec> extraTargets;  // 追加の範囲
     std::vector<Effect> effects;
     SelectRule   select;
+    std::string  windupVfx;               // 着弾前に飛ばす演出(メテオ落下)
+    float        windup = 0.0f;           // 着弾までの秒数（この間、行動は保留）
+    std::string  areaVfx;                 // 攻撃範囲の各マスに出す演出（空なら area_burst）
+    std::string  impactVfx;               // 着弾点に出す演出（当たり外れに関わらず）
 };

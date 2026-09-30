@@ -64,6 +64,10 @@ static EnemyAction ParseAction(const json& a)
     EnemyAction act;
     act.description = ToWString(a.value("description", std::string("")));
     act.vfx = a.value("vfx", std::string(""));
+    act.windupVfx = a.value("windupVfx", std::string(""));
+    act.windup = a.value("windup", 0.0f);
+    act.areaVfx = a.value("areaVfx", std::string(""));
+    act.impactVfx = a.value("impactVfx", std::string(""));
     if (a.contains("target")) act.target = ParseTarget(a["target"]);
     if (a.contains("extraTargets") && a["extraTargets"].is_array())
         for (const auto& t : a["extraTargets"])

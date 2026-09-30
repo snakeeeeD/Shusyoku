@@ -767,7 +767,7 @@
       "range": 20,
       "rangeType": "Area",
       "description": "全ての敵に{value}ダメージ",
-      "vfx": "explosion_all",
+      "vfx": "meteor_rain",
       "upgrade": {
         "cost": -1
       },
