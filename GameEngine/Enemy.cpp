@@ -63,7 +63,16 @@ void Enemy::Draw3D(Renderer3D* renderer)
     renderer->DrawBillboard(
         TextureManager::Get(m_textureName),
         worldX, y, worldZ + m_drawZ,
-        width * s, height * s, 0.0f, drawColor);
+        width * s, height * s, 0.0f, drawColor, FacingUV());
+}
+
+// プレイヤーの方を向く。画像は左向きが基準なので、右にいる時だけ反転する
+void Enemy::FaceToward(float targetX)
+{
+    if (m_isBoss) return;                           // ボスは向き固定
+    float dx = targetX - worldX;
+    if (dx > 0.05f) m_faceRight = true;            // 真上・真下にいる時は前の向きを保つ（ちらつき防止）
+    if (dx < -0.05f) m_faceRight = false;
 }
 
 bool Enemy::IsAdjacentTo(int playerCol, int playerRow)

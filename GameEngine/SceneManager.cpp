@@ -182,6 +182,23 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	{
 		TextureManager::Load("player", L"Assets/Player/player.png");
 		TextureManager::Load("kakashi", L"Assets/Player/kakashi.png");
+
+		TextureManager::Load("player_front", L"Assets/Player/player_front.png");
+		TextureManager::Load("player_back", L"Assets/Player/player_back.png");
+		TextureManager::Load("player_side", L"Assets/Player/player_side.png");
+
+		TextureManager::Load("player_side_attack", L"Assets/Player/player_side_attack.png");
+		TextureManager::Load("player_front_attack", L"Assets/Player/player_front_attack.png");
+		TextureManager::Load("player_back_attack", L"Assets/Player/player_back_attack.png");
+		TextureManager::Load("player_side_idle", L"Assets/Player/player_side_idle.png");
+		TextureManager::Load("player_front_idle", L"Assets/Player/player_front_idle.png");
+		TextureManager::Load("player_back_idle", L"Assets/Player/player_back_idle.png");
+		TextureManager::Load("player_side_skill", L"Assets/Player/player_side_skill.png");
+		TextureManager::Load("player_front_skill", L"Assets/Player/player_front_skill.png");
+		TextureManager::Load("player_back_skill", L"Assets/Player/player_back_skill.png");
+		TextureManager::Load("player_side_hurt", L"Assets/Player/player_side_hurt.png");
+		TextureManager::Load("player_front_hurt", L"Assets/Player/player_front_hurt.png");
+		TextureManager::Load("player_back_hurt", L"Assets/Player/player_back_hurt.png");
 	}
 
 	// エネミー

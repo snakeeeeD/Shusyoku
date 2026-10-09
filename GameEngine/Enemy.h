@@ -129,6 +129,9 @@ public:
 		else { outC = defC;         outR = defR; }
 	}
 
+	void FaceToward(float targetX);                 // プレイヤーの方を向く（画像は左向きが基準）
+	XMFLOAT4 FacingUV() const { return m_faceRight ? XMFLOAT4(1, 0, -1, 1) : XMFLOAT4(0, 0, 1, 1); }
+
 private:
 	bool IsAdjacentTo(int playerCol, int playerRow);
 
@@ -196,5 +199,7 @@ private:
 
 	std::vector<PendingCurse> m_pendingCurses;
 	std::vector<Buff> m_pendingPlayerBuffs;   // ダメージ適用後に付与する状態異常
+
+	bool m_faceRight = false;                       // true＝右向き（左向きの画像を左右反転）
 };
 

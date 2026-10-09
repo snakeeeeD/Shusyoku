@@ -113,7 +113,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     outNewPlayerCol = playerCol;
     outNewPlayerRow = playerRow;
 
-    ExecuteResult result = { false, false };
+    ExecuteResult result = { false, false };    
 
     // エネルギーが足りるかを先に確認
     if (player->GetEnergy() < data.cost)

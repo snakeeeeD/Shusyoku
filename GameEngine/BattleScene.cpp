@@ -878,6 +878,7 @@ void BattleScene::Update(float deltaTime)
         enemy->UpdateDisplayHp(deltaTime);
 
     m_player->UpdateMove(deltaTime);
+    m_player->Update(deltaTime);
     m_player->UpdateHitFlash(deltaTime);
 
     for (auto enemy : m_enemies)
@@ -886,6 +887,7 @@ void BattleScene::Update(float deltaTime)
         enemy->UpdateLunge(deltaTime);
         enemy->UpdateJump(deltaTime);
         enemy->UpdateHitFlash(deltaTime);
+        enemy->FaceToward(m_player->worldX);
     }
 
     // カメラズーム（マウスホイール）
@@ -2213,10 +2215,11 @@ void BattleScene::Draw()
                 float ox = cosf(ang) * r, oy = sinf(ang) * r;
                 m_renderer3D->DrawBillboard(tex,
                     enemy->worldX + ox, cy + oy, enemy->worldZ + 0.10f,
-                    enemy->width * sc, enemy->height * sc, 0.0f,
+                    enemy->width* sc, enemy->height* sc, 0.0f,
                     XMFLOAT4(enemy->hueColor.x * 1.3f,
                         enemy->hueColor.y * 1.3f,
-                        enemy->hueColor.z * 1.3f, a));
+                        enemy->hueColor.z * 1.3f, a),
+                    enemy->FacingUV());                 // ← 本体と同じ向きで光らせる
             }
         }
     }
@@ -3019,6 +3022,8 @@ void BattleScene::HandleInput()
                     newPlayerCol, newPlayerRow,
                     usePath
                 );
+                if (execResult.cardUsed)                                   // 実際に使えた時だけ
+                    m_player->OnCardUsed(dataCopy.type, targetCol - m_playerCol, targetRow - m_playerRow);
                 if (execResult.startChainDetonate)
                 {
                     m_chainQueue.clear();
@@ -3367,6 +3372,8 @@ void BattleScene::HandleInput()
                     m_hand, m_selectedCardIndex, m_deck,
                     newPlayerCol, newPlayerRow
                 );
+                if (execResult.cardUsed)                                   // 実際に使えた時だけ
+                    m_player->OnCardUsed(dataCopy.type, result.col - m_playerCol, result.row - m_playerRow);
                 if (execResult.startChainDetonate)
                 {
                     m_chainQueue.clear();
