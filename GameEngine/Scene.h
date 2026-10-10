@@ -11,6 +11,7 @@ public:
 	virtual void Update(float deltaTime) = 0;
 	virtual void Draw() = 0;
 	virtual void DrawImGui() {};
+	virtual const char* DebugName() const { return nullptr; }   // デバッグタブ名（nullptr＝タブ無し）
 	virtual void HandleInput() = 0;
 
 };

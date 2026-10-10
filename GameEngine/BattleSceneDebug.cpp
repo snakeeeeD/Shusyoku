@@ -7,7 +7,6 @@
 
 void BattleScene::DrawImGui()
 {
-    ImGui::Begin("Battle Debug");
 
     ImGui::Text("Hand:%d  Anims:%d  Hover:%d  Sel:%d",
         (int)m_hand.GetCards().size(),
@@ -253,7 +252,6 @@ void BattleScene::DrawImGui()
         OutputDebugStringA(b);
     }
 
-    ImGui::End();
 }
 #else
 #include "BattleScene.h"

@@ -47,6 +47,7 @@ public:
     void Update(float deltaTime) override;
     void Draw() override;
     void DrawImGui() override;
+    const char* DebugName() const override { return "Battle"; }
     void HandleInput() override;
 
     int GetPlayerHp() const { return m_player ? m_player->GetHp() : 0; }

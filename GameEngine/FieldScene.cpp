@@ -820,7 +820,6 @@ void FieldScene::SetupEventBattle(EncCategory cat, const std::string& param)
 void FieldScene::DrawImGui()
 {
 #ifdef _DEBUG
-    ImGui::Begin("Field Debug");
     ImGui::InputInt("Steps", &m_steps);
     ImGui::Checkbox("Free Move (teleport)", &m_freeMove);
     ImGui::Text("Overflow: %d", (m_steps < 0) ? -m_steps : 0);
@@ -933,6 +932,5 @@ void FieldScene::DrawImGui()
         }
     }
 
-    ImGui::End();
 #endif
 }

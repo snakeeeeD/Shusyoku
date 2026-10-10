@@ -873,46 +873,59 @@ std::vector<int> SceneManager::VisibleDeckIndices() const
 void SceneManager::DrawImGui()
 {
 #ifdef _DEBUG
-	ImGui::Begin("Global Debug");
-	int gold = PlayerDataManager::GetData().gold;
-	if (ImGui::InputInt("Gold", &gold))
+	ImGui::Begin("Debug");
+	if (ImGui::BeginTabBar("DebugTabs"))
 	{
-		PlayerDataManager::GetData().gold = gold;
-		PlayerDataManager::Save();
-	}
-
-	auto& pd = PlayerDataManager::GetData();
-	float mv = pd.masterVolume, bv = pd.bgmVolume;
-	if (ImGui::SliderFloat("Master", &mv, 0.0f, 1.0f)) { pd.masterVolume = mv; Audio::SetMasterVolume(mv); PlayerDataManager::Save(); }
-	if (ImGui::SliderFloat("BGM", &bv, 0.0f, 1.0f)) { pd.bgmVolume = bv;    Audio::SetBgmVolume(bv);    PlayerDataManager::Save(); }
-
-	ImGui::Separator();
-	{
-		// チェックON=チュートリアルを表示する（＝各フラグを未表示に戻す）
-		bool showTut = !(pd.tutorialField && pd.tutorialBattle && pd.tutorialCardSelect
-			&& pd.tutorialShop && pd.tutorialRest && pd.tutorialCraft);
-		if (ImGui::Checkbox("Show Tutorials", &showTut))
+		if (ImGui::BeginTabItem("Global"))
 		{
-			bool seen = !showTut;   // 表示する→フラグfalse / 出さない→true
-			pd.tutorialField = pd.tutorialBattle = pd.tutorialCardSelect =
-				pd.tutorialShop = pd.tutorialRest = pd.tutorialCraft = seen;
-			PlayerDataManager::Save();
+			int gold = PlayerDataManager::GetData().gold;
+			if (ImGui::InputInt("Gold", &gold))
+			{
+				PlayerDataManager::GetData().gold = gold;
+				PlayerDataManager::Save();
+			}
+
+			auto& pd = PlayerDataManager::GetData();
+			float mv = pd.masterVolume, bv = pd.bgmVolume;
+			if (ImGui::SliderFloat("Master", &mv, 0.0f, 1.0f)) { pd.masterVolume = mv; Audio::SetMasterVolume(mv); PlayerDataManager::Save(); }
+			if (ImGui::SliderFloat("BGM", &bv, 0.0f, 1.0f)) { pd.bgmVolume = bv;    Audio::SetBgmVolume(bv);    PlayerDataManager::Save(); }
+
+			ImGui::Separator();
+			{
+				// チェックON=チュートリアルを表示する（＝各フラグを未表示に戻す）
+				bool showTut = !(pd.tutorialField && pd.tutorialBattle && pd.tutorialCardSelect
+					&& pd.tutorialShop && pd.tutorialRest && pd.tutorialCraft);
+				if (ImGui::Checkbox("Show Tutorials", &showTut))
+				{
+					bool seen = !showTut;   // 表示する→フラグfalse / 出さない→true
+					pd.tutorialField = pd.tutorialBattle = pd.tutorialCardSelect =
+						pd.tutorialShop = pd.tutorialRest = pd.tutorialCraft = seen;
+					PlayerDataManager::Save();
+				}
+			}
+
+						if (ImGui::CollapsingHeader("Relics"))
+			{
+				auto ids = RelicManager::AllIds();
+				std::sort(ids.begin(), ids.end());     // アルファベット順
+				for (auto& id : ids)
+					if (ImGui::Button(id.c_str()))
+						PlayerDataManager::AddRelic(id);
+			}                                   
+
+			ImGui::EndTabItem();
 		}
-	}
 
-	if (ImGui::CollapsingHeader("Relics"))
-	{
-		auto ids = RelicManager::AllIds();
-		std::sort(ids.begin(), ids.end());     // アルファベット順
-		for (auto& id : ids)
-			if (ImGui::Button(id.c_str()))
-				PlayerDataManager::AddRelic(id);
+		const char* sceneTab = m_currentScene ? m_currentScene->DebugName() : nullptr;
+		if (sceneTab && ImGui::BeginTabItem(sceneTab))
+		{
+			m_currentScene->DrawImGui();
+			ImGui::EndTabItem();
+		}
+		ImGui::EndTabBar();
 	}
-
 	ImGui::End();
 #endif
-	if (m_currentScene)
-		m_currentScene->DrawImGui();
 }
 
 void SceneManager::HandleInput()

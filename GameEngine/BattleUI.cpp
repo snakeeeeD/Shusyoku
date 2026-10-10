@@ -747,20 +747,10 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 m_spriteRenderer->DrawSprite(m_whiteTexture, rx - mg, ry - mg, rw + mg * 2, rh + mg * 2,
                     m_cardAnims[i].currentRot, XMFLOAT4(1.0f, 0.0f, 0.0f, 0.25f + 0.55f * blink));
             }
-
             CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture,
                 m_cardAnims[i].currentX, m_cardAnims[i].currentY,
                 m_cardAnims[i].currentScale, m_cardAnims[i].currentRot,
                 col,                                    // ← 元の色に戻す
-                cards[i]->GetData(), ctx.highlightTimer);
-
-            m_textRenderer->End();
-            m_spriteRenderer->Begin();
-
-            CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture,
-                m_cardAnims[i].currentX, m_cardAnims[i].currentY,
-                m_cardAnims[i].currentScale, m_cardAnims[i].currentRot,
-                col,
                 cards[i]->GetData(), ctx.highlightTimer);
             m_spriteRenderer->End();
             m_textRenderer->Begin();

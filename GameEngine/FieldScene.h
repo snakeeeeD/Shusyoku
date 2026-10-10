@@ -52,6 +52,7 @@ private:
     XMFLOAT2 GetNodeScreenPos(int col, int row) const;
 
     void DrawImGui() override;
+    const char* DebugName() const override { return "Field"; }
 
     SpriteRenderer* m_spriteRenderer;
     TextRenderer* m_textRenderer;
