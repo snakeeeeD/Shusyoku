@@ -6,6 +6,10 @@
 class MaterialDataBase {
 public:
     static void Load(const std::string& path);
+    static void Reload(const std::string& path);   // 全部消してから読み直す（エディタの保存後）
+    // JSON1件分の文字列から作る（エディタのプレビュー用。ゲームと同じ読み方）
+    static bool ParseBaseText(const std::string& jsonText, BaseDef& out);
+    static bool ParseMaterialText(const std::string& jsonText, MaterialDef& out);
     static const BaseDef* GetBase(const std::string& id);
     static const MaterialDef* GetMaterial(const std::string& id);
 

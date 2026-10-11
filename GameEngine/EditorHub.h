@@ -27,4 +27,8 @@ namespace EditorHub
     void RequestCardReload(const std::string& addToHand);
     bool ConsumeCardReload(std::string& addToHand);
     bool IsCardReloadPending();   // まだゲーム側が受け取っていないか（エディタの表示用）
+
+    // 「このイベントをゲーム内で開く」要求（本物のイベント画面でプレビューする）。SceneManager から呼ぶ
+    void RequestOpenEvent(const std::string& eventId);
+    bool ConsumeOpenEvent(std::string& eventId);
 }

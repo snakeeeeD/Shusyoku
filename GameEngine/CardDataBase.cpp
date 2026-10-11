@@ -314,8 +314,6 @@ static void applyEntry(CardData& c, const MaterialDef& m, const std::string& bas
 
 CardData CardDataBase::BuildCrafted(const std::string& id)
 {
-    CardData c;
-    c.id = id;
     // "CRAFT:core|m1|m2" を分解
     std::string body = id.substr(6);
     std::vector<std::string> parts;
@@ -324,10 +322,21 @@ CardData CardDataBase::BuildCrafted(const std::string& id)
         parts.push_back(body.substr(pos, bar - pos)); pos = bar + 1;
     }
     parts.push_back(body.substr(pos));
-    if (parts.empty()) return c;
 
-    const BaseDef* base = MaterialDataBase::GetBase(parts[0]);
-    if (!base) return c;
+    const BaseDef* base = parts.empty() ? nullptr : MaterialDataBase::GetBase(parts[0]);
+    if (!base) { CardData c; c.id = id; return c; }
+
+    std::vector<const MaterialDef*> mats;
+    for (size_t i = 1; i < parts.size(); i++)
+        mats.push_back(MaterialDataBase::GetMaterial(parts[i]));   // 見つからない素材は nullptr（計算本体で飛ばす）
+    return BuildCraftedFrom(id, *base, mats);
+}
+
+CardData CardDataBase::BuildCraftedFrom(const std::string& id, const BaseDef& baseDef, const std::vector<const MaterialDef*>& mats)
+{
+    CardData c;
+    c.id = id;
+    const BaseDef* base = &baseDef;
 
     c.type = StringToCardType(base->type);
     c.rangeType = StringToRangeType(base->rangeType);
@@ -340,8 +349,8 @@ CardData CardDataBase::BuildCrafted(const std::string& id)
 
     std::wstring nm = ToWString(base->name);
     std::wstring tags;
-    for (size_t i = 1; i < parts.size(); i++) {
-        const MaterialDef* m = MaterialDataBase::GetMaterial(parts[i]);
+
+    for (const MaterialDef* m : mats) {
         if (!m) continue;
         c.cost += m->cost;
         applyEntry(c, *m, base->type);
@@ -383,12 +392,12 @@ CardData CardDataBase::BuildCrafted(const std::string& id)
     case CardEffectType::Damage:    c.description = L"{value}ダメージ" + hitSuffix; break;
     case CardEffectType::Block:     c.description = L"{value}ブロック"; break;
     case CardEffectType::ApplyBuff: c.description = fxText(c.mainEffect); break;
-        if (c.pierce)         c.description += L" / 貫通";
-        if (c.dash)           c.description += L" / 移動";
-        if (c.exhaust)        c.description += L" / 消耗";
-        if (c.selfDamage > 0) c.description += L" / 自傷" + std::to_wstring(c.selfDamage);
     default:                        c.description = L"特殊カード"; break;
     }
+    if (c.pierce)         c.description += L" / 貫通";
+    if (c.dash)           c.description += L" / 移動";
+    if (c.exhaust)        c.description += L" / 消耗";
+    if (c.selfDamage > 0) c.description += L" / 自傷" + std::to_wstring(c.selfDamage);
     if (c.subEffect.hasEffect)   c.description += L" / " + fxText(c.subEffect);
     if (c.onHitEffect.hasEffect) c.description += L" / 命中時" + fxText(c.onHitEffect);
     return c;

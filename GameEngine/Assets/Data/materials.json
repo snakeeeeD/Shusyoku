@@ -126,8 +126,6 @@
       "layer": 3
     }
   ],
-
-
   "materials": [
     {
       "id": "sword_fragment",
@@ -167,7 +165,9 @@
       "cost": -1,
       "buyPrice": 150,
       "sellPrice": 20,
-      "all": { "slot": "none" }
+      "all": {
+        "slot": "none"
+      }
     },
     {
       "id": "combo_shard",

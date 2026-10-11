@@ -654,7 +654,9 @@
           "label": "1枚強化してもらう（-60G）",
           "result": "カードが鍛えられた。",
           "outcomes": [
-            { "type": "upgradeCard" },
+            {
+              "type": "upgradeCard"
+            },
             {
               "type": "gold",
               "value": -60
@@ -779,7 +781,9 @@
           "label": "契約する（レリック獲得 / 呪い・重荷）",
           "result": "力を得た。だが胸に重いものが残った。",
           "outcomes": [
-            { "type": "relic" },
+            {
+              "type": "relic"
+            },
             {
               "type": "addCard",
               "param": "cursed_burden"

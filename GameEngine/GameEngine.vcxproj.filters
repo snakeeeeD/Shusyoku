@@ -310,6 +310,21 @@
     <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\03-CardEditor">
       <UniqueIdentifier>{d8168ea8-cec3-44ff-bf93-3bb315f3c1ab}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\04-EventEditor">
+      <UniqueIdentifier>{9940c295-b9eb-4722-a6e5-134246f1b0c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\30-RefCheck">
+      <UniqueIdentifier>{b8276e07-61c7-40c2-97bd-a2bfe50aa2ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\05-CraftEditor">
+      <UniqueIdentifier>{02376687-bfda-44c6-9e7a-5361443f153c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\40-EditorCardOverlay">
+      <UniqueIdentifier>{c29b4424-fab6-42f9-817a-f2b302e05ff8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\05-RericEditor">
+      <UniqueIdentifier>{74587e77-9287-4826-8132-b6b01cb77608}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -576,6 +591,21 @@
     <ClInclude Include="CardEditor.h">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\03-CardEditor</Filter>
     </ClInclude>
+    <ClInclude Include="EventEditor.h">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\04-EventEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="RefCheck.h">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\30-RefCheck</Filter>
+    </ClInclude>
+    <ClInclude Include="CraftEditor.h">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\05-CraftEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="EditorCardOverlay.h">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\40-EditorCardOverlay</Filter>
+    </ClInclude>
+    <ClInclude Include="RelicEditor.h">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\05-RericEditor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SpriteRenderer.cpp">
@@ -727,6 +757,21 @@
     </ClCompile>
     <ClCompile Include="CardEditor.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\03-CardEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="EventEditor.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\04-EventEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="RefCheck.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\30-RefCheck</Filter>
+    </ClCompile>
+    <ClCompile Include="CraftEditor.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\05-CraftEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="EditorCardOverlay.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\40-EditorCardOverlay</Filter>
+    </ClCompile>
+    <ClCompile Include="RelicEditor.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\05-RericEditor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

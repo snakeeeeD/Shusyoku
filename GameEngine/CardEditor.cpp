@@ -4,13 +4,11 @@
 
 #include "CardDataBase.h"
 #include "CardVisual.h"
+#include "EditorCardOverlay.h"
 #include "EditorCommon.h"
 #include "EditorHub.h"
 #include "EnumNames.h"
 #include "RangeShape.h"
-#include "SpriteRenderer.h"
-#include "TextRenderer.h"
-#include "TextureManager.h"
 #include <algorithm>
 #include <cstdio>
 #include <string>
@@ -25,9 +23,55 @@ namespace
     const char* CARD_PATH   = "Assets/Data/cards.json";
     const char* BACKUP_PATH = "Assets/Data/cards.json.bak";
 
-    // ゲーム画面（論理 1280x720）に出すプレビューの位置
-    constexpr float SCREEN_W = 1280.0f, SCREEN_H = 720.0f;
-    constexpr float PREVIEW_SCALE = 1.8f;
+    // ==================================================================
+    // 新規作成のテンプレート（よく使う形を選んで作り、あとは中身を変えるだけにする）
+    // ==================================================================
+    struct CardTemplate
+    {
+        const char* label;    // メニューに出す名前
+        const char* prefix;   // id の頭（ATK_ / SKL_ / POW_ …）
+        const char* json;     // カードの中身（id は自動で付ける）
+    };
+
+    const CardTemplate TEMPLATES[] = {
+        { u8"攻撃（単体）", "ATK_new",
+          u8R"({"name":"新しい攻撃","type":"Attack","rarity":"Common","cost":1,"range":1,"rangeType":"Adjacent",
+               "description":"敵に{value}ダメージ","upgrade":{"mainValue":3},
+               "mainEffect":{"type":"Damage","value":6},"vfx":"slash","tags":["Strike"]})" },
+        { u8"攻撃（範囲）", "ATK_new",
+          u8R"({"name":"新しい範囲攻撃","type":"Attack","rarity":"Uncommon","cost":2,"range":1,"rangeType":"Area",
+               "description":"周囲の敵に{value}ダメージ","upgrade":{"mainValue":3},
+               "mainEffect":{"type":"Damage","value":5},"vfx":"slash_spin","tags":[]})" },
+        { u8"攻撃＋デバフ", "ATK_new",
+          u8R"({"name":"新しいデバフ攻撃","type":"Attack","rarity":"Common","cost":1,"range":1,"rangeType":"Adjacent",
+               "description":"敵に{value}ダメージ\n脱力{onhit}","upgrade":{"mainValue":2,"onHitValue":1},
+               "mainEffect":{"type":"Damage","value":5},
+               "onHitEffect":{"type":"ApplyDebuff","value":1,"duration":1,"buffType":"Weak"},"vfx":"slash","tags":[]})" },
+        { u8"防御（ブロック）", "SKL_new",
+          u8R"({"name":"新しい防御","type":"Skill","rarity":"Common","cost":1,"range":0,"rangeType":"None",
+               "description":"ブロック+{value}","upgrade":{"mainValue":3},
+               "mainEffect":{"type":"Block","value":5},"tags":["Bulwark"]})" },
+        { u8"ドロー", "SKL_new",
+          u8R"({"name":"新しいドロー","type":"Skill","rarity":"Common","cost":0,"range":0,"rangeType":"None",
+               "description":"カードを{value}枚引く","upgrade":{"mainValue":1},
+               "mainEffect":{"type":"Draw","value":2},"tags":[]})" },
+        { u8"パワー（永続バフ）", "POW_new",
+          u8R"({"name":"新しいパワー","type":"Power","rarity":"Uncommon","cost":1,"range":0,"rangeType":"None",
+               "description":"攻撃力+{value}","upgrade":{"mainValue":1},
+               "mainEffect":{"type":"ApplyBuff","value":2,"duration":-1,"buffType":"AttackUp"},"tags":[]})" },
+        { u8"移動", "MOV_new",
+          u8R"({"name":"新しい移動","type":"Move","rarity":"Common","cost":1,"range":2,"rangeType":"Diamond",
+               "description":"2マスまで移動","upgrade":{"range":1,"description":"3マスまで移動"},
+               "mainEffect":{"type":"None","value":0},"tags":[]})" },
+        { u8"罠を置く", "SKL_new",
+          u8R"({"name":"新しい罠","type":"Skill","rarity":"Common","cost":1,"range":2,"rangeType":"Diamond",
+               "description":"爆発する罠を置く（{value}ダメージ）","upgrade":{"mainValue":3},
+               "mainEffect":{"type":"PlaceTrap","value":8,"trapType":"explosion"},"tags":["Trap"]})" },
+        { u8"状態異常／呪い（使えない）", "STS_new",
+          u8R"({"name":"新しい呪い","type":"Curse","cost":0,"range":0,"rangeType":"None",
+               "description":"使用できない","mainEffect":{"type":"None","value":0},
+               "unplayable":true,"generated":true,"tags":[]})" },
+    };
 
     struct State
     {
@@ -253,23 +297,22 @@ namespace
         ImGui::SetNextItemWidth(90);
         if (ImGui::Combo("##rarity", &ri, rars, 4)) s.rarityFilter = ri - 1;
 
-        if (ImGui::Button("New"))
+        if (ImGui::Button("New...")) ImGui::OpenPopup("NewCardMenu");
+        if (ImGui::BeginPopup("NewCardMenu"))
         {
-            ojson c;
-            c["id"] = UniqueId("NEW_card");
-            c["name"] = u8"新しいカード";
-            c["type"] = "Attack";
-            c["rarity"] = "Common";
-            c["cost"] = 1;
-            c["range"] = 1;
-            c["rangeType"] = "Adjacent";
-            c["description"] = u8"敵に{value}ダメージ";
-            c["upgrade"] = ojson{ { "mainValue", 3 } };
-            c["mainEffect"] = ojson{ { "type", "Damage" }, { "value", 6 } };
-            c["tags"] = ojson::array();
-            Cards().push_back(c);
-            s.sel = (int)Cards().size() - 1;
-            s.dirty = true;
+            ImGui::TextDisabled(u8"テンプレートから作る");
+            for (auto& t : TEMPLATES)
+                if (ImGui::Selectable(t.label))
+                {
+                    ojson body = ojson::parse(t.json);
+                    ojson c;
+                    c["id"] = UniqueId(t.prefix);   // id を先頭に（JSON の並びを既存カードとそろえる）
+                    for (auto it = body.begin(); it != body.end(); ++it) c[it.key()] = it.value();
+                    Cards().push_back(c);
+                    s.sel = (int)Cards().size() - 1;
+                    s.dirty = true;
+                }
+            ImGui::EndPopup();
         }
         ImGui::SameLine();
         ImGui::BeginDisabled(s.sel < 0);
@@ -682,42 +725,12 @@ void CardEditor::Draw()
 
 void CardEditor::DrawGameOverlay(SpriteRenderer* sprite, TextRenderer* text)
 {
-    if (!s.open || !s.overlay || !s.loaded || !s.parseOk || !sprite || !text) return;
-
-    ID3D11ShaderResourceView* white = TextureManager::Get("white");
-    float cw = CardVisual::CARD_W * PREVIEW_SCALE, ch = CardVisual::CARD_H * PREVIEW_SCALE;
-    float gap = 40.0f;
-    int n = s.hasUpgrade ? 2 : 1;
-    float totalW = cw * n + gap * (n - 1);
-    float x0 = s.overlayLeft ? 30.0f : SCREEN_W - totalW - 30.0f;
-    float y0 = SCREEN_H / 2.0f - ch / 2.0f + 20.0f;
-
-    // GetRect は「基準位置から中心で拡大」なので、左上が (x0,y0) になる基準位置に直す
-    auto baseX = [&](float left) { return left + (cw - CardVisual::CARD_W) / 2.0f; };
-    float by = y0 + (ch - CardVisual::CARD_H) / 2.0f;
-    float t = (float)ImGui::GetTime();
-
-    const CardData* cards[2] = { &s.base, &s.upgraded };
-
-    sprite->Begin();
-    sprite->DrawSprite(white, x0 - 16.0f, y0 - 50.0f, totalW + 32.0f, ch + 66.0f, 0.0f, XMFLOAT4(0, 0, 0, 0.55f));
-    for (int i = 0; i < n; i++)
-    {
-        float left = x0 + (cw + gap) * i;
-        CardVisual::DrawBase(sprite, white, baseX(left), by, PREVIEW_SCALE, 0.0f,
-            CardVisual::GetCardColor(cards[i]->type), cards[i], t);
-    }
-    sprite->End();
-
-    text->Begin();
-    for (int i = 0; i < n; i++)
-    {
-        float left = x0 + (cw + gap) * i;
-        CardVisual::DrawTexts(text, cards[i], nullptr, baseX(left), by, PREVIEW_SCALE, 0.0f, 1.0f);
-        text->DrawText(i == 0 ? L"編集中" : L"強化後", left, y0 - 40.0f, 20.0f,
-            i == 0 ? D2D1::ColorF(1, 1, 1) : D2D1::ColorF(0.4f, 1.0f, 0.5f));
-    }
-    text->End();
+    if (!s.open || !s.overlay || !s.loaded || !s.parseOk) return;
+    EditorCardOverlay::Item items[2] = {
+        { &s.base,     L"編集中", false },
+        { &s.upgraded, L"強化後", true },
+    };
+    EditorCardOverlay::Draw(sprite, text, items, s.hasUpgrade ? 2 : 1, s.overlayLeft);
 }
 
 #else   // Release ではすべて何もしない

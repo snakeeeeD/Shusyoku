@@ -93,6 +93,9 @@ namespace EditorCommon
     const std::vector<std::string>& EffectIds();    // effects.json
     const std::vector<std::string>& CardIds();      // cards.json
     const std::vector<std::string>& TerrainIds();   // terrains.json（罠の種類）
+    const std::vector<std::string>& RelicIds();     // relics.json
+    const std::vector<std::string>& MaterialIds();  // materials.json（bases と materials の両方）
+    const std::vector<std::string>& EncounterIds(); // encounters.json（id があるものだけ）
     void ReloadIdLists();
 
     // ==================================================================
@@ -103,6 +106,7 @@ namespace EditorCommon
     bool InputFloatKey(const char* label, ojson& obj, const char* key, float def, float width = 90.0f);
     bool CheckboxKey(const char* label, ojson& obj, const char* key, bool def = false);
     bool InputTextKey(const char* label, ojson& obj, const char* key, float width = 200.0f);
+    bool InputTextMultilineKey(const char* label, ojson& obj, const char* key, float width = 420.0f, float height = 60.0f);
 
     // 文字列の選択肢から選ぶ。optional=true なら先頭に "(none)"（選ぶと key を消す）
     // 今の値が選択肢に無い（打ち間違いなど）時は赤で表示する

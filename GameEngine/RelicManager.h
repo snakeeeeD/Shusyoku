@@ -7,6 +7,7 @@
 class RelicManager {
 public:
     static void Load(const std::string& path);
+    static void Reload(const std::string& path);   // 全部消してから読み直す（エディタの保存後）
     static const RelicDef* Get(const std::string& id);
     static bool Owns(const std::string& id);
     static int  SumValue(const std::string& kind);   // 所持中でkind一致のvalue合計

@@ -154,8 +154,10 @@
     <ClInclude Include="CardTooltip.h" />
     <ClInclude Include="CardType.h" />
     <ClInclude Include="CardVisual.h" />
+    <ClInclude Include="CraftEditor.h" />
     <ClInclude Include="DamageFeedBack.h" />
     <ClInclude Include="Deck.h" />
+    <ClInclude Include="EditorCardOverlay.h" />
     <ClInclude Include="EditorCommon.h" />
     <ClInclude Include="EditorHub.h" />
     <ClInclude Include="EffectDataBase.h" />
@@ -172,6 +174,7 @@
     <ClInclude Include="EnumNames.h" />
     <ClInclude Include="EventData.h" />
     <ClInclude Include="EventDataBase.h" />
+    <ClInclude Include="EventEditor.h" />
     <ClInclude Include="External\imgui\imgui.h" />
     <ClInclude Include="External\imgui\backends\imgui_impl_dx11.h" />
     <ClInclude Include="External\imgui\backends\imgui_impl_win32.h" />
@@ -198,7 +201,9 @@
     <ClInclude Include="PlayerData.h" />
     <ClInclude Include="PlayerDataManager.h" />
     <ClInclude Include="RangeShape.h" />
+    <ClInclude Include="RefCheck.h" />
     <ClInclude Include="RelicData.h" />
+    <ClInclude Include="RelicEditor.h" />
     <ClInclude Include="RelicManager.h" />
     <ClInclude Include="RenderConfig.h" />
     <ClInclude Include="Renderer3D.h" />
@@ -236,7 +241,9 @@
     <ClCompile Include="CardEditor.cpp" />
     <ClCompile Include="CardExecutor.cpp" />
     <ClCompile Include="CardSelectScene.cpp" />
+    <ClCompile Include="CraftEditor.cpp" />
     <ClCompile Include="Deck.cpp" />
+    <ClCompile Include="EditorCardOverlay.cpp" />
     <ClCompile Include="EditorCommon.cpp" />
     <ClCompile Include="EditorHub.cpp" />
     <ClCompile Include="EffectDataBase.cpp" />
@@ -244,6 +251,7 @@
     <ClCompile Include="EncounterEditor.cpp" />
     <ClCompile Include="EnemyEditor.cpp" />
     <ClCompile Include="EventDataBase.cpp" />
+    <ClCompile Include="EventEditor.cpp" />
     <ClCompile Include="External\imgui\imgui.cpp" />
     <ClCompile Include="External\imgui\imgui_draw.cpp" />
     <ClCompile Include="External\imgui\imgui_tables.cpp" />
@@ -262,6 +270,8 @@
     <ClCompile Include="MaterialDataBase.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="PlayerDataManager.cpp" />
+    <ClCompile Include="RefCheck.cpp" />
+    <ClCompile Include="RelicEditor.cpp" />
     <ClCompile Include="RelicManager.cpp" />
     <ClCompile Include="Renderer3D.cpp" />
     <ClCompile Include="ResultScene.cpp" />

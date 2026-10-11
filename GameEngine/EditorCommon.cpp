@@ -182,7 +182,7 @@ namespace EditorCommon
         {
             bool loaded = false;
             std::vector<EnemyDef> enemies;
-            std::vector<std::string> enemyIds, effectIds, cardIds, terrainIds;
+            std::vector<std::string> enemyIds, effectIds, cardIds, terrainIds, relicIds, materialIds, encounterIds;
         };
         IdLists g_ids;
 
@@ -224,6 +224,10 @@ namespace EditorCommon
             g_ids.effectIds = CollectIds("Assets/Data/effects.json", "effects");
             g_ids.cardIds = CollectIds("Assets/Data/cards.json", "cards");
             g_ids.terrainIds = CollectIds("Assets/Data/terrains.json", "terrains");
+            g_ids.relicIds = CollectIds("Assets/Data/relics.json", "relics");
+            g_ids.materialIds = CollectIds("Assets/Data/materials.json", "bases");
+            for (auto& id : CollectIds("Assets/Data/materials.json", "materials")) g_ids.materialIds.push_back(id);
+            g_ids.encounterIds = CollectIds("Assets/Data/encounters.json", "encounters");
         }
     }
 
@@ -232,6 +236,9 @@ namespace EditorCommon
     const std::vector<std::string>& EffectIds() { EnsureLoaded(); return g_ids.effectIds; }
     const std::vector<std::string>& CardIds() { EnsureLoaded(); return g_ids.cardIds; }
     const std::vector<std::string>& TerrainIds() { EnsureLoaded(); return g_ids.terrainIds; }
+    const std::vector<std::string>& RelicIds() { EnsureLoaded(); return g_ids.relicIds; }
+    const std::vector<std::string>& MaterialIds() { EnsureLoaded(); return g_ids.materialIds; }
+    const std::vector<std::string>& EncounterIds() { EnsureLoaded(); return g_ids.encounterIds; }
     void ReloadIdLists() { g_ids.loaded = false; }
 
     const EnemyDef* FindEnemy(const std::string& id)
@@ -275,6 +282,15 @@ namespace EditorCommon
         snprintf(buf, sizeof(buf), "%s", obj.value(key, std::string()).c_str());
         ImGui::SetNextItemWidth(width);
         if (!ImGui::InputText(label, buf, sizeof(buf))) return false;
+        obj[key] = std::string(buf);
+        return true;
+    }
+
+    bool InputTextMultilineKey(const char* label, ojson& obj, const char* key, float width, float height)
+    {
+        char buf[2048];
+        snprintf(buf, sizeof(buf), "%s", obj.value(key, std::string()).c_str());
+        if (!ImGui::InputTextMultiline(label, buf, sizeof(buf), ImVec2(width, height))) return false;
         obj[key] = std::string(buf);
         return true;
     }

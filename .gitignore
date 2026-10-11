@@ -375,3 +375,9 @@ tools/telemetry_report.xlsx
 # Supabase 秘密鍵（service_role）とpull状態（絶対にコミットしない）
 tools/.supabase_service_key
 tools/.pull_state.json
+
+# エディタの保存時バックアップ
+*.bak
+
+# ImGuiのウィンドウ位置・サイズ（人ごとに違う）
+imgui.ini

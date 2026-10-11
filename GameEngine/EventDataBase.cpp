@@ -39,6 +39,12 @@ void EventDataBase::Load(const std::string& path)
     }
 }
 
+void EventDataBase::Reload(const std::string& path)
+{
+    s_events.clear();
+    Load(path);
+}
+
 const EventDef* EventDataBase::Get(const std::string& id)
 {
     auto it = s_events.find(id); return it != s_events.end() ? &it->second : nullptr;

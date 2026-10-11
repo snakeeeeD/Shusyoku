@@ -1234,7 +1234,7 @@
     },
     {
 
-      "id": "POW_battle_thirst",
+      "id": "SKL_battle_thirst",
       "name": "戦いの渇き",
       "type": "Skill",
       "rarity": "Uncommon",
@@ -1819,33 +1819,6 @@
         "value": 2,
         "duration": -1,
         "buffType": "AttackUp"
-      }
-    },
-    {
-      "id": "POW_battle_thirst",
-      "name": "戦いの渇き",
-      "type": "Skill",
-      "rarity": "Uncommon",
-      "tags": [
-        "Strike"
-      ],
-      "cost": 2,
-      "range": 0,
-      "rangeType": "None",
-      "description": "攻撃力を+{value}。\nただし敵全体の攻撃力+1",
-      "upgrade": {
-        "mainValue": 1
-      },
-      "mainEffect": {
-        "type": "ApplyBuff",
-        "value": 2,
-        "duration": -1,
-        "buffType": "AttackUp"
-      },
-      "allEnemyEffect": {
-        "buffType": "AttackUp",
-        "value": 1,
-        "duration": -1
       }
     },
     {

@@ -38,6 +38,12 @@ void RelicManager::Load(const std::string& path) {
     }
 }
 
+void RelicManager::Reload(const std::string& path)
+{
+    s_defs.clear();
+    Load(path);
+}
+
 const RelicDef* RelicManager::Get(const std::string& id) {
     auto it = s_defs.find(id); return it != s_defs.end() ? &it->second : nullptr;
 }

@@ -12,7 +12,7 @@
       "id": "healing_spring",
       "name": "治癒の泉",
       "kind": "winHeal",
-      "value": 5,
+      "value": 4,
       "rarity": "uncommon",
       "desc": "勝利後にHP+4"
     },
@@ -56,7 +56,6 @@
       "rarity": "common",
       "desc": "休憩の回復量+10"
     },
-
     {
       "id": "quick_read",
       "name": "速読の書",
@@ -73,7 +72,6 @@
       "rarity": "common",
       "desc": "罠を設置するとカードを1枚引く"
     },
-
     {
       "id": "war_god_seal",
       "name": "戦神の刻印",
@@ -170,7 +168,6 @@
       "rarity": "uncommon",
       "desc": "毎ターン開始時 1枚捨てて1枚引く"
     },
-
     {
       "id": "giant_gauntlet",
       "name": "巨人の篭手",
@@ -211,7 +208,6 @@
       "rarity": "uncommon",
       "desc": "毒を持つ敵が倒れると 周囲の敵に同量の毒が伝染する"
     },
-
     {
       "id": "combo_blade",
       "name": "連撃の刃",
@@ -236,7 +232,6 @@
       "rarity": "rare",
       "desc": "ターン終了時ブロックの半分を保持"
     },
-
     {
       "id": "boss_furnace",
       "name": "覇道の炉",
@@ -253,7 +248,6 @@
       "rarity": "boss",
       "desc": "最大HP+30"
     },
-
     {
       "id": "event_fortune",
       "name": "幸運の壺",
@@ -270,7 +264,6 @@
       "rarity": "event",
       "desc": "最初のターン、+2ドロー"
     },
-
     {
       "id": "merchant_seal",
       "name": "商人の証",

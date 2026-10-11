@@ -3,9 +3,13 @@
 #ifdef _DEBUG
 
 #include "CardEditor.h"
+#include "CraftEditor.h"
 #include "EncounterEditor.h"
 #include "EnemyEditor.h"
+#include "EventEditor.h"
 #include "External/imgui/imgui.h"
+#include "RefCheck.h"
+#include "RelicEditor.h"
 
 namespace
 {
@@ -14,6 +18,8 @@ namespace
 
     bool g_hasCardReload = false;
     std::string g_addToHand;
+
+    std::string g_openEvent;
 }
 
 void EditorHub::DrawMenu()
@@ -24,6 +30,13 @@ void EditorHub::DrawMenu()
     if (ImGui::Button("Enemy Editor")) EnemyEditor::Toggle();
     ImGui::SameLine();
     if (ImGui::Button("Card Editor")) CardEditor::Toggle();
+    ImGui::SameLine();
+    if (ImGui::Button("Event Editor")) EventEditor::Toggle();
+    ImGui::SameLine();
+    if (ImGui::Button("Craft Editor")) CraftEditor::Toggle();
+    ImGui::SameLine();
+    if (ImGui::Button("Relic Editor")) RelicEditor::Toggle();
+    if (ImGui::Button("Check References")) RefCheck::Toggle();   // 全JSONの参照切れ・重複idを一覧に
 }
 
 void EditorHub::DrawAll()
@@ -31,11 +44,16 @@ void EditorHub::DrawAll()
     EncounterEditor::Draw();
     EnemyEditor::Draw();
     CardEditor::Draw();
+    EventEditor::Draw();
+    CraftEditor::Draw();
+    RelicEditor::Draw();
+    RefCheck::Draw();
 }
 
 void EditorHub::DrawGameOverlay(SpriteRenderer* sprite, TextRenderer* text)
 {
-    CardEditor::DrawGameOverlay(sprite, text);
+    CardEditor::DrawGameOverlay(sprite, text);    // 既定は右側
+    CraftEditor::DrawGameOverlay(sprite, text);   // 既定は左側
 }
 
 void EditorHub::RequestBattle(const std::vector<EncounterEnemy>& enemies)
@@ -70,6 +88,16 @@ bool EditorHub::ConsumeCardReload(std::string& addToHand)
 
 bool EditorHub::IsCardReloadPending() { return g_hasCardReload; }
 
+void EditorHub::RequestOpenEvent(const std::string& eventId) { g_openEvent = eventId; }
+
+bool EditorHub::ConsumeOpenEvent(std::string& eventId)
+{
+    if (g_openEvent.empty()) return false;
+    eventId = g_openEvent;
+    g_openEvent.clear();
+    return true;
+}
+
 #else   // Release ではすべて何もしない
 
 void EditorHub::DrawMenu() {}
@@ -80,5 +108,7 @@ bool EditorHub::ConsumeBattleRequest(std::vector<EncounterEnemy>&) { return fals
 void EditorHub::RequestCardReload(const std::string&) {}
 bool EditorHub::ConsumeCardReload(std::string&) { return false; }
 bool EditorHub::IsCardReloadPending() { return false; }
+void EditorHub::RequestOpenEvent(const std::string&) {}
+bool EditorHub::ConsumeOpenEvent(std::string&) { return false; }
 
 #endif

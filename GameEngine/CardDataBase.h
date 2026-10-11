@@ -1,6 +1,10 @@
 #pragma once
 #include "CardData.h"
 #include <unordered_map>
+#include <vector>
+
+struct BaseDef;
+struct MaterialDef;
 
 class CardDataBase
 {
@@ -13,6 +17,9 @@ public:
 
     static const std::unordered_map<std::string, CardData>& GetAll() { return m_data; }
     static CardData BuildCrafted(const std::string& id);
+
+    // 土台と素材を直接渡して合成カードを作る（BuildCrafted の計算本体。エディタのプレビューでも使う）
+    static CardData BuildCraftedFrom(const std::string& id, const BaseDef& baseDef, const std::vector<const MaterialDef*>& mats);
 
     static std::vector<std::string> RewardPool();
     static std::string RandomCard();

@@ -874,6 +874,14 @@ std::vector<int> SceneManager::VisibleDeckIndices() const
 void SceneManager::DrawImGui()
 {
 #ifdef _DEBUG
+
+	// イベントエディタの「Save & Open in Game」
+	std::string editorEvent;
+	if (EditorHub::ConsumeOpenEvent(editorEvent))
+	{
+		m_eventOpen = true; m_eventId = editorEvent; m_eventResult = -1; m_eventPickType.clear();
+	}
+
 	ImGui::Begin("Debug");
 	if (ImGui::BeginTabBar("DebugTabs"))
 	{
@@ -2549,6 +2557,8 @@ void SceneManager::ApplyOutcomes(const EventChoice& c)
 	auto& pd = PlayerDataManager::GetData();
 	for (auto& o : c.outcomes)
 	{
+		if (o.chance < 100 && rand() % 100 >= o.chance) continue;   // 確率つきの結果（省略＝100＝必ず）
+
 		if (o.type == "hp") { pd.hp += o.value; if (pd.hp > pd.maxHp) pd.hp = pd.maxHp; if (pd.hp < 0) pd.hp = 0; }
 		else if (o.type == "maxHp") { pd.maxHp += o.value; pd.hp += o.value; if (pd.hp < 1) pd.hp = 1; }
 		else if (o.type == "gold") { pd.gold += o.value; if (pd.gold < 0) pd.gold = 0; }
@@ -2588,8 +2598,8 @@ void SceneManager::DrawEvent()
 			float x, y, w, h; GetEventChoiceRect(i, x, y, w, h);
 			bool en = ChoiceEnabled(e->choices[i]);
 			char key[16]; sprintf_s(key, "evc%d", i);
-			bool hov = en && UiHover(x, y, w, h, mp, key, s_lastHoverKey);   // ← ホバーSE＋判定
-			float yy = hov ? y - 6.0f : y;                   // ← 浮く
+			bool hov = en && UiHover(x, y, w, h, mp, key, s_lastHoverKey);   // ホバーSE＋判定
+			float yy = hov ? y - 6.0f : y;                   // 浮く
 			UiWindow::Draw(m_uiSprite, white, x, yy, w, h);
 			if (!en)
 				m_uiSprite->DrawSprite(white, x + 6, yy + 6, w - 12, h - 12, 0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.45f));   // 無効=暗く
@@ -2599,10 +2609,10 @@ void SceneManager::DrawEvent()
 	m_uiSprite->End();
 
 	m_textRenderer->Begin();
-	m_textRenderer->DrawText(ToWString(e->title).c_str(), m_screenWidth / 2.0f - 150.0f, 90.0f, 30.0f, D2D1::ColorF(1, 0.9f, 0.6f));
+	m_textRenderer->DrawTextCentered(ToWString(e->title).c_str(), m_screenWidth / 2.0f, 90.0f, 800.0f, 30.0f, D2D1::ColorF(1, 0.9f, 0.6f));
 	if (m_eventResult < 0)
 	{
-		m_textRenderer->DrawText(ToWString(e->desc).c_str(), m_screenWidth / 2.0f - 260.0f, 160.0f, 18.0f, D2D1::ColorF(0.9f, 0.9f, 0.9f));
+		m_textRenderer->DrawTextCentered(ToWString(e->desc).c_str(), m_screenWidth / 2.0f, 160.0f, 520.0f, 18.0f, D2D1::ColorF(0.9f, 0.9f, 0.9f));
 		for (int i = 0; i < (int)e->choices.size(); i++)
 		{
 			float x, y, w, h; GetEventChoiceRect(i, x, y, w, h);
@@ -2615,7 +2625,7 @@ void SceneManager::DrawEvent()
 	}
 	else
 	{
-		m_textRenderer->DrawText(ToWString(e->choices[m_eventResult].result).c_str(), m_screenWidth / 2.0f - 260.0f, 220.0f, 22.0f, D2D1::ColorF(0.8f, 1.0f, 0.8f));
+		m_textRenderer->DrawTextCentered(ToWString(e->choices[m_eventResult].result).c_str(), m_screenWidth / 2.0f, 220.0f, 520.0f, 22.0f, D2D1::ColorF(0.8f, 1.0f, 0.8f));
 		m_textRenderer->DrawText(L"クリックで進む", m_screenWidth / 2.0f - 70.0f, m_screenHeight - 100.0f, 20.0f, D2D1::ColorF(0.8f, 0.8f, 0.8f));
 	}
 	m_textRenderer->End();
