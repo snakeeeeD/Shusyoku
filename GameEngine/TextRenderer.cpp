@@ -139,7 +139,7 @@ void TextRenderer::DrawOutlinedText(const wchar_t* text,
 }
 
 void TextRenderer::DrawTextCentered(const wchar_t* text, float centerX, float y, float width,
-    float size, D2D1_COLOR_F color)
+    float size, D2D1_COLOR_F color, float height)
 {
     ComPtr<IDWriteTextFormat> format;
     m_dwriteFactory->CreateTextFormat(
@@ -152,14 +152,27 @@ void TextRenderer::DrawTextCentered(const wchar_t* text, float centerX, float y,
     );
     format->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);   // 各行を枠の横中央に
 
+    if (height > 0.0f) format->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+
     m_brush->SetColor(color);
 
     float sx = (float)g_renderWidth / (float)LOGICAL_WIDTH;
     float sy = (float)g_renderHeight / (float)LOGICAL_HEIGHT;
     m_d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Scale(sx, sy));   // 論理座標 → 実解像度
 
-    D2D1_RECT_F rect = D2D1::RectF(centerX - width / 2.0f, y, centerX + width / 2.0f, y + 400.0f);
+    float bottom = (height > 0.0f) ? y + height : y + 400.0f;
+    D2D1_RECT_F rect = D2D1::RectF(centerX - width / 2.0f, y, centerX + width / 2.0f, bottom);
     m_d2dRenderTarget->DrawTextW(text, (UINT32)wcslen(text), format.Get(), rect, m_brush.Get());
 
     m_d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+}
+
+void TextRenderer::DrawOutlinedTextCentered(const wchar_t* text, float centerX, float y, float width, float height,
+    float size, D2D1_COLOR_F color, D2D1_COLOR_F outline, float thickness)
+{
+    for (int dx = -1; dx <= 1; dx++)
+        for (int dy = -1; dy <= 1; dy++)
+            if (dx || dy)
+                DrawTextCentered(text, centerX + dx * thickness, y + dy * thickness, width, size, outline, height);
+    DrawTextCentered(text, centerX, y, width, size, color, height);
 }

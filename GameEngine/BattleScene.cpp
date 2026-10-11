@@ -1031,8 +1031,17 @@ void BattleScene::Update(float deltaTime)
         if (m_arrowRevealTimer > 0.0f) m_arrowRevealTimer -= deltaTime;
         if (m_highlightTimer > 3.14159f * 2.0f)
             m_highlightTimer = 0.0f;
+        if (m_battleResult != BattleResult::None)
+        {
+            // 勝敗決定後：操作は止めるが、飛んでいる途中のカード演出は最後まで動かす（止めると画面に残る）
+            m_battleUI->UpdateDrawCardEffects(deltaTime);
+            m_battleUI->UpdatePlayCardEffects(deltaTime);
+            m_battleUI->UpdateDiscardEffects(deltaTime);
+            m_battleUI->UpdateAddedCardEffects(deltaTime);
+            m_battleUI->UpdateReshuffleEffect(deltaTime);
+            return;
+        }
 
-        if (m_battleResult != BattleResult::None) return;   // 勝敗決定後は何もしない
         m_highlighter.UpdateEnemyHighlight(
             m_enemies, m_gridMap, m_player,
             m_playerCol, m_playerRow, m_highlightTimer,

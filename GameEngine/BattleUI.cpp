@@ -904,11 +904,11 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         const float cx = m_screenWidth / 2.0f;
 
         // ===== VICTORY バナー（布バナー＋アウトライン文字）=====
+        const float bw = 350.0f, bh = 78.0f;
+        const float bx = cx - bw / 2.0f, by = m_screenHeight / 2.0f - 230.0f;
         m_spriteRenderer->End(); m_spriteRenderer->Begin();
-        m_spriteRenderer->DrawSprite(TextureManager::Get("ui_banner"),
-            cx - 175.0f, m_screenHeight / 2.0f - 230.0f, 350.0f, 78.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
-        m_textRenderer->DrawOutlinedText(L"VICTORY!",
-            cx - 120.0f, m_screenHeight / 2.0f - 214.0f, 46.0f,
+        m_spriteRenderer->DrawSprite(TextureManager::Get("ui_banner"), bx, by, bw, bh, 0.0f, XMFLOAT4(1, 1, 1, 1));
+        m_textRenderer->DrawOutlinedTextCentered(L"VICTORY!", cx, by, bw, bh, 46.0f,
             D2D1::ColorF(1.0f, 0.92f, 0.45f), D2D1::ColorF(0.35f, 0.16f, 0.0f), 3.0f);
 
         // ===== ドロップ一覧（アイコン＋窓＋アウトライン文字）=====

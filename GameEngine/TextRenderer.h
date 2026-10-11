@@ -36,8 +36,14 @@ public:
         float thickness = 2.0f);
 
     // 中央揃え：centerX を中心に幅 width の枠で描く（はみ出す行は折り返し、各行が中央に揃う）
+    // height > 0 なら、y~y+height の縦の中央にも揃える
     void DrawTextCentered(const wchar_t* text, float centerX, float y, float width,
-        float size = 24.0f, D2D1_COLOR_F color = D2D1::ColorF(D2D1::ColorF::White));
+        float size = 24.0f, D2D1_COLOR_F color = D2D1::ColorF(D2D1::ColorF::White), float height = 0.0f);
+
+    // 縁取り＋中央揃え（バナーの文字など）
+    void DrawOutlinedTextCentered(const wchar_t* text, float centerX, float y, float width, float height,
+        float size, D2D1_COLOR_F color,
+        D2D1_COLOR_F outline = D2D1::ColorF(D2D1::ColorF::Black), float thickness = 2.0f);
 
 
     void Begin();
