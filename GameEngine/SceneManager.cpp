@@ -7,6 +7,7 @@
 #include "ItemTooltip.h"
 #include "PlayerDataManager.h"
 #include "EncounterDataBase.h"
+#include "EditorHub.h" 
 #include "TerrainDataBase.h"
 #include "MaterialDataBase.h"
 #include "RelicManager.h"
@@ -642,7 +643,7 @@ void SceneManager::Draw()
 			(float)m_screenWidth, (float)m_screenHeight, 0.0f, XMFLOAT4(0, 0, 0, m_fadeAlpha));
 		m_uiSprite->End();
 	}
-
+	EditorHub::DrawGameOverlay(m_uiSprite, m_textRenderer);   // エディタのプレビュー（Release では何もしない）
 }
 
 void SceneManager::DrawOverlay()
@@ -902,6 +903,9 @@ void SceneManager::DrawImGui()
 						pd.tutorialShop = pd.tutorialRest = pd.tutorialCraft = seen;
 					PlayerDataManager::Save();
 				}
+
+				EditorHub::DrawMenu();
+
 			}
 
 						if (ImGui::CollapsingHeader("Relics"))
@@ -925,6 +929,7 @@ void SceneManager::DrawImGui()
 		ImGui::EndTabBar();
 	}
 	ImGui::End();
+	EditorHub::DrawAll();
 #endif
 }
 

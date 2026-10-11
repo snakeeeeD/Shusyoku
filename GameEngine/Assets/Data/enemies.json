@@ -277,7 +277,6 @@
       "actions": [
         {
           "description": "燃え上がる、残り火付与",
-          "vfx": "fire",
           "target": {
             "rangeType": "None"
           },
@@ -289,7 +288,9 @@
               "duration": 2,
               "applyTo": "Self"
             }
-          ]
+          ],
+          "select": {},
+          "selfVfx": "burn"
         },
         {
           "description": "接近",
@@ -562,7 +563,9 @@
               "duration": 2
             }
           ],
-          "select": { "chance": 300 }
+          "select": {
+            "chance": 300
+          }
         },
         {
           "description": "噛み砕き、{0}ダメージ",
@@ -682,7 +685,9 @@
               "value": 1
             }
           ],
-          "select": { "chance": 30 }
+          "select": {
+            "chance": 30
+          }
         }
       ]
     },
@@ -1608,7 +1613,9 @@
               "value": 1
             }
           ],
-          "select": { "chance": 25 }
+          "select": {
+            "chance": 25
+          }
         },
         {
           "description": "唸る、攻撃力↑付与",
@@ -1691,7 +1698,9 @@
               "value": 1
             }
           ],
-          "select": { "chance": 25 }
+          "select": {
+            "chance": 25
+          }
         }
       ],
       "drops": [
@@ -2738,7 +2747,9 @@
               "value": 3
             }
           ],
-          "select": { "chance": 35 }
+          "select": {
+            "chance": 35
+          }
         },
         {
           "description": "ウロコ飛ばし、{0}ダメージ、毒{1}付与",
@@ -2763,7 +2774,9 @@
               "value": 3
             }
           ],
-          "select": { "chance": 35 }
+          "select": {
+            "chance": 35
+          }
         },
         {
           "description": "絞め上げ、{0}ダメージ",
@@ -2782,7 +2795,9 @@
               "value": 3
             }
           ],
-          "select": { "chance": 30 }
+          "select": {
+            "chance": 30
+          }
         },
         {
           "description": "まるのみ、{0}ダメージ",
@@ -3596,18 +3611,24 @@
               "value": 10
             }
           ],
-          "select": { "chance": 55 }
+          "select": {
+            "chance": 55
+          }
         },
         {
           "description": "虚空の刺突、{0}ダメージ",
-          "target": { "unavoidable": true },
+          "target": {
+            "unavoidable": true
+          },
           "effects": [
             {
               "kind": "Damage",
               "value": 8
             }
           ],
-          "select": { "chance": 45 }
+          "select": {
+            "chance": 45
+          }
         }
       ]
     },
@@ -3637,11 +3658,15 @@
               "duration": 3
             }
           ],
-          "select": { "chance": 55 }
+          "select": {
+            "chance": 55
+          }
         },
         {
           "description": "衰弱、{0}ダメージ、弱体{1}付与",
-          "target": { "unavoidable": true },
+          "target": {
+            "unavoidable": true
+          },
           "effects": [
             {
               "kind": "Damage",
@@ -3654,7 +3679,9 @@
               "duration": 2
             }
           ],
-          "select": { "chance": 45 }
+          "select": {
+            "chance": 45
+          }
         }
       ]
     },
@@ -3668,7 +3695,9 @@
       "actions": [
         {
           "description": "引き寄せ、{0}ダメージ、引き寄せ",
-          "target": { "unavoidable": true },
+          "target": {
+            "unavoidable": true
+          },
           "effects": [
             {
               "kind": "Damage",
@@ -3679,7 +3708,9 @@
               "value": 1
             }
           ],
-          "select": { "chance": 50 }
+          "select": {
+            "chance": 50
+          }
         },
         {
           "description": "妨害、{0}ダメージ、山札にノイズ",
@@ -3699,7 +3730,9 @@
               "value": 1
             }
           ],
-          "select": { "chance": 50 }
+          "select": {
+            "chance": 50
+          }
         }
       ]
     },
@@ -3723,11 +3756,15 @@
               "value": 8
             }
           ],
-          "select": { "chance": 60 }
+          "select": {
+            "chance": 60
+          }
         },
         {
           "description": "守りを固める、{0}ブロック",
-          "target": { "rangeType": "None" },
+          "target": {
+            "rangeType": "None"
+          },
           "effects": [
             {
               "kind": "Block",
@@ -3735,7 +3772,9 @@
               "applyTo": "Allies"
             }
           ],
-          "select": { "chance": 40 }
+          "select": {
+            "chance": 40
+          }
         }
       ]
     },
@@ -3747,18 +3786,38 @@
       "height": 3.4,
       "drawZ": 1.0,
       "gridShape": [
-        [ -1, 0 ],
-        [ 0, 0 ],
-        [ 1, 0 ],
-        [ -1, 1 ],
-        [ 0, 1 ],
-        [ 1, 1 ]
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
       ],
       "isBoss": true,
       "actions": [
         {
           "description": "楔を強化する",
-          "target": { "rangeType": "None" },
+          "target": {
+            "rangeType": "None"
+          },
           "effects": [
             {
               "kind": "Buff",
@@ -3773,10 +3832,11 @@
             "chance": 50
           }
         },
-
         {
           "description": "めまい、山札にノイズ",
-          "target": { "rangeType": "None" },
+          "target": {
+            "rangeType": "None"
+          },
           "effects": [
             {
               "kind": "AddCard",
@@ -3790,7 +3850,6 @@
             "chance": 50
           }
         },
-
         {
           "description": "次元崩し、{0}ダメージ",
           "target": {
@@ -3808,10 +3867,11 @@
             "chance": 50
           }
         },
-
         {
           "description": "虚無の侵蝕、{0}ダメージ、弱体{1}付与",
-          "target": { "unavoidable": true },
+          "target": {
+            "unavoidable": true
+          },
           "effects": [
             {
               "kind": "Damage",
@@ -3923,7 +3983,6 @@
             "chance": 35
           }
         }
-
       ]
     }
   ]

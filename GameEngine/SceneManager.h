@@ -12,6 +12,7 @@
 #include "CardDataBase.h"
 #include "EventDataBase.h"
 #include "Telemetry.h"
+#include "EncounterEditor.h"
 
 #include "TitleScene.h"
 #include "BattleScene.h"

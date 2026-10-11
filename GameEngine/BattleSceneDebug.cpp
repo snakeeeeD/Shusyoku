@@ -4,9 +4,29 @@
 #include "External/imgui/imgui.h"
 #include "EncounterDataBase.h"
 #include "EnemyDataBase.h"
+#include "EditorHub.h" 
 
 void BattleScene::DrawImGui()
 {
+    // カードエディタの保存を反映（手札の Card は CardDataBase の中を指しているので、読み直したら手札も作り直す）
+    std::string editorAddCard;
+    if (EditorHub::ConsumeCardReload(editorAddCard))
+    {
+        std::vector<std::string> handIds;
+        for (auto c : m_hand.GetCards()) handIds.push_back(c->GetId());
+
+        CardDataBase::Reload();
+
+        m_battleUI->ClearCardAnimations();
+        m_hand.Clear();
+        for (auto& id : handIds)
+            if (CardDataBase::Get(id)) m_hand.AddCard(id);       // 消したカードは手札から外す
+        if (!editorAddCard.empty() && CardDataBase::Get(editorAddCard))
+        {
+            m_hand.AddCard(editorAddCard);
+            m_battleUI->StartDrawCardEffect(editorAddCard);
+        }
+    }
 
     ImGui::Text("Hand:%d  Anims:%d  Hover:%d  Sel:%d",
         (int)m_hand.GetCards().size(),
@@ -30,7 +50,10 @@ void BattleScene::DrawImGui()
     ImGui::Text("Encounter");
     ImGui::SliderInt("Template", &m_debugEncounterIndex, -1, EncounterDataBase::GetCount() - 1);
     ImGui::SliderInt("Rank", &m_debugRank, 1, 3);
-    if (ImGui::Button("Reload & Reset"))
+    std::vector<EncounterEnemy> editorEnemies;
+    bool playFromEditor = EditorHub::ConsumeBattleRequest(editorEnemies);
+
+    if (ImGui::Button("Reload & Reset") || playFromEditor)
     {
 
         // 手札IDを退避（GetId()はDBポインタ参照なので、Reload前に取る）
@@ -56,14 +79,22 @@ void BattleScene::DrawImGui()
         }
         m_enemies.clear();
 
-        const EncounterData* encounter = (m_debugEncounterIndex < 0)
-            ? EncounterDataBase::GetEncounter(m_debugRank, EncCategory::Normal, m_battleTier, rand())
-            : EncounterDataBase::GetByIndex(m_debugEncounterIndex);
-
-        if (encounter)
+        if (playFromEditor)
         {
-            for (auto& ee : encounter->enemies)
+            for (auto& ee : editorEnemies)          // エディタから届いた敵の並びで作り直す
                 AddEnemy(ee.col, ee.row, ee.id);
+        }
+        else
+        {
+            const EncounterData* encounter = (m_debugEncounterIndex < 0)
+                ? EncounterDataBase::GetEncounter(m_debugRank, EncCategory::Normal, m_battleTier, rand())
+                : EncounterDataBase::GetByIndex(m_debugEncounterIndex);
+
+            if (encounter)
+            {
+                for (auto& ee : encounter->enemies)
+                    AddEnemy(ee.col, ee.row, ee.id);
+            }
         }
         for (auto enemy : m_enemies)
             enemy->DecideNextAction(m_playerCol, m_playerRow, m_turnCount);

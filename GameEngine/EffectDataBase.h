@@ -14,6 +14,7 @@ struct BurstDef
     XMFLOAT4 colorStart = { 1,1,1,1 };
     XMFLOAT4 colorEnd = { 1,1,1,0 };
     std::string texture;
+    bool center = false;   // true: 発生点を絵の中心にする（既定は下端＝これまで通り）
 };
 
 struct SheetAnim

@@ -7,6 +7,8 @@ class CardDataBase
 public:
     static void Init();
     static void Reload();
+    // JSON1枚分の文字列から CardData を作る（エディタのプレビュー用）。upgrade があれば強化版も作り hasUpgrade=true
+    static bool ParseCardText(const std::string& jsonText, CardData& base, CardData& upgraded, bool& hasUpgrade);
     static const CardData* Get(const std::string& id);
 
     static const std::unordered_map<std::string, CardData>& GetAll() { return m_data; }

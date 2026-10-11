@@ -17,6 +17,7 @@ struct Particle
     float life, lifeMax;
     float scale, gravity, drag;
     ID3D11ShaderResourceView* tex = nullptr;
+    bool center = false;   // 発生点を絵の中心にする
 };
 
 struct SpriteInstance
@@ -108,8 +109,15 @@ public:
                 p.colorStart.z + (p.colorEnd.z - p.colorStart.z) * t,
                 p.colorStart.w + (p.colorEnd.w - p.colorStart.w) * t);
             ID3D11ShaderResourceView* pt = p.tex ? p.tex : tex;
-            float sc = p.scale * SCALE;                          // ← 倍率をかける
-            r->DrawBillboard(pt, p.pos.x, p.pos.y, p.pos.z, sc, sc, 0.0f, c);
+            float sc = p.scale * SCALE;
+            float px = p.pos.x, py = p.pos.y, pz = p.pos.z;
+            if (p.center)   // シートと同じく、発生点に絵の中心が来るよう上方向に半分下げる
+            {
+                float pitch = XMConvertToRadians(Renderer3D::GetBillboardPitch());
+                py -= 0.5f * sc * cosf(pitch);
+                pz -= 0.5f * sc * sinf(pitch);
+            }
+            r->DrawBillboard(pt, px, py, pz, sc, sc, 0.0f, c);
         }
 
         for (auto& s : m_sprites)
@@ -149,7 +157,7 @@ public:
     static void SpawnBurst(float x, float y, float z, int count,
         float speed, XMFLOAT4 colorStart, XMFLOAT4 colorEnd, float life, float scale,
         float gravity = 4.0f, float drag = 0.02f,
-        ID3D11ShaderResourceView* tex = nullptr)
+        ID3D11ShaderResourceView* tex = nullptr, bool center = false)
     {
         const float golden = XM_PI * (3.0f - sqrtf(5.0f));
         for (int i = 0; i < count; i++)
@@ -173,6 +181,7 @@ public:
             p.gravity = gravity;
             p.drag = drag;
             p.tex = tex;
+            p.center = center;
             m_particles.push_back(p);
         }
     }
@@ -194,7 +203,7 @@ public:
         {
             ID3D11ShaderResourceView* t = b.texture.empty() ? nullptr : TextureManager::Get(b.texture);
             SpawnBurst(x, y, z, b.count, b.speed,
-                b.colorStart, b.colorEnd, b.life, b.scale, b.gravity, b.drag, t);
+                b.colorStart, b.colorEnd, b.life, b.scale, b.gravity, b.drag, t, b.center);
         }
         for (auto& s : def->sheets)
         {

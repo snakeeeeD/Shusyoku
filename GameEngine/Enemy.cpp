@@ -790,6 +790,11 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
         EffectManager::Play(fx, player->worldX, player->worldY + 0.5f, player->worldZ);
     }
 
+    // 自分に向けた演出（バフ・構えなど）は、当たったかに関係なく自分の位置で出す
+    // 絵と同じ位置に合わせる（絵は drawZ だけ手前に描いている／高さは体の真ん中）
+    if (!act.selfVfx.empty())
+        EffectManager::Play(act.selfVfx, worldX, worldY + height * 0.5f, worldZ + m_drawZ);
+
     // この行動がダメージ攻撃なら、命中したか(=避けられなかったか)を記録
     bool isAttack = false;
     for (auto& e : act.effects)

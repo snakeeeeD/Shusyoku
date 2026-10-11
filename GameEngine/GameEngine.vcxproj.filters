@@ -286,6 +286,30 @@
     <Filter Include="ソース ファイル\01-描画関連\11-URect">
       <UniqueIdentifier>{87c80f1b-836c-48a0-b991-fdceadec0941}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\01-Telemetry">
+      <UniqueIdentifier>{56dfbee4-1cdc-4212-95e0-9cbbddf4d087}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor">
+      <UniqueIdentifier>{c94b15b2-dfc0-40a8-a932-cbd422083b10}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\01-EncounterEditor">
+      <UniqueIdentifier>{b7b11a1b-2013-4f1e-8b82-e4935e0bf38e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor">
+      <UniqueIdentifier>{b9a4cc20-7fc2-4da1-9e5f-b1554f6e458f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\00-EditorCommon">
+      <UniqueIdentifier>{957a4c30-9ba3-44e5-b1db-2b89f54952df}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\10-EnumNames">
+      <UniqueIdentifier>{60472a36-afbc-4f6a-bb1a-c3910d1f6df8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\20-EditorHub">
+      <UniqueIdentifier>{368f17b0-5ca7-4c1f-80d7-f654c45e641e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\03-CardEditor">
+      <UniqueIdentifier>{d8168ea8-cec3-44ff-bf93-3bb315f3c1ab}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -525,14 +549,32 @@
     <ClInclude Include="ItemTooltip.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\50-ItemTooltip</Filter>
     </ClInclude>
-    <ClInclude Include="Telemetry.h">
-      <Filter>ソース ファイル\07-デバッグ用</Filter>
-    </ClInclude>
     <ClInclude Include="AnimTune.h">
       <Filter>ソース ファイル\01-描画関連\10-AnimTune</Filter>
     </ClInclude>
     <ClInclude Include="URect.h">
       <Filter>ソース ファイル\01-描画関連\11-URect</Filter>
+    </ClInclude>
+    <ClInclude Include="EncounterEditor.h">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\01-EncounterEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="Telemetry.h">
+      <Filter>ソース ファイル\07-デバッグ用\01-Telemetry</Filter>
+    </ClInclude>
+    <ClInclude Include="EnemyEditor.h">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="EditorCommon.h">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\00-EditorCommon</Filter>
+    </ClInclude>
+    <ClInclude Include="EnumNames.h">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\10-EnumNames</Filter>
+    </ClInclude>
+    <ClInclude Include="EditorHub.h">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\20-EditorHub</Filter>
+    </ClInclude>
+    <ClInclude Include="CardEditor.h">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\03-CardEditor</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -670,6 +712,21 @@
     </ClCompile>
     <ClCompile Include="Settings.cpp">
       <Filter>ソース ファイル\04-Game内関連\04-Setting</Filter>
+    </ClCompile>
+    <ClCompile Include="EncounterEditor.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\01-EncounterEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="EnemyEditor.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="EditorCommon.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\00-EditorCommon</Filter>
+    </ClCompile>
+    <ClCompile Include="EditorHub.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\20-EditorHub</Filter>
+    </ClCompile>
+    <ClCompile Include="CardEditor.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\03-CardEditor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

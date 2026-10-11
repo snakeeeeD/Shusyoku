@@ -271,6 +271,9 @@ bool InitD3D()
     ImGui_ImplWin32_Init(g_hWnd);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pImmediateContext);
     ImGui::StyleColorsDark();
+    // エディタで日本語（敵の説明文など）を表示するためのフォント
+    if (GetFileAttributesA("C:\\Windows\\Fonts\\meiryo.ttc") != INVALID_FILE_ATTRIBUTES)
+        ImGui::GetIO().Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\meiryo.ttc", 16.0f);
 #endif
 
     return true;

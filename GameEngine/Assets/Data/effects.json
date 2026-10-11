@@ -216,19 +216,10 @@
           "scale": 2.5,
           "gravity": -1.0,
           "drag": 0.03,
-          "colorStart": [
-            0.9,
-            0.4,
-            0.1,
-            1.0
-          ],
-          "colorEnd": [
-            0.45,
-            0.08,
-            0.0,
-            0.0
-          ],
-          "texture": "fire"
+          "colorStart": [ 0.9, 0.4, 0.1, 1.0 ],
+          "colorEnd": [ 0.45, 0.08, 0.0, 0.0 ],
+          "texture": "fire",
+          "center": true
         }
       ]
     },

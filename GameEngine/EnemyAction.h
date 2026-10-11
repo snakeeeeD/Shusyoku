@@ -61,4 +61,5 @@ struct EnemyAction
     float        windup = 0.0f;           // 着弾までの秒数（この間、行動は保留）
     std::string  areaVfx;                 // 攻撃範囲の各マスに出す演出（空なら area_burst）
     std::string  impactVfx;               // 着弾点に出す演出（当たり外れに関わらず）
+    std::string  selfVfx;                 // 行動した時に敵自身の位置で出す演出（バフ・構えなど。命中に関係なし）
 };

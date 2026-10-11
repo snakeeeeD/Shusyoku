@@ -12,6 +12,152 @@ using json = nlohmann::json;
 
 std::unordered_map<std::string, CardData> CardDataBase::m_data;
 
+// cards.json のカード1枚分を CardData にする（Init とエディタのプレビューで共通）
+static void ParseCard(const json& c, CardData& data, CardData& up, bool& hasUp)
+{
+    data.id = c["id"];
+    data.name = ToWString(c["name"]);
+    data.type = StringToCardType(c["type"]);
+    data.cost = c["cost"];
+    data.range = c["range"];
+    data.rangeType = StringToRangeType(c["rangeType"]);
+    data.description = ToWString(c["description"]);
+    data.generated = c.value("generated", false);
+    data.starter = c.value("starter", false);
+    data.vfx.clear();
+    if (c.contains("vfx"))
+    {
+        auto& v = c["vfx"];
+        if (v.is_array())       for (auto& s : v) data.vfx.push_back(s.get<std::string>());
+        else if (v.is_string()) data.vfx.push_back(v.get<std::string>());
+    }
+    if (c.contains("vfxColor"))
+    {
+        auto& vc = c["vfxColor"];
+        data.vfxColor[0] = vc[0]; data.vfxColor[1] = vc[1]; data.vfxColor[2] = vc[2];
+        data.vfxColor[3] = vc.size() > 3 ? (float)vc[3] : 1.0f;
+    }
+    data.scaleByTrapCount = c.value("scaleByTrapCount", false);
+
+    std::string rarityStr = c.value("rarity", "Common");
+    if (rarityStr == "Uncommon") data.rarity = CardRarity::Uncommon;
+    else if (rarityStr == "Rare") data.rarity = CardRarity::Rare;
+    else data.rarity = CardRarity::Common;
+    if (c.contains("tags"))
+    {
+        for (auto& t : c["tags"])
+            data.tags.push_back(t);
+    }
+
+    data.exhaust = c.value("exhaust", false);
+    data.unplayable = c.value("unplayable", false);
+    data.ethereal = c.value("ethereal", false);
+    data.retain = c.value("retain", false);
+    data.endTurnDamage = c.value("endTurnDamage", 0);
+    data.pierce = c.value("pierce", false);
+    data.dash = c.value("dash", false);
+    data.drawBeforeDiscard = c.value("drawBeforeDiscard", false);
+    data.selfDamage = c.value("selfDamage", 0);
+    data.hits = c.value("hits", 1);
+
+    // mainEffect
+    data.mainEffect.hasEffect = true;
+    data.mainEffect.type = StringToCardEffectType(c["mainEffect"]["type"]);
+    data.mainEffect.value = c["mainEffect"]["value"];
+    data.mainEffect.duration = c["mainEffect"].value("duration", 0);
+    data.mainEffect.buffType = c["mainEffect"].value("buffType", "");
+    data.mainEffect.cardId = c["mainEffect"].value("cardId", "");
+    data.mainEffect.trapType = c["mainEffect"].value("trapType", "");
+
+
+    if (c.contains("onHitEffect"))
+    {
+        data.onHitEffect.hasEffect = true;
+        data.onHitEffect.type = StringToCardEffectType(c["onHitEffect"]["type"]);
+        data.onHitEffect.value = c["onHitEffect"]["value"];
+        data.onHitEffect.duration = c["onHitEffect"].value("duration", 0);
+        data.onHitEffect.buffType = c["onHitEffect"].value("buffType", "");
+        data.onHitEffect.cardId = c["onHitEffect"].value("cardId", "");
+    }
+    else
+    {
+        data.onHitEffect.hasEffect = false;
+    }
+
+    if (c.contains("onHitEffect2"))
+    {
+        data.onHitEffect2.hasEffect = true;
+        data.onHitEffect2.type = StringToCardEffectType(c["onHitEffect2"]["type"]);
+        data.onHitEffect2.value = c["onHitEffect2"]["value"];
+        data.onHitEffect2.duration = c["onHitEffect2"].value("duration", 0);
+        data.onHitEffect2.buffType = c["onHitEffect2"].value("buffType", "");
+    }
+    else data.onHitEffect2.hasEffect = false;
+
+    if (c.contains("onDiscardEffect"))
+    {
+        data.onDiscardEffect.hasEffect = true;
+        data.onDiscardEffect.type = StringToCardEffectType(c["onDiscardEffect"]["type"]);
+        data.onDiscardEffect.value = c["onDiscardEffect"]["value"];
+        data.onDiscardEffect.cardId = c["onDiscardEffect"].value("cardId", "");
+        data.onDiscardEffect.buffType = c["onDiscardEffect"].value("buffType", "");
+    }
+    else data.onDiscardEffect.hasEffect = false;
+
+    if (c.contains("subEffect"))
+    {
+        data.subEffect.hasEffect = true;
+        data.subEffect.type = StringToCardEffectType(c["subEffect"]["type"]);
+        data.subEffect.value = c["subEffect"]["value"];
+        data.subEffect.duration = c["subEffect"].value("duration", 0);
+        data.subEffect.buffType = c["subEffect"].value("buffType", "");
+        data.subEffect.cardId = c["subEffect"].value("cardId", "");
+    }
+    else
+    {
+        data.subEffect.hasEffect = false;
+    }
+
+    // allEnemyEffect は upgrade の前（基本のカードの一部）
+    if (c.contains("allEnemyEffect"))
+    {
+        data.allEnemyEffect.hasEffect = true;
+        data.allEnemyEffect.value = c["allEnemyEffect"]["value"];
+        data.allEnemyEffect.duration = c["allEnemyEffect"].value("duration", 0);
+        data.allEnemyEffect.buffType = c["allEnemyEffect"].value("buffType", "");
+    }
+    else
+    {
+        data.allEnemyEffect.hasEffect = false;
+    }
+
+    // 基本のカードが全部できてから、強化版を作る
+    hasUp = c.contains("upgrade");
+    if (hasUp)
+    {
+        const auto& u = c["upgrade"];
+        up = data;
+        up.id = data.id + "+";
+        up.name = data.name + L"+";
+
+        up.cost += u.value("cost", 0);
+        up.hits += u.value("hits", 0);
+        up.range += u.value("range", 0);
+        up.mainEffect.value += u.value("mainValue", 0);
+        up.mainEffect.duration += u.value("duration", 0);
+        if (up.onHitEffect.hasEffect) up.onHitEffect.value += u.value("onHitValue", 0);
+        if (up.onHitEffect.hasEffect)  up.onHitEffect.duration += u.value("onHitDuration", 0);
+        if (up.onHitEffect2.hasEffect) up.onHitEffect2.duration += u.value("onHitDuration", 0);
+        if (up.subEffect.hasEffect)   up.subEffect.value += u.value("subValue", 0);
+        if (up.cost < 0) up.cost = 0;
+        if (u.contains("rangeType"))
+            up.rangeType = StringToRangeType(u["rangeType"]);
+        if (u.contains("description"))
+            up.description = ToWString(u["description"]);
+        if (up.onDiscardEffect.hasEffect) up.onDiscardEffect.value += u.value("onDiscardValue", 0);
+    }
+}
+
 void CardDataBase::Init()
 {
     std::ifstream file("Assets/Data/cards.json");
@@ -30,123 +176,11 @@ void CardDataBase::Init()
 
         for (const auto& c : j["cards"])
         {
-            CardData data;
-            data.id = c["id"];
-            data.name = ToWString(c["name"]);
-            data.type = StringToCardType(c["type"]);
-            data.cost = c["cost"];
-            data.range = c["range"];
-            data.rangeType = StringToRangeType(c["rangeType"]);
-            data.description = ToWString(c["description"]);
-            data.generated = c.value("generated", false);
-            data.starter = c.value("starter", false);
-            data.vfx.clear();
-            if (c.contains("vfx"))
-            {
-                auto& v = c["vfx"];
-                if (v.is_array())       for (auto& s : v) data.vfx.push_back(s.get<std::string>());
-                else if (v.is_string()) data.vfx.push_back(v.get<std::string>());
-            }
-            if (c.contains("vfxColor"))
-            {
-                auto& vc = c["vfxColor"];
-                data.vfxColor[0] = vc[0]; data.vfxColor[1] = vc[1]; data.vfxColor[2] = vc[2];
-                data.vfxColor[3] = vc.size() > 3 ? (float)vc[3] : 1.0f;
-            }
-            data.scaleByTrapCount = c.value("scaleByTrapCount", false);
-
-            std::string rarityStr = c.value("rarity", "Common");
-            if (rarityStr == "Uncommon") data.rarity = CardRarity::Uncommon;
-            else if (rarityStr == "Rare") data.rarity = CardRarity::Rare;
-            else data.rarity = CardRarity::Common;
-            if (c.contains("tags"))
-            {
-                for (auto& t : c["tags"])
-                    data.tags.push_back(t);
-            }
-
-            data.exhaust = c.value("exhaust", false);
-            data.unplayable = c.value("unplayable", false);
-            data.ethereal = c.value("ethereal", false);
-            data.retain = c.value("retain", false);
-            data.endTurnDamage = c.value("endTurnDamage", 0);
-            data.pierce = c.value("pierce", false);
-            data.dash = c.value("dash", false);
-            data.drawBeforeDiscard = c.value("drawBeforeDiscard", false);
-            data.selfDamage = c.value("selfDamage", 0);
-            data.hits = c.value("hits", 1);
-
-            // mainEffect
-            data.mainEffect.hasEffect = true;
-            data.mainEffect.type = StringToCardEffectType(c["mainEffect"]["type"]);
-            data.mainEffect.value = c["mainEffect"]["value"];
-            data.mainEffect.duration = c["mainEffect"].value("duration", 0);
-            data.mainEffect.buffType = c["mainEffect"].value("buffType", "");
-            data.mainEffect.cardId = c["mainEffect"].value("cardId", "");
-            data.mainEffect.trapType = c["mainEffect"].value("trapType", "");
-
-
-            if (c.contains("onHitEffect"))
-            {
-                data.onHitEffect.hasEffect = true;
-                data.onHitEffect.type = StringToCardEffectType(c["onHitEffect"]["type"]);
-                data.onHitEffect.value = c["onHitEffect"]["value"];
-                data.onHitEffect.duration = c["onHitEffect"].value("duration", 0);
-                data.onHitEffect.buffType = c["onHitEffect"].value("buffType", "");
-                data.onHitEffect.cardId = c["onHitEffect"].value("cardId", "");
-            }
-            else
-            {
-                data.onHitEffect.hasEffect = false;
-            }
-
-            if (c.contains("onHitEffect2"))
-            {
-                data.onHitEffect2.hasEffect = true;
-                data.onHitEffect2.type = StringToCardEffectType(c["onHitEffect2"]["type"]);
-                data.onHitEffect2.value = c["onHitEffect2"]["value"];
-                data.onHitEffect2.duration = c["onHitEffect2"].value("duration", 0);
-                data.onHitEffect2.buffType = c["onHitEffect2"].value("buffType", "");
-            }
-            else data.onHitEffect2.hasEffect = false;
-
-            if (c.contains("onDiscardEffect"))
-            {
-                data.onDiscardEffect.hasEffect = true;
-                data.onDiscardEffect.type = StringToCardEffectType(c["onDiscardEffect"]["type"]);
-                data.onDiscardEffect.value = c["onDiscardEffect"]["value"];
-                data.onDiscardEffect.cardId = c["onDiscardEffect"].value("cardId", "");
-                data.onDiscardEffect.buffType = c["onDiscardEffect"].value("buffType", "");
-            }
-            else data.onDiscardEffect.hasEffect = false;
-
-            if (c.contains("subEffect"))
-            {
-                data.subEffect.hasEffect = true;
-                data.subEffect.type = StringToCardEffectType(c["subEffect"]["type"]);
-                data.subEffect.value = c["subEffect"]["value"];
-                data.subEffect.duration = c["subEffect"].value("duration", 0);
-                data.subEffect.buffType = c["subEffect"].value("buffType", "");
-                data.subEffect.cardId = c["subEffect"].value("cardId", "");
-            }
-            else
-            {
-                data.subEffect.hasEffect = false;
-            }
-
-            if (c.contains("allEnemyEffect"))
-            {
-                data.allEnemyEffect.hasEffect = true;
-                data.allEnemyEffect.value = c["allEnemyEffect"]["value"];
-                data.allEnemyEffect.duration = c["allEnemyEffect"].value("duration", 0);
-                data.allEnemyEffect.buffType = c["allEnemyEffect"].value("buffType", "");
-            }
-            else
-            {
-                data.allEnemyEffect.hasEffect = false;
-            }
-
+            CardData data, up;
+            bool hasUp = false;
+            ParseCard(c, data, up, hasUp);
             m_data[data.id] = data;
+            if (hasUp) m_data[up.id] = up;
 
             // アップグレード版を自動生成（id + "+"）
             if (c.contains("upgrade"))
@@ -194,6 +228,17 @@ void CardDataBase::Reload()
 {
     m_data.clear();   // 古い定義（"+"版・CRAFT含む）を全消去
     Init();           // cards.json から読み直し
+}
+
+bool CardDataBase::ParseCardText(const std::string& jsonText, CardData& base, CardData& upgraded, bool& hasUpgrade)
+{
+    try
+    {
+        hasUpgrade = false;
+        ParseCard(json::parse(jsonText), base, upgraded, hasUpgrade);
+        return true;
+    }
+    catch (const json::exception&) { return false; }
 }
 
 const CardData* CardDataBase::Get(const std::string& id)
