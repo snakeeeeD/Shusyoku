@@ -14,6 +14,7 @@
 #include "RangeShape.h"
 #include "UiNotice.h"
 #include "Audio.h"
+#include "Hint.h"
 #include "Telemetry.h"
 #include "EnemyIntentVisual.h"
 
@@ -1132,6 +1133,7 @@ void BattleScene::Update(float deltaTime)
             m_highlightTimer = 0.0f;
         if (m_battleResult != BattleResult::None)
         {
+            Hint::Clear();   // 勝利/敗北画面にヒントを残さない
             // 勝敗決定後：操作は止めるが、飛んでいる途中のカード演出は最後まで動かす（止めると画面に残る）
             m_battleUI->UpdateDrawCardEffects(deltaTime);
             m_battleUI->UpdatePlayCardEffects(deltaTime);
@@ -1145,6 +1147,17 @@ void BattleScene::Update(float deltaTime)
             m_enemies, m_gridMap, m_player,
             m_playerCol, m_playerRow, m_highlightTimer,
             m_decoyCol, m_decoyRow);
+
+        // その場ヒント（初めてその状況になった時だけ）
+        if (!m_turnManager.IsEnemyTurn())
+        {
+            bool threatened = std::any_of(m_enemies.begin(), m_enemies.end(),
+                [](const Enemy* e) { return e->hitsPlayer; });
+            if (threatened) Hint::Request("threat"); else Hint::Resolve("threat");
+            if (m_player->GetEnergy() == 0) Hint::Request("endTurn");
+            if (m_turnManager.GetTurnCount() >= 2) { Hint::Request("focus"); Hint::Request("camera"); }
+        }
+        else Hint::Resolve("endTurn");
 
         m_battleUI->UpdateDrawCardEffects(deltaTime);
         // 時間差ドローの進行

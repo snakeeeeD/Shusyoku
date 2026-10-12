@@ -192,6 +192,7 @@
     <ClInclude Include="GridMap.h" />
     <ClInclude Include="Hand.h" />
     <ClInclude Include="HighlightPalette.h" />
+    <ClInclude Include="Hint.h" />
     <ClInclude Include="HitStop.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="ItemTooltip.h" />
@@ -265,6 +266,7 @@
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="GridMap.cpp" />
     <ClCompile Include="Hand.cpp" />
+    <ClCompile Include="Hint.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MaterialDataBase.cpp" />

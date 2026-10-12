@@ -8,6 +8,7 @@
 #include "CardDataBase.h"
 #include "RelicManager.h"
 #include "MaterialDataBase.h"   
+#include "Hint.h"
 
 #include <cstdlib>
 #include <algorithm>
@@ -681,6 +682,7 @@ void FieldScene::HandleInput()
                 m_playerCol = col;
                 m_playerRow = row;
                 m_steps--;
+                if (m_steps <= 0) Hint::Request("steps");
                 
                 if (!node.visited)
                 {

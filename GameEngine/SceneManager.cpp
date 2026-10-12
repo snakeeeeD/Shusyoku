@@ -13,6 +13,7 @@
 #include "RelicManager.h"
 #include "UiWindow.h"
 #include "Audio.h"
+#include "Hint.h"
 #include "Settings.h"
 
 #include <cmath>
@@ -392,6 +393,8 @@ void SceneManager::ChangeScene(SceneType type, std::function<void()> onBlack)
 }
 void SceneManager::DoChangeScene(SceneType type)
 {
+	Hint::Clear();
+
 	// 削除前に必要な情報を取得
 	std::string battleEnemyId;
 	int battleSeed = 0;
@@ -497,16 +500,6 @@ void SceneManager::DoChangeScene(SceneType type)
 				m_restOpen = true; m_restActive = true; m_restArmed = false;
 				Audio::PlayBGM("Assets/Sound/bgm/Rest.mp3");
 				auto& pd = PlayerDataManager::GetData();
-				if (!pd.tutorialRest)
-				{
-					pd.tutorialRest = true; PlayerDataManager::Save();
-					ShowTutorial({
-						{ L"休憩マス。3つのうち1つを選べる",          510, 240, 260, 244 },  // ← 3ボタン全体
-						{ L"Heal … HPを回復する",                     510, 250, 260,  60 },  // ← ボタン0
-						{ L"Upgrade … 手持ちカード1枚を強化する",     510, 330, 260,  60 },  // ← ボタン1
-						{ L"Craft … コア＋素材で新しいカードを作る",   510, 410, 260,  60 },  // ← ボタン2
-						});
-				}
 				};
 			scene->onEvent = [this](const std::string& id) { m_eventOpen = true; m_eventId = id; m_eventResult = -1; m_eventPickType.clear(); };
 			m_currentScene = scene;
@@ -558,29 +551,15 @@ void SceneManager::DoChangeScene(SceneType type)
 	{
 		pd.tutorialField = true; PlayerDataManager::Save();
 		ShowTutorial({
-			{ L"マスをクリックして進もう",                         170, 130, 940, 540 },
-			{ L"戦闘/休憩/ショップ/イベント\nエリート/ボスがある", 170, 130, 940, 540 },
-			{ L"歩数(Steps)が尽きて進むと敵が強くなる",                                 130,   5, 110,  28, -1, true },  // ← stepsTip=true
-			{ L"左上のレリック\n常時発動する特殊効果。今回は戦闘に勝つとHP回復",		8.0f, (float)BAR_H + 2.0f, 52.0f, 38.0f },
-			{ L"レリックはエリート撃破・\nイベント・ショップで入手できる",				8.0f, (float)BAR_H + 2.0f, 52.0f, 38.0f },
-			{ L"右端のボスを倒すと次の層へ",                       1050, 130, 120, 540 },
-					});
+			{ L"マスをクリックして進む\n右端のボスを倒すと次の層へ", 170, 130, 940, 540 },
+			});
 	}
 	if (type == SceneType::Battle && !pd.tutorialBattle)
 	{
 		pd.tutorialBattle = true; PlayerDataManager::Save();
 		ShowTutorialDelayed({
-			{ L"手札のカードをクリックし\n対象を選んで使う",         340, 580, 600, 220 },
-			{ L"一番左は移動カード\nマスを移動して敵の攻撃を避ける", 340, 630, 130, 170, 0 },
-			{ L"2番目はアタック\n隣接する敵にダメージを与える",       340, 630, 130, 170, 1 },
-			{ L"3番目はブロック\nそのターン受けるダメージを防ぐ",     340, 630, 130, 170, 2 },
-			{ L"左上のエナジーでカードのコストを払う\n毎ターン回復する", 15, 185,  70,  70 },
-			{ L"ターンエンドで相手の番\nここを押して自分の番を終える",
-			  (float)m_screenWidth - 208.0f, (float)m_screenHeight - 84.0f, 196.0f, 72.0f },
-			{ L"HPが0になると敗北",                                   20,  85, 220,  90 },
-			{ L"カメラ操作\nマウスホイール：ズーム / 右クリックドラッグ：カメラ移動\nホイールをクリック：自分中心にリセット", 170, 130, 940, 540 },
-			{ L"敵をクリック（右上の敵ウィンドウでもOK）で\nその敵の攻撃範囲が表示される",1028, 46, 246, 200, -1, false, false, true },
-			{ L"頭上に赤い警告が出ている敵は\n今の位置に攻撃が当たる。移動して避けよう", 170, 130, 940, 540, -1, false, true },
+	{ L"カードを掴んで、使いたいマスの上で離す\n左から 移動・アタック・ブロック", 340, 580, 600, 220 },
+	{ L"色付きのマスは敵の攻撃範囲\n移動で避けて、アタックで倒そう",         170, 130, 940, 540 },
 			}, 1.2f);
 	}
 
@@ -588,19 +567,14 @@ void SceneManager::DoChangeScene(SceneType type)
 	{
 		pd.tutorialCardSelect = true; PlayerDataManager::Save();
 		ShowTutorial({
-					{ L"戦闘の報酬カード。1枚選ぶとデッキに加わる", 376, 224, 490, 224 }, // ← カード3枚を明るく
-			{ L"欲しいカードが無ければスキップもできる",     566, 596, 148,  52 },  // ← スキップボタン
+			{ L"1枚選ぶとデッキに加わる（スキップも可）", 376, 224, 490, 224 },
 			});
 	}
 	if (type == SceneType::Shop && !pd.tutorialShop)
 	{
 		pd.tutorialShop = true; PlayerDataManager::Save();
 		ShowTutorial({
-			{ L"ショップ。カード・素材・レリックをクリックで購入", 180, 120, 920, 470 },
-			{ L"購入にはゴールド（G）が必要",                     704,   4,  82,  30 },
-			{ L"左下：カードをデッキから削除できる（有料・1回）",  36, 646, 228,  52 },
-			{ L"SELL：いらない素材を売ってゴールドにできる",      276, 646, 168,  52 },  // ← 追加（売却ボタン）
-			{ L"終わったら LEAVE でフィールドへ戻る",            556, 646, 168,  52 },
+			{ L"クリックで購入（ゴールドを使う）\n左下でカード削除、SELLで素材を売れる", 180, 120, 920, 470 },
 			});
 	}
 }
@@ -629,6 +603,7 @@ void SceneManager::Draw()
 	if (m_deckOpen || m_mapOpen || m_invOpen || m_restOpen || m_craftOpen) DrawBackButton();
 	if (m_craftFxTimer > 0.0f) DrawCraftFx();  
 	if (m_currentType != SceneType::Title && !fading) { DrawRelicBar(); DrawBarTips(); }
+	if (!TutorialActive() && !fading) DrawHint();
 	if (m_settingsOpen) DrawSettings();
 
 	if (m_tutorialOpen) DrawTutorial();
@@ -904,6 +879,7 @@ void SceneManager::DrawImGui()
 				// チェックON=チュートリアルを表示する（＝各フラグを未表示に戻す）
 				bool showTut = !(pd.tutorialField && pd.tutorialBattle && pd.tutorialCardSelect
 					&& pd.tutorialShop && pd.tutorialRest && pd.tutorialCraft);
+				if (showTut) pd.seenHints.clear();
 				if (ImGui::Checkbox("Show Tutorials", &showTut))
 				{
 					bool seen = !showTut;   // 表示する→フラグfalse / 出さない→true
@@ -1323,11 +1299,7 @@ void SceneManager::DrawTutorial()
 		m_uiSprite->DrawSprite(white, 0, y + h, sw, sh - (y + h), 0.0f, dim);
 		m_uiSprite->DrawSprite(white, 0, y, x, h, 0.0f, dim);
 		m_uiSprite->DrawSprite(white, x + w, y, sw - (x + w), h, 0.0f, dim);
-		XMFLOAT4 fr(1.0f, 0.85f, 0.2f, 1.0f);
-		m_uiSprite->DrawSprite(white, x - 3, y - 3, w + 6, 3, 0.0f, fr);
-		m_uiSprite->DrawSprite(white, x - 3, y + h, w + 6, 3, 0.0f, fr);
-		m_uiSprite->DrawSprite(white, x - 3, y, 3, h + 3, 0.0f, fr);
-		m_uiSprite->DrawSprite(white, x + w, y, 3, h + 3, 0.0f, fr);
+		DrawFrame(x, y, w, h, XMFLOAT4(1.0f, 0.85f, 0.2f, 1.0f));
 	}
 	else m_uiSprite->DrawSprite(white, 0, 0, sw, sh, 0.0f, dim);
 
@@ -1369,6 +1341,40 @@ void SceneManager::DrawTutorial()
 		m_textRenderer->DrawText(L"0を超えて進むと敵が強くなる", tx + 10.0f, ty + 30.0f, 13.0f, D2D1::ColorF(0.9f, 0.9f, 0.9f));
 		m_textRenderer->End();
 	}
+}
+
+void SceneManager::DrawFrame(float x, float y, float w, float h, const XMFLOAT4& c)
+{
+	ID3D11ShaderResourceView* white = TextureManager::Get("white");
+	m_uiSprite->DrawSprite(white, x - 3, y - 3, w + 6, 3, 0.0f, c);
+	m_uiSprite->DrawSprite(white, x - 3, y + h, w + 6, 3, 0.0f, c);
+	m_uiSprite->DrawSprite(white, x - 3, y, 3, h + 3, 0.0f, c);
+	m_uiSprite->DrawSprite(white, x + w, y, 3, h + 3, 0.0f, c);
+}
+
+void SceneManager::DrawHint()
+{
+	const HintDef* h = Hint::Current();
+	if (!h) return;
+	float a = Hint::Alpha();
+	ID3D11ShaderResourceView* white = TextureManager::Get("white");
+
+	int lines = 1;
+	for (const wchar_t* p = h->text; *p; p++) if (*p == L'\n') lines++;
+	float w = 470.0f, bh = 26.0f + lines * 24.0f;
+	float x = (m_screenWidth - w) / 2.0f, y = 110.0f;
+
+	m_uiSprite->Begin();
+	UiWindow::Draw(m_uiSprite, white, x, y, w, bh, XMFLOAT4(1, 1, 1, a));
+	m_uiSprite->DrawSprite(white, x + 8, y + 8, 4, bh - 16, 0.0f, XMFLOAT4(1.0f, 0.85f, 0.2f, a));   // 左の金帯＝ヒントの目印
+	if (h->hw > 0.0f)   // 指している場所を金枠で脈動
+		DrawFrame(h->hx, h->hy, h->hw, h->hh,
+			XMFLOAT4(1.0f, 0.85f, 0.2f, a * (0.6f + 0.4f * sinf(m_uiTime * 6.0f))));
+	m_uiSprite->End();
+
+	m_textRenderer->Begin();
+	m_textRenderer->DrawText(h->text, x + 22.0f, y + 13.0f, 18.0f, D2D1::ColorF(1, 1, 1, a));
+	m_textRenderer->End();
 }
 
 void SceneManager::DrawSettings()
@@ -1515,12 +1521,9 @@ void SceneManager::Update(float deltaTime)
 			pd.tutorialCraft = true; PlayerDataManager::Save();
 			// スポットライトは勝利画面のドロップ行に一致（cx640 / rx490 / 行0=y270・行1=y322 / 300x42）
 			ShowTutorialDelayed({
-				{ L"【コア】カードの土台。何を作るかを決める部品（例：斬核＝近接ダメージ）。",
-				  482, 262, 316, 54 },   // ← コア行だけを明るく
-				{ L"【素材】コアに組み込んで強化する部品（例：剣の破片＝ダメージ+2）。",
-				  486, 318, 308, 50 },   // ← 素材行だけを明るく
-				{ L"休憩マスの「クラフト」で コア＋素材 を組み合わせ、新しいカードが作れる！" },
-				}, 1.0f);   // ← VICTORYを1秒見せてから開始
+			{ L"【コア】カードの土台。何を作るかが決まる",                    482, 262, 316, 54 },
+			{ L"【素材】コアに足す強化部品\n休憩マスのクラフトで組み合わせる", 486, 318, 308, 50 },
+				}, 1.0f);
 		}
 	}
 
@@ -1541,6 +1544,8 @@ void SceneManager::Update(float deltaTime)
 	}
 
 	m_uiTime += deltaTime;
+
+	if (!m_tutorialOpen) Hint::Update(deltaTime);   // ページ型の説明中は止める
 
 	if (m_craftFxTimer > 0.0f)
 	{

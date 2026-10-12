@@ -71,6 +71,7 @@ void PlayerDataManager::Save()
 	j["tutorialCardSelect"] = m_data.tutorialCardSelect;
 	j["tutorialShop"] = m_data.tutorialShop;
 	j["tutorialRest"] = m_data.tutorialRest;
+	j["seenHints"] = m_data.seenHints;
 
 	j["gold"] = m_data.gold;
 	j["materials"] = m_data.materials;
@@ -133,6 +134,7 @@ void PlayerDataManager::Load()
 		m_data.tutorialCardSelect = j.value("tutorialCardSelect", false);
 		m_data.tutorialShop = j.value("tutorialShop", false);
 		m_data.tutorialRest = j.value("tutorialRest", false);
+		m_data.seenHints = j.value("seenHints", std::set<std::string>{});
 		m_data.removeCount = j.value("removeCount", 0);
 		m_data.layer = j.value("layer", 1);
 

@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <set>
 
 struct PlayerData
 {
@@ -42,6 +43,7 @@ struct PlayerData
     bool tutorialCardSelect = false;
     bool tutorialShop = false;
     bool tutorialRest = false;
+    std::set<std::string> seenHints;   // 表示済みのその場ヒントid
 
     std::map<std::string, int> relicCounters;   // レリックid → 現在カウント
 };

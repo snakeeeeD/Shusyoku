@@ -89,9 +89,13 @@ public:
     bool m_tutorialOpen = false;
     void ShowTutorial(const std::vector<TutorialPage>& pages);
     void DrawTutorial();
+    void DrawHint();
+    void DrawFrame(float x, float y, float w, float h, const DirectX::XMFLOAT4& c);   // 金枠（チュートリアル・ヒント共通）
     std::vector<TutorialPage> m_pendingTutorial;
     float m_tutorialDelay = 0.0f;
     void ShowTutorialDelayed(const std::vector<TutorialPage>& pages, float delay);
+    // ページ型チュートリアルの表示中、または表示待ち中か（その間はヒントを出さない）
+    bool TutorialActive() const { return m_tutorialOpen || !m_pendingTutorial.empty(); }
 
     void DrawBarTips();
 
