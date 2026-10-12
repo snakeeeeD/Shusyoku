@@ -80,6 +80,8 @@ private:
 
 	bool CursorInside() const;   // カーソルが自窓のクライアント内＆フォーカス時のみ true
 	
+	float m_moveRemX = 0.0f, m_moveRemY = 0.0f;   // MoveMouseBy の、1px 未満の端数（実ピクセル）
+
 public:
 
 	Input(); //コンストラクタ
@@ -116,7 +118,8 @@ public:
 	bool GetMouseButtonPress(int button);
 	bool GetMouseButtonTrigger(int button);	//クリックした瞬間
 	bool GetMouseButtonRelease(int button); //離した瞬間
-	
+	void MoveMouseBy(float dx, float dy);   // 1280x720 基準の量だけカーソルをずらす（端数は貯めて次に回す）
+
 	// マウスホイール
 	static void SetWheelDelta(int delta) { s_wheelDelta += delta; }
 	static int  GetPendingWheel() { return s_wheelDelta; }

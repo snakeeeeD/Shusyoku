@@ -23,7 +23,22 @@
 #include "URect.h"
 
 #include <functional>
-struct SettingsUI { URect panel, disp, bgmTrack, seTrack, shake, title, gameEnd, close, gear, cfmPanel, cfmYes, cfmNo; };
+struct SettingsUI 
+{ 
+    URect panel, 
+          disp, 
+          bgmTrack, 
+          seTrack, 
+          shake,
+          aimCam,
+          title,
+          gameEnd, 
+          close,
+          gear, 
+          cfmPanel, 
+          cfmYes, 
+          cfmNo; 
+};
 
 class SceneManager
 {
@@ -230,15 +245,16 @@ private:
     {
         SettingsUI u{};
         u.gear = { (float)m_screenWidth - 58.0f, 5.0f, 48.0f, 30.0f };
-        float pw = 440.0f, ph = 396.0f;                 // タイトルボタン分だけ縦を拡張
+        float pw = 440.0f, ph = 438.0f;               // タイトルボタン分だけ縦を拡張
         float px = (m_screenWidth - pw) / 2.0f, py = (m_screenHeight - ph) / 2.0f;
         u.panel = { px, py, pw, ph };
         u.disp = { px + 180.0f, py + 54.0f, 200.0f, 34.0f };
         u.bgmTrack = { px + 180.0f, py + 120.0f, 200.0f, 14.0f };
         u.seTrack = { px + 180.0f, py + 168.0f, 200.0f, 14.0f };
         u.shake = { px + 180.0f, py + 208.0f, 120.0f, 34.0f };
-        u.title = { px + pw / 2.0f - 90.0f, py + 250.0f, 180.0f, 34.0f };   // タイトルに戻る
-        u.gameEnd = { px + pw / 2.0f - 90.0f, py + 292.0f, 180.0f, 34.0f };
+        u.aimCam = { px + 180.0f, py + 250.0f, 120.0f, 34.0f };
+        u.title = { px + pw / 2.0f - 90.0f, py + 292.0f, 180.0f, 34.0f };   // タイトルに戻る
+        u.gameEnd = { px + pw / 2.0f - 90.0f, py + 334.0f, 180.0f, 34.0f };
         u.close = { px + pw / 2.0f - 70.0f, py + ph - 52.0f, 140.0f, 38.0f };
 
         // 確認ダイアログ（はい/いいえ）

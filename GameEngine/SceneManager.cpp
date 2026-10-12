@@ -1052,6 +1052,7 @@ void SceneManager::HandleInput()
 					SetDisplayMode(nx); Audio::PlaySE("Assets/Sound/se/click.mp3");
 				}
 				else if (su.shake.has(m)) { s.screenShake = !s.screenShake; Settings::Save(); Audio::PlaySE("Assets/Sound/se/click.mp3"); }
+				else if (su.aimCam.has(m)) { s.aimCamera = !s.aimCamera; Settings::Save(); Audio::PlaySE("Assets/Sound/se/click.mp3"); }
 				else if (su.title.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); m_confirmAction = 2; }
 				else if (su.gameEnd.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); m_confirmAction = 1; }
 				else if (su.close.has(m) || !su.panel.has(m)) { m_settingsOpen = false; m_dragSlider = -1; Settings::Save(); Audio::PlaySE("Assets/Sound/se/click.mp3"); }
@@ -1394,6 +1395,8 @@ void SceneManager::DrawSettings()
 
 	UiWindow::Button(m_uiSprite, white, u.shake.x, u.shake.y, u.shake.w, u.shake.h,
 		s.screenShake ? XMFLOAT4(0.3f, 0.55f, 0.3f, 1) : XMFLOAT4(0.45f, 0.3f, 0.3f, 1));
+	UiWindow::Button(m_uiSprite, white, u.aimCam.x, u.aimCam.y, u.aimCam.w, u.aimCam.h,
+		s.aimCamera ? XMFLOAT4(0.3f, 0.55f, 0.3f, 1) : XMFLOAT4(0.45f, 0.3f, 0.3f, 1));
 	UiWindow::Button(m_uiSprite, white, u.title.x, u.title.y, u.title.w, u.title.h,
 		u.title.has(mp) ? XMFLOAT4(0.35f, 0.5f, 0.7f, 1) : XMFLOAT4(0.25f, 0.28f, 0.4f, 1));
 	UiWindow::Button(m_uiSprite, white, u.gameEnd.x, u.gameEnd.y, u.gameEnd.w, u.gameEnd.h,
@@ -1410,6 +1413,8 @@ void SceneManager::DrawSettings()
 	m_textRenderer->DrawText(L"SE", u.panel.x + 40, u.seTrack.y - 6, 20, D2D1::ColorF(1, 1, 1));
 	m_textRenderer->DrawText(L"画面シェイク", u.panel.x + 40, u.shake.y + 6, 18, D2D1::ColorF(1, 1, 1));
 	m_textRenderer->DrawText(s.screenShake ? L"ON" : L"OFF", u.shake.x + 46, u.shake.y + 6, 20, D2D1::ColorF(1, 1, 1));
+	m_textRenderer->DrawText(L"移動のカメラ追従", u.panel.x + 40, u.aimCam.y + 6, 18, D2D1::ColorF(1, 1, 1));
+	m_textRenderer->DrawText(s.aimCamera ? L"ON" : L"OFF", u.aimCam.x + 46, u.aimCam.y + 6, 20, D2D1::ColorF(1, 1, 1));
 	m_textRenderer->DrawText(L"タイトルに戻る", u.title.x + 24, u.title.y + 6, 20, D2D1::ColorF(1, 1, 1));
 	m_textRenderer->DrawText(L"ゲーム終了", u.gameEnd.x + 40, u.gameEnd.y + 6, 20, D2D1::ColorF(1, 0.9f, 0.9f));
 	m_textRenderer->DrawText(L"閉じる", u.close.x + 42, u.close.y + 8, 20, D2D1::ColorF(1, 1, 1));

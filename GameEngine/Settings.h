@@ -6,8 +6,9 @@ struct SettingsData
 {
     DisplayMode displayMode = DisplayMode::Borderless;
     float bgmVolume = 0.6f;    // 0..1
-    float seVolume = 0.8f;    // 0..1
+    float seVolume = 0.8f;     // 0..1
     bool  screenShake = true;
+    bool  aimCamera = true;    // 狙い中にカメラが自動で寄る（手札に隠れるマス・移動予定のマス）
 };
 
 class Settings

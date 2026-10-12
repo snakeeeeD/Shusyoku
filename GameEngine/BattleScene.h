@@ -238,6 +238,32 @@ private:
     float m_cameraOffsetX;
     float m_cameraOffsetZ;
 
+    // 狙いズーム：マスを選ぶカードを選んだ時、狙えるマスが手札に隠れるなら少し引く
+    static constexpr float AIM_ZOOM_OUT = 0.3f;    // 引く量（ズームに掛ける割合）
+    float m_aimZoom = 0.0f;                        // 0~1（滑らかに変化）
+    bool  m_aimZoomWanted = false;
+    int   m_aimZoomCardIndex = -1;                 // どのカードを選んだ時に判定したか
+
+    bool SelectedNeedsTarget() const;                  // 選択中のカードがマスを選ぶ種類か（攻撃・移動・罠など）
+    bool TargetsHiddenByHand(const CardData& d) const; // 狙えるマスのどれかが手札に隠れる位置に映っているか
+
+    // 狙いパン：キャンセルなどでは元のカメラ位置へ戻す（移動カードで実際に移動した時はそのまま）
+    bool  m_aimPanned = false;      // この選択でカメラを寄せたか
+    float m_aimPanStartZ = 0.0f;    // 寄せる前のカメラ位置
+    bool  m_aimPanKeep = false;     // 移動カードを使った → 戻さない
+    bool  m_aimReturning = false;   // 元の位置へ戻している途中
+    float m_aimPanStartX = 0.0f;          // 寄せる前のカメラ位置（X）
+    bool  m_camAutoMoving = false;        // 今フレーム、狙いカメラが自動で動いたか
+    bool CellToScreen(int col, int row, float& sx, float& sy) const;   // マスの中心が今のカメラで画面のどこに映るか
+    POINT m_prevPathMouse = { -1, -1 };   // 前フレームのマウス位置（経路を変えるのはマウスが動いた時だけにする）
+
+    static constexpr float AIM_FOLLOW_SPEED = 4.0f;   // ゴーストへ寄る速さ（大きいほど速い。手札に隠れるマスを出す時は 8）
+    static constexpr float AIM_FOLLOW_START = 1.6f;   // ゴーストがこれ以上離れたら寄り始める（1マス＝1.1）
+    bool m_ghostFollowing = false;                    // 今、ゴーストへ寄っている途中か
+
+    float HiddenTargetsPanZ(const CardData& d) const;   // 手札に隠れるマスを手札の上に出すのに必要なカメラのずらし量
+   
+
 #ifdef _DEBUG
     int m_debugRank;
     int m_debugEncounterIndex;
@@ -287,4 +313,9 @@ private:
 
     float m_windupTimer = 0.0f;     // メテオ落下待ち
     bool  m_windupPlayed = false;   // この行動の落下演出を出したか
+
+    // 狙いの確定：離したマスに少し止まっていた時だけ使う（ドラッグ途中で通り過ぎたマスでの誤使用を防ぐ）
+    static constexpr unsigned long long AIM_SETTLE_MS = 150;
+    std::pair<int, int> m_aimCell = { -1, -1 };
+    unsigned long long m_aimSince = 0;
 };

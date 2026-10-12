@@ -17,6 +17,7 @@ void Settings::Load()
         s_data.bgmVolume = j.value("bgmVolume", 0.6f);
         s_data.seVolume = j.value("seVolume", 0.8f);
         s_data.screenShake = j.value("screenShake", true);
+        s_data.aimCamera = j.value("aimCamera", true);
     }
     catch (...) { /* ‰ó‚ê‚Ä‚½‚çŠù’è‚Ì‚Ü‚Ü */ }
 }
@@ -28,6 +29,7 @@ void Settings::Save()
     j["bgmVolume"] = s_data.bgmVolume;
     j["seVolume"] = s_data.seVolume;
     j["screenShake"] = s_data.screenShake;
+    j["aimCamera"] = s_data.aimCamera;
     std::ofstream file(PATH);
     if (file) file << j.dump(2);
 }

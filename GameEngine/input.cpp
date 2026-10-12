@@ -183,6 +183,23 @@ bool Input::GetMouseButtonRelease(int button)
 	return !mouseState[button] && mouseState_old[button];
 }
 
+void Input::MoveMouseBy(float dx, float dy)
+{
+	RECT rect;
+	GetClientRect(m_hWnd, &rect);
+	// 1280x720 基準の量を実ピクセルに直してから貯める（切り捨ての往復をしない）
+	m_moveRemX += dx * (rect.right - rect.left) / 1280.0f;
+	m_moveRemY += dy * (rect.bottom - rect.top) / 720.0f;
+	LONG mx = (LONG)m_moveRemX, my = (LONG)m_moveRemY;
+	m_moveRemX -= mx;
+	m_moveRemY -= my;
+	if (mx == 0 && my == 0) return;
+
+	POINT p;
+	GetCursorPos(&p);              // 画面座標のまま足す
+	SetCursorPos(p.x + mx, p.y + my);
+}
+
 bool Input::CursorInside() const
 {
 	if (GetForegroundWindow() != m_hWnd) return false;   // 非フォーカスは無視

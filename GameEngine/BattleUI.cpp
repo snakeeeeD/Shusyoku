@@ -1984,26 +1984,21 @@ void BattleUI::UpdateCardAnimations(float deltaTime, int handSize, int hoveredIn
 
         if (i == selectedIndex)
         {
-            if (selectedNeedsTarget)
-            {
-                if (mousePos.y < m_screenHeight - 100)
-                    m_cardLockedToCenter = true;
+            // 使用ラインより上か（BattleScene の使用判定と同じ線）
+            bool abovePlayLine = mousePos.y < m_screenHeight - CardVisual::PLAY_LINE_OFFSET;
 
-                if (m_cardLockedToCenter)
-                {
-                    targetX = m_screenWidth / 2.0f - CardVisual::CARD_W / 2.0f;
-                    targetY = cardHoverY + 40.0f;
-                }
-                else
-                {
-                    targetX = (float)mousePos.x - CardVisual::CARD_W / 2.0f;
-                    targetY = (float)mousePos.y - CardVisual::CARD_H / 2.0f;
-                }
+            // 上に出したら中央に固定し、選択が外れるまで固定のまま（どの種類のカードも同じ）
+            if (abovePlayLine) m_cardLockedToCenter = true;
+
+            if (m_cardLockedToCenter)
+            {
+                targetX = m_screenWidth / 2.0f - CardVisual::CARD_W / 2.0f;
+                targetY = cardHoverY + 40.0f;
             }
             else
             {
-                targetX = (float)mousePos.x - CardVisual::CARD_W / 2.0f;
-                targetY = (float)mousePos.y - CardVisual::CARD_H / 2.0f;
+                // 手札のあたりではマウスについていかず、自分の位置で持ち上がったまま待つ（泳がない）
+                targetY = cardHoverY;   // targetX は自分のスロットのまま
             }
 
             if (i < prevSize)

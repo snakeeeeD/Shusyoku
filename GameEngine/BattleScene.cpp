@@ -973,6 +973,88 @@ void BattleScene::Update(float deltaTime)
         m_cameraOffsetZ = m_player->worldZ - 0.7f;
     }
 
+    // ===== 狙いカメラ =====
+    // ・マスを選ぶカードを選んでいる間、狙えるマスが手札に隠れていたら、隠れなくなるまで奥へ寄せる
+    // ・移動カードで経路を引いている間は、移動予定のマス（ゴースト）を画面の中央へ寄せる（カーソルも一緒に動かす）
+    // ・選択が終わったら：移動カードで移動した → そのまま／キャンセルなど → 寄せる前の位置へ戻す
+    bool userPanning = m_isDraggingCamera && m_rightClickDragged;
+    if (userPanning) { m_aimPanned = false; m_aimReturning = false; }
+
+    bool carryCursor = false;                 // このフレーム、カーソルをゴーストと一緒に動かすか
+    std::pair<int, int> carryCell = { -1, -1 };
+    float carryBX = 0.0f, carryBY = 0.0f;     // カメラを動かす前のゴーストの画面位置
+
+    m_camAutoMoving = false;
+    if (SelectedNeedsTarget() && Settings::Get().aimCamera)
+    {
+        if (!m_isDraggingCamera)
+        {
+            const CardData* sd = m_hand.GetCards()[m_selectedCardIndex]->GetData();
+            float dX = 0.0f, dZ = 0.0f;
+            float speed = 8.0f;
+            if (sd->type == CardType::Move && !m_movePath.empty())
+            {
+                // 移動予定のマス（ゴースト）を中央へ。カメラの注視点を少し奥に置くと中央に映る（初期カメラと同じ -0.7）
+                std::pair<int, int> tip = m_movePath.back();
+                float goalX = (tip.first - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                float goalZ = (tip.second - m_gridMap->GetRows() / 2.0f) * 1.1f - 0.7f;
+                dX = goalX - m_cameraOffsetX;
+                dZ = goalZ - m_cameraOffsetZ;
+
+                // 遊び：少し離れただけでは動かず、一定以上離れたら中央まで寄る（途中で止めると端で止まって中途半端になる）
+                float dist = sqrtf(dX * dX + dZ * dZ);
+                if (!m_ghostFollowing && dist > AIM_FOLLOW_START) m_ghostFollowing = true;
+                if (m_ghostFollowing && dist < 0.05f)             m_ghostFollowing = false;
+                if (!m_ghostFollowing) { dX = 0.0f; dZ = 0.0f; }
+                speed = AIM_FOLLOW_SPEED;
+
+                // カーソルは「カーソルの下のマス」と一緒に動かす（ゴーストではない）
+                if (m_hoveredCell.first >= 0)
+                {
+                    carryCell = m_hoveredCell;
+                    carryCursor = CellToScreen(carryCell.first, carryCell.second, carryBX, carryBY);
+                }
+            }
+            else
+                dZ = HiddenTargetsPanZ(*sd);   // 経路がまだ無い：手札に隠れるマスを出す
+
+            if (fabsf(dX) > 0.01f || fabsf(dZ) > 0.01f)
+            {
+                if (!m_aimPanned)
+                {
+                    if (!m_aimReturning) { m_aimPanStartX = m_cameraOffsetX; m_aimPanStartZ = m_cameraOffsetZ; }
+                    m_aimPanned = true;
+                }
+                m_aimReturning = false;
+                float k = min(1.0f, speed * deltaTime);   // ← 8.0f を speed に
+                m_cameraOffsetX += dX * k;
+                m_cameraOffsetZ += dZ * k;
+                m_camAutoMoving = true;
+            }
+            else carryCursor = false;
+        }
+    }
+    else if (m_aimPanned)
+    {
+        m_aimReturning = !m_aimPanKeep;
+        m_aimPanned = false;
+        m_aimPanKeep = false;
+        m_ghostFollowing = false;
+    }
+
+    if (m_aimReturning)
+    {
+        float k = min(1.0f, 8.0f * deltaTime);
+        m_cameraOffsetX += (m_aimPanStartX - m_cameraOffsetX) * k;
+        m_cameraOffsetZ += (m_aimPanStartZ - m_cameraOffsetZ) * k;
+        if (fabsf(m_aimPanStartX - m_cameraOffsetX) < 0.01f && fabsf(m_aimPanStartZ - m_cameraOffsetZ) < 0.01f)
+        {
+            m_cameraOffsetX = m_aimPanStartX;
+            m_cameraOffsetZ = m_aimPanStartZ;
+            m_aimReturning = false;
+        }
+    }
+
     // カメラ更新（ズーム or パンが変わったら毎フレーム適用）
     {
         float shakeX, shakeZ;
@@ -983,12 +1065,21 @@ void BattleScene::Update(float deltaTime)
             -2.0f,
             m_cameraOffsetZ + shakeZ
         );
+        float zoom = m_cameraZoom;
         XMFLOAT3 zoomedPos(
             m_cameraOffsetX + shakeX,
-            target.y + 17.0f * m_cameraZoom,
-            m_cameraOffsetZ + shakeZ + 6.0f * m_cameraZoom
+            target.y + 17.0f * zoom,
+            m_cameraOffsetZ + shakeZ + 6.0f * zoom
         );
         m_renderer3D->SetCamera(zoomedPos, target, XMFLOAT3(0.0f, 1.0f, 0.0f));
+
+        // ゴーストを中央へ寄せている間は、カーソルの下のマスがずれた分だけカーソルもずらす（指している場所を変えない）
+        if (carryCursor)
+        {
+            float ax, ay;
+            if (CellToScreen(carryCell.first, carryCell.second, ax, ay))   // 新しいカメラでの位置
+                m_input.MoveMouseBy(ax - carryBX, ay - carryBY);
+        }
 
         int hi = m_battleUI->GetPanelHoveredEnemy();
         m_highlighter.SetSelectedEnemy(hi >= 0 ? hi : m_selectedEnemyRange);
@@ -1094,17 +1185,7 @@ void BattleScene::Update(float deltaTime)
                 else ++it;
             }
         }
-        bool selectedNeedsTarget = false;
-        if (m_selectedCardIndex >= 0 && m_selectedCardIndex < (int)m_hand.GetCards().size())
-        {
-            const CardData* sd = m_hand.GetCards()[m_selectedCardIndex]->GetData();
-            CardType ct = sd->type;
-            selectedNeedsTarget = (ct == CardType::Attack || ct == CardType::Move
-                || sd->mainEffect.type == CardEffectType::PlaceTrap
-                || sd->mainEffect.type == CardEffectType::DetonateAt
-                || sd->mainEffect.type == CardEffectType::DetonateChain
-                || sd->mainEffect.type == CardEffectType::PlaceDecoy);
-        }
+        bool selectedNeedsTarget = SelectedNeedsTarget();
         m_battleUI->UpdateCardAnimations(deltaTime, (int)m_hand.GetCards().size(), m_hoveredCardIndex, 
             m_selectedCardIndex, m_input.GetMousePos(), selectedNeedsTarget,
             &m_discardSelected);
@@ -2724,6 +2805,19 @@ void BattleScene::HandleInput()
         m_highlighter.ClearPlayerHighlight(m_gridMap);
     }
 
+    // 狙っているマスがいつから同じか
+    if (m_hoveredCell != m_aimCell)
+    {
+        m_aimCell = m_hoveredCell;
+        m_aimSince = GetTickCount64();
+    }
+
+    // カメラが自動で動いて、マウスの下のマスが変わっただけ（マウスは止まっている）なら、経路は変えない
+    POINT mpNow = m_input.GetMousePos();
+    bool mouseMoved = (mpNow.x != m_prevPathMouse.x || mpNow.y != m_prevPathMouse.y);
+    m_prevPathMouse = mpNow;
+    bool cameraDriven = m_camAutoMoving && !mouseMoved;
+
     // === 移動カード：手動経路構築 ===
     bool selectedIsMove = false;
     int moveRangeSel = 0;
@@ -2749,7 +2843,7 @@ void BattleScene::HandleInput()
         {
             m_movePath.clear();
         }
-        else if (m_hoveredCell.first >= 0)
+        else if (m_hoveredCell.first >= 0 && !cameraDriven)
         {
             m_moveReleaseSuppress = false;   // カーソルが動いたら再開
             int hc = m_hoveredCell.first, hr = m_hoveredCell.second;
@@ -2973,8 +3067,15 @@ void BattleScene::HandleInput()
                 bool cellInRange = (result.cell && cellInRng(result.col, result.row));
                 if (result.cell && (cellInRange || !autoAttack))
                 {
-                    targetCol = result.col;
-                    targetRow = result.row;
+                    // 離したマスに止まっていた時間が短い＝通り過ぎる途中で離した → 使わずに選択したまま（もう一度押せば使える）
+                    bool settled = (result.col == m_aimCell.first && result.row == m_aimCell.second)
+                        && (GetTickCount64() - m_aimSince >= AIM_SETTLE_MS);
+                    if (settled)
+                    {
+                        targetCol = result.col;
+                        targetRow = result.row;
+                    }
+                    else canTry = false;
                 }
                 else if (autoAttack)
                 {
@@ -3188,6 +3289,7 @@ void BattleScene::HandleInput()
                             m_showDiscardPile = true;
                     }
 
+                    m_aimPanKeep = (dataPtr->type == CardType::Move);   // 移動したらカメラは寄せた位置のまま
                     m_battleUI->OnCardRemoved(m_selectedCardIndex);
                     m_selectedCardIndex = -1;
                     cardJustUsed = true;
@@ -3791,6 +3893,84 @@ void BattleScene::OnDrawSequenceComplete()
         m_battleUI->StartDrawCardEffect("ATK_knife");
     }
     RunTurnCycle();
+}
+
+bool BattleScene::SelectedNeedsTarget() const
+{
+    if (m_selectedCardIndex < 0 || m_selectedCardIndex >= (int)m_hand.GetCards().size()) return false;
+    const CardData* sd = m_hand.GetCards()[m_selectedCardIndex]->GetData();
+    CardType ct = sd->type;
+    return ct == CardType::Attack || ct == CardType::Move
+        || sd->mainEffect.type == CardEffectType::PlaceTrap
+        || sd->mainEffect.type == CardEffectType::DetonateAt
+        || sd->mainEffect.type == CardEffectType::DetonateChain
+        || sd->mainEffect.type == CardEffectType::PlaceDecoy;
+}
+
+bool BattleScene::TargetsHiddenByHand(const CardData& d) const
+{
+    XMMATRIX vp = m_renderer3D->GetViewMatrix() * m_renderer3D->GetProjectionMatrix();
+    float handTop = m_screenHeight - CardVisual::PLAY_LINE_OFFSET;   // 手札の上端（使用ラインと同じ線）
+    int rng = (d.type == CardType::Move) ? m_player->GetMoveRange(d.range) : d.range;
+
+    for (auto& [c, r] : BattleHighlighter::GetCandidates(m_playerCol, m_playerRow, d.rangeType, rng, 0, -1))
+    {
+        if (c < 0 || c >= m_gridMap->GetCols() || r < 0 || r >= m_gridMap->GetRows()) continue;   // 盤面外も返るので除く
+        float wx = (c - m_gridMap->GetCols() / 2.0f) * 1.1f;
+        float wz = (r - m_gridMap->GetRows() / 2.0f) * 1.1f;
+        XMFLOAT4 clip;
+        XMStoreFloat4(&clip, XMVector4Transform(XMVectorSet(wx, 0.0f, wz, 1.0f), vp));
+        if (clip.w <= 0.0f) continue;
+        float sy = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;   // 画面のy（下ほど大きい）
+        if (sy > handTop) return true;
+    }
+    return false;
+}
+
+float BattleScene::HiddenTargetsPanZ(const CardData& d) const
+{
+    XMMATRIX vp = m_renderer3D->GetViewMatrix() * m_renderer3D->GetProjectionMatrix();
+    float handTop = m_screenHeight - CardVisual::PLAY_LINE_OFFSET;   // 手札の上端（使用ラインと同じ線）
+    int rng = (d.type == CardType::Move) ? m_player->GetMoveRange(d.range) : d.range;
+
+    // ワールド座標 → 画面のy（下ほど大きい）
+    auto screenY = [&](float wx, float wz) {
+        XMFLOAT4 clip;
+        XMStoreFloat4(&clip, XMVector4Transform(XMVectorSet(wx, 0.0f, wz, 1.0f), vp));
+        return (clip.w > 0.0f) ? (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight : -1.0f;
+        };
+
+    // 狙えるマスのうち、画面で一番下に映っているもの
+    float lowest = 0.0f, lowX = 0.0f, lowZ = 0.0f;
+    for (auto& [c, r] : BattleHighlighter::GetCandidates(m_playerCol, m_playerRow, d.rangeType, rng, 0, -1))
+    {
+        if (c < 0 || c >= m_gridMap->GetCols() || r < 0 || r >= m_gridMap->GetRows()) continue;   // 盤面外も返るので除く
+        float wx = (c - m_gridMap->GetCols() / 2.0f) * 1.1f;
+        float wz = (r - m_gridMap->GetRows() / 2.0f) * 1.1f;
+        float sy = screenY(wx, wz);
+        if (sy > lowest) { lowest = sy; lowX = wx; lowZ = wz; }
+    }
+    const float MARGIN = 30.0f;              // 手札の上端より、これだけ上に出す
+    float limit = handTop - MARGIN;
+    if (lowest <= limit) return 0.0f;        // 余白込みで隠れていない → 動かさない
+
+    // そのマスの近くで「カメラを奥へ1ずらすと、画面で何px上がるか」を測って、必要な量に直す
+    float pxPerUnit = screenY(lowX, lowZ) - screenY(lowX, lowZ - 1.0f);
+    if (pxPerUnit <= 1.0f) return 0.0f;
+    return (lowest - limit) / pxPerUnit;
+}
+
+bool BattleScene::CellToScreen(int col, int row, float& sx, float& sy) const
+{
+    float wx = (col - m_gridMap->GetCols() / 2.0f) * 1.1f;
+    float wz = (row - m_gridMap->GetRows() / 2.0f) * 1.1f;
+    XMFLOAT4 clip;
+    XMStoreFloat4(&clip, XMVector4Transform(XMVectorSet(wx, 0.0f, wz, 1.0f),
+        m_renderer3D->GetViewMatrix() * m_renderer3D->GetProjectionMatrix()));
+    if (clip.w <= 0.0f) return false;
+    sx = (1.0f + clip.x / clip.w) * 0.5f * m_screenWidth;
+    sy = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;
+    return true;
 }
 
 void BattleScene::DashGlideTo(int c, int r)

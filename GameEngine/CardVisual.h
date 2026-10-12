@@ -25,6 +25,7 @@ public:
     static constexpr float CARD_SPACING = 75.0f;   // 手札の間隔
     static constexpr float CARD_HIDE_Y_OFFSET = 120.0f;  // 非ホバー時の手札の見える高さ
     static constexpr float CARD_HOVER_Y_OFFSET = 60.0f;   // ホバー時の追加リフト
+    static constexpr float PLAY_LINE_OFFSET = 190.0f;    // 画面下からこの高さより上で離すとカードを使う（見た目と判定で共用）
     static constexpr float RESHUFFLE_FX_DUR = 0.6f;
 
     // 手札 index 番目の基準X（中央揃え）

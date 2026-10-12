@@ -176,6 +176,8 @@ public:
 
     int GetCardAnimCount() const { return (int)m_cardAnims.size(); }
 
+    bool IsCardLockedToCenter() const { return m_cardLockedToCenter; }   // 選択中のカードが中央に固定されているか
+
     bool GetCardRect(int i, float& x, float& y, float& w, float& h) const
     {
         if (i < 0 || i >= (int)m_cardAnims.size()) return false;
