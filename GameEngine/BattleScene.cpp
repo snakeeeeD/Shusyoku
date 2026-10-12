@@ -530,6 +530,15 @@ void BattleScene::AddEnemy(int col, int row, const std::string& id)
     }
 
     if (id == "l3_sovereign") enemy->SetInvulnerable(true);   // 初手決定前から無敵に
+
+    // 識別色：今いる敵が使っていない一番小さい番号（誰かが倒れても他の敵の色は変わらない）
+    int ci = 0;
+    while (std::any_of(m_enemies.begin(), m_enemies.end(),
+        [ci](const Enemy* e) { return e->colorIndex == ci; }))
+        ci++;
+    enemy->colorIndex = ci;
+    enemy->hueColor = HighlightPalette::EnemyHue(ci);
+
     m_enemies.push_back(enemy);
 }
 
@@ -1081,8 +1090,7 @@ void BattleScene::Update(float deltaTime)
                 m_input.MoveMouseBy(ax - carryBX, ay - carryBY);
         }
 
-        int hi = m_battleUI->GetPanelHoveredEnemy();
-        m_highlighter.SetSelectedEnemy(hi >= 0 ? hi : m_selectedEnemyRange);
+        m_highlighter.SetSelectedEnemy(FocusEnemy());
 
         // ハイライト更新
         int highlightCardIndex = m_selectedCardIndex >= 0 ? m_selectedCardIndex : m_hoveredCardIndex;
@@ -1110,7 +1118,7 @@ void BattleScene::Update(float deltaTime)
                 m_enemies, m_gridMap, m_player,
                 m_highlightTimer, m_hoveredCell,
                 m_renderer3D, m_screenWidth, m_screenHeight,
-                cardArea, m_player->GetBuffManager().HasBuff(BuffType::MoveLock));
+                cardArea, m_player->GetBuffManager().HasBuff(BuffType::MoveLock), AttackTarget());
         }
         else
         {
@@ -1735,7 +1743,7 @@ void BattleScene::Update(float deltaTime)
                 m_enemies, m_gridMap, m_player,
                 m_highlightTimer, m_hoveredCell,
                 m_renderer3D, m_screenWidth, m_screenHeight,
-                cardArea, m_player->GetBuffManager().HasBuff(BuffType::MoveLock));
+                cardArea, m_player->GetBuffManager().HasBuff(BuffType::MoveLock), AttackTarget());
         }
         else
         {
@@ -1771,33 +1779,12 @@ void BattleScene::Draw()
             const CardData* d = &dThrow;
             // 敵1体・アタックは、ホバーしていなくても敵マスを狙い先にする（ホバー時と同じ浮き演出）
             std::pair<int, int> hov = m_hoveredCell;
-            if (d->type == CardType::Attack)
+            // 攻撃は「今離したら当たる敵」の占有マスを浮かせる（使用時と同じ判定）
+            if (const Enemy* t = AttackTarget())
             {
-                Enemy* sole = nullptr; int alive = 0;
-                for (auto e : m_enemies) if (e && e->GetHp() > 0) { alive++; sole = e; }
-                if (alive == 1 && sole)
-                {
-                    int rng = d->range;
-                    if (m_player->GetBuffManager().HasBuff(BuffType::Reposition))
-                        rng += m_player->GetBuffManager().GetBuffValue(BuffType::Reposition);
-                    int adx = 0, ady = 0;
-                    if (d->rangeType == RangeType::Cone && m_hoveredCell.first >= 0)
-                        RangeShape::CardinalAim(m_playerCol, m_playerRow,
-                            m_hoveredCell.first, m_hoveredCell.second, adx, ady);
-                    bool hoverInRange = (m_hoveredCell.first >= 0) &&
-                        RangeShape::Contains(m_playerCol, m_playerRow,
-                            m_hoveredCell.first, m_hoveredCell.second, d->rangeType, rng, 0, adx, ady);
-                    if (!hoverInRange)
-                        hov = { sole->gridCol, sole->gridRow };   // 射程内マス以外は敵を自動
-
-                    // 狙う敵の占有マスを全部浮かせる（スネークは頭＋体）
-                    raised.insert({ sole->gridCol, sole->gridRow });
-                    if (sole->IsSnake())
-                        for (auto& b : sole->GetBodyCells()) raised.insert(b);
-                    else
-                        for (auto& [dc, dr] : sole->GetGridShape())
-                            raised.insert({ sole->gridCol + dc, sole->gridRow + dr });
-                }
+                if (!CellInCardRange(*d, hov.first, hov.second))
+                    hov = { t->gridCol, t->gridRow };   // 射程内マス以外は狙う敵へ
+                for (auto& c : t->OccupiedCells()) raised.insert(c);
             }
             if (d->type == CardType::Move)
             {
@@ -2209,21 +2196,20 @@ void BattleScene::Draw()
         m_renderer3D->SetDepthEnabled(true);
     }
 
-    // 選択/ホバー中の敵をコーナーマークで囲む
+    // 注目中の敵を識別色のコーナーマークで囲む
     {
-        int hi = m_battleUI->GetPanelHoveredEnemy();
-        int target = (hi >= 0) ? hi : m_selectedEnemyRange;
+        int target = FocusEnemy();
         if (target >= 0 && target < (int)m_enemies.size())
         {
             Enemy* e = m_enemies[target];
             m_renderer3D->SetDepthEnabled(false);
-            XMFLOAT4 line(0.2f, 0.7f, 1.0f, 1.0f);
+            XMFLOAT4 line(e->hueColor.x, e->hueColor.y, e->hueColor.z, 1.0f);
             const float H = 0.5f, L = 0.18f, T = 0.05f;   // 半径・角の長さ・太さ
 
-            for (auto& [dc, dr] : e->GetGridShape())
+            for (auto& [c, r] : e->OccupiedCells())
             {
-                float cx = (e->gridCol + dc - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                float cz = (e->gridRow + dr - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                float cx = (c - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                float cz = (r - m_gridMap->GetRows() / 2.0f) * 1.1f;
                 for (int sx = -1; sx <= 1; sx += 2)
                     for (int sz = -1; sz <= 1; sz += 2)
                     {
@@ -2508,7 +2494,7 @@ void BattleScene::Draw()
     ctx.mousePos = m_input.GetMousePos();
     ctx.outOfRangeCells = &m_highlighter.GetOutOfRangeCells();
     ctx.travelPath = &m_movePath;
-    ctx.selectedEnemy = m_selectedEnemyRange;
+    ctx.selectedEnemy = FocusEnemy();
     ctx.discardSelectCount = m_discardSelectCount;
     ctx.discardSelected = &m_discardSelected;
     ctx.discardViewMode = m_discardViewMode;
@@ -3026,22 +3012,8 @@ void BattleScene::HandleInput()
             int targetRow = m_playerRow;
             bool canTry = !moveCanceled;
 
-            // 射程判定ヘルパー（スネークは頭＋体、多セル敵は占有マス全部）
-            int rng = dataCopy.range;
-            if (m_player->GetBuffManager().HasBuff(BuffType::Reposition))
-                rng += m_player->GetBuffManager().GetBuffValue(BuffType::Reposition);
-            auto cellInRng = [&](int ec, int er) {
-                int adx = 0, ady = 0;
-                if (dataCopy.rangeType == RangeType::Cone)
-                    RangeShape::CardinalAim(m_playerCol, m_playerRow, ec, er, adx, ady);
-                return RangeShape::Contains(m_playerCol, m_playerRow, ec, er, dataCopy.rangeType, rng, 0, adx, ady);
-                };
-            auto enemyCells = [](Enemy* e) {
-                std::vector<std::pair<int, int>> v;
-                if (e->IsSnake()) { v.push_back({ e->gridCol, e->gridRow }); for (auto& b : e->GetBodyCells()) v.push_back(b); }
-                else for (auto& [dc, dr] : e->GetGridShape()) v.push_back({ e->gridCol + dc, e->gridRow + dr });
-                return v;
-                };
+            auto cellInRng = [&](int ec, int er) { return CellInCardRange(dataCopy, ec, er); };
+            auto enemyCells = [](Enemy* e) { return e->OccupiedCells(); };
 
             // 射程内の敵を数える。1体だけなら自動ターゲット
             Enemy* soleEnemy = nullptr; int inRangeCount = 0;
@@ -3709,26 +3681,15 @@ void BattleScene::HandleInput()
             }
         }
 
-        // 敵パネルクリック → カメラ移動
+        // 敵パネルクリック → 範囲選択＋その敵へカメラ
         if (m_input.GetMouseButtonTrigger(0))
         {
-            POINT mp = m_input.GetMousePos();
-            float panelX = m_screenWidth - 250.0f;
-            float panelY = 50.0f;
-            float panelW = 240.0f;
-            float entryH = 90.0f;
-
-            for (int i = 0; i < (int)m_enemies.size(); i++)
+            int i = BattleUI::EnemyEntryAt(m_input.GetMousePos(), (int)m_enemies.size(), m_screenWidth);
+            if (i >= 0)
             {
-                float entryY = panelY + i * (entryH + 5.0f);
-                if (mp.x >= panelX && mp.x <= panelX + panelW
-                    && mp.y >= entryY && mp.y <= entryY + entryH)
-                {
-                    m_selectedEnemyRange = (m_selectedEnemyRange == i) ? -1 : i;
-                    m_cameraOffsetX = m_enemies[i]->worldX;
-                    m_cameraOffsetZ = m_enemies[i]->worldZ;
-                    break;
-                }
+                m_selectedEnemyRange = (m_selectedEnemyRange == i) ? -1 : i;
+                m_cameraOffsetX = m_enemies[i]->worldX;
+                m_cameraOffsetZ = m_enemies[i]->worldZ;
             }
         }
 }
@@ -3895,6 +3856,61 @@ void BattleScene::OnDrawSequenceComplete()
     RunTurnCycle();
 }
 
+bool BattleScene::CellInCardRange(const CardData& d, int c, int r) const
+{
+    if (c < 0 || r < 0) return false;
+    int rng = d.range;
+    if (m_player->GetBuffManager().HasBuff(BuffType::Reposition))
+        rng += m_player->GetBuffManager().GetBuffValue(BuffType::Reposition);
+    int adx = 0, ady = 0;
+    if (d.rangeType == RangeType::Cone)   // 扇は指したマスの方向へ向ける
+        RangeShape::CardinalAim(m_playerCol, m_playerRow, c, r, adx, ady);
+    return RangeShape::Contains(m_playerCol, m_playerRow, c, r, d.rangeType, rng, 0, adx, ady);
+}
+
+int BattleScene::AttackTargetEnemy() const
+{
+    if (m_selectedCardIndex < 0 || m_selectedCardIndex >= (int)m_hand.GetCards().size()) return -1;
+    CardData d = *m_hand.GetCards()[m_selectedCardIndex]->GetData();
+    ApplyKnifeThrow(d, m_player);
+    if (d.type != CardType::Attack) return -1;
+
+    auto inRange = [&](const Enemy* e) {
+        for (auto& [c, r] : e->OccupiedCells()) if (CellInCardRange(d, c, r)) return true;
+        return false;
+        };
+    // 射程内の敵が1体だけなら自動ターゲット（使用時と同じ判定）
+    int sole = -1, count = 0;
+    for (int i = 0; i < (int)m_enemies.size(); i++)
+        if (m_enemies[i]->GetHp() > 0 && inRange(m_enemies[i])) { sole = i; count++; }
+    bool autoAttack = (count == 1);
+
+    bool hoverInRange = CellInCardRange(d, m_hoveredCell.first, m_hoveredCell.second);
+    if (m_hoveredCell.first >= 0 && (hoverInRange || !autoAttack))
+    {
+        if (!hoverInRange) return -1;   // 射程外を指している＝当たらない
+        for (int i = 0; i < (int)m_enemies.size(); i++)
+            for (auto& cell : m_enemies[i]->OccupiedCells())
+                if (cell == m_hoveredCell) return i;
+        return -1;                      // 空きマスを指している
+    }
+    return autoAttack ? sole : -1;
+}
+
+// 優先：攻撃の対象予測 > パネルのホバー > マウスの下の敵 > クリック選択
+int BattleScene::FocusEnemy() const
+{
+    int t = AttackTargetEnemy();
+    if (t >= 0) return t;
+    int hi = m_battleUI ? m_battleUI->GetPanelHoveredEnemy() : -1;
+    if (hi >= 0 && hi < (int)m_enemies.size()) return hi;
+    if (m_selectedCardIndex < 0 && m_hoveredCardIndex < 0)   // カードを触っていない時だけ
+        for (int i = 0; i < (int)m_enemies.size(); i++)
+            for (auto& cell : m_enemies[i]->OccupiedCells())
+                if (cell == m_hoveredCell) return i;
+    return m_selectedEnemyRange;
+}
+
 bool BattleScene::SelectedNeedsTarget() const
 {
     if (m_selectedCardIndex < 0 || m_selectedCardIndex >= (int)m_hand.GetCards().size()) return false;
@@ -4023,16 +4039,13 @@ void BattleScene::FreeLookStep(Input& in, float deltaTime)
                     if (m_enemies[i]->gridCol + dc == rc.col && m_enemies[i]->gridRow + dr == rc.row) found = i;
         m_selectedEnemyRange = (found >= 0 && found != m_selectedEnemyRange) ? found : -1;
     }
+
     // 敵パネルクリック → 範囲選択＋その敵へカメラ
     if (in.GetMouseButtonTrigger(0)) {
-        POINT mp = in.GetMousePos();
-        float px = m_screenWidth - 250.0f, py = 50.0f, pw = 240.0f, eh = 90.0f;
-        for (int i = 0; i < (int)m_enemies.size(); i++) {
-            float ey = py + i * (eh + 5.0f);
-            if (mp.x >= px && mp.x <= px + pw && mp.y >= ey && mp.y <= ey + eh) {
-                m_selectedEnemyRange = (m_selectedEnemyRange == i) ? -1 : i;
-                m_cameraOffsetX = m_enemies[i]->worldX; m_cameraOffsetZ = m_enemies[i]->worldZ; break;
-            }
+        int i = BattleUI::EnemyEntryAt(in.GetMousePos(), (int)m_enemies.size(), m_screenWidth);
+        if (i >= 0) {
+            m_selectedEnemyRange = (m_selectedEnemyRange == i) ? -1 : i;
+            m_cameraOffsetX = m_enemies[i]->worldX; m_cameraOffsetZ = m_enemies[i]->worldZ;
         }
     }
 
@@ -4045,8 +4058,7 @@ void BattleScene::FreeLookStep(Input& in, float deltaTime)
     }
 
     // ハイライト（脅威範囲＋当たりマーカー）
-    int hi = m_battleUI->GetPanelHoveredEnemy();
-    m_highlighter.SetSelectedEnemy(hi >= 0 ? hi : m_selectedEnemyRange);
+    m_highlighter.SetSelectedEnemy(FocusEnemy());
     m_highlighter.ClearPlayerHighlight(m_gridMap);
     m_highlightTimer += deltaTime * 0.5f;
     if (m_highlightTimer > 3.14159f * 2.0f) m_highlightTimer = 0.0f;
@@ -4064,12 +4076,11 @@ bool BattleScene::GetHitmarkRect(float& x, float& y, float& w, float& h) const
 bool BattleScene::GetEnemyPanelRect(float& x, float& y, float& w, float& h) const
 {
     if (m_enemies.empty()) return false;
-    int n = (int)m_enemies.size();
-    const float panelW = 240.0f, entryH = 90.0f, gap = 5.0f;
-    x = m_screenWidth - 250.0f - 6.0f;
-    y = 50.0f + RelicManager::BarTotalHeight(m_screenWidth) - 6.0f;
-    w = panelW + 12.0f;
-    h = n * entryH + (n - 1) * gap + 12.0f;     // 敵数ぶんの高さ
+    float ex, ey, ew, eh, lx, ly;
+    BattleUI::GetEnemyEntryRect(0, m_screenWidth, ex, ey, ew, eh);
+    BattleUI::GetEnemyEntryRect((int)m_enemies.size() - 1, m_screenWidth, lx, ly, ew, eh);
+    x = ex - 6.0f; y = ey - 6.0f;
+    w = ew + 12.0f; h = (ly + eh) - ey + 12.0f;   // 先頭〜末尾の敵まで
     return true;
 }
 

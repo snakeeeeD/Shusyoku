@@ -46,6 +46,12 @@ namespace HighlightPalette
         }
     }
 
+    // 識別色を白に寄せた色（窓の枠の色付け用。k=識別色の強さ 0..1）
+    inline XMFLOAT4 Tint(const XMFLOAT4& c, float k)
+    {
+        return XMFLOAT4(1.0f - k + k * c.x, 1.0f - k + k * c.y, 1.0f - k + k * c.z, 1.0f);
+    }
+
     inline const DirectX::XMFLOAT4& EnemyHue(int i)
     {
         static const DirectX::XMFLOAT4 hues[] = {

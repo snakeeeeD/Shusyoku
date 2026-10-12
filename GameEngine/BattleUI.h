@@ -172,6 +172,10 @@ public:
     TextRenderer* GetTextRenderer() { return m_textRenderer; }
     int GetPanelHoveredEnemy() const { return m_panelHoveredEnemy; }
 
+    // 右上の敵パネル1件分の矩形（描画・クリック判定・チュートリアルで共有）
+    static void GetEnemyEntryRect(int i, int screenWidth, float& x, float& y, float& w, float& h);
+    static int  EnemyEntryAt(POINT p, int count, int screenWidth);   // 無ければ-1
+
     int GetCardAtScreenPos(POINT p) const;
 
     int GetCardAnimCount() const { return (int)m_cardAnims.size(); }

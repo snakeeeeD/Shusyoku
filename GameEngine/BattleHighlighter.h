@@ -22,7 +22,7 @@ public:
         const std::vector<Enemy*>& enemies, GridMap* gridMap, const Player* player,
         float timer, std::pair<int, int> hoveredCell, Renderer3D* renderer3D,
         int screenWidth, int screenHeight, const RECT& cardArea,
-        bool moveLocked = false);
+        bool moveLocked = false, const Enemy* attackTarget = nullptr);
 
     void UpdateEnemyHighlight(
         const std::vector<Enemy*>& enemies, GridMap* gridMap, const Player* player,

@@ -255,6 +255,10 @@ private:
     float m_aimPanStartX = 0.0f;          // 寄せる前のカメラ位置（X）
     bool  m_camAutoMoving = false;        // 今フレーム、狙いカメラが自動で動いたか
     bool CellToScreen(int col, int row, float& sx, float& sy) const;   // マスの中心が今のカメラで画面のどこに映るか
+    bool CellInCardRange(const CardData& d, int c, int r) const;   // カードの射程にマスが入るか（使用時・予測で共通）
+    int  AttackTargetEnemy() const;   // 攻撃カードを今離したら当たる敵（無ければ-1）
+    int  FocusEnemy() const;          // 今注目している敵（範囲の点滅・選択枠・パネル強調で共通）
+    const Enemy* AttackTarget() const { int i = AttackTargetEnemy(); return i >= 0 ? m_enemies[i] : nullptr; }
     POINT m_prevPathMouse = { -1, -1 };   // 前フレームのマウス位置（経路を変えるのはマウスが動いた時だけにする）
 
     static constexpr float AIM_FOLLOW_SPEED = 4.0f;   // ゴーストへ寄る速さ（大きいほど速い。手札に隠れるマスを出す時は 8）

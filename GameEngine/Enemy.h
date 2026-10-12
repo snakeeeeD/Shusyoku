@@ -99,6 +99,7 @@ public:
 
 	bool hitsPlayer = false;   // 現在のプレイヤー位置を攻撃範囲に含む＝避けられていない
 	DirectX::XMFLOAT4 hueColor{ 1, 1, 1, 1 };   // 敵ごとの識別色（マーカーのフチ用）
+	int colorIndex = -1;   // 識別色の番号（出現時に決めて戦闘中は変えない）
 
 	void SetAllyCount(int n) { m_allyCount = n; }
 	void MarkJustSummoned() { m_justSummoned = true; }
@@ -110,6 +111,14 @@ public:
 
 	bool IsSnake() const { return m_isSnake; }
 	const std::vector<std::pair<int, int>>& GetBodyCells() const { return m_bodyCells; }
+	// 占有している全マス（蛇は頭＋体、多マス敵は形の全マス）
+	std::vector<std::pair<int, int>> OccupiedCells() const
+	{
+		std::vector<std::pair<int, int>> v;
+		if (IsSnake()) { v.push_back({ gridCol, gridRow }); for (auto& b : GetBodyCells()) v.push_back(b); }
+		else for (auto& [dc, dr] : m_gridShape) v.push_back({ gridCol + dc, gridRow + dr });
+		return v;
+	}
 	void InitSnake(GridMap* gridMap);
 	void GrowCoil(GridMap* gridMap, int steps, class Player* player);
 	bool PushPlayerToCenter(GridMap* gridMap, class Player* player);

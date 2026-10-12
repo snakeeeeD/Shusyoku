@@ -66,7 +66,8 @@ void BattleHighlighter::UpdatePlayerHighlight(
     Renderer3D* renderer3D,
     int screenWidth, int screenHeight,
     const RECT& cardArea,
-    bool moveLocked)
+    bool moveLocked,
+    const Enemy* attackTarget)
 {
     ClearPlayerHighlight(gridMap);
     if (!data) return;
@@ -280,30 +281,10 @@ void BattleHighlighter::UpdatePlayerHighlight(
         if (data->type == CardType::Attack && isHovered && !isEnemy)
             isHovered = false;
 
-        // 攻撃カードで射程内の敵マスは自動でホバー扱い
-        if (data->type == CardType::Attack && isEnemy && !isHovered)
-        {
-            // 射程内か確認（表示形状と同じ判定）
-            bool inShape = false;
-            for (auto enemy : enemies)
-            {
-                bool isThisEnemy = false;
-                for (auto& [dc, dr] : enemy->GetGridShape())
-                    if (enemy->gridCol + dc == col && enemy->gridRow + dr == row) { isThisEnemy = true; break; }
-                if (!isThisEnemy) continue;
-
-                for (auto& [dc2, dr2] : enemy->GetGridShape())
-                    if (RangeShape::Contains(centerCol, centerRow,
-                        enemy->gridCol + dc2, enemy->gridRow + dr2,
-                        data->rangeType, data->range, 0, aimDx, aimDy))
-                    {
-                        inShape = true; break;
-                    }
-                break;
-            }
-            if (inShape)
-                isHovered = true;
-        }
+        // 攻撃カード：今離したら当たる敵のマスだけ強調（射程内に敵が2体いても狙いが一目で分かる）
+        if (data->type == CardType::Attack && isEnemy && attackTarget)
+            for (auto& c : attackTarget->OccupiedCells())
+                if (c.first == col && c.second == row) { isHovered = true; break; }
 
         // 危険マス判定
         bool isDangerCell = false;
@@ -377,9 +358,8 @@ void BattleHighlighter::UpdateEnemyHighlight(
         const EnemyAction* action = enemy->GetNextAction();
         bool harmful = action && EnemyIntentVisual::IsHarmful(*action);
 
-        // 足元マス：全ての敵に自分の色（薄め）
-        XMFLOAT4 footCol = HighlightPalette::Scale(HighlightPalette::EnemyHue(ei), 0.5f);
-        enemy->hueColor = HighlightPalette::EnemyHue(ei);
+        // 足元マス：その敵の識別色（薄め）
+        XMFLOAT4 footCol = HighlightPalette::Scale(enemy->hueColor, 0.5f);
         for (auto& [dc, dr] : enemy->GetGridShape())
         {
             int ec = enemy->gridCol + dc, er = enemy->gridRow + dr;
@@ -388,15 +368,6 @@ void BattleHighlighter::UpdateEnemyHighlight(
         }
 
         if (!harmful) continue;
-
-        // 足元マスをこの敵の色（薄め）で
-        for (auto& [dc, dr] : enemy->GetGridShape())
-        {
-            int ec = enemy->gridCol + dc, er = enemy->gridRow + dr;
-            if (ec >= 0 && ec < gridMap->GetCols() && er >= 0 && er < gridMap->GetRows())
-                gridMap->GetCell(ec, er).gameObject.color =
-                HighlightPalette::Scale(HighlightPalette::EnemyHue(ei), 0.5f);
-        }
 
         auto mark = [&](int c, int r, int dist)
             {
@@ -442,12 +413,14 @@ void BattleHighlighter::UpdateEnemyHighlight(
     {
         bool sel = selCells.count(pos) > 0;
         auto& threats = cellThreats[pos];
-        float a = sel ? 0.70f : 0.50f;
+        // 注目中の敵の範囲は点滅、それ以外は控えめ（注目が無ければ全部ふつう）
+        float a = sel ? 0.55f + 0.30f * sinf(timer * 12.0f)
+            : (m_selectedEnemy >= 0 ? 0.20f : 0.50f);
 
         XMFLOAT4 h;
         if ((int)threats.size() <= 1 || sel)
         {
-            h = HighlightPalette::EnemyHue(info.second);      // 単独／選択中は固定色
+            h = enemies[info.second]->hueColor;      // 単独／選択中は固定色
         }
         else
         {
@@ -458,8 +431,8 @@ void BattleHighlighter::UpdateEnemyHighlight(
             int ib = (ia + 1) % n;                            // 次の色
             float t = scaled - floorf(scaled);                // 0..1
             t = t * t * (3.0f - 2.0f * t);                    // smoothstep（滑らかに）
-            const XMFLOAT4& ca = HighlightPalette::EnemyHue(threats[ia]);
-            const XMFLOAT4& cb = HighlightPalette::EnemyHue(threats[ib]);
+            const XMFLOAT4& ca = enemies[threats[ia]]->hueColor;
+            const XMFLOAT4& cb = enemies[threats[ib]]->hueColor;
             h = XMFLOAT4(ca.x + (cb.x - ca.x) * t,
                 ca.y + (cb.y - ca.y) * t,
                 ca.z + (cb.z - ca.z) * t, 1.0f);
@@ -477,7 +450,8 @@ void BattleHighlighter::UpdateEnemyHighlight(
     const int drow[4] = { -1, 1, 0, 0 };
     for (auto& [ei, cells] : enemyCells)
     {
-        XMFLOAT4 hue = HighlightPalette::EnemyHue(ei);
+        XMFLOAT4 hue = enemies[ei]->hueColor;
+        if (m_selectedEnemy >= 0 && ei != m_selectedEnemy) hue.w = 0.30f;   // 注目外の外周線は薄く
         for (auto& pos : cells)
             for (int d = 0; d < 4; d++)
             {

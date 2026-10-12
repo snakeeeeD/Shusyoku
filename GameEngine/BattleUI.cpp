@@ -2122,12 +2122,28 @@ void BattleUI::DrawPlayerOffScreenIndicator(const BattleUIContext& ctx)
     }
 }
 
+void BattleUI::GetEnemyEntryRect(int i, int screenWidth, float& x, float& y, float& w, float& h)
+{
+    w = 240.0f; h = 90.0f;
+    x = screenWidth - 250.0f;
+    y = 50.0f + RelicManager::BarTotalHeight(screenWidth) + i * (h + 5.0f);
+}
+
+int BattleUI::EnemyEntryAt(POINT p, int count, int screenWidth)
+{
+    for (int i = 0; i < count; i++)
+    {
+        float x, y, w, h;
+        GetEnemyEntryRect(i, screenWidth, x, y, w, h);
+        if (p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h) return i;
+    }
+    return -1;
+}
+
 void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
 {
-    float panelX = ctx.screenWidth - 250.0f;
-    float panelY = 50.0f + RelicManager::BarTotalHeight(ctx.screenWidth);
-    float panelW = 240.0f;
-    float entryH = 90.0f;
+    float panelX, panelY, panelW, entryH;
+    GetEnemyEntryRect(0, ctx.screenWidth, panelX, panelY, panelW, entryH);
     float iconSize = 55.0f;
 
     POINT mp = ctx.mousePos;
@@ -2157,26 +2173,28 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
         bool isHover = isEntryHover || isDetailHover;
 
         bool isSel = (ctx.selectedEnemy == i);
-        DrawWindow(panelX, entryY, panelW, entryH);
-        if (isHover || isSel)   // 選択/ホバーは水色を薄く重ねて強調
-            m_spriteRenderer->DrawSprite(m_whiteTexture, panelX + 5.0f, entryY + 5.0f,
-                panelW - 10.0f, entryH - 10.0f, 0.0f, XMFLOAT4(0.2f, 0.5f, 0.7f, 0.30f));
+        const XMFLOAT4& hue = enemy->hueColor;
 
-        if (isHover || isSel)
+        // 窓の枠を識別色に寄せる（範囲・足元と同じ色＝どの敵の窓か一目で分かる）
+        DrawWindow(panelX, entryY, panelW, entryH, HighlightPalette::Tint(hue, 0.55f));
+        // アイコンの下地も識別色
+        m_spriteRenderer->DrawSprite(m_whiteTexture, panelX + 5.0f, entryY + 5.0f,
+            iconSize, iconSize, 0.0f, XMFLOAT4(hue.x, hue.y, hue.z, 0.45f));
+
+        if (isHover || isSel)   // 選択/ホバーは識別色を薄く重ねる＋角の印
         {
-            XMFLOAT4 line(0.2f, 0.7f, 1.0f, 1.0f);
+            m_spriteRenderer->DrawSprite(m_whiteTexture, panelX + 5.0f, entryY + 5.0f,
+                panelW - 10.0f, entryH - 10.0f, 0.0f, XMFLOAT4(hue.x, hue.y, hue.z, 0.22f));
+
+            XMFLOAT4 line(hue.x, hue.y, hue.z, 1.0f);
             const float th = 3.0f, L = 14.0f;
             float rx = panelX + panelW, by = entryY + entryH;
-            // 左上
             m_spriteRenderer->DrawSprite(m_whiteTexture, panelX, entryY, L, th, 0.0f, line);
             m_spriteRenderer->DrawSprite(m_whiteTexture, panelX, entryY, th, L, 0.0f, line);
-            // 右上
             m_spriteRenderer->DrawSprite(m_whiteTexture, rx - L, entryY, L, th, 0.0f, line);
             m_spriteRenderer->DrawSprite(m_whiteTexture, rx - th, entryY, th, L, 0.0f, line);
-            // 左下
             m_spriteRenderer->DrawSprite(m_whiteTexture, panelX, by - th, L, th, 0.0f, line);
             m_spriteRenderer->DrawSprite(m_whiteTexture, panelX, by - L, th, L, 0.0f, line);
-            // 右下
             m_spriteRenderer->DrawSprite(m_whiteTexture, rx - L, by - th, L, th, 0.0f, line);
             m_spriteRenderer->DrawSprite(m_whiteTexture, rx - th, by - L, th, L, 0.0f, line);
         }
@@ -2240,7 +2258,7 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
             detailH += 20.0f;
         detailH += 18.0f;
         if (detailH < entryH) detailH = entryH;
-        DrawWindow(detailX, detailEntryY, 190.0f, detailH);
+        DrawWindow(detailX, detailEntryY, 190.0f, detailH, HighlightPalette::Tint(hEnemy->hueColor, 0.55f));
     }
 
     m_panelHoveredEnemy = hoveredEnemy;
