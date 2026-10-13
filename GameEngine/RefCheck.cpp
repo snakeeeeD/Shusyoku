@@ -147,6 +147,11 @@ namespace
         { "effects.json", "effects[].sheets[].texture", "texture", nullptr, nullptr, Severity::Warning },
         { "effects.json", "effects[].then",             "effect" },
 
+        // ---- quickplay.json（クイックプレイの戦闘順・デッキ固定レリック）----
+        { "quickplay.json", "battles[]",        "encounter" },
+        { "quickplay.json", "decks[].relics[]", "relic" },
+        { "quickplay.json", "decks[].cards[]",  "cardRef" },
+
         // ---- セーブデータ（遊んでいる途中の状態。消したカードなどが残っていると警告）----
         { "playerdata.json", "deck[]",          "cardRef",  nullptr, nullptr, Severity::Warning },
         { "playerdata.json", "relics[]",        "relic",    nullptr, nullptr, Severity::Warning },

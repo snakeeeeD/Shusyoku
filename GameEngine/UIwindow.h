@@ -39,4 +39,14 @@ public:
         Draw(sr, white, x, y, w, h);
         sr->DrawSprite(white, x + 6, y + 6, w - 12, h - 12, 0.0f, color);
     }
+
+    // 枠線だけ（選択中・スポットライトの強調）
+    static void Frame(SpriteRenderer* sr, ID3D11ShaderResourceView* white,
+        float x, float y, float w, float h, const DirectX::XMFLOAT4& c, float t = 3.0f)
+    {
+        sr->DrawSprite(white, x - t, y - t, w + t * 2, t, 0.0f, c);
+        sr->DrawSprite(white, x - t, y + h, w + t * 2, t, 0.0f, c);
+        sr->DrawSprite(white, x - t, y, t, h, 0.0f, c);
+        sr->DrawSprite(white, x + w, y, t, h, 0.0f, c);
+    }
 };

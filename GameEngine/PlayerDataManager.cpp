@@ -48,6 +48,8 @@ void PlayerDataManager::Init()
 
 void PlayerDataManager::Save()
 {
+	if (!s_saveEnabled) return;
+
 	json j;
 	j["hp"] = m_data.hp;
 	j["maxHp"] = m_data.maxHp;
@@ -231,6 +233,8 @@ void PlayerDataManager::StartNewGame()
 
 void PlayerDataManager::DeleteSave()
 {
+	if (!s_saveEnabled) return;
+
 	std::error_code ec;
 	std::filesystem::remove(SAVE_PATH, ec);   // ワイドパスで確実に削除（日本語CWD対策）
 	s_runOver = true;

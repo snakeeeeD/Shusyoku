@@ -1,0 +1,45 @@
+{
+  "decks": [
+    {
+      "tag": "Strike",
+      "name": "斬撃",
+      "desc": "攻撃カードを重ねて押し切る基本の型。\n迷ったらこれ。",
+      "cards": [
+        "MOV_move", "MOV_move", "MOV_sidestep",
+        "SKL_defend", "SKL_defend",
+        "ATK_strike", "ATK_double_strike", "ATK_double_strike",
+        "ATK_fan_slash", "ATK_cleave", "ATK_jab", "ATK_Spin Slash", "ATK_flurry",
+        "SKL_flex", "POW_rage"
+      ],
+      "relics": [ "first_strike", "war_god_seal", "combo_blade" ]
+    },
+    {
+      "tag": "Poison",
+      "name": "毒",
+      "desc": "毒を重ねて毎ターン削る。\n逃げ回りながら倒す持久戦の型。",
+      "cards": [
+        "MOV_move", "MOV_move", "MOV_sidestep",
+        "SKL_defend", "SKL_defend",
+        "ATK_strike", "ATK_poison_blade", "ATK_poison_blade",
+        "ATK_poison_mist", "ATK_venom_fan", "ATK_venom_lash", "ATK_drain",
+        "ATK_catalyst", "ATK_envenom", "POW_noxious"
+      ],
+      "relics": [ "venom_vial", "toxic_lore", "plague_heart" ]
+    },
+    {
+      "tag": "Trap",
+      "name": "罠",
+      "desc": "マスに罠を置き、敵を誘い込む。\nグリッドならではの戦い方。",
+      "cards": [
+        "MOV_move", "MOV_move", "MOV_sidestep",
+        "SKL_defend", "SKL_defend",
+        "ATK_strike", "ATK_shove", "ATK_hook",
+        "SKL_Trap_explosion_trap", "SKL_Trap_root_trap", "SKL_Trap_poison_trap",
+        "SKL_detonate_at",
+        "SKL_Trap_minefield", "SKL_Trap_landmine", "SKL_detonate_all", "ATK_resonance"
+      ],
+      "relics": [ "trapper", "trap_master", "trap_adept" ]
+    }
+  ],
+  "battles": [ "enc6", "enc16", "dragon" ]
+}

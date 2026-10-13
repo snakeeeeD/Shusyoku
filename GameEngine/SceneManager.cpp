@@ -15,6 +15,8 @@
 #include "Audio.h"
 #include "Hint.h"
 #include "Settings.h"
+#include "QuickPlay.h"
+#include "QuickSelectScene.h"
 
 #include <cmath>
 
@@ -104,6 +106,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	MaterialDataBase::Load("Assets/Data/materials.json");
 	RelicManager::Load("Assets/Data/relics.json");
 	EventDataBase::Load("Assets/Data/events.json");
+	QuickPlay::Load("Assets/Data/quickplay.json");
 	PlayerDataManager::Init();
 
 	Audio::SetMasterVolume(1.0f);
@@ -395,6 +398,10 @@ void SceneManager::DoChangeScene(SceneType type)
 {
 	Hint::Clear();
 
+	if (type == SceneType::Title) QuickPlay::End();   // タイトルへ戻る時は必ず終了（本編の状態に戻す）
+	if (QuickPlay::Active() && type == SceneType::Field)
+		type = QuickPlay::NextScene();                // 「フィールドへ戻る」を次の戦闘か結果画面に読み替える
+
 	// 削除前に必要な情報を取得
 	std::string battleEnemyId;
 	int battleSeed = 0;
@@ -443,6 +450,7 @@ void SceneManager::DoChangeScene(SceneType type)
 			battleCategory = field->GetCurrentBattleCategory();
 			battleTier = field->GetCurrentBattleTier();
 		}
+		if (QuickPlay::Active()) QuickPlay::TakeBattle(battleEnemyId, battleCategory);
 	}
 
 	// 古いシーンを削除
@@ -521,6 +529,13 @@ void SceneManager::DoChangeScene(SceneType type)
 			scene->onChangeSceneBlack = [this](SceneType t, std::function<void()> fn) { ChangeScene(t, std::move(fn)); };
 			break;
 		}
+		case SceneType::QuickSelect:
+		{
+			auto scene = new QuickSelectScene();
+			scene->onChangeScene = [this](SceneType t) { ChangeScene(t); };
+			m_currentScene = scene;
+			break;
+		}
 		
 	}
 
@@ -591,7 +606,7 @@ void SceneManager::Draw()
 	if (m_invOpen) DrawInventory();
 	if (m_mapOpen) DrawMap();
 	bool fading = (m_fadeState != Fade::None);
-	if (m_currentType != SceneType::Title && !fading) DrawOverlay();
+	if (HasTopBar() && !fading) DrawOverlay();
 	if (m_eventOpen && !m_mapOpen && !m_invOpen && !m_deckOpen)
 	{
 		if (m_eventPickType.empty()) DrawEvent();
@@ -602,7 +617,7 @@ void SceneManager::Draw()
 	if (m_restOpen && !m_mapOpen && !m_invOpen && !m_deckOpen && !m_craftOpen) DrawRest();
 	if (m_deckOpen || m_mapOpen || m_invOpen || m_restOpen || m_craftOpen) DrawBackButton();
 	if (m_craftFxTimer > 0.0f) DrawCraftFx();  
-	if (m_currentType != SceneType::Title && !fading) { DrawRelicBar(); DrawBarTips(); }
+	if (HasTopBar() && !fading) { DrawRelicBar(); DrawBarTips(); }
 	if (!TutorialActive() && !fading) DrawHint();
 	if (m_settingsOpen) DrawSettings();
 
@@ -962,7 +977,11 @@ void SceneManager::HandleInput()
 		{
 			Audio::PlaySE("Assets/Sound/se/click.mp3");
 			m_tutorialPage++;
-			if (m_tutorialPage >= (int)m_tutorialPages.size()) m_tutorialOpen = false;
+			if (m_tutorialPage >= (int)m_tutorialPages.size())
+			{
+				m_tutorialOpen = false;
+				if (auto b = dynamic_cast<BattleScene*>(m_currentScene)) b->OnTutorialClosed();   // 保留していたレリックを発動
+			}
 		}
 		return;
 	}
@@ -971,7 +990,7 @@ void SceneManager::HandleInput()
 
 	if (m_craftFxTimer > 0.0f) return;           // 演出中は入力停止
 
-	if (m_currentType != SceneType::Title)
+	if (HasTopBar())
 	{
 		POINT m = m_uiInput.GetMousePos();
 		bool click = m_uiInput.GetMouseButtonTrigger(0);
@@ -1134,7 +1153,7 @@ void SceneManager::HandleInput()
 		}
 	}
 
-	if (m_currentType != SceneType::Title && m_currentType != SceneType::Battle)
+	if (HasTopBar() && m_currentType != SceneType::Battle)
 	{
 		POINT m = m_uiInput.GetMousePos();
 		bool click = m_uiInput.GetMouseButtonTrigger(0);
@@ -1346,10 +1365,7 @@ void SceneManager::DrawTutorial()
 void SceneManager::DrawFrame(float x, float y, float w, float h, const XMFLOAT4& c)
 {
 	ID3D11ShaderResourceView* white = TextureManager::Get("white");
-	m_uiSprite->DrawSprite(white, x - 3, y - 3, w + 6, 3, 0.0f, c);
-	m_uiSprite->DrawSprite(white, x - 3, y + h, w + 6, 3, 0.0f, c);
-	m_uiSprite->DrawSprite(white, x - 3, y, 3, h + 3, 0.0f, c);
-	m_uiSprite->DrawSprite(white, x + w, y, 3, h + 3, 0.0f, c);
+	UiWindow::Frame(m_uiSprite, TextureManager::Get("white"), x, y, w, h, c);
 }
 
 void SceneManager::DrawHint()

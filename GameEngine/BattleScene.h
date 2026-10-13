@@ -122,6 +122,7 @@ public:
     Enemy* m_coilTrapEnemy = nullptr;
 
     bool IsRelicSpent(const std::string& id) const;   // 一度きりレリックが使用済みか
+    void OnTutorialClosed();   // 初戦チュートリアルを閉じた時（保留していたレリックを発動）
 
 private:
     BattleUI* m_battleUI;
@@ -266,7 +267,6 @@ private:
     bool m_ghostFollowing = false;                    // 今、ゴーストへ寄っている途中か
 
     float HiddenTargetsPanZ(const CardData& d) const;   // 手札に隠れるマスを手札の上に出すのに必要なカメラのずらし量
-   
 
 #ifdef _DEBUG
     int m_debugRank;
@@ -322,4 +322,7 @@ private:
     static constexpr unsigned long long AIM_SETTLE_MS = 150;
     std::pair<int, int> m_aimCell = { -1, -1 };
     unsigned long long m_aimSince = 0;
+
+    bool m_holdForTutorial = false;    // 初戦チュートリアルが閉じるまで、操作を求めるレリックを保留
+    bool m_turnCyclePending = false;   // 保留中のturnCycle（閉じたら発動）
 };

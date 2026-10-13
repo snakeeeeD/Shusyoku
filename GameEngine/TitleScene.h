@@ -56,4 +56,11 @@ private:
         ny = m_screenHeight / 2.0f + 40.0f;
         cx = nx; cy = ny + h + 18.0f;
     }
+    bool m_quickHover = false;
+    void QuickBtnRect(float& x, float& y, float& w, float& h) const
+    {
+        float nx, ny, cx, cy; MenuBtnRects(nx, ny, cx, cy, w, h);
+        x = cx; y = cy + h + 18.0f;   // コンティニューの下
+    }
+
 };

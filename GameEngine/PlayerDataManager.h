@@ -35,9 +35,13 @@ public:
 
     static bool IsRunOver() { return s_runOver; }
 
+    static void SetSaveEnabled(bool on) { s_saveEnabled = on; }   // falseの間はSave/DeleteSaveしない（クイックプレイ用）
+
 private:
     static PlayerData m_data;
     static const char* SAVE_PATH;
 
     static bool s_runOver;
+
+    static inline bool s_saveEnabled = true;
 };

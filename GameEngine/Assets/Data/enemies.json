@@ -564,7 +564,7 @@
             }
           ],
           "select": {
-            "chance": 300
+            "chance": 30
           }
         },
         {

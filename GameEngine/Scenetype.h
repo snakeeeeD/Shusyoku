@@ -8,4 +8,5 @@ enum class SceneType
     CardSelect,
     Shop,
     Result,
+    QuickSelect,   // クイックプレイのデッキ選択
 };

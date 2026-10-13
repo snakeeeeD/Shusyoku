@@ -54,6 +54,7 @@ public:
         case SceneType::Field:      return "field";
         case SceneType::Shop:       return "shop";
         case SceneType::Result:     return "result";
+        case SceneType::QuickSelect: return "quickselect";
         default:                    return "other";
         }
     }
@@ -269,4 +270,7 @@ private:
         u.cfmNo = { ccx + cw - 160.0f, ccy + ch - 60.0f, 120.0f, 40.0f };
         return u;
     }
+
+    // 上部のバー（HP・デッキ・設定など）を出すシーンか
+    bool HasTopBar() const { return m_currentType != SceneType::Title && m_currentType != SceneType::QuickSelect; }
 };

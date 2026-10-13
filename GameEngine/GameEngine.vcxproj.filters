@@ -325,6 +325,18 @@
     <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\05-RericEditor">
       <UniqueIdentifier>{74587e77-9287-4826-8132-b6b01cb77608}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\04-Game内関連\05-RunSetup">
+      <UniqueIdentifier>{84da6d07-9658-4b71-8660-71f8bd577220}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\70-QuickPlay">
+      <UniqueIdentifier>{44884960-ece6-4c17-8b37-932e4c07679f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\70-QuickPlay\00-QuickPlay">
+      <UniqueIdentifier>{d97ee1d3-cfe3-4786-bd6a-7f23935d3344}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\70-QuickPlay\01-QuickSelectScene">
+      <UniqueIdentifier>{0def693b-c25a-4925-a8fc-7742db21d486}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -606,6 +618,18 @@
     <ClInclude Include="RelicEditor.h">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\05-RericEditor</Filter>
     </ClInclude>
+    <ClInclude Include="Hint.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="RunSetup.h">
+      <Filter>ソース ファイル\04-Game内関連\05-RunSetup</Filter>
+    </ClInclude>
+    <ClInclude Include="QuickPlay.h">
+      <Filter>ソース ファイル\02-Scene\70-QuickPlay\00-QuickPlay</Filter>
+    </ClInclude>
+    <ClInclude Include="QuickSelectScene.h">
+      <Filter>ソース ファイル\02-Scene\70-QuickPlay\01-QuickSelectScene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SpriteRenderer.cpp">
@@ -772,6 +796,18 @@
     </ClCompile>
     <ClCompile Include="RelicEditor.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\05-RericEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="Hint.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="RunSetup.cpp">
+      <Filter>ソース ファイル\04-Game内関連\05-RunSetup</Filter>
+    </ClCompile>
+    <ClCompile Include="QuickPlay.cpp">
+      <Filter>ソース ファイル\02-Scene\70-QuickPlay\00-QuickPlay</Filter>
+    </ClCompile>
+    <ClCompile Include="QuickSelectScene.cpp">
+      <Filter>ソース ファイル\02-Scene\70-QuickPlay\01-QuickSelectScene</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

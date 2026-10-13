@@ -6,6 +6,7 @@
 #include "TextureManager.h"
 #include "PlayerDataManager.h"
 #include "input.h"
+#include "URect.h"
 #include <functional>
 
 class ResultScene : public Scene
@@ -31,4 +32,8 @@ private:
     HWND m_hWnd = nullptr;
     bool m_cleared = false;
     float m_timer = 0.0f;
+
+    // クイックプレイ終了時のボタン（描画と判定で共有）
+    URect MainBtn() const { return { m_screenWidth / 2.0f - 290.0f, m_screenHeight / 2.0f + 80.0f, 270.0f, 56.0f }; }
+    URect TitleBtn() const { return { m_screenWidth / 2.0f + 20.0f, m_screenHeight / 2.0f + 80.0f, 270.0f, 56.0f }; }
 };

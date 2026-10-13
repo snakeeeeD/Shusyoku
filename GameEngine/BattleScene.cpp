@@ -119,6 +119,8 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         if (!moveId.empty()) m_hand.AddCard(moveId);
     }*/
 
+    m_holdForTutorial = !playerData.tutorialBattle;   // この戦闘で初戦チュートリアルが出る
+
     if (!playerData.tutorialBattle)
     {
         // 初戦チュートリアル：左から 移動・アタック・ブロック で固定
@@ -3839,6 +3841,8 @@ void BattleScene::RunTurnCycle()
     int n = RelicManager::SumValue("turnCycle");
     if (n <= 0) return;
 
+    if (m_holdForTutorial) { m_turnCyclePending = true; return; }   // 説明中は出さない（閉じたら発動）
+
     // 追加で n 枚引く（7→8枚）
     for (int i = 0; i < n; i++)
     {
@@ -3848,6 +3852,13 @@ void BattleScene::RunTurnCycle()
 
     // n 枚を「選んで捨てる」既存UIを起動（8→7枚、選んだカードのonDiscardが発動）
     m_discardSelectCount = min(n, (int)m_hand.GetCards().size());
+}
+
+void BattleScene::OnTutorialClosed()
+{
+    if (!m_holdForTutorial) return;
+    m_holdForTutorial = false;
+    if (m_turnCyclePending) { m_turnCyclePending = false; RunTurnCycle(); }
 }
 
 void BattleScene::StartDrawSequence(int count)

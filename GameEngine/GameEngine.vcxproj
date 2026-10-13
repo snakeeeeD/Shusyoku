@@ -201,6 +201,8 @@
     <ClInclude Include="Player.h" />
     <ClInclude Include="PlayerData.h" />
     <ClInclude Include="PlayerDataManager.h" />
+    <ClInclude Include="QuickPlay.h" />
+    <ClInclude Include="QuickSelectScene.h" />
     <ClInclude Include="RangeShape.h" />
     <ClInclude Include="RefCheck.h" />
     <ClInclude Include="RelicData.h" />
@@ -210,6 +212,7 @@
     <ClInclude Include="Renderer3D.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="ResultScene.h" />
+    <ClInclude Include="RunSetup.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SceneManager.h" />
     <ClInclude Include="Scenetype.h" />
@@ -272,11 +275,14 @@
     <ClCompile Include="MaterialDataBase.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="PlayerDataManager.cpp" />
+    <ClCompile Include="QuickPlay.cpp" />
+    <ClCompile Include="QuickSelectScene.cpp" />
     <ClCompile Include="RefCheck.cpp" />
     <ClCompile Include="RelicEditor.cpp" />
     <ClCompile Include="RelicManager.cpp" />
     <ClCompile Include="Renderer3D.cpp" />
     <ClCompile Include="ResultScene.cpp" />
+    <ClCompile Include="RunSetup.cpp" />
     <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="Settings.cpp" />
     <ClCompile Include="ShopScene.cpp" />
