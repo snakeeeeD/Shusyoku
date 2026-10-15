@@ -81,7 +81,8 @@ public:
 
     // カード上端中央あたりに解説パネルを出す。シーンDrawの最後（パス外）で呼ぶ
     static void Draw(SpriteRenderer* sr, TextRenderer* tr, ID3D11ShaderResourceView* white,
-        const CardData* d, float ccx, float cty, float cardW, float cardH, int sw, int sh)
+        const CardData* d, float ccx, float cty, float cardW, float cardH, int sw, int sh,
+        float topLimit = 46.0f)
     {
         auto es = Entries(d);
         if (es.empty()) return;
@@ -91,7 +92,8 @@ public:
         float py = cty - ph - 12.0f;
         if (px < 6.0f) px = 6.0f;
         if (px + pw > sw - 6.0f) px = sw - 6.0f - pw;
-        if (py < 6.0f) py = cty + cardH + 12.0f;
+        if (py < topLimit) py = cty + cardH + 12.0f;           // 上に入らなければカードの下へ
+        if (py + ph > sh - 6.0f) py = sh - 6.0f - ph;          // 下からもはみ出すなら画面内へ
 
         // 生成先カード（ホバー中カードの横に、少し大きめ）
         const CardData* gen = GeneratedCard(d);
@@ -116,6 +118,7 @@ public:
         }
         if (gen) CardVisual::DrawTexts(tr, gen, nullptr, gx, gy, gs, 0.0f, 1.0f);
         tr->End();
+
     }
 
     static const CardData* GeneratedCard(const CardData* d)

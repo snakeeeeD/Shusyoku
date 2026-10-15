@@ -3347,82 +3347,38 @@ void BattleScene::HandleInput()
             m_showDiscardPile = false;
         }
 
-        // ビューワー外クリックで閉じる
+        // 一覧から選ぶ（山札から探す・捨て札から回収）
         else if (m_cardSelecting && (m_showDrawPile || m_showDiscardPile))
         {
-            float bgX = m_screenWidth / 2.0f - 300.0f;
-            float bgY = 50.0f;
-            const float scale = 0.7f;
-            const float cardW = CardVisual::CARD_W * scale;
-            const float cardH = CardVisual::CARD_H * scale;
-            const float gap = 12.0f;
-            const int cols = 6;
-
-            const auto& pile = m_showDrawPile
-                ? m_deck.GetDrawPile()
-                : m_deck.GetDiscardPile();
-
-            std::vector<std::string> displayPile = pile;
-            if (m_showDrawPile)
-                std::sort(displayPile.begin(), displayPile.end());
-
-            bool cardClicked = false;
-            for (int i = 0; i < (int)displayPile.size(); i++)
+            auto displayPile = BattleUI::PileForView(&m_deck, m_showDrawPile, m_showDiscardPile);
+            int i = m_battleUI->PileCardAt(mousePos, (int)displayPile.size());   // 描画と同じ矩形で判定
+            if (i >= 0)
             {
-                int col = i % cols;
-                int row = i / cols;
-                float cx = bgX + 25.0f + col * (cardW + gap);
-                float cy = bgY + 50.0f + row * (cardH + gap);
+                std::string selectedId = displayPile[i];
+                std::string result;
+                if (m_selectingType == CardEffectType::Search)
+                    result = m_deck.DrawSpecificCard(selectedId);
+                else if (m_selectingType == CardEffectType::Salvage)
+                    result = m_deck.SalvageCard(selectedId);
 
-                if (mousePos.x >= cx && mousePos.x <= cx + cardW
-                    && mousePos.y >= cy && mousePos.y <= cy + cardH)
+                if (!result.empty())
                 {
-                    std::string selectedId = displayPile[i];
-                    std::string result;
-                    if (m_selectingType == CardEffectType::Search)
-                        result = m_deck.DrawSpecificCard(selectedId);
-                    else if (m_selectingType == CardEffectType::Salvage)
-                        result = m_deck.SalvageCard(selectedId);
-
-                    if (!result.empty())
-                    {
-                        m_hand.AddCard(result);
-                        m_battleUI->StartDrawCardEffect(result);
-                    }
-
-                    cardClicked = true;
-                    break;
+                    m_hand.AddCard(result);
+                    m_battleUI->StartDrawCardEffect(result);
                 }
             }
-
-            if (cardClicked)
+            if (i >= 0 || !m_battleUI->PileViewerRect().has(mousePos))   // 選んだ／枠の外＝取りやめ
             {
                 m_cardSelecting = false;
                 m_selectingType = CardEffectType::None;
                 m_showDrawPile = false;
                 m_showDiscardPile = false;
             }
-            else
-            {
-                // ビューワー外クリックで選択キャンセル
-                bool outsideBg = mousePos.x < bgX || mousePos.x > bgX + 600.0f
-                    || mousePos.y < bgY || mousePos.y > bgY + 580.0f;
-                if (outsideBg)
-                {
-                    m_cardSelecting = false;
-                    m_selectingType = CardEffectType::None;
-                    m_showDrawPile = false;
-                    m_showDiscardPile = false;
-                }
-            }
         }
+        // 見るだけの一覧：枠の外で閉じる
         else if (m_showDrawPile || m_showDiscardPile || m_showExhaustPile)
         {
-            float bgX = m_screenWidth / 2.0f - 300.0f;
-            float bgY = 50.0f;
-            bool outsideBg = mousePos.x < bgX || mousePos.x > bgX + 600.0f
-                || mousePos.y < bgY || mousePos.y > bgY + 580.0f;
-            if (outsideBg)
+            if (!m_battleUI->PileViewerRect().has(mousePos))
             {
                 m_showDrawPile = false;
                 m_showDiscardPile = false;

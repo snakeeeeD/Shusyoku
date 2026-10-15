@@ -214,6 +214,23 @@ private:
     void DrawEvent();
     void ApplyOutcomes(const EventChoice& c);
     void GetEventChoiceRect(int i, float& x, float& y, float& w, float& h) const;
+    // イベントの窓（選択肢の数、または結果画面で受け取った物の数で高さが決まる）
+    URect EventPanelRect(int choiceCount, int gainCount = 0) const
+    {
+        float w = 640.0f;
+        float hc = 200.0f + choiceCount * 72.0f, hg = 264.0f + gainCount * 52.0f;
+        return { (m_screenWidth - w) / 2.0f, 96.0f, w, hc > hg ? hc : hg };
+    }
+
+    // イベントで実際に増減したもの（結果画面に一覧表示。確率つきの結果も起きたものだけ）
+    struct EventGain { std::string kind; std::string id; int value = 0; };   // kind: gold/hp/maxHp/material/relic/card
+    std::vector<EventGain> m_eventGains;
+    float m_eventHpDisplay = -1.0f;   // イベントでHPが減った時の表示HP（バトルと同じく徐々に減らす。-1=なし）
+    URect EventGainRect(int i, const URect& panel) const
+    {
+        const float w = 380.0f;
+        return { panel.x + (panel.w - w) / 2.0f, panel.y + 184.0f + i * 52.0f, w, 44.0f };
+    }
     std::string m_eventPickType;   // "removeCard"/"upgradeCard"/"transformCard"（空=非ピッカー）
     int m_eventPickChoice = -1;
     void DrawEventPicker();
@@ -241,6 +258,7 @@ private:
     bool m_upgradeBtnHov = false;
 
     bool m_settingsOpen = false;
+    bool m_swallowSceneClick = false;   // モーダルを閉じたクリックが下のシーンに漏れないよう、ボタンを離すまでシーンの入力を止める
     int  m_confirmAction = 0;
     int  m_dragSlider = -1;               // 0=BGM,1=SE,-1=なし
     void DrawSettings();
@@ -269,6 +287,22 @@ private:
         u.cfmYes = { ccx + 40.0f, ccy + ch - 60.0f, 120.0f, 40.0f };
         u.cfmNo = { ccx + cw - 160.0f, ccy + ch - 60.0f, 120.0f, 40.0f };
         return u;
+    }
+
+    // 上部の帯の数値欄（0=HP, 1=Steps, 2=Layer, 3=G）。描画と説明のホバー判定で共有
+    URect BarStatRect(int i) const
+    {
+        const float xs[] = { 8.0f, 136.0f, 268.0f, (float)m_screenWidth - 572.0f };
+        const float ws[] = { 120.0f, 120.0f, 110.0f, 90.0f };
+        return { xs[i], 6.0f, ws[i], 28.0f };
+    }
+
+    // 上部の帯のボタン（0=マップ, 1=アイテム, 2=デッキ）。描画・クリック・説明で共有
+    URect BarButtonRect(int i) const
+    {
+        const float xs[] = { (float)m_screenWidth - 680.0f, (float)m_screenWidth - 470.0f, (float)m_screenWidth - 220.0f };
+        const float ws[] = { 36.0f, 90.0f, 100.0f };
+        return { xs[i], 5.0f, ws[i], 30.0f };
     }
 
     // 上部のバー（HP・デッキ・設定など）を出すシーンか

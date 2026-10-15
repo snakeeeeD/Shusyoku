@@ -14,6 +14,8 @@
 #include "UiWindow.h"
 #include "Audio.h"
 #include "Hint.h"
+#include "ScreenShake.h"
+#include "HpBar.h"
 #include "Settings.h"
 #include "QuickPlay.h"
 #include "QuickSelectScene.h"
@@ -284,6 +286,10 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 			TextureManager::Load("ui_hitmark", L"Assets/UI/ui_hitmark.png");
 			TextureManager::Load("ui_hitring", L"Assets/UI/ui_hitring.png");
 			TextureManager::Load("icon_curse", L"Assets/UI/icon_curse.png");
+			TextureManager::Load("icon_hp", L"Assets/UI/icon_hp.png");
+			TextureManager::Load("icon_steps", L"Assets/UI/icon_steps.png");
+			TextureManager::Load("icon_gold", L"Assets/UI/icon_gold.png");
+			TextureManager::Load("icon_map", L"Assets/UI/icon_map.png");
 
 			TextureManager::Load("node_battle", L"Assets/UI/node_battle.png");
 			TextureManager::Load("node_rest", L"Assets/UI/node_rest.png");
@@ -667,8 +673,42 @@ void SceneManager::DrawOverlay()
 		m_textRenderer->End();
 	}
 
-	m_uiSprite->DrawSprite(white, 0.0f, 0.0f, (float)m_screenWidth, BAR_H, 0.0f,
-		XMFLOAT4(0.08f, 0.08f, 0.12f, 0.9f));                 // 帯
+	// 帯：窓と同じ質感（上と左右の枠は画面外に逃がし、下の縁だけ見せる）＋下端の金のライン
+	UiWindow::Draw(m_uiSprite, white, -16.0f, -16.0f, (float)m_screenWidth + 32.0f, BAR_H + 16.0f);
+	m_uiSprite->DrawSprite(white, 0.0f, BAR_H - 2.0f, (float)m_screenWidth, 2.0f, 0.0f, XMFLOAT4(0.85f, 0.7f, 0.3f, 0.8f));
+
+	// 数値欄（HP / Steps / Layer / G）：暗いくぼみ＋左端にその数値の色の印
+	const XMFLOAT4 statCol[] = { { 1.0f, 0.5f, 0.5f, 1 }, { 0.6f, 0.9f, 0.6f, 1 }, { 0.75f, 0.8f, 1.0f, 1 }, { 1.0f, 0.9f, 0.3f, 1 } };
+	for (int i = 0; i < 4; i++)
+	{
+		URect r = BarStatRect(i);
+		m_uiSprite->DrawSprite(white, r.x, r.y, r.w, r.h, 0.0f, XMFLOAT4(0, 0, 0, 0.35f));
+		m_uiSprite->DrawSprite(white, r.x, r.y, 3.0f, r.h, 0.0f, statCol[i]);
+	}
+
+	// 数値欄のアイコン（白い画像を欄の色で染める）
+	const char* statIcon[] = { "icon_hp", "icon_steps", nullptr, "icon_gold" };
+	for (int i = 0; i < 4; i++)
+		if (statIcon[i])
+			if (auto tex = TextureManager::Get(statIcon[i]))
+			{
+				URect r = BarStatRect(i);
+				m_uiSprite->DrawSprite(tex, r.x + 8.0f, r.y + 3.0f, 22.0f, 22.0f, 0.0f, statCol[i]);
+			}
+
+	// 層：全3層のうち、今いる層までを光らせる（●●○）
+	{
+		URect r = BarStatRect(2);
+		int layer = PlayerDataManager::GetData().layer;
+		for (int k = 0; k < 3; k++)
+		{
+			bool cur = (k == layer - 1);
+			float s = cur ? 16.0f : 12.0f;   // 今いる層は少し大きく
+			float px = r.x + 22.0f + k * 30.0f - s / 2.0f, py = r.y + r.h / 2.0f - s / 2.0f;
+			m_uiSprite->DrawSprite(TextureManager::Get("particle"), px, py, s, s, 0.0f,
+				k < layer ? statCol[2] : XMFLOAT4(0.3f, 0.32f, 0.4f, 1.0f));
+		}
+	}
 
 	m_uiSprite->DrawSprite(TextureManager::Get("ui_items"), m_screenWidth - 470.0f, 5.0f, 90.0f, 30.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
 
@@ -676,8 +716,14 @@ void SceneManager::DrawOverlay()
 	m_uiSprite->DrawSprite(TextureManager::Get("particle"),
 		btnX + 100.0f - 24.0f, 5.0f + 30.0f - 22.0f, 24.0f, 24.0f, 0.0f, XMFLOAT4(0.10f, 0.09f, 0.13f, 1.0f));
 
-	if (m_currentType != SceneType::Field)
-		m_uiSprite->DrawSprite(TextureManager::Get("ui_map"), m_screenWidth - 680.0f, 5.0f, 90.0f, 30.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));   // Mapボタン（フィールドは自身がマップなので非表示）
+	if (m_currentType != SceneType::Field)   // Mapボタン（フィールドは自身がマップなので非表示）：小さな正方形＋地図のアイコン
+	{
+		URect mb = BarButtonRect(0);
+		UiWindow::Button(m_uiSprite, white, mb.x, mb.y, mb.w, mb.h,
+			mb.has(m_uiInput.GetMousePos()) ? XMFLOAT4(0.4f, 0.4f, 0.5f, 1) : XMFLOAT4(0.22f, 0.22f, 0.3f, 1));
+		m_uiSprite->DrawSprite(TextureManager::Get("icon_map"), mb.x + (mb.w - 24.0f) / 2.0f, mb.y + 3.0f, 24.0f, 24.0f,
+			0.0f, XMFLOAT4(0.95f, 0.88f, 0.7f, 1));   // 羊皮紙の色
+	}
 
 	{
 		SettingsUI u = SettingsLayout();
@@ -690,6 +736,13 @@ void SceneManager::DrawOverlay()
 
 	// === テキスト ===
 	m_textRenderer->Begin();
+	// 数値をアイコンの右側の中央に
+	auto statText = [&](int i, const wchar_t* s, D2D1::ColorF c) {
+		URect r = BarStatRect(i);
+		float left = r.x + 32.0f;
+		m_textRenderer->DrawOutlinedTextCentered(s, left + (r.x + r.w - left) / 2.0f, r.y, r.x + r.w - left, r.h,
+			16.0f, c, D2D1::ColorF(0, 0, 0), 1.5f);
+		};
 	{
 		wchar_t t[16]; swprintf_s(t, L"%d", (int)PlayerDataManager::GetData().deck.size());
 		m_textRenderer->DrawOutlinedText(t, btnX + 100.0f - 18.0f, 5.0f + 30.0f - 20.0f, 17.0f,
@@ -700,10 +753,8 @@ void SceneManager::DrawOverlay()
 
 	
 	wchar_t gbuf[32];
-	// ゴールド
-	swprintf_s(gbuf, L"G:%d", PlayerDataManager::GetData().gold);
-	m_textRenderer->DrawText(gbuf, m_screenWidth - 560.0f, 10.0f, 16.0f, D2D1::ColorF(1, 0.9f, 0.3f));
-
+	swprintf_s(gbuf, L"%d", PlayerDataManager::GetData().gold);
+	statText(3, gbuf, D2D1::ColorF(1, 0.9f, 0.3f));          // ゴールド
 
 	auto& pd = PlayerDataManager::GetData();
 	int hp = pd.hp, mhp = pd.maxHp;
@@ -713,15 +764,15 @@ void SceneManager::DrawOverlay()
 	}
 
 	wchar_t hbuf[48];
-	swprintf_s(hbuf, L"HP %d/%d", hp, mhp);
-	m_textRenderer->DrawText(hbuf, 12.0f, 10.0f, 16.0f, D2D1::ColorF(1.0f, 0.5f, 0.5f));
+	swprintf_s(hbuf, L"%d/%d", hp, mhp);
+	statText(0, hbuf, D2D1::ColorF(1.0f, 0.5f, 0.5f));       // HP
 
 	wchar_t sbuf[48];
-	swprintf_s(sbuf, L"Steps %d", pd.fieldSteps);
-	m_textRenderer->DrawText(sbuf, 140.0f, 10.0f, 16.0f, D2D1::ColorF(0.6f, 0.9f, 0.6f));
+	swprintf_s(sbuf, L"%d", pd.fieldSteps);
+	statText(1, sbuf, D2D1::ColorF(0.6f, 0.9f, 0.6f));       // Steps
 
 	wchar_t lbuf[32]; swprintf_s(lbuf, L"Layer %d/3", pd.layer);
-	m_textRenderer->DrawText(lbuf, 280.0f, 10.0f, 16.0f, D2D1::ColorF(0.75f, 0.8f, 1.0f));
+	statText(2, lbuf, D2D1::ColorF(0.75f, 0.8f, 1.0f));      // Layer
 
 	m_textRenderer->End();
 
@@ -935,6 +986,7 @@ void SceneManager::DrawImGui()
 void SceneManager::HandleInput()
 {
 	m_uiInput.Update();
+	if (AnyModalOpen()) m_swallowSceneClick = true;   // 開いている間に押されたクリックは、閉じた後もシーンに渡さない
 	if (m_fadeState != Fade::None) return;   // フェード中は入力無効
 
 	{
@@ -996,8 +1048,7 @@ void SceneManager::HandleInput()
 		bool click = m_uiInput.GetMouseButtonTrigger(0);
 		bool clickRel = m_uiInput.GetMouseButtonRelease(0) && !m_mDragMoved;  // タップ(離した瞬間・非ドラッグ)]::]
 		float btnX = m_screenWidth - 220.0f, btnY = 5.0f, btnW = 100.0f, btnH = 30.0f;
-		bool onDeckBtn = click && m.x >= btnX && m.x <= btnX + btnW
-			&& m.y >= btnY && m.y <= btnY + btnH;
+		bool onDeckBtn = click && BarButtonRect(2).has(m);
 
 		SettingsUI su = SettingsLayout();
 		// ギアで開閉
@@ -1060,7 +1111,7 @@ void SceneManager::HandleInput()
 		{
 			float mapX = m_screenWidth - 680.0f;
 			if (click && m_currentType != SceneType::Field && !m_deckOpen && !m_craftOpen && !m_invOpen
-				&& m.x >= mapX && m.x <= mapX + 90.0f && m.y >= 5.0f && m.y <= 35.0f)
+				&& BarButtonRect(0).has(m))
 			{
 				Audio::PlaySE("Assets/Sound/se/click.mp3");
 				m_mapOpen = true; return;
@@ -1070,9 +1121,8 @@ void SceneManager::HandleInput()
 		// Items（いつでも）
 		if (m_invOpen) { if (clickRel && BackBtnHit(m)) m_invOpen = false; return; }
 		{
-			float itemsX = m_screenWidth - 470.0f;
 			if (click && !m_deckOpen && !m_craftOpen && !m_mapOpen
-				&& m.x >= itemsX && m.x <= itemsX + 90.0f && m.y >= 5.0f && m.y <= 35.0f)
+				&& BarButtonRect(1).has(m))
 			{
 				Audio::PlaySE("Assets/Sound/se/click.mp3");
 				m_invOpen = true; m_matScroll = 0.0f; m_matScrollTarget = 0.0f; return;
@@ -1268,6 +1318,14 @@ void SceneManager::HandleInput()
 			}
 		}
 		return;
+	}
+
+	// m_uiInputが消費したホイールをシーンへ戻す（ズーム等が効くように）
+	// モーダルを閉じたクリックはシーンに渡さない（ボタンを離したら解除）
+	if (m_swallowSceneClick)
+	{
+		if (m_uiInput.GetMouseButtonPress(0)) return;
+		m_swallowSceneClick = false;
 	}
 
 	// m_uiInputが消費したホイールをシーンへ戻す（ズーム等が効くように）
@@ -1480,14 +1538,15 @@ void SceneManager::DrawBarTips()
 	if (mp.y < 5 || mp.y > 35) return;
 
 	struct Tip { float x0, x1; const wchar_t* title; const wchar_t* desc; bool hideOnField; };
-	float btnX = m_screenWidth - 220.0f;
+	URect hs = BarStatRect(0), ss = BarStatRect(1), ls = BarStatRect(2);
+	URect mb = BarButtonRect(0), ib = BarButtonRect(1), db = BarButtonRect(2);
 	Tip tips[] = {
-		{ 12.0f, 130.0f, L"体力", L"0でゲームオーバー", false },
-		{ 140.0f, 260.0f, L"歩数", L"0を超えて進むと敵が強くなる", false },
-		{ 274.0f, 380.0f, L"層",   L"ダンジョンの階層(全3層)。深いほど敵が強い", false },
-		{ m_screenWidth - 680.0f, m_screenWidth - 590.0f, L"マップ",   L"マップを開く",   true  },
-		{ m_screenWidth - 470.0f, m_screenWidth - 380.0f, L"アイテム", L"アイテムを見る", false },
-		{ btnX,                   btnX + 100.0f,          L"デッキ",   L"デッキを見る",   false },
+		{ hs.x, hs.x + hs.w, L"体力", L"0でゲームオーバー", false },
+		{ ss.x, ss.x + ss.w, L"歩数", L"0を超えて進むと敵が強くなる", false },
+		{ ls.x, ls.x + ls.w, L"層",   L"ダンジョンの階層(全3層)。深いほど敵が強い", false },
+		{ mb.x, mb.x + mb.w, L"マップ",   L"マップを開く",   true  },
+		{ ib.x, ib.x + ib.w, L"アイテム", L"アイテムを見る", false },
+		{ db.x, db.x + db.w, L"デッキ",   L"デッキを見る",   false },
 	};
 
 	const Tip* hit = nullptr;
@@ -1562,6 +1621,13 @@ void SceneManager::Update(float deltaTime)
 	m_uiTime += deltaTime;
 
 	if (!m_tutorialOpen) Hint::Update(deltaTime);   // ページ型の説明中は止める
+
+	if (m_eventOpen)   // イベント中の揺れと表示HP（戦闘中は BattleScene が自前で回す）  ← ここに追加
+	{
+		ScreenShake::Update(deltaTime);
+		if (m_eventHpDisplay >= 0.0f)
+			m_eventHpDisplay = HpBar::StepDisplay(m_eventHpDisplay, PlayerDataManager::GetData().hp, deltaTime);
+	}
 
 	if (m_craftFxTimer > 0.0f)
 	{
@@ -1650,10 +1716,7 @@ void SceneManager::Update(float deltaTime)
 		battle->SetForceHitmark(false);
 	}
 
-	
-
 	if (m_currentScene) m_currentScene->Update(deltaTime);   // 戦闘はfreeLook中は早期return
-
 }
 
 bool SceneManager::GetDeckCardBase(int i, float& baseX, float& baseY) const
@@ -2573,33 +2636,59 @@ void SceneManager::DrawRelicBar()
 
 void SceneManager::GetEventChoiceRect(int i, float& x, float& y, float& w, float& h) const
 {
-	w = 520.0f; h = 50.0f;
+	w = 560.0f; h = 58.0f;   // 2段（行動／結果）が入る高さ
 	x = m_screenWidth / 2.0f - w / 2.0f;
-	y = 270.0f + i * 66.0f;
+	y = 280.0f + i * 72.0f;
 }
 
 void SceneManager::ApplyOutcomes(const EventChoice& c)
 {
 	auto& pd = PlayerDataManager::GetData();
+	m_eventGains.clear();
+	m_eventHpDisplay = -1.0f;
 	for (auto& o : c.outcomes)
 	{
 		if (o.chance < 100 && rand() % 100 >= o.chance) continue;   // 確率つきの結果（省略＝100＝必ず）
 
-		if (o.type == "hp") { pd.hp += o.value; if (pd.hp > pd.maxHp) pd.hp = pd.maxHp; if (pd.hp < 0) pd.hp = 0; }
-		else if (o.type == "maxHp") { pd.maxHp += o.value; pd.hp += o.value; if (pd.hp < 1) pd.hp = 1; }
-		else if (o.type == "gold") { pd.gold += o.value; if (pd.gold < 0) pd.gold = 0; }
-		else if (o.type == "material") { PlayerDataManager::AddMaterial(o.param, o.value > 0 ? o.value : 1); }
+		if (o.type == "hp")
+		{
+			int before = pd.hp;
+			pd.hp += o.value; if (pd.hp > pd.maxHp) pd.hp = pd.maxHp; if (pd.hp < 0) pd.hp = 0;
+			if (pd.hp != before) m_eventGains.push_back({ "hp", "", pd.hp - before });
+			if (pd.hp < before)   // ダメージ：画面を揺らし、減った分をバーで徐々に縮める
+			{
+				m_eventHpDisplay = (float)before;
+				ScreenShake::Add(ScreenShake::PowerForDamage(before - pd.hp));
+			}
+		}
+		else if (o.type == "maxHp")
+		{
+			pd.maxHp += o.value; pd.hp += o.value; if (pd.hp < 1) pd.hp = 1;
+			m_eventGains.push_back({ "maxHp", "", o.value });
+		}
+		else if (o.type == "gold")
+		{
+			int before = pd.gold;
+			pd.gold += o.value; if (pd.gold < 0) pd.gold = 0;
+			if (pd.gold != before) m_eventGains.push_back({ "gold", "", pd.gold - before });
+		}
+		else if (o.type == "material")
+		{
+			int n = o.value > 0 ? o.value : 1;
+			PlayerDataManager::AddMaterial(o.param, n);
+			m_eventGains.push_back({ "material", o.param, n });
+		}
 		else if (o.type == "randomMaterial") {
 			std::string mid = MaterialDataBase::RandomId(o.value);   // value=層(0=全)
-			if (!mid.empty()) PlayerDataManager::AddMaterial(mid, 1);
+			if (!mid.empty()) { PlayerDataManager::AddMaterial(mid, 1); m_eventGains.push_back({ "material", mid, 1 }); }
 		}
 		else if (o.type == "relic")
 		{
 			std::string rid = o.param.empty() ? RelicManager::RandomUnowned("event") : o.param;
 			if (rid.empty()) rid = RelicManager::RandomDrop();
-			if (!rid.empty()) PlayerDataManager::AddRelic(rid);
+			if (!rid.empty()) { PlayerDataManager::AddRelic(rid); m_eventGains.push_back({ "relic", rid, 1 }); }
 		}
-		else if (o.type == "addCard") { PlayerDataManager::AddCard(o.param); }
+		else if (o.type == "addCard") { PlayerDataManager::AddCard(o.param); m_eventGains.push_back({ "card", o.param, 1 }); }
 		else if (o.type == "battle") { if (m_eventPending == EventPending::None) { m_eventPending = EventPending::Battle; m_eventBattleParam = o.param; } }
 		else if (o.type == "shop") { if (m_eventPending == EventPending::None) m_eventPending = EventPending::Shop; }
 		else if (o.type == "treasure") { if (m_eventPending == EventPending::None) m_eventPending = EventPending::Treasure; }
@@ -2614,47 +2703,171 @@ void SceneManager::DrawEvent()
 	if (!e) { m_eventOpen = false; return; }
 	ID3D11ShaderResourceView* white = TextureManager::Get("white");
 	POINT mp = m_uiInput.GetMousePos();
+	int n = (int)e->choices.size();
+	bool result = (m_eventResult >= 0);
+	URect p = EventPanelRect(n, result ? (int)m_eventGains.size() : 0);
+	{   // ダメージを受けた時の揺れ（ScreenShakeはワールド単位なのでピクセルに換算）
+		float sx, sz; ScreenShake::GetOffset(sx, sz);
+		p.x += sx * 40.0f; p.y += sz * 40.0f;
+	}
+	float cx = p.x + p.w / 2.0f;
+	const float bnW = 440.0f, bnH = 80.0f, bnY = p.y - 40.0f;   // タイトルの布バナー（窓の上端に乗せる）
 
+	// 選択肢の文を「行動」と「結果（…）」に分ける（events.jsonは書き換えずに2段表示）
+	auto splitLabel = [](const std::wstring& s, std::wstring& act, std::wstring& eff) {
+		size_t k = s.find(L'（');
+		if (k == std::wstring::npos) k = s.find(L'(');
+		act = (k == std::wstring::npos) ? s : s.substr(0, k);
+		eff = (k == std::wstring::npos) ? L"" : s.substr(k);
+		};
+
+	// ---- スプライト ----
 	m_uiSprite->Begin();
 	m_uiSprite->DrawSprite(white, 0, BAR_H, (float)m_screenWidth, (float)m_screenHeight - BAR_H, 0.0f,
 		XMFLOAT4(0.05f, 0.03f, 0.09f, 0.96f));
+	UiWindow::Draw(m_uiSprite, white, p.x, p.y, p.w, p.h);
+	m_uiSprite->DrawSprite(TextureManager::Get("ui_banner"), cx - bnW / 2.0f, bnY, bnW, bnH, 0.0f, XMFLOAT4(1, 1, 1, 1));
+	m_uiSprite->DrawSprite(white, cx - 280.0f, p.y + 166.0f, 560.0f, 2.0f, 0.0f, XMFLOAT4(0.85f, 0.7f, 0.3f, 0.5f));   // 説明と選択肢の区切り
+
 	if (m_eventResult < 0)
-		for (int i = 0; i < (int)e->choices.size(); i++)
+	{
+		for (int i = 0; i < n; i++)
 		{
 			float x, y, w, h; GetEventChoiceRect(i, x, y, w, h);
 			bool en = ChoiceEnabled(e->choices[i]);
 			char key[16]; sprintf_s(key, "evc%d", i);
 			bool hov = en && UiHover(x, y, w, h, mp, key, s_lastHoverKey);   // ホバーSE＋判定
-			float yy = hov ? y - 6.0f : y;                   // 浮く
+			float yy = hov ? y - 4.0f : y;                                    // 浮く
 			UiWindow::Draw(m_uiSprite, white, x, yy, w, h);
 			if (!en)
 				m_uiSprite->DrawSprite(white, x + 6, yy + 6, w - 12, h - 12, 0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.45f));   // 無効=暗く
 			else if (hov)
 				m_uiSprite->DrawSprite(white, x + 6, yy + 6, w - 12, h - 12, 0.0f, XMFLOAT4(0.55f, 0.45f, 0.75f, 0.45f)); // ホバー強調
 		}
+	}
+	else   // 結果：受け取った物の一覧＋「クリックで進む」のピル
+	{
+		for (int i = 0; i < (int)m_eventGains.size(); i++)
+		{
+			const auto& g = m_eventGains[i];
+			URect r = EventGainRect(i, p);
+			bool canHover = (g.kind == "material" || g.kind == "relic" || g.kind == "card");
+			UiWindow::Draw(m_uiSprite, white, r.x, r.y, r.w, r.h,
+				canHover && r.has(mp) ? XMFLOAT4(1.0f, 0.95f, 0.75f, 1.0f) : XMFLOAT4(1, 1, 1, 1));
+			float ix = r.x + 10.0f, iy = r.y + 5.0f, is = 34.0f;   // 左端のアイコン
+			if (g.kind == "material")
+				m_uiSprite->DrawSprite(TextureManager::Get(MaterialDataBase::GetBase(g.id) ? "mat_core" : "mat_material"),
+					ix, iy, is, is, 0.0f, XMFLOAT4(1, 1, 1, 1));
+			else if (g.kind == "gold")
+				m_uiSprite->DrawSprite(TextureManager::Get("icon_gold"), ix, iy, is, is, 0.0f, XMFLOAT4(1.0f, 0.9f, 0.3f, 1));
+			else if (g.kind == "hp" || g.kind == "maxHp")
+				m_uiSprite->DrawSprite(TextureManager::Get("icon_hp"), ix, iy, is, is, 0.0f, XMFLOAT4(1.0f, 0.5f, 0.5f, 1));
+			else if (g.kind == "relic")   // 仮：レリック個別のアイコンは帯のアイコン化で差し替える
+				m_uiSprite->DrawSprite(TextureManager::Get("icon_buff"), ix, iy, is, is, 0.0f, XMFLOAT4(1, 1, 1, 1));
+			else if (g.kind == "card")
+				if (const CardData* d = CardDataBase::Get(g.id))
+				{
+					const float s = 0.3f;   // 小さいカードの絵
+					CardVisual::DrawBase(m_uiSprite, white, ix + 2.0f - CardVisual::CARD_W * (1 - s) / 2.0f,
+						r.y + 1.0f - CardVisual::CARD_H * (1 - s) / 2.0f, s, 0.0f, CardVisual::GetCardColor(d->type), d, 0.0f);
+				}
+
+			if (g.kind == "hp" && g.value < 0)   // 減ったHPをバトルと同じバーで（オレンジが徐々に縮む）
+			{
+				const auto& pdh = PlayerDataManager::GetData();
+				HPBarInfo bar;
+				bar.currentHP = pdh.hp; bar.maxHP = pdh.maxHp;
+				bar.displayHP = (m_eventHpDisplay >= 0.0f) ? m_eventHpDisplay : (float)pdh.hp;
+				HpBar::Draw(m_uiSprite, white, r.x + 150.0f, r.y + 14.0f, r.w - 164.0f, 16.0f, bar, m_uiTime);
+			}
+		}
+		UiWindow::Draw(m_uiSprite, white, cx - 120.0f, p.y + p.h - 64.0f, 240.0f, 40.0f);
+	}
 	m_uiSprite->End();
 
+	// ---- 文字 ----
 	m_textRenderer->Begin();
-	m_textRenderer->DrawTextCentered(ToWString(e->title).c_str(), m_screenWidth / 2.0f, 90.0f, 800.0f, 30.0f, D2D1::ColorF(1, 0.9f, 0.6f));
+	m_textRenderer->DrawOutlinedTextCentered(ToWString(e->title).c_str(), cx, bnY, bnW, bnH, 28.0f,
+		D2D1::ColorF(1.0f, 0.95f, 0.8f), D2D1::ColorF(0.25f, 0.04f, 0.06f), 3.0f);
+
 	if (m_eventResult < 0)
 	{
-		m_textRenderer->DrawTextCentered(ToWString(e->desc).c_str(), m_screenWidth / 2.0f, 160.0f, 520.0f, 18.0f, D2D1::ColorF(0.9f, 0.9f, 0.9f));
-		for (int i = 0; i < (int)e->choices.size(); i++)
+		m_textRenderer->DrawTextCentered(ToWString(e->desc).c_str(), cx, p.y + 60.0f, 560.0f, 19.0f,
+			D2D1::ColorF(0.92f, 0.92f, 0.92f), 90.0f);
+		for (int i = 0; i < n; i++)
 		{
 			float x, y, w, h; GetEventChoiceRect(i, x, y, w, h);
 			bool en = ChoiceEnabled(e->choices[i]);
 			bool hov = en && mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h;
-			float yy = hov ? y - 6.0f : y;
-			m_textRenderer->DrawText(ToWString(e->choices[i].label).c_str(), x + 16.0f, yy + 13.0f, 20.0f,
-				en ? D2D1::ColorF(1, 1, 1) : D2D1::ColorF(0.4f, 0.4f, 0.4f));
+			float yy = hov ? y - 4.0f : y;
+			std::wstring act, eff; splitLabel(ToWString(e->choices[i].label), act, eff);
+			if (eff.empty())   // 結果の書き無し＝1段で中央
+				m_textRenderer->DrawText(act.c_str(), x + 18.0f, yy + 17.0f, 20.0f,
+					en ? D2D1::ColorF(1, 1, 1) : D2D1::ColorF(0.4f, 0.4f, 0.4f));
+			else
+			{
+				m_textRenderer->DrawText(act.c_str(), x + 18.0f, yy + 7.0f, 20.0f,
+					en ? D2D1::ColorF(1, 1, 1) : D2D1::ColorF(0.4f, 0.4f, 0.4f));
+				m_textRenderer->DrawText(eff.c_str(), x + 22.0f, yy + 33.0f, 14.0f,
+					en ? D2D1::ColorF(1.0f, 0.85f, 0.45f) : D2D1::ColorF(0.4f, 0.4f, 0.4f));
+			}
 		}
 	}
 	else
 	{
-		m_textRenderer->DrawTextCentered(ToWString(e->choices[m_eventResult].result).c_str(), m_screenWidth / 2.0f, 220.0f, 520.0f, 22.0f, D2D1::ColorF(0.8f, 1.0f, 0.8f));
-		m_textRenderer->DrawText(L"クリックで進む", m_screenWidth / 2.0f - 70.0f, m_screenHeight - 100.0f, 20.0f, D2D1::ColorF(0.8f, 0.8f, 0.8f));
+		m_textRenderer->DrawTextCentered(ToWString(e->choices[m_eventResult].result).c_str(), cx, p.y + 60.0f,
+			560.0f, 21.0f, D2D1::ColorF(0.8f, 1.0f, 0.8f), 90.0f);
+		for (int i = 0; i < (int)m_eventGains.size(); i++)
+		{
+			const auto& g = m_eventGains[i];
+			URect r = EventGainRect(i, p);
+			std::wstring label, tag;
+			D2D1::ColorF col(1, 1, 1);
+			std::wstring sign = (g.value >= 0) ? L"+" : L"";
+			if (g.kind == "gold") { label = sign + std::to_wstring(g.value) + L" ゴールド"; col = D2D1::ColorF(1.0f, 0.9f, 0.3f); }
+			else if (g.kind == "hp") { label = sign + std::to_wstring(g.value) + L" HP"; col = g.value >= 0 ? D2D1::ColorF(0.5f, 1.0f, 0.5f) : D2D1::ColorF(1.0f, 0.45f, 0.45f); }
+			else if (g.kind == "maxHp") { label = sign + std::to_wstring(g.value) + L" 最大HP"; col = D2D1::ColorF(1.0f, 0.6f, 0.6f); }
+			else if (g.kind == "card") { const CardData* d = CardDataBase::Get(g.id); label = d ? d->name : ToWString(g.id); tag = L"カード"; }
+			else { std::wstring ds; ItemTooltip::Info(g.id, label, ds, tag); if (g.value > 1) label += L" ×" + std::to_wstring(g.value); }
+			m_textRenderer->DrawText(label.c_str(), r.x + 54.0f, r.y + 11.0f, 18.0f, col);
+			if (!tag.empty())
+				m_textRenderer->DrawText(tag.c_str(), r.x + r.w - 72.0f, r.y + 14.0f, 13.0f, D2D1::ColorF(0.7f, 0.8f, 1.0f));
+			if (g.kind == "hp" && g.value < 0)   // バーの上に今のHP
+			{
+				const auto& pdh = PlayerDataManager::GetData();
+				wchar_t hb[32]; swprintf_s(hb, L"%d / %d", pdh.hp, pdh.maxHp);
+				m_textRenderer->DrawOutlinedTextCentered(hb, r.x + 150.0f + (r.w - 164.0f) / 2.0f, r.y + 14.0f, r.w - 164.0f, 16.0f,
+					13.0f, D2D1::ColorF(1, 1, 1), D2D1::ColorF(0, 0, 0), 1.5f);
+			}
+		}
+		m_textRenderer->DrawTextCentered(L"クリックで進む", cx, p.y + p.h - 64.0f, 240.0f, 17.0f,
+			D2D1::ColorF(0.9f, 0.9f, 0.85f), 40.0f);
 	}
 	m_textRenderer->End();
+	// 受け取った物の説明（ホバー）：素材・レリックはゲーム中と同じ説明窓、カードは拡大＋キーワード
+	if (result)
+		for (int i = 0; i < (int)m_eventGains.size(); i++)
+		{
+			const auto& g = m_eventGains[i];
+			URect r = EventGainRect(i, p);
+			if (!r.has(mp)) continue;
+			if (g.kind == "material" || g.kind == "relic")
+				ItemTooltip::Draw(m_uiSprite, m_textRenderer, white, g.id, r.x + r.w + 12.0f, r.y, m_screenWidth, m_screenHeight);
+			else if (g.kind == "card")
+				if (const CardData* d = CardDataBase::Get(g.id))
+				{
+					const float s = 1.4f;
+					float w = CardVisual::CARD_W * s, h = CardVisual::CARD_H * s;
+					float tx = r.x + r.w + 16.0f, ty = r.y + r.h / 2.0f - h / 2.0f;
+					if (tx + w > m_screenWidth - 6.0f) tx = r.x - 16.0f - w;   // 右に入らなければ左
+					if (ty < 46.0f) ty = 46.0f;
+					float bx = tx - CardVisual::CARD_W * (1 - s) / 2.0f, by = ty - CardVisual::CARD_H * (1 - s) / 2.0f;
+					m_uiSprite->Begin();  DrawBigCard(d, bx, by, s, false); m_uiSprite->End();
+					m_textRenderer->Begin(); DrawBigCard(d, bx, by, s, true); m_textRenderer->End();
+					CardTooltip::Draw(m_uiSprite, m_textRenderer, white, d, tx + w / 2.0f, ty, w, h, m_screenWidth, m_screenHeight);
+				}
+			break;
+		}
 }
 
 static std::string EventPickerType(const EventChoice& c)

@@ -55,64 +55,70 @@ void BattleUI::GridToWorld(GridMap* gridMap, int col, int row, float& outX, floa
     outZ = (row - gridMap->GetRows() / 2.0f + 0.5f) * 1.1f;
 }
 
+BattleUI::PlayerHudRects BattleUI::PlayerHud() const
+{
+    float sh = (float)m_screenHeight;
+    PlayerHudRects r;
+    r.panel = { 10.0f, sh - 172.0f, 280.0f, 102.0f };   // 山札・捨て札(sh-60)のすぐ上
+    r.orb = { 20.0f, sh - 166.0f, 90.0f, 90.0f };
+    r.hp = { 118.0f, sh - 150.0f, 160.0f, 26.0f };
+    r.block = { 118.0f, sh - 116.0f, 34.0f, 34.0f };
+    return r;
+}
+
+void BattleUI::DrawPlayerHud(const BattleUIContext& ctx)
+{
+    PlayerHudRects r = PlayerHud();
+    Player* p = ctx.player;
+
+    bool hasBlock = p->GetBlock() > 0;
+
+    m_spriteRenderer->Begin();
+    DrawWindow(r.panel.x, r.panel.y, r.panel.w, r.panel.h);
+
+    // エナジー：カードのコストと同じオーブ（払う元と払う先を見た目でつなぐ）。0なら暗く
+    m_spriteRenderer->DrawSprite(TextureManager::Get("ui_cost"), r.orb.x, r.orb.y, r.orb.w, r.orb.h, 0.0f,
+        p->GetEnergy() == 0 ? XMFLOAT4(0.45f, 0.45f, 0.5f, 1.0f) : XMFLOAT4(1, 1, 1, 1));
+
+    HPBarInfo bar;
+    bar.currentHP = p->GetHp();
+    bar.maxHP = p->GetMaxHp();
+    bar.displayHP = p->GetDisplayHp();
+    bar.block = p->GetBlock();
+    bar.poisonDmg = p->GetBuffManager().GetTurnEndDamage().total();
+    bar.hasBurn = p->GetBuffManager().HasBuff(BuffType::Burn);
+    DrawHPBar(r.hp.x, r.hp.y, r.hp.w, r.hp.h, bar, ctx.highlightTimer);
+
+    // ブロック：盾のアイコン（0の時も薄く出して欄を空けない）
+    m_spriteRenderer->DrawSprite(TextureManager::Get("icon_block"), r.block.x, r.block.y, r.block.w, r.block.h, 0.0f,
+        hasBlock ? XMFLOAT4(1, 1, 1, 1) : XMFLOAT4(0.4f, 0.4f, 0.45f, 0.8f));
+    m_spriteRenderer->End();
+
+    const D2D1::ColorF white(1, 1, 1), black(0, 0, 0);
+    wchar_t buf[32];
+    m_textRenderer->Begin();
+    swprintf_s(buf, L"%d", p->GetEnergy());
+    m_textRenderer->DrawOutlinedTextCentered(buf, r.orb.x + r.orb.w / 2.0f, r.orb.y, r.orb.w, r.orb.h - 10.0f,
+        38.0f, white, black, 3.0f);
+    swprintf_s(buf, L"/%d", p->GetMaxEnergy());
+    m_textRenderer->DrawOutlinedTextCentered(buf, r.orb.x + r.orb.w / 2.0f, r.orb.y + r.orb.h * 0.62f, r.orb.w, 20.0f,
+        15.0f, D2D1::ColorF(0.95f, 0.9f, 0.75f), black, 2.0f);
+
+    swprintf_s(buf, L"%d / %d", p->GetHp(), p->GetMaxHp());
+    m_textRenderer->DrawOutlinedTextCentered(buf, r.hp.x + r.hp.w / 2.0f, r.hp.y, r.hp.w, r.hp.h,
+        17.0f, white, black, 2.0f);
+
+    swprintf_s(buf, L"%d", p->GetBlock());
+    m_textRenderer->DrawOutlinedTextCentered(buf, r.block.x + r.block.w / 2.0f, r.block.y, r.block.w, r.block.h,
+        16.0f, hasBlock ? white : D2D1::ColorF(0.6f, 0.6f, 0.6f), black, 2.0f);
+    m_textRenderer->DrawText(L"ブロック", r.block.x + r.block.w + 6.0f, r.block.y + 8.0f, 15.0f,
+        hasBlock ? D2D1::ColorF(0.7f, 0.85f, 1.0f) : D2D1::ColorF(0.5f, 0.5f, 0.55f));
+    m_textRenderer->End();
+}
+
 void BattleUI::DrawHPBar(float x, float y, float w, float h, const HPBarInfo& info, float time)
 {
-    float hpRatio = (float)info.currentHP / (float)info.maxHP;
-    float displayRatio = info.displayHP / (float)info.maxHP;
-    float poisonRatio = (float)info.poisonDmg / (float)info.maxHP;
-
-    // ブロック時：外枠を青白く
-    if (info.block > 0)
-    {
-        float glow = 0.7f + 0.3f * sin(time * 3.0f);
-        XMFLOAT4 glowColor = XMFLOAT4(0.7f * glow, 0.8f * glow, 1.0f * glow, 1.0f);
-        m_spriteRenderer->DrawSprite(m_whiteTexture, x - 5.0f, y - 5.0f, w + 10.0f, h + 10.0f,
-            0.0f, glowColor);
-    }
-
-    // 黒い外枠
-    m_spriteRenderer->DrawSprite(m_whiteTexture, x - 1.0f, y - 1.0f, w + 2.0f, h + 2.0f,
-        0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
-    // 背景（暗い赤）
-    m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, w, h,
-        0.0f, XMFLOAT4(0.3f, 0.0f, 0.0f, 1.0f));
-
-    // 減少アニメーション（オレンジ）
-    if (displayRatio > hpRatio)
-    {
-        m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, w * displayRatio, h,
-            0.0f, XMFLOAT4(0.9f, 0.6f, 0.1f, 1.0f));
-    }
-
-    // HPバー本体
-    XMFLOAT4 barColor;
-    // ブロック時：青白い外枠
-    if (info.block > 0)
-    {
-         barColor = XMFLOAT4(0.3f, 0.5f , 1.0f, 1.0f);
-        m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, w * hpRatio, h,
-            0.0f, barColor);
-    }
-    else if (info.hasBurn)
-    {
-        float flash = 0.5f + 0.5f * sin(time * 4.0f);
-        barColor = XMFLOAT4(0.8f, 0.4f * flash, 0.0f, 1.0f);
-    }
-    else
-        barColor = XMFLOAT4(0.0f, 0.8f, 0.0f, 1.0f);
-
-    m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, w * hpRatio, h,
-        0.0f, barColor);
-
-    // 毒ダメージ予測（紫。長さ＝ToxicRhythm込みの合計）
-    if (info.poisonDmg > 0 && hpRatio > 0.0f)
-    {
-        float poisonW = w * min(poisonRatio, hpRatio);
-        float poisonX = x + w * hpRatio - poisonW;
-        float alpha = 0.6f + 0.4f * sin(time * 4.0f);
-        m_spriteRenderer->DrawSprite(m_whiteTexture, poisonX, y, poisonW, h,
-            0.0f, XMFLOAT4(0.5f * alpha, 0.0f, 0.8f * alpha, alpha));
-    }
+    HpBar::Draw(m_spriteRenderer, m_whiteTexture, x, y, w, h, info, time);
 }
 
 void BattleUI::DrawEnemyHPBar(Enemy* enemy, Renderer3D* renderer3D)
@@ -169,35 +175,8 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
     float oy = RelicManager::BarExtraHeight(m_screenWidth);   // レリック折り返しぶん下げる
 
+    DrawPlayerHud(ctx);   // 自分の状態（左下）
     m_spriteRenderer->Begin();
-    HPBarInfo playerBar;
-    playerBar.currentHP = ctx.player->GetHp();
-    playerBar.maxHP = ctx.player->GetMaxHp();
-    playerBar.displayHP = ctx.player->GetDisplayHp();
-    playerBar.block = ctx.player->GetBlock();
-    playerBar.poisonDmg = ctx.player->GetBuffManager().GetTurnEndDamage().total();
-    playerBar.hasBurn = ctx.player->GetBuffManager().HasBuff(BuffType::Burn);
-    DrawHPBar(20.0f, 140.0f + oy, 200.0f, 30.0f, playerBar, ctx.highlightTimer);
-
-
-    if (ctx.player->GetBlock() > 0)
-    {
-        float pIconSize = 30.0f * 1.5f;
-        float pIconX = 20.0f - pIconSize * 0.35f;
-        float pIconY = 110.0f + oy + (30.0f - pIconSize) / 2.0f;
-        m_spriteRenderer->DrawSprite(m_whiteTexture,
-            pIconX - 1.0f, pIconY - 1.0f, pIconSize + 2.0f, pIconSize + 2.0f,
-            0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
-        m_spriteRenderer->DrawSprite(m_whiteTexture,
-            pIconX, pIconY, pIconSize, pIconSize,
-            0.0f, XMFLOAT4(0.3f, 0.6f, 1.0f, 1.0f));
-    }
-
-    {
-        float ex = 20.0f, ey = 190.0f + oy, es = 60.0f;
-        m_spriteRenderer->DrawSprite(m_whiteTexture, ex - 3, ey - 3, es + 6, es + 6, 0.0f, XMFLOAT4(0.15f, 0.10f, 0.0f, 1.0f)); // 縁
-        m_spriteRenderer->DrawSprite(m_whiteTexture, ex, ey, es, es, 0.0f, XMFLOAT4(0.95f, 0.72f, 0.12f, 1.0f));               // 本体（金）
-    }
 
     int topIdx = (ctx.selectedCardIndex >= 0) ? ctx.selectedCardIndex : ctx.hoveredCardIndex;
 
@@ -281,7 +260,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             const auto& path = enemy->GetPlannedMovePath();
             if (path.empty()) continue;
 
-            XMFLOAT4 hue = HighlightPalette::EnemyHue(ei);
+            XMFLOAT4 hue = enemy->hueColor;   // 範囲・パネルと同じ識別色（撃破で並びが変わってもずれない）
             auto proj = [&](float wx, float wz, float& sx, float& sy) -> bool {
                 XMVECTOR wp = XMVectorSet(wx - 0.5f, 0.15f, wz - 0.5f, 1.0f);
                 XMVECTOR cp = XMVector4Transform(wp, ctx.renderer3D->GetViewMatrix() * ctx.renderer3D->GetProjectionMatrix());
@@ -386,14 +365,23 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         int sel = ctx.discardSelected ? (int)ctx.discardSelected->size() : 0;
         bool ready = (sel == ctx.discardSelectCount);
 
+        // 案内の布バナー
+        m_spriteRenderer->DrawSprite(TextureManager::Get("ui_banner"),
+            m_screenWidth / 2.0f - 220.0f, m_screenHeight - 410.0f, 440.0f, 76.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
+
+        // 確定（選び終わるまで灰色）／盤面を見る：窓の枠のボタン、ホバーで浮く
         float x, y, w, h;
         GetDiscardConfirmRect(x, y, w, h);
-        m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, w, h, 0.0f,
-            ready ? XMFLOAT4(0.7f, 0.3f, 0.2f, 1.0f) : XMFLOAT4(0.25f, 0.25f, 0.25f, 1.0f));
+        bool hc = ready && UiHover(x, y, w, h, ctx.mousePos, "discardOk", s_hoverKey);
+        UiWindow::Button(m_spriteRenderer, m_whiteTexture, x, hc ? y - 3.0f : y, w, h,
+            !ready ? XMFLOAT4(0.22f, 0.22f, 0.24f, 1.0f)
+            : hc ? XMFLOAT4(0.85f, 0.4f, 0.25f, 1.0f) : XMFLOAT4(0.7f, 0.3f, 0.2f, 1.0f));
 
         GetDiscardViewRect(x, y, w, h);
-        m_spriteRenderer->DrawSprite(m_whiteTexture, x, y, w, h, 0.0f,
-            ctx.discardViewMode ? XMFLOAT4(0.3f, 0.5f, 0.7f, 1.0f) : XMFLOAT4(0.3f, 0.3f, 0.35f, 1.0f));
+        bool hv = UiHover(x, y, w, h, ctx.mousePos, "discardView", s_hoverKey);
+        UiWindow::Button(m_spriteRenderer, m_whiteTexture, x, hv ? y - 3.0f : y, w, h,
+            ctx.discardViewMode ? XMFLOAT4(0.3f, 0.5f, 0.7f, 1.0f)
+            : hv ? XMFLOAT4(0.4f, 0.4f, 0.5f, 1.0f) : XMFLOAT4(0.25f, 0.28f, 0.4f, 1.0f));
     }
     m_spriteRenderer->End();
     m_textRenderer->Begin();
@@ -484,52 +472,25 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         m_textRenderer->Begin();                                 // テキスト再開（以降の描画はこのバッチで続く）
         m_textRenderer->DrawText(pileTip, tx + 10.0f, ty + 5.0f, 15.0f, D2D1::ColorF(1, 1, 1));
     }
-    wchar_t hpText[64];
-    swprintf_s(hpText, L"%d / %d", ctx.player->GetHp(), ctx.player->GetMaxHp());
-    m_textRenderer->DrawOutlinedText(hpText, 55.0f, 90.0f + oy, 45.0f, D2D1::ColorF(D2D1::ColorF::White));
-
-    wchar_t energyText[64];
-    {
-        float ex = 20.0f, ey = 196.0f + oy, es = 46.0f;
-        wchar_t eCur[16]; swprintf_s(eCur, L"%d", ctx.player->GetEnergy());
-        m_textRenderer->DrawText(eCur, ex + es / 2.0f - 11.0f, ey + 5.0f, 32.0f, D2D1::ColorF(0.15f, 0.08f, 0.0f)); // 大きく
-        wchar_t eMax[16]; swprintf_s(eMax, L"/%d", ctx.player->GetMaxEnergy());
-        m_textRenderer->DrawText(eMax, ex + es - 4.0f, ey + es - 20.0f, 15.0f, D2D1::ColorF(0.35f, 0.2f, 0.0f));
-    }
 
     if (ctx.discardSelectCount > 0)
     {
         int sel = ctx.discardSelected ? (int)ctx.discardSelected->size() : 0;
+        bool ready = (sel == ctx.discardSelectCount);
         wchar_t msg[64];
-        swprintf_s(msg, L"捨てるカードを選択 (%d/%d)", sel, ctx.discardSelectCount);
-        m_textRenderer->DrawText(msg, m_screenWidth / 2.0f - 120.0f, m_screenHeight - 380.0f, 24.0f,
-            D2D1::ColorF(1.0f, 0.8f, 0.3f));
+        swprintf_s(msg, L"捨てるカードを選ぶ（%d/%d）", sel, ctx.discardSelectCount);
+        m_textRenderer->DrawOutlinedTextCentered(msg, m_screenWidth / 2.0f, m_screenHeight - 410.0f, 440.0f, 76.0f,
+            22.0f, D2D1::ColorF(1.0f, 0.95f, 0.8f), D2D1::ColorF(0.25f, 0.04f, 0.06f), 3.0f);
 
         float x, y, w, h;
         GetDiscardConfirmRect(x, y, w, h);
-        m_textRenderer->DrawText(L"確定", x + 45.0f, y + 8.0f, 20.0f, D2D1::ColorF(1, 1, 1));
+        float dy = (ready && IsOnDiscardConfirm(ctx.mousePos)) ? -3.0f : 0.0f;
+        m_textRenderer->DrawTextCentered(L"確定", x + w / 2.0f, y + dy, w, 20.0f,
+            ready ? D2D1::ColorF(1, 1, 1) : D2D1::ColorF(0.5f, 0.5f, 0.5f), h);
         GetDiscardViewRect(x, y, w, h);
-        m_textRenderer->DrawText(ctx.discardViewMode ? L"戻る" : L"盤面を見る",
-            x + 20.0f, y + 8.0f, 20.0f, D2D1::ColorF(1, 1, 1));
-    }
-
-    if (ctx.player->GetBlock() > 0)
-    {
-        float pIconSize = 30.0f * 1.5f;
-        float pIconX = 20.0f - pIconSize * 0.35f;
-        float pIconY = 110.0f + oy + (30.0f - pIconSize) / 2.0f;
-        wchar_t blockText[16];
-        swprintf_s(blockText, L"%d", ctx.player->GetBlock());
-        float bFontSize = 18.0f;
-        float bTextW = wcslen(blockText) * bFontSize * 0.5f;
-        m_textRenderer->DrawText(blockText,
-            pIconX + (pIconSize - bTextW) / 2.0f + 1.0f,
-            pIconY + (pIconSize - bFontSize) / 2.0f + 1.0f,
-            bFontSize, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
-        m_textRenderer->DrawText(blockText,
-            pIconX + (pIconSize - bTextW) / 2.0f,
-            pIconY + (pIconSize - bFontSize) / 2.0f,
-            bFontSize, D2D1::ColorF(D2D1::ColorF::White));
+        dy = IsOnDiscardView(ctx.mousePos) ? -3.0f : 0.0f;
+        m_textRenderer->DrawTextCentered(ctx.discardViewMode ? L"戻る" : L"盤面を見る", x + w / 2.0f, y + dy, w, 20.0f,
+            D2D1::ColorF(1, 1, 1), h);
     }
 
     // 敵UI
@@ -793,7 +754,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 m_cardAnims[topIdx].currentScale, m_cardAnims[topIdx].currentRot);
         }
         const auto& buffs = ctx.player->GetBuffManager().GetBuffs();
-        float buffY = 282.0f + oy;
+        float buffY = 90.0f + oy;
 
         // バフがある時だけ、後ろにウィンドウを敷いて見やすく
         if (!buffs.empty())
@@ -888,6 +849,14 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         float bey = hoverEnd ? btnY - 6.0f : btnY;
         XMFLOAT4 btnColor = hoverEnd ? XMFLOAT4(0.3f, 0.7f, 1.0f, 1.0f) : XMFLOAT4(0.2f, 0.5f, 0.8f, 1.0f);
         XMFLOAT4 teTint = hoverEnd ? XMFLOAT4(1, 1, 1, 1) : XMFLOAT4(0.85f, 0.85f, 0.85f, 1);
+        // エナジーを使い切ったら、後ろを金色に脈動させて「次はここ」と知らせる
+        if (ctx.player->GetEnergy() == 0)
+        {
+            float pl = 0.5f + 0.5f * sinf(ctx.highlightTimer * 6.0f);
+            float g = 4.0f + 4.0f * pl;
+            m_spriteRenderer->DrawSprite(m_whiteTexture, btnX - g, bey - g, btnW + g * 2, btnH + g * 2, 0.0f,
+                XMFLOAT4(1.0f, 0.85f, 0.2f, 0.25f + 0.35f * pl));
+        }
         m_spriteRenderer->DrawSprite(TextureManager::Get("ui_turnend"), btnX, bey, btnW, btnH, 0.0f, teTint);
      
         if (hoverEnd) {
@@ -1569,93 +1538,122 @@ void BattleUI::DrawArrowIndicator(float sx, float sy, const XMFLOAT4& color, flo
     m_spriteRenderer->DrawSprite(m_whiteTexture, sx - 2.0f, ay + 23.0f, 4.0f, 3.0f, 0.0f, color);
 }
 
+// 矩形rに収まるように置く時の CardVisual の基準座標と倍率（GetRectの逆）
+static void CardBaseOf(const URect& r, float& bx, float& by, float& s)
+{
+    s = r.w / CardVisual::CARD_W;
+    bx = r.x - CardVisual::CARD_W * (1.0f - s) / 2.0f;
+    by = r.y - CardVisual::CARD_H * (1.0f - s) / 2.0f;
+}
+
+URect BattleUI::PileViewerRect() const
+{
+    return { (m_screenWidth - 860.0f) / 2.0f, 80.0f, 860.0f, 560.0f };
+}
+
+URect BattleUI::PileCardRect(int i, int count) const
+{
+    bool many = (count > 36);   // 多い時は小さくして全部収める
+    float s = many ? 0.6f : 0.75f;
+    int cols = many ? 11 : 9;
+    float gap = many ? 10.0f : 12.0f;
+    URect v = PileViewerRect();
+    float w = CardVisual::CARD_W * s, h = CardVisual::CARD_H * s;
+    float gridW = cols * w + (cols - 1) * gap;
+    return { v.x + (v.w - gridW) / 2.0f + (i % cols) * (w + gap),
+             v.y + 64.0f + (i / cols) * (h + gap), w, h };
+}
+
+int BattleUI::PileCardAt(POINT p, int count) const
+{
+    for (int i = 0; i < count; i++)
+        if (PileCardRect(i, count).has(p)) return i;
+    return -1;
+}
+
+std::vector<std::string> BattleUI::PileForView(Deck* deck, bool showDraw, bool showDiscard)
+{
+    std::vector<std::string> v = showDraw ? deck->GetDrawPile()
+        : showDiscard ? deck->GetDiscardPile() : deck->GetExhaustPile();
+    if (showDraw) std::sort(v.begin(), v.end());   // 山札は引く順が分からないように並べ替える
+    return v;
+}
+
 void BattleUI::DrawPileViewer(const BattleUIContext& ctx)
 {
-    m_textRenderer->Begin();
+    auto pile = PileForView(ctx.deck, ctx.showDrawPile, ctx.showDiscardPile);
+    int n = (int)pile.size();
+    URect v = PileViewerRect();
+    int hover = PileCardAt(ctx.mousePos, n);
 
-    const auto& pile = ctx.showDrawPile
-        ? ctx.deck->GetDrawPile()
-        : ctx.showDiscardPile
-        ? ctx.deck->GetDiscardPile()
-        : ctx.deck->GetExhaustPile();
+    const wchar_t* name = ctx.cardSelecting
+        ? (ctx.showDrawPile ? L"山札から選ぶ" : L"捨て札から選ぶ")
+        : (ctx.showDrawPile ? L"山札" : ctx.showDiscardPile ? L"捨て札" : L"廃棄");
+    wchar_t title[48]; swprintf_s(title, L"%s（%d枚）", name, n);
+    const float bnW = 400.0f, bnH = 80.0f, bnX = v.x + v.w / 2.0f - bnW / 2.0f, bnY = v.y - 40.0f;
 
-    const wchar_t* title;
-    if (ctx.cardSelecting)
-        title = ctx.showDrawPile ? L"山札から選択" : L"捨て札から選択";
-    else
-        title = ctx.showDrawPile ? L"山札"
-        : ctx.showDiscardPile ? L"捨て札"
-        : L"廃棄札";
-
-    float bgX = m_screenWidth / 2.0f - 300.0f;
-    float bgY = 50.0f;
-    float bgW = 600.0f;
-    float bgH = 580.0f;
-
+    // ---- スプライト ----
     m_spriteRenderer->Begin();
-    DrawWindow(bgX, bgY, bgW, bgH);
+    m_spriteRenderer->DrawSprite(m_whiteTexture, 0.0f, 0.0f, (float)m_screenWidth, (float)m_screenHeight,
+        0.0f, XMFLOAT4(0, 0, 0, 0.45f));   // 薄い暗幕
+    DrawWindow(v.x, v.y, v.w, v.h);
+    m_spriteRenderer->DrawSprite(TextureManager::Get("ui_banner"), bnX, bnY, bnW, bnH, 0.0f, XMFLOAT4(1, 1, 1, 1));
+    for (int i = 0; i < n; i++)
+    {
+        const CardData* d = CardDataBase::Get(pile[i]);
+        if (!d) continue;
+        URect r = PileCardRect(i, n);
+        if (ctx.cardSelecting && i == hover)   // 選べる時は金の縁
+            UiWindow::Frame(m_spriteRenderer, m_whiteTexture, r.x, r.y, r.w, r.h, XMFLOAT4(1.0f, 0.85f, 0.2f, 1.0f));
+        float bx, by, s; CardBaseOf(r, bx, by, s);
+        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, bx, by, s, 0.0f,
+            CardVisual::GetCardColor(d->type, false), d, 0.0f);
+    }
     m_spriteRenderer->End();
 
-    m_textRenderer->DrawText(title, bgX + 20.0f, bgY + 10.0f, 24.0f,
-        D2D1::ColorF(D2D1::ColorF::White));
-
-    if (ctx.cardSelecting)
-        m_textRenderer->DrawText(L"[カードをクリックして選択]", bgX + bgW - 220.0f, bgY + 10.0f, 16.0f,
-            D2D1::ColorF(D2D1::ColorF::Yellow));
-    else
-        m_textRenderer->DrawText(L"[枠外クリックで閉じる]", bgX + bgW - 150.0f, bgY + 10.0f, 16.0f,
-            D2D1::ColorF(D2D1::ColorF::Gray));
-
-    std::vector<std::string> displayPile = pile;
-
-    if (ctx.showDrawPile)
-        std::sort(displayPile.begin(), displayPile.end());
-
-    const float scale = 0.7f;
-    const float cw = CardVisual::CARD_W * scale;
-    const float ch = CardVisual::CARD_H * scale;
-    const float gap = 12.0f;
-    const int   cols = 6;
-
-    // 本体（スプライト）
-    m_textRenderer->End();
-    m_spriteRenderer->Begin();
-    for (int i = 0; i < (int)displayPile.size(); i++)
+    // ---- 文字 ----
+    m_textRenderer->Begin();
+    m_textRenderer->DrawOutlinedTextCentered(title, bnX + bnW / 2.0f, bnY, bnW, bnH, 24.0f,
+        D2D1::ColorF(1.0f, 0.95f, 0.8f), D2D1::ColorF(0.25f, 0.04f, 0.06f), 3.0f);
+    for (int i = 0; i < n; i++)
     {
-        const CardData* data = CardDataBase::Get(displayPile[i]);
-        if (!data) continue;
+        const CardData* d = CardDataBase::Get(pile[i]);
+        if (!d) continue;
+        float bx, by, s; CardBaseOf(PileCardRect(i, n), bx, by, s);
+        CardVisual::DrawTexts(m_textRenderer, d, ctx.player, bx, by, s, 0.0f, 1.0f);
+    }
+    if (n == 0)
+        m_textRenderer->DrawTextCentered(L"カードがありません", v.x + v.w / 2.0f, v.y, v.w, 20.0f,
+            D2D1::ColorF(0.7f, 0.7f, 0.7f), v.h);
+    m_textRenderer->DrawTextCentered(
+        ctx.cardSelecting ? L"カードをクリックして選ぶ（枠の外で取りやめ）" : L"枠の外をクリックで閉じる",
+        v.x + v.w / 2.0f, v.y + v.h - 34.0f, v.w, 15.0f, D2D1::ColorF(0.75f, 0.75f, 0.75f), 24.0f);
+    m_textRenderer->End();
 
-        float bx = bgX + 25.0f + (i % cols) * (cw + gap);
-        float by = bgY + 50.0f + (i / cols) * (ch + gap);
-
-        XMFLOAT4 col = CardVisual::GetCardColor(data->type, false);
-        if (ctx.cardSelecting)
+    // ---- ホバー中のカードを拡大＋キーワード説明（最前面） ----
+    if (hover >= 0)
+        if (const CardData* d = CardDataBase::Get(pile[hover]))
         {
-            float rx, ry, rw, rh; CardVisual::GetRect(bx, by, scale, rx, ry, rw, rh);
-            if (ctx.mousePos.x >= rx && ctx.mousePos.x <= rx + rw
-                && ctx.mousePos.y >= ry && ctx.mousePos.y <= ry + rh)
-                col = XMFLOAT4(min(1.0f, col.x + 0.3f), min(1.0f, col.y + 0.3f),
-                    min(1.0f, col.z + 0.3f), 1.0f);
+            const float Z = 1.6f;
+            URect r = PileCardRect(hover, n);
+            float w = CardVisual::CARD_W * Z, h = CardVisual::CARD_H * Z;
+            float tx = r.x + r.w / 2.0f - w / 2.0f, ty = r.y + r.h / 2.0f - h / 2.0f;   // 小さいカードの中心に合わせる
+            if (tx < 6.0f) tx = 6.0f;
+            if (tx + w > m_screenWidth - 6.0f) tx = m_screenWidth - 6.0f - w;
+            if (ty < 6.0f) ty = 6.0f;
+            if (ty + h > m_screenHeight - 6.0f) ty = m_screenHeight - 6.0f - h;
+            float bx, by, s; CardBaseOf({ tx, ty, w, h }, bx, by, s);
+
+            m_spriteRenderer->Begin();
+            CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, bx, by, s, 0.0f,
+                CardVisual::GetCardColor(d->type, false), d, 0.0f);
+            m_spriteRenderer->End();
+            m_textRenderer->Begin();
+            CardVisual::DrawTexts(m_textRenderer, d, ctx.player, bx, by, s, 0.0f, 1.0f);
+            m_textRenderer->End();
+            CardTooltip::Draw(m_spriteRenderer, m_textRenderer, m_whiteTexture, d,
+                tx + w / 2.0f, ty, w, h, m_screenWidth, m_screenHeight, bnY + bnH);   // 見出しのバナーより上には出さない
         }
-
-        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, bx, by, scale, 0.0f,
-            col, data, 0.0f);
-    }
-    m_spriteRenderer->End();
-
-    // 文字（テキスト）
-    m_textRenderer->Begin();
-    for (int i = 0; i < (int)displayPile.size(); i++)
-    {
-        const CardData* data = CardDataBase::Get(displayPile[i]);
-        if (!data) continue;
-
-        float bx = bgX + 25.0f + (i % cols) * (cw + gap);
-        float by = bgY + 50.0f + (i / cols) * (ch + gap);
-        CardVisual::DrawTexts(m_textRenderer, data, ctx.player, bx, by, scale, 0.0f, 1.0f);
-    }
-
-    m_textRenderer->End();
 }
 
 void BattleUI::StartDrawCardEffect(const std::string& cardId)

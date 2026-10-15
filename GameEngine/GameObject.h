@@ -1,4 +1,6 @@
 #pragma once
+#include "HpBar.h"
+
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include <vector>
@@ -177,15 +179,7 @@ public:
 
     void UpdateDisplayHp(float deltaTime)
     {
-        float speed = 0.5f;
-        float minSpeed = 15.0f;
-        if (m_displayHp > (float)GetHp())
-        {
-            float rate = speed * (m_displayHp - GetHp());
-            if (rate < minSpeed) rate = minSpeed;
-            m_displayHp -= rate * deltaTime;
-            if (m_displayHp < (float)GetHp()) m_displayHp = (float)GetHp();
-        }
+        m_displayHp = HpBar::StepDisplay(m_displayHp, GetHp(), deltaTime);
     }
 
     // ”í’eƒtƒ‰ƒbƒVƒ…

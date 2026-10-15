@@ -194,6 +194,7 @@
     <ClInclude Include="HighlightPalette.h" />
     <ClInclude Include="Hint.h" />
     <ClInclude Include="HitStop.h" />
+    <ClInclude Include="HpBar.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="ItemTooltip.h" />
     <ClInclude Include="MaterialData.h" />

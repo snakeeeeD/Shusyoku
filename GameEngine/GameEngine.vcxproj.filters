@@ -337,6 +337,9 @@
     <Filter Include="ソース ファイル\02-Scene\70-QuickPlay\01-QuickSelectScene">
       <UniqueIdentifier>{0def693b-c25a-4925-a8fc-7742db21d486}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\12-HpBar">
+      <UniqueIdentifier>{31bb15d4-78e5-494a-b391-7b02f64c08c2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -629,6 +632,9 @@
     </ClInclude>
     <ClInclude Include="QuickSelectScene.h">
       <Filter>ソース ファイル\02-Scene\70-QuickPlay\01-QuickSelectScene</Filter>
+    </ClInclude>
+    <ClInclude Include="HpBar.h">
+      <Filter>ソース ファイル\01-描画関連\12-HpBar</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

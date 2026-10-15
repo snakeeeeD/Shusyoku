@@ -14,6 +14,8 @@
 #include "BattleHighlighter.h"
 #include "TextureManager.h"
 #include "FloatingText.h"
+#include "URect.h"
+#include "HpBar.h"
 #include <vector>
 #include <utility>
 #include <string>
@@ -71,17 +73,6 @@ struct PlayCardEffect {
     bool isBurn = false;
     bool exhaust = false;
     bool sparked = false;
-};
-
-struct HPBarInfo
-{
-    int currentHP;
-    int maxHP;
-    float displayHP;
-    int block;
-    int poisonDmg;
-    bool poisonBoosted = false;   // ToxicRhythmで毒が複数回化しているか
-    bool hasBurn;
 };
 
 struct DropShown 
@@ -171,6 +162,9 @@ public:
 
     TextRenderer* GetTextRenderer() { return m_textRenderer; }
     int GetPanelHoveredEnemy() const { return m_panelHoveredEnemy; }
+    // 自分の状態（左下：エナジーのオーブ・HP・ブロック）の配置。描画と位置の参照で共有
+    struct PlayerHudRects { URect panel, orb, hp, block; };
+    PlayerHudRects PlayerHud() const;
 
     // 右上の敵パネル1件分の矩形（描画・クリック判定・チュートリアルで共有）
     static void GetEnemyEntryRect(int i, int screenWidth, float& x, float& y, float& w, float& h);
@@ -214,6 +208,12 @@ public:
 
     static constexpr float BURN_EFFECT_DUR = 0.75f;   // 過負荷は長め（ため time込み）
 
+    // 山札・捨て札・廃棄の一覧（描画とクリック判定で共有）
+    URect PileViewerRect() const;
+    URect PileCardRect(int i, int count) const;   // i枚目の見た目どおりの矩形
+    int   PileCardAt(POINT p, int count) const;   // 無ければ-1
+    static std::vector<std::string> PileForView(Deck* deck, bool showDraw, bool showDiscard);   // 表示順の一覧
+
 private:
     SpriteRenderer* m_spriteRenderer = nullptr;
     TextRenderer* m_textRenderer = nullptr;
@@ -237,6 +237,7 @@ private:
     void DrawHPBar(float x, float y, float w, float h, const HPBarInfo& info, float time);
     void DrawEnemyHPBar(Enemy* enemy, Renderer3D* renderer3D);
     void DrawEnemyInfoPanel(const BattleUIContext& ctx);
+    void DrawPlayerHud(const BattleUIContext& ctx);
     void DrawEnemyKeywords(const BattleUIContext& ctx);
     void DrawTargetIndicators(const BattleUIContext& ctx);
     void DrawArrowIndicator(float sx, float sy, const DirectX::XMFLOAT4& color, float highlightTimer);
