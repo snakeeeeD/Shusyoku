@@ -212,6 +212,16 @@ private:
     std::string m_eventId;
     int m_eventResult = -1;   // -1=選択中, >=0=結果表示
     void DrawEvent();
+    // ボスレリックの選択（候補があるフィールドで開くモーダル）
+    bool BossRelicPickOpen() const;
+    void DrawBossRelicPick();
+    URect BossRelicCardRect(int i, int n) const
+    {
+        const float w = 300.0f, h = 310.0f, gap = 30.0f;
+        float total = n * w + (n - 1) * gap;
+        return { (m_screenWidth - total) / 2.0f + i * (w + gap), 170.0f, w, h };
+    }
+    URect BossRelicSkipRect() const { return { m_screenWidth / 2.0f - 90.0f, 520.0f, 180.0f, 44.0f }; }
     void ApplyOutcomes(const EventChoice& c);
     void GetEventChoiceRect(int i, float& x, float& y, float& w, float& h) const;
     // イベントの窓（選択肢の数、または結果画面で受け取った物の数で高さが決まる）
@@ -236,6 +246,7 @@ private:
     void DrawEventPicker();
     void ApplyCardPick(int idx);
     void GetEventCardSlot(int i, float& x, float& y) const;
+    URect EventPickerPanel() const;   // イベントのカード選択：一覧を囲む窓（デッキ枚数で高さが決まる）
     int  EventCardAt(POINT p) const;
     int m_eventPickAnimIdx = -1;
     float m_eventPickAnimTimer = 0.0f;

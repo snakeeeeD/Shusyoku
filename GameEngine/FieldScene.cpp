@@ -840,10 +840,18 @@ void FieldScene::DrawImGui()
         const char* tags[] = { "Strike", "Poison", "Bulwark", "Knife", "Berserk", "Trap" };
         ImGui::Combo("Archetype", &archetype, tags, IM_ARRAYSIZE(tags));
 
-        auto jumpTo = [&](int layer, int relicsPer, int archN, int suppN, int randN) 
+        auto jumpTo = [&](int layer, int relicsPer, int archN, int suppN, int randN)
             {
+                auto& pd = PlayerDataManager::GetData();
                 RunSetup::BuildArchetypeDeck(tags[archetype], archN, suppN, randN);
                 RunSetup::GrantRandomRelics(relicsPer);
+                pd.layer = layer;
+                pd.hp = pd.maxHp;
+                pd.fieldNodeTypes.clear();      // マップを作り直させる
+                pd.fieldNodeEnemyIds.clear();
+                pd.fieldNodeVisited.clear();
+                PlayerDataManager::Save();
+                if (onChangeScene) onChangeScene(SceneType::Field);
             };
 
         if (ImGui::Button("Go Layer 2 (relics x1)")) jumpTo(2, 1, 5, 3, 2);   // 基本4+軸5+補助3+乱2=14

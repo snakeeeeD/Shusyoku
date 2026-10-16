@@ -134,6 +134,8 @@ namespace
 
         // ---- レリック ----
         { "relics.json", "relics[].kind",   "relicKind" },
+        { "relics.json", "relics[].extra[].kind", "relicKind" },   // 追加効果（代償）
+        { "relics.json", "relics[].icon", "texture", nullptr, nullptr, Severity::Warning },   // アイコン（Assets/UI/<icon>.png）
         { "relics.json", "relics[].rarity", "relicRarity" },
         { "relics.json", "relics[].effect", "relicEffect" },
 

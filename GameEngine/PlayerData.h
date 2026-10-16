@@ -44,6 +44,7 @@ struct PlayerData
     bool tutorialShop = false;
     bool tutorialRest = false;
     std::set<std::string> seenHints;   // 表示済みのその場ヒントid
+    std::vector<std::string> bossRelicChoices;   // ボス撃破後に選ぶレリックの候補（空＝選択なし）
 
     std::map<std::string, int> relicCounters;   // レリックid → 現在カウント
 };

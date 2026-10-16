@@ -290,6 +290,8 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 			TextureManager::Load("icon_steps", L"Assets/UI/icon_steps.png");
 			TextureManager::Load("icon_gold", L"Assets/UI/icon_gold.png");
 			TextureManager::Load("icon_map", L"Assets/UI/icon_map.png");
+			TextureManager::Load("icon_layer", L"Assets/UI/icon_layer.png");
+			RelicManager::LoadIcons();
 
 			TextureManager::Load("node_battle", L"Assets/UI/node_battle.png");
 			TextureManager::Load("node_rest", L"Assets/UI/node_rest.png");
@@ -605,7 +607,7 @@ void SceneManager::Draw()
 	if (auto field = dynamic_cast<FieldScene*>(m_currentScene))
 	{
 		bool overlay = m_settingsOpen || m_craftOpen || m_restOpen || m_mapOpen
-			|| m_invOpen || m_deckOpen || m_tutorialOpen;
+			|| m_invOpen || m_deckOpen || m_tutorialOpen || BossRelicPickOpen();
 		field->SetHoverEnabled(!overlay);
 	}
 	if (m_currentScene) m_currentScene->Draw();
@@ -624,6 +626,7 @@ void SceneManager::Draw()
 	if (m_deckOpen || m_mapOpen || m_invOpen || m_restOpen || m_craftOpen) DrawBackButton();
 	if (m_craftFxTimer > 0.0f) DrawCraftFx();  
 	if (HasTopBar() && !fading) { DrawRelicBar(); DrawBarTips(); }
+	if (BossRelicPickOpen() && !fading) DrawBossRelicPick();
 	if (!TutorialActive() && !fading) DrawHint();
 	if (m_settingsOpen) DrawSettings();
 
@@ -687,7 +690,7 @@ void SceneManager::DrawOverlay()
 	}
 
 	// 数値欄のアイコン（白い画像を欄の色で染める）
-	const char* statIcon[] = { "icon_hp", "icon_steps", nullptr, "icon_gold" };
+	const char* statIcon[] = { "icon_hp", "icon_steps", "icon_layer", "icon_gold" };
 	for (int i = 0; i < 4; i++)
 		if (statIcon[i])
 			if (auto tex = TextureManager::Get(statIcon[i]))
@@ -695,20 +698,6 @@ void SceneManager::DrawOverlay()
 				URect r = BarStatRect(i);
 				m_uiSprite->DrawSprite(tex, r.x + 8.0f, r.y + 3.0f, 22.0f, 22.0f, 0.0f, statCol[i]);
 			}
-
-	// 層：全3層のうち、今いる層までを光らせる（●●○）
-	{
-		URect r = BarStatRect(2);
-		int layer = PlayerDataManager::GetData().layer;
-		for (int k = 0; k < 3; k++)
-		{
-			bool cur = (k == layer - 1);
-			float s = cur ? 16.0f : 12.0f;   // 今いる層は少し大きく
-			float px = r.x + 22.0f + k * 30.0f - s / 2.0f, py = r.y + r.h / 2.0f - s / 2.0f;
-			m_uiSprite->DrawSprite(TextureManager::Get("particle"), px, py, s, s, 0.0f,
-				k < layer ? statCol[2] : XMFLOAT4(0.3f, 0.32f, 0.4f, 1.0f));
-		}
-	}
 
 	m_uiSprite->DrawSprite(TextureManager::Get("ui_items"), m_screenWidth - 470.0f, 5.0f, 90.0f, 30.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
 
@@ -771,7 +760,7 @@ void SceneManager::DrawOverlay()
 	swprintf_s(sbuf, L"%d", pd.fieldSteps);
 	statText(1, sbuf, D2D1::ColorF(0.6f, 0.9f, 0.6f));       // Steps
 
-	wchar_t lbuf[32]; swprintf_s(lbuf, L"Layer %d/3", pd.layer);
+	wchar_t lbuf[32]; swprintf_s(lbuf, L"%d/3", pd.layer);
 	statText(2, lbuf, D2D1::ColorF(0.75f, 0.8f, 1.0f));      // Layer
 
 	m_textRenderer->End();
@@ -1041,6 +1030,36 @@ void SceneManager::HandleInput()
 	if (m_tutorialDelay > 0.0f) return;   // チュートリアル表示待ち中は入力を止める（勝利連打で飛ぶのを防ぐ）
 
 	if (m_craftFxTimer > 0.0f) return;           // 演出中は入力停止
+
+	if (BossRelicPickOpen())   // ボスレリックの選択（選ぶか「受け取らない」まで他の操作はしない）
+	{
+		if (m_uiInput.GetMouseButtonTrigger(0))
+		{
+			auto& pd = PlayerDataManager::GetData();
+			POINT m = m_uiInput.GetMousePos();
+			int n = (int)pd.bossRelicChoices.size();
+			for (int i = 0; i < n; i++)
+				if (BossRelicCardRect(i, n).has(m))
+				{
+					Audio::PlaySE("Assets/Sound/se/click.mp3");
+					std::string offered;
+					for (auto& c : pd.bossRelicChoices) { if (!offered.empty()) offered += ","; offered += c; }
+					Telemetry::Instance().Log("boss_relic_pick", { {"chosen", pd.bossRelicChoices[i]}, {"offered", offered} });
+					std::string id = pd.bossRelicChoices[i];
+					pd.bossRelicChoices.clear();
+					PlayerDataManager::AddRelic(id);   // 取得時の効果（最大HP・歩数、代償も）を適用して保存
+					return;
+				}
+			if (BossRelicSkipRect().has(m))
+			{
+				Audio::PlaySE("Assets/Sound/se/click.mp3");
+				Telemetry::Instance().Log("boss_relic_pick", { {"chosen", "(skip)"} });
+				pd.bossRelicChoices.clear();
+				PlayerDataManager::Save();
+			}
+		}
+		return;
+	}
 
 	if (HasTopBar())
 	{
@@ -1538,12 +1557,13 @@ void SceneManager::DrawBarTips()
 	if (mp.y < 5 || mp.y > 35) return;
 
 	struct Tip { float x0, x1; const wchar_t* title; const wchar_t* desc; bool hideOnField; };
-	URect hs = BarStatRect(0), ss = BarStatRect(1), ls = BarStatRect(2);
+	URect hs = BarStatRect(0), ss = BarStatRect(1), ls = BarStatRect(2), gs = BarStatRect(3);
 	URect mb = BarButtonRect(0), ib = BarButtonRect(1), db = BarButtonRect(2);
 	Tip tips[] = {
 		{ hs.x, hs.x + hs.w, L"体力", L"0でゲームオーバー", false },
 		{ ss.x, ss.x + ss.w, L"歩数", L"0を超えて進むと敵が強くなる", false },
 		{ ls.x, ls.x + ls.w, L"層",   L"ダンジョンの階層(全3層)。深いほど敵が強い", false },
+		{ gs.x, gs.x + gs.w, L"ゴールド", L"ショップやイベントで消費する", false },
 		{ mb.x, mb.x + mb.w, L"マップ",   L"マップを開く",   true  },
 		{ ib.x, ib.x + ib.w, L"アイテム", L"アイテムを見る", false },
 		{ db.x, db.x + db.w, L"デッキ",   L"デッキを見る",   false },
@@ -2533,15 +2553,6 @@ void SceneManager::DrawRelicBar()
 	if (relics.empty()) return;
 	ID3D11ShaderResourceView* white = TextureManager::Get("white");
 
-	auto rarColor = [](const std::string& r) -> XMFLOAT4 {
-		if (r == "uncommon") return XMFLOAT4(0.2f, 0.6f, 0.9f, 1);
-		if (r == "rare")     return XMFLOAT4(0.95f, 0.8f, 0.2f, 1);
-		if (r == "boss")     return XMFLOAT4(0.9f, 0.3f, 0.3f, 1);
-		if (r == "event")    return XMFLOAT4(0.3f, 0.8f, 0.4f, 1);
-		if (r == "shop")     return XMFLOAT4(0.7f, 0.4f, 0.9f, 1);
-		return XMFLOAT4(0.55f, 0.55f, 0.55f, 1);  // common
-		};
-
 	BattleScene* battle = (m_currentType == SceneType::Battle)
 		? dynamic_cast<BattleScene*>(m_currentScene) : nullptr;
 	auto& counters = PlayerDataManager::GetData().relicCounters;
@@ -2552,7 +2563,7 @@ void SceneManager::DrawRelicBar()
 	{
 		float x, y, w, h; GetRelicRect(i, x, y, w, h);
 		auto rd = RelicManager::Get(relics[i]);
-		XMFLOAT4 frame = rd ? rarColor(rd->rarity) : XMFLOAT4(0.55f, 0.55f, 0.55f, 1);
+		XMFLOAT4 frame = rd ? RelicManager::RarityColor(rd->rarity) : XMFLOAT4(0.55f, 0.55f, 0.55f, 1);
 
 		bool spent = battle && battle->IsRelicSpent(relics[i]);
 		bool aboutToFire = false;
@@ -2562,21 +2573,24 @@ void SceneManager::DrawRelicBar()
 			if (it != counters.end() && it->second == rd->count - 1) aboutToFire = true;
 		}
 
-		if (spent)   // 使い切り：暗く沈める
+		if (!spent && aboutToFire)   // 発動直前：金色に脈動する縁
 		{
-			m_uiSprite->DrawSprite(white, x - 2, y - 2, w + 4, h + 4, 0.0f, XMFLOAT4(0.25f, 0.25f, 0.25f, 1));
-			m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(0.10f, 0.10f, 0.12f, 1));
+			float p = 4.0f + 4.0f * pulse;
+			m_uiSprite->DrawSprite(white, x - p, y - p, w + p * 2, h + p * 2, 0.0f,
+				XMFLOAT4(1.0f, 0.95f, 0.4f, 0.45f + 0.4f * pulse));
 		}
-		else
+		// 窓の枠（レア度の色を薄く乗せる）。使い切りは暗く沈める
+		XMFLOAT4 winTint = spent ? XMFLOAT4(0.2f, 0.2f, 0.22f, 1.0f)
+			: XMFLOAT4(0.45f + 0.55f * frame.x, 0.45f + 0.55f * frame.y, 0.45f + 0.55f * frame.z, 1.0f);
+		UiWindow::Draw(m_uiSprite, white, x, y, w, h, winTint);
+
+		ID3D11ShaderResourceView* icon = (rd && !rd->icon.empty()) ? TextureManager::Get(rd->icon) : nullptr;
+		if (icon)   // アイコン：影で輪郭を立たせ、レア度の色で染める
 		{
-			if (aboutToFire)   // 発動直前：金色に脈動する縁
-			{
-				float p = 4.0f + 4.0f * pulse;
-				m_uiSprite->DrawSprite(white, x - p, y - p, w + p * 2, h + p * 2, 0.0f,
-					XMFLOAT4(1.0f, 0.95f, 0.4f, 0.45f + 0.4f * pulse));
-			}
-			m_uiSprite->DrawSprite(white, x - 2, y - 2, w + 4, h + 4, 0.0f, frame);
-			m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(0.22f, 0.18f, 0.28f, 1));
+			float is = h - 8.0f, ix = x + (w - is) / 2.0f, iy = y + 4.0f;
+			m_uiSprite->DrawSprite(icon, ix + 1.5f, iy + 1.5f, is, is, 0.0f, XMFLOAT4(0, 0, 0, 0.65f));
+			m_uiSprite->DrawSprite(icon, ix, iy, is, is, 0.0f,
+				spent ? XMFLOAT4(0.22f, 0.22f, 0.24f, 0.8f) : frame);
 		}
 
 		float flash = RelicManager::FlashAmount(relics[i]);
@@ -2599,7 +2613,8 @@ void SceneManager::DrawRelicBar()
 			&& dynamic_cast<BattleScene*>(m_currentScene)
 			&& dynamic_cast<BattleScene*>(m_currentScene)->IsRelicSpent(relics[i]);
 		D2D1::ColorF nameCol = spentT ? D2D1::ColorF(0.45f, 0.45f, 0.45f) : D2D1::ColorF(1, 1, 1);
-		m_textRenderer->DrawText(lb.c_str(), x + 6.0f, y + 8.0f, 18.0f, nameCol);
+		bool hasIcon = d && !d->icon.empty() && TextureManager::Get(d->icon);
+		if (!hasIcon) m_textRenderer->DrawText(lb.c_str(), x + 6.0f, y + 8.0f, 18.0f, nameCol);
 		if (d && d->count > 0)
 		{
 			auto& rc = PlayerDataManager::GetData().relicCounters;
@@ -2762,8 +2777,10 @@ void SceneManager::DrawEvent()
 				m_uiSprite->DrawSprite(TextureManager::Get("icon_gold"), ix, iy, is, is, 0.0f, XMFLOAT4(1.0f, 0.9f, 0.3f, 1));
 			else if (g.kind == "hp" || g.kind == "maxHp")
 				m_uiSprite->DrawSprite(TextureManager::Get("icon_hp"), ix, iy, is, is, 0.0f, XMFLOAT4(1.0f, 0.5f, 0.5f, 1));
-			else if (g.kind == "relic")   // 仮：レリック個別のアイコンは帯のアイコン化で差し替える
-				m_uiSprite->DrawSprite(TextureManager::Get("icon_buff"), ix, iy, is, is, 0.0f, XMFLOAT4(1, 1, 1, 1));
+			else if (g.kind == "relic")
+				if (const RelicDef* rd = RelicManager::Get(g.id))
+					if (auto tex = TextureManager::Get(rd->icon))
+						m_uiSprite->DrawSprite(tex, ix, iy, is, is, 0.0f, RelicManager::RarityColor(rd->rarity));
 			else if (g.kind == "card")
 				if (const CardData* d = CardDataBase::Get(g.id))
 				{
@@ -2870,6 +2887,75 @@ void SceneManager::DrawEvent()
 		}
 }
 
+void SceneManager::DrawBossRelicPick()
+{
+	auto& choices = PlayerDataManager::GetData().bossRelicChoices;
+	int n = (int)choices.size();
+	ID3D11ShaderResourceView* white = TextureManager::Get("white");
+	POINT mp = m_uiInput.GetMousePos();
+	const float bnW = 520.0f, bnH = 90.0f, bnX = m_screenWidth / 2.0f - bnW / 2.0f, bnY = 64.0f;
+
+	// ---- スプライト ----
+	m_uiSprite->Begin();
+	m_uiSprite->DrawSprite(white, 0, BAR_H, (float)m_screenWidth, (float)m_screenHeight - BAR_H, 0.0f,
+		XMFLOAT4(0.05f, 0.03f, 0.09f, 0.92f));
+	m_uiSprite->DrawSprite(TextureManager::Get("ui_banner"), bnX, bnY, bnW, bnH, 0.0f, XMFLOAT4(1, 1, 1, 1));
+	for (int i = 0; i < n; i++)
+	{
+		URect r = BossRelicCardRect(i, n);
+		char key[16]; sprintf_s(key, "boss%d", i);
+		bool hov = UiHover(r.x, r.y, r.w, r.h, mp, key, s_lastHoverKey);
+		float y = hov ? r.y - 6.0f : r.y;
+		UiWindow::Draw(m_uiSprite, white, r.x, y, r.w, r.h);
+		if (hov) UiWindow::Frame(m_uiSprite, white, r.x, y, r.w, r.h, XMFLOAT4(1.0f, 0.85f, 0.2f, 1.0f));
+		// アイコン（個別アイコンがあればボスの色で染める。無ければ台座の円）
+		const RelicDef* rdef = RelicManager::Get(choices[i]);
+		auto icon = (rdef && !rdef->icon.empty()) ? TextureManager::Get(rdef->icon) : nullptr;
+		m_uiSprite->DrawSprite(icon ? icon : TextureManager::Get("particle"), r.x + r.w / 2.0f - 44.0f, y + 22.0f, 88.0f, 88.0f, 0.0f,
+			icon ? XMFLOAT4(0.95f, 0.4f, 0.4f, 1.0f) : XMFLOAT4(0.9f, 0.3f, 0.3f, 0.35f));
+	}
+	URect sk = BossRelicSkipRect();
+	bool skHov = UiHover(sk.x, sk.y, sk.w, sk.h, mp, "bossSkip", s_lastHoverKey);
+	UiWindow::Button(m_uiSprite, white, sk.x, skHov ? sk.y - 3.0f : sk.y, sk.w, sk.h,
+		skHov ? XMFLOAT4(0.4f, 0.4f, 0.5f, 1) : XMFLOAT4(0.25f, 0.28f, 0.4f, 1));
+	m_uiSprite->End();
+
+	// ---- 文字 ----
+	m_textRenderer->Begin();
+	m_textRenderer->DrawOutlinedTextCentered(L"ボスのレリックを1つ選ぶ", bnX + bnW / 2.0f, bnY, bnW, bnH, 28.0f,
+		D2D1::ColorF(1.0f, 0.95f, 0.8f), D2D1::ColorF(0.25f, 0.04f, 0.06f), 3.0f);
+	for (int i = 0; i < n; i++)
+	{
+		const RelicDef* d = RelicManager::Get(choices[i]);
+		if (!d) continue;
+		URect r = BossRelicCardRect(i, n);
+		float y = r.has(mp) ? r.y - 6.0f : r.y;
+		m_textRenderer->DrawTextCentered(ToWString(d->name).c_str(), r.x + r.w / 2.0f, y + 124.0f, r.w, 24.0f,
+			D2D1::ColorF(1.0f, 0.8f, 0.75f));
+
+		// 説明：行ごとに折り返し、「代償」で始まる行は赤
+		std::wstring desc = ToWString(d->desc);
+		float ly = y + 168.0f;
+		size_t s0 = 0;
+		while (true)
+		{
+			size_t e = desc.find(L'\n', s0);
+			std::wstring line = desc.substr(s0, e == std::wstring::npos ? std::wstring::npos : e - s0);
+			bool cost = (line.rfind(L"代償", 0) == 0);
+			std::wstring wrapped = CardVisual::WrapText(line, 15);
+			int lines = 1; for (wchar_t c : wrapped) if (c == L'\n') lines++;
+			m_textRenderer->DrawTextCentered(wrapped.c_str(), r.x + r.w / 2.0f, ly, r.w - 30.0f, 16.0f,
+				cost ? D2D1::ColorF(1.0f, 0.45f, 0.45f) : D2D1::ColorF(0.92f, 0.92f, 0.92f), lines * 22.0f);
+			ly += lines * 22.0f + 8.0f;
+			if (e == std::wstring::npos) break;
+			s0 = e + 1;
+		}
+	}
+	m_textRenderer->DrawTextCentered(L"受け取らない", sk.x + sk.w / 2.0f, skHov ? sk.y - 3.0f : sk.y, sk.w, 18.0f,
+		D2D1::ColorF(1, 1, 1), sk.h);
+	m_textRenderer->End();
+}
+
 static std::string EventPickerType(const EventChoice& c)
 {
 	for (auto& o : c.outcomes)
@@ -2887,11 +2973,22 @@ void SceneManager::GetEventCardSlot(int i, float& x, float& y) const
 	x = startX + (i % perRow) * (cw + gapX);
 	y = 150.0f + (i / perRow) * (ch + gapY);
 }
+
+URect SceneManager::EventPickerPanel() const
+{
+	const float s = 0.85f, cw = CardVisual::CARD_W * s, ch = CardVisual::CARD_H * s;
+	int n = (int)PlayerDataManager::GetData().deck.size();
+	int rows = (n + 7) / 8; if (rows < 1) rows = 1;     // 1行8枚（GetEventCardSlotと同じ）
+	float gridW = 8 * cw + 7 * 12.0f;
+	return { (m_screenWidth - gridW) / 2.0f - 24.0f, 126.0f, gridW + 48.0f, rows * (ch + 16.0f) + 32.0f };
+}
+
 int SceneManager::EventCardAt(POINT p) const
 {
 	auto& deck = PlayerDataManager::GetData().deck;
 	for (int i = 0; i < (int)deck.size(); i++)
 	{
+		if (m_eventPickType == "upgradeCard" && !CanUpgrade(deck[i])) continue;   // 強化できないカードは選べない
 		float bx, by; GetEventCardSlot(i, bx, by);
 		float x, y, w, h; CardVisual::GetRect(bx, by, 0.85f, x, y, w, h);
 		if (p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h) return i;
@@ -2973,6 +3070,11 @@ void SceneManager::DrawEventPicker()
 
 	m_uiSprite->Begin();
 	m_uiSprite->DrawSprite(white, 0, BAR_H, (float)m_screenWidth, (float)m_screenHeight - BAR_H, 0.0f, XMFLOAT4(0.05f, 0.03f, 0.09f, 0.96f));
+	URect pn = EventPickerPanel();
+	UiWindow::Draw(m_uiSprite, white, pn.x, pn.y, pn.w, pn.h);   // 一覧を囲む窓
+	if (!anim)                                                     // 見出しの布バナー
+		m_uiSprite->DrawSprite(TextureManager::Get("ui_banner"), m_screenWidth / 2.0f - 240.0f, pn.y - 86.0f,
+			480.0f, 84.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
 	for (int i = 0; i < (int)deck.size(); i++)
 	{
 		if (i == m_eventPickAnimIdx) continue;
@@ -2980,7 +3082,17 @@ void SceneManager::DrawEventPicker()
 		if (!d) continue;
 		float bx, by; GetEventCardSlot(i, bx, by);
 		if (i == hov) by -= 12.0f;
-		CardVisual::DrawBase(m_uiSprite, white, bx, by, 0.85f, 0.0f, i == hov ? XMFLOAT4(0.6f, 0.4f, 0.7f, 1.0f) : CardVisual::GetCardColor(d->type), d, m_uiTime);
+		if (i == hov)   // ホバー：色は変えず、浮かせて金の縁
+		{
+			float rx, ry, rw, rh; CardVisual::GetRect(bx, by, 0.85f, rx, ry, rw, rh);
+			UiWindow::Frame(m_uiSprite, white, rx, ry, rw, rh, XMFLOAT4(1.0f, 0.85f, 0.2f, 1.0f));
+		}
+		CardVisual::DrawBase(m_uiSprite, white, bx, by, 0.85f, 0.0f, CardVisual::GetCardColor(d->type), d, m_uiTime);
+		if (m_eventPickType == "upgradeCard" && !CanUpgrade(deck[i]))   // 強化できないカードは暗く
+		{
+			float rx, ry, rw, rh; CardVisual::GetRect(bx, by, 0.85f, rx, ry, rw, rh);
+			m_uiSprite->DrawSprite(white, rx, ry, rw, rh, 0.0f, XMFLOAT4(0, 0, 0, 0.55f));
+		}
 	}
 	m_uiSprite->End();
 
@@ -2991,7 +3103,8 @@ void SceneManager::DrawEventPicker()
 		if (m_eventPickType == "removeCard") prompt = L"削除するカードを選択";
 		else if (m_eventPickType == "upgradeCard") prompt = L"強化するカードを選択";
 		else if (m_eventPickType == "transformCard") prompt = L"変化させるカードを選択";
-		m_textRenderer->DrawText(prompt.c_str(), m_screenWidth / 2.0f - 150.0f, 90.0f, 26.0f, D2D1::ColorF(1, 0.9f, 0.6f));
+		m_textRenderer->DrawOutlinedTextCentered(prompt.c_str(), m_screenWidth / 2.0f, pn.y - 86.0f, 480.0f, 84.0f, 26.0f,
+			D2D1::ColorF(1.0f, 0.95f, 0.8f), D2D1::ColorF(0.25f, 0.04f, 0.06f), 3.0f);
 	}
 	for (int i = 0; i < (int)deck.size(); i++)
 	{
@@ -3032,8 +3145,24 @@ void SceneManager::DrawEventPicker()
 		const CardData* d = CardDataBase::Get(deck[hov]);
 		float bx, by; GetEventCardSlot(hov, bx, by);
 		float rx, ry, rw, rh; CardVisual::GetRect(bx, by - 12.0f, 0.85f, rx, ry, rw, rh);
-		CardTooltip::Draw(m_uiSprite, m_textRenderer, TextureManager::Get("white"), d,
-			rx + rw / 2.0f, ry, rw, rh, m_screenWidth, m_screenHeight);
+		CardTooltip::Draw(m_uiSprite, m_textRenderer, white, d,
+			rx + rw / 2.0f, ry, rw, rh, m_screenWidth, m_screenHeight, pn.y);   // 見出しのバナーより上には出さない
+
+		// 強化：強化後の姿を横に並べて見せる（右に入らなければ左）
+		if (m_eventPickType == "upgradeCard")
+			if (const CardData* up = CardDataBase::Get(deck[hov] + "+"))
+			{
+				bool right = (rx + rw + 34.0f + CardVisual::CARD_W <= m_screenWidth - 6.0f);
+				float px = right ? rx + rw + 34.0f : rx - 34.0f - CardVisual::CARD_W;
+				float py = ry - 8.0f;
+				m_uiSprite->Begin(); DrawBigCard(up, px, py, 1.0f, false); m_uiSprite->End();
+				m_textRenderer->Begin();
+				DrawBigCard(up, px, py, 1.0f, true);
+				m_textRenderer->DrawOutlinedTextCentered(right ? L"▶" : L"◀", right ? rx + rw + 17.0f : rx - 17.0f,
+					ry + rh / 2.0f - 14.0f, 30.0f, 28.0f, 22.0f,
+					D2D1::ColorF(1.0f, 0.85f, 0.3f), D2D1::ColorF(0, 0, 0), 2.0f);
+				m_textRenderer->End();
+			}
 	}
 }
 
@@ -3136,5 +3265,10 @@ bool SceneManager::AnyModalOpen() const
 {
 	return m_tutorialOpen || m_deckOpen || m_craftOpen || m_invOpen
 		|| m_mapOpen || m_restOpen || m_eventOpen || m_settingsOpen
-		|| m_confirmAction != 0;
+		|| m_confirmAction != 0 || BossRelicPickOpen();
+}
+
+bool SceneManager::BossRelicPickOpen() const
+{
+	return m_currentType == SceneType::Field && !PlayerDataManager::GetData().bossRelicChoices.empty();
 }

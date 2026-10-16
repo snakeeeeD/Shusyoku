@@ -1243,9 +1243,13 @@ void BattleScene::Update(float deltaTime)
 
             if (m_category == EncCategory::Boss && pd.layer < 3)
             {
-                std::string br = RelicManager::RandomUnowned("boss");
-                if (br.empty()) br = RelicManager::RandomDrop();
-                if (!br.empty()) { PlayerDataManager::AddRelic(br); m_rewardRelic = br; }
+                // ボスのレリックは3つの候補から選ばせる（次の層のフィールドで選択画面）。候補が無ければ従来どおりランダム付与
+                pd.bossRelicChoices = RelicManager::RandomUnownedMany("boss", 3);
+                if (pd.bossRelicChoices.empty())
+                {
+                    std::string br = RelicManager::RandomDrop();
+                    if (!br.empty()) { PlayerDataManager::AddRelic(br); m_rewardRelic = br; }
+                }
             }
 
             // 初勝利：クラフト導入（コア＋素材を確定ドロップ。

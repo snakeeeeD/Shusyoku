@@ -880,6 +880,8 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         m_textRenderer->DrawOutlinedTextCentered(L"VICTORY!", cx, by, bw, bh, 46.0f,
             D2D1::ColorF(1.0f, 0.92f, 0.45f), D2D1::ColorF(0.35f, 0.16f, 0.0f), 3.0f);
 
+        float pillY = m_screenHeight / 2.0f + 110.0f;   // 「クリックで次へ」の位置（行が下まで伸びたら押し下げる）
+
         // ===== ドロップ一覧（アイコン＋窓＋アウトライン文字）=====
         m_hoverDropId.clear();
         if (ctx.drops)
@@ -942,21 +944,34 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             // レリック
             if (ctx.rewardRelic && !ctx.rewardRelic->empty())
             {
+                const RelicDef* rdef = RelicManager::Get(*ctx.rewardRelic);
                 std::wstring rn, rd;
-                if (auto r = RelicManager::Get(*ctx.rewardRelic)) { rn = ToWString(r->name); rd = ToWString(r->desc); }
-                const float rw = 340.0f, rh = rd.empty() ? 40.0f : 66.0f, rrx = cx - rw / 2.0f;
+                if (rdef) { rn = ToWString(rdef->name); rd = ToWString(rdef->desc); }
+                std::wstring wrapped = CardVisual::WrapText(rd, 19);   // アイコンの分だけ狭く
+                int lines = rd.empty() ? 0 : 1;
+                for (wchar_t c : wrapped) if (c == L'\n') lines++;
+                const float rw = 340.0f, rh = 44.0f + lines * 18.0f, rrx = cx - rw / 2.0f;
                 m_spriteRenderer->End(); m_spriteRenderer->Begin();
                 DrawWindow(rrx, y, rw, rh);
-                m_textRenderer->DrawOutlinedText((L"レリック獲得: " + rn).c_str(), rrx + 14.0f, y + 8.0f, 19.0f,
+                m_spriteRenderer->End(); m_spriteRenderer->Begin();   // 窓をフラッシュ→アイコンを上へ
+                if (rdef)
+                    if (auto tex = TextureManager::Get(rdef->icon))
+                    {
+                        m_spriteRenderer->DrawSprite(tex, rrx + 11.5f, y + 7.5f, 34.0f, 34.0f, 0.0f, XMFLOAT4(0, 0, 0, 0.65f));   // 影
+                        m_spriteRenderer->DrawSprite(tex, rrx + 10.0f, y + 6.0f, 34.0f, 34.0f, 0.0f, RelicManager::RarityColor(rdef->rarity));
+                    }
+                m_textRenderer->DrawOutlinedText((L"レリック獲得: " + rn).c_str(), rrx + 52.0f, y + 10.0f, 19.0f,
                     D2D1::ColorF(0.95f, 0.8f, 1.0f), D2D1::ColorF(0.2f, 0.1f, 0.25f), 2.5f);
                 if (!rd.empty())
-                    m_textRenderer->DrawText(rd.c_str(), rrx + 14.0f, y + 36.0f, 14.0f, D2D1::ColorF(0.86f, 0.86f, 0.92f));
+                    m_textRenderer->DrawText(wrapped.c_str(), rrx + 52.0f, y + 38.0f, 14.0f, D2D1::ColorF(0.86f, 0.86f, 0.92f));
+                if (y + rh + 14.0f > pillY) pillY = y + rh + 14.0f;
+      
             }
         }
 
         // ===== クリックで次へ（窓ピル）=====
         {
-            const float pw = 210.0f, ph = 36.0f, px = cx - pw / 2.0f, py = m_screenHeight / 2.0f + 110.0f;
+            const float pw = 210.0f, ph = 36.0f, px = cx - pw / 2.0f, py = pillY;
             DrawWindow(px, py, pw, ph);
             m_textRenderer->DrawOutlinedText(L"クリックで次へ", px + 34.0f, py + 8.0f, 20.0f,
                 D2D1::ColorF(1, 1, 1), D2D1::ColorF(0.1f, 0.1f, 0.1f), 2.0f);

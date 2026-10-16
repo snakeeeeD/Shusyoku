@@ -1,5 +1,6 @@
 #include "RelicManager.h"
 #include "PlayerDataManager.h"
+#include "TextureManager.h"
 
 #include <fstream>
 #include <algorithm>
@@ -28,6 +29,9 @@ void RelicManager::Load(const std::string& path) {
             d.effect = r.value("effect", "block");
             d.perTurn = r.value("perTurn", false);
             d.rarity = r.value("rarity", "common");
+            d.icon = r.value("icon", "");
+            if (r.contains("extra"))
+                for (auto& e : r["extra"]) d.extra.push_back({ e.value("kind", ""), e.value("value", 0) });
             s_defs[d.id] = d;
         }
         char buf[64]; sprintf_s(buf, "[Relic] loaded %d\n", (int)s_defs.size());
@@ -44,6 +48,27 @@ void RelicManager::Reload(const std::string& path)
     Load(path);
 }
 
+void RelicManager::LoadIcons()
+{
+    for (auto& kv : s_defs)
+    {
+        const std::string& icon = kv.second.icon;
+        if (icon.empty() || TextureManager::Get(icon)) continue;
+        std::wstring path = L"Assets/UI/" + std::wstring(icon.begin(), icon.end()) + L".png";   // アイコン名は英数字のみ
+        TextureManager::Load(icon, path.c_str());
+    }
+}
+
+DirectX::XMFLOAT4 RelicManager::RarityColor(const std::string& r)
+{
+    if (r == "uncommon") return { 0.2f, 0.6f, 0.9f, 1 };
+    if (r == "rare")     return { 0.95f, 0.8f, 0.2f, 1 };
+    if (r == "boss")     return { 0.9f, 0.3f, 0.3f, 1 };
+    if (r == "event")    return { 0.3f, 0.8f, 0.4f, 1 };
+    if (r == "shop")     return { 0.7f, 0.4f, 0.9f, 1 };
+    return { 0.85f, 0.85f, 0.88f, 1 };   // common / starter（明るい銀色）
+}
+
 const RelicDef* RelicManager::Get(const std::string& id) {
     auto it = s_defs.find(id); return it != s_defs.end() ? &it->second : nullptr;
 }
@@ -56,7 +81,7 @@ bool RelicManager::Owns(const std::string& id) {
 int RelicManager::SumValue(const std::string& kind) {
     int sum = 0;
     for (auto& id : PlayerDataManager::GetData().relics)
-        if (auto d = Get(id)) if (d->kind == kind) sum += d->value;
+        if (auto d = Get(id)) sum += d->ValueOf(kind);   // 追加効果（代償）も合算
     return sum;
 }
 
@@ -71,7 +96,7 @@ std::vector<const RelicDef*> RelicManager::OwnedByKind(const std::string& kind) 
 
 bool RelicManager::HasKind(const std::string& kind) {
     for (auto& id : PlayerDataManager::GetData().relics)
-        if (auto d = Get(id)) if (d->kind == kind) return true;
+        if (auto d = Get(id)) if (d->Has(kind)) return true;
     return false;
 }
 
@@ -83,6 +108,16 @@ std::string RelicManager::RandomUnowned(const std::string& tier)
             pool.push_back(kv.first);
     if (pool.empty()) return "";
     return pool[rand() % pool.size()];
+}
+
+std::vector<std::string> RelicManager::RandomUnownedMany(const std::string& tier, int n)
+{
+    std::vector<std::string> pool;
+    for (auto& kv : s_defs)
+        if (!Owns(kv.first) && kv.second.rarity == tier) pool.push_back(kv.first);
+    for (int i = (int)pool.size() - 1; i > 0; i--) std::swap(pool[i], pool[rand() % (i + 1)]);   // シャッフル
+    if ((int)pool.size() > n) pool.resize(n);
+    return pool;
 }
 
 std::string RelicManager::RandomDrop()   // 通常/エリート用：common/uncommon/rare を重み付け

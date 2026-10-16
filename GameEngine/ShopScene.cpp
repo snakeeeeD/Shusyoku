@@ -3,6 +3,7 @@
 #include "ItemTooltip.h"
 #include "MaterialDataBase.h"
 #include "RelicManager.h"
+#include "RelicManager.h"
 #include "GameUtils.h"
 #include "UiWindow.h"
 #include "Audio.h"
@@ -88,7 +89,7 @@ void ShopScene::GenerateStock()
         });
 
     int disc = RelicManager::SumValue("shopDiscount");
-    if (disc > 0)
+    if (disc != 0)
         for (auto& it : m_items)
             it.price = it.price * (100 - disc) / 100;
 }
@@ -164,9 +165,22 @@ void ShopScene::Draw()
                 : (m_items[i].kind == ShopKind::Core) ? XMFLOAT4(0.42f, 0.32f, 0.22f, 1.0f)
                 : (m_items[i].kind == ShopKind::Relic) ? XMFLOAT4(0.40f, 0.30f, 0.55f, 1.0f)
                 : XMFLOAT4(0.20f, 0.35f, 0.35f, 1.0f);
-            UiWindow::Draw(m_spriteRenderer, m_whiteTexture, x, y, w, h);
-            m_spriteRenderer->DrawSprite(m_whiteTexture, x + 6, y + 6, w - 12, h - 12, 0.0f,
-                XMFLOAT4(col.x, col.y, col.z, 0.85f));   // 種類色を中に
+            // 左上にアイコン（コア=金の宝石／素材=青い結晶／レリック=個別アイコンをレア度の色で）
+            ID3D11ShaderResourceView* icon = nullptr;
+            XMFLOAT4 iconCol(1, 1, 1, 1);
+            if (m_items[i].kind == ShopKind::Core) icon = TextureManager::Get("mat_core");
+            else if (m_items[i].kind == ShopKind::Material) icon = TextureManager::Get("mat_material");
+            else if (const RelicDef* rd = RelicManager::Get(m_items[i].id))
+            {
+                icon = TextureManager::Get(rd->icon);
+                iconCol = RelicManager::RarityColor(rd->rarity);
+            }
+            if (icon)
+            {
+                if (m_items[i].bought) iconCol = XMFLOAT4(0.35f, 0.35f, 0.35f, 1.0f);
+                m_spriteRenderer->DrawSprite(icon, x + 7.5f, y + 9.5f, 30.0f, 30.0f, 0.0f, XMFLOAT4(0, 0, 0, 0.6f));   // 影
+                m_spriteRenderer->DrawSprite(icon, x + 6.0f, y + 8.0f, 30.0f, 30.0f, 0.0f, iconCol);
+            }
         }
     }
     POINT mp = m_input.GetMousePos();
@@ -264,7 +278,7 @@ void ShopScene::Draw()
                 if (r) { nm = ToWString(r->name); desc = ToWString(r->desc); }
                 tag = L"RELIC"; tagCol = D2D1::ColorF(0.85f, 0.7f, 1.0f);
             }
-            m_textRenderer->DrawText(nm.c_str(), x + 6, y + 10, 17.0f, D2D1::ColorF(D2D1::ColorF::White));
+            m_textRenderer->DrawText(nm.c_str(), x + 40, y + 13, 15.0f, D2D1::ColorF(D2D1::ColorF::White));   // アイコンの右
             m_textRenderer->DrawText(tag, x + 6, y + 34, 12.0f, tagCol);
             m_textRenderer->DrawText(CardVisual::WrapText(desc, 9).c_str(), x + 6, y + 56, 12.0f, D2D1::ColorF(D2D1::ColorF::LightGray));
         }

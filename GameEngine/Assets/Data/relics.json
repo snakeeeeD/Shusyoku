@@ -2,6 +2,7 @@
   "relics": [
     {
       "id": "iron_heart",
+      "icon": "relic_iron_heart",
       "name": "鉄の心臓",
       "kind": "startBlock",
       "value": 10,
@@ -10,6 +11,7 @@
     },
     {
       "id": "healing_spring",
+      "icon": "relic_healing_spring",
       "name": "治癒の泉",
       "kind": "winHeal",
       "value": 4,
@@ -18,6 +20,7 @@
     },
     {
       "id": "sturdy_amulet",
+      "icon": "relic_sturdy_amulet",
       "name": "不屈の護符",
       "kind": "maxHp",
       "value": 10,
@@ -26,6 +29,7 @@
     },
     {
       "id": "loot_bag",
+      "icon": "relic_loot_bag",
       "name": "戦利品袋",
       "kind": "killGold",
       "value": 5,
@@ -34,6 +38,7 @@
     },
     {
       "id": "first_strike",
+      "icon": "relic_first_strike",
       "name": "初撃の一撃",
       "kind": "firstAttack",
       "value": 4,
@@ -42,6 +47,7 @@
     },
     {
       "id": "travelers_map",
+      "icon": "relic_travelers_map",
       "name": "旅人の地図",
       "kind": "steps",
       "value": 5,
@@ -50,6 +56,7 @@
     },
     {
       "id": "field_blanket",
+      "icon": "relic_field_blanket",
       "name": "携帯毛布",
       "kind": "restHeal",
       "value": 10,
@@ -58,6 +65,7 @@
     },
     {
       "id": "quick_read",
+      "icon": "relic_quick_read",
       "name": "速読の書",
       "kind": "startDraw",
       "value": 1,
@@ -66,6 +74,7 @@
     },
     {
       "id": "trapper",
+      "icon": "relic_trapper",
       "name": "仕掛け好き",
       "kind": "trapDraw",
       "value": 1,
@@ -74,6 +83,7 @@
     },
     {
       "id": "war_god_seal",
+      "icon": "relic_war_god_seal",
       "name": "戦神の刻印",
       "kind": "startBuffAtk",
       "value": 1,
@@ -82,6 +92,7 @@
     },
     {
       "id": "trekker_boots",
+      "icon": "relic_trekker_boots",
       "name": "踏破のブーツ",
       "kind": "moveBlock",
       "value": 2,
@@ -90,6 +101,7 @@
     },
     {
       "id": "vampire_charm",
+      "icon": "relic_vampire_charm",
       "name": "吸血の護符",
       "kind": "killHeal",
       "value": 1,
@@ -98,6 +110,7 @@
     },
     {
       "id": "alchemy_shard",
+      "icon": "relic_alchemy_shard",
       "name": "錬金の欠片",
       "kind": "eliteMaterial",
       "value": 1,
@@ -106,6 +119,7 @@
     },
     {
       "id": "transmute_catalyst",
+      "icon": "relic_transmute_catalyst",
       "name": "錬成の触媒",
       "kind": "craftCostDown",
       "value": 1,
@@ -114,6 +128,7 @@
     },
     {
       "id": "trap_master",
+      "icon": "relic_trap_master",
       "name": "罠の達人",
       "kind": "trapDamage",
       "value": 4,
@@ -122,6 +137,7 @@
     },
     {
       "id": "trap_adept",
+      "icon": "relic_trap_adept",
       "name": "仕掛けの妙",
       "kind": "trapDebuff",
       "value": 1,
@@ -130,6 +146,7 @@
     },
     {
       "id": "life_charm",
+      "icon": "relic_life_charm",
       "name": "生命の護符",
       "kind": "startHeal",
       "value": 6,
@@ -138,6 +155,7 @@
     },
     {
       "id": "venom_vial",
+      "icon": "relic_venom_vial",
       "name": "猛毒の小瓶",
       "kind": "startPoison",
       "value": 3,
@@ -146,6 +164,7 @@
     },
     {
       "id": "toxic_lore",
+      "icon": "relic_toxic_lore",
       "name": "毒の心得",
       "kind": "poisonAdd",
       "value": 1,
@@ -154,6 +173,7 @@
     },
     {
       "id": "knife_whetstone",
+      "icon": "relic_knife_whetstone",
       "name": "研ぎ師",
       "kind": "knifeBonus",
       "value": 2,
@@ -162,6 +182,7 @@
     },
     {
       "id": "cycle_wheel",
+      "icon": "relic_cycle_wheel",
       "name": "回転の輪",
       "kind": "turnCycle",
       "value": 1,
@@ -170,6 +191,7 @@
     },
     {
       "id": "giant_gauntlet",
+      "icon": "relic_giant_gauntlet",
       "name": "巨人の篭手",
       "kind": "turnBuffAtk",
       "value": 1,
@@ -178,6 +200,7 @@
     },
     {
       "id": "wind_boots",
+      "icon": "relic_wind_boots",
       "name": "風の靴",
       "kind": "moveRange",
       "value": 1,
@@ -186,6 +209,7 @@
     },
     {
       "id": "lucky_coin",
+      "icon": "relic_lucky_coin",
       "name": "幸運のコイン",
       "kind": "rewardRare",
       "value": 1,
@@ -194,6 +218,7 @@
     },
     {
       "id": "warriors_medal",
+      "icon": "relic_warriors_medal",
       "name": "闘志の勲章",
       "kind": "killStrength",
       "value": 1,
@@ -202,6 +227,7 @@
     },
     {
       "id": "plague_heart",
+      "icon": "relic_plague_heart",
       "name": "疫病の心臓",
       "kind": "poisonSpread",
       "value": 1,
@@ -210,6 +236,7 @@
     },
     {
       "id": "combo_blade",
+      "icon": "relic_combo_blade",
       "name": "連撃の刃",
       "kind": "multiHit",
       "value": 1,
@@ -218,6 +245,7 @@
     },
     {
       "id": "expansion_core",
+      "icon": "relic_expansion_core",
       "name": "拡張の核",
       "kind": "modSlots",
       "value": 1,
@@ -226,6 +254,7 @@
     },
     {
       "id": "steel_will",
+      "icon": "relic_steel_will",
       "name": "鋼の意志",
       "kind": "blockRetain",
       "value": 50,
@@ -234,22 +263,57 @@
     },
     {
       "id": "boss_furnace",
+      "icon": "relic_boss_furnace",
       "name": "覇道の炉",
       "kind": "turnEnergy",
       "value": 1,
       "rarity": "boss",
-      "desc": "毎ターン、エナジー+1"
+      "desc": "毎ターン、エナジー+1\n代償：休憩の回復量-10",
+      "extra": [ { "kind": "restHeal", "value": -10 } ]
     },
     {
       "id": "boss_titan",
+      "icon": "relic_boss_titan",
       "name": "巨人の血",
       "kind": "maxHp",
       "value": 30,
       "rarity": "boss",
-      "desc": "最大HP+30"
+      "desc": "最大HP+30\n代償：歩数-5",
+      "extra": [ { "kind": "steps", "value": -5 } ]
+    },
+    {
+      "id": "boss_rampart",
+      "icon": "relic_boss_rampart",
+      "name": "不落の城壁",
+      "kind": "blockRetain",
+      "value": 100,
+      "rarity": "boss",
+      "desc": "ターン終了時、ブロックを全て保持\n代償：最大HP-10",
+      "extra": [ { "kind": "maxHp", "value": -10 } ]
+    },
+    {
+      "id": "boss_sage_core",
+      "icon": "relic_boss_sage_core",
+      "name": "賢者の炉心",
+      "kind": "modSlots",
+      "value": 2,
+      "rarity": "boss",
+      "desc": "コアの素材枠+2\n代償：合成カードのコスト+1",
+      "extra": [ { "kind": "craftCostDown", "value": -1 } ]
+    },
+    {
+      "id": "boss_oni_horn",
+      "icon": "relic_boss_oni_horn",
+      "name": "戦鬼の角",
+      "kind": "startBuffAtk",
+      "value": 3,
+      "rarity": "boss",
+      "desc": "戦闘開始時、攻撃力+3\n代償：ショップの価格+25%",
+      "extra": [ { "kind": "shopDiscount", "value": -25 } ]
     },
     {
       "id": "event_fortune",
+      "icon": "relic_event_fortune",
       "name": "幸運の壺",
       "kind": "killGold",
       "value": 10,
@@ -258,6 +322,7 @@
     },
     {
       "id": "event_grimoire",
+      "icon": "relic_event_grimoire",
       "name": "禁書",
       "kind": "startDraw",
       "value": 2,
@@ -265,7 +330,44 @@
       "desc": "最初のターン、+2ドロー"
     },
     {
+      "id": "event_compass",
+      "icon": "relic_event_compass",
+      "name": "古びた羅針盤",
+      "kind": "steps",
+      "value": 8,
+      "rarity": "event",
+      "desc": "歩数+8"
+    },
+    {
+      "id": "event_serpent_fang",
+      "icon": "relic_event_serpent_fang",
+      "name": "大蛇の牙",
+      "kind": "poisonAdd",
+      "value": 2,
+      "rarity": "event",
+      "desc": "毒を付与する時 +2"
+    },
+    {
+      "id": "event_spirit_drop",
+      "icon": "relic_event_spirit_drop",
+      "name": "精霊の雫",
+      "kind": "startHeal",
+      "value": 10,
+      "rarity": "event",
+      "desc": "戦闘開始時 HP+10"
+    },
+    {
+      "id": "event_whetstone",
+      "icon": "relic_event_whetstone",
+      "name": "古代の砥石",
+      "kind": "knifeBonus",
+      "value": 4,
+      "rarity": "event",
+      "desc": "ナイフのダメージ+4"
+    },
+    {
       "id": "merchant_seal",
+      "icon": "relic_merchant_seal",
       "name": "商人の証",
       "kind": "shopDiscount",
       "value": 20,
@@ -274,6 +376,7 @@
     },
     {
       "id": "shop_ledger",
+      "icon": "relic_shop_ledger",
       "name": "商人の帳簿",
       "kind": "killGold",
       "value": 8,
@@ -282,6 +385,7 @@
     },
     {
       "id": "shop_bandage",
+      "icon": "relic_shop_bandage",
       "name": "高級包帯",
       "kind": "restHeal",
       "value": 15,
@@ -289,7 +393,47 @@
       "desc": "休憩の回復量+15"
     },
     {
+      "id": "shop_hammer",
+      "icon": "relic_shop_hammer",
+      "name": "鍛冶屋の金槌",
+      "kind": "craftCostDown",
+      "value": 1,
+      "rarity": "shop",
+      "desc": "合成カードのコスト-1"
+    },
+    {
+      "id": "shop_ward",
+      "icon": "relic_shop_ward",
+      "name": "守り札",
+      "kind": "startBlock",
+      "value": 6,
+      "rarity": "shop",
+      "desc": "戦闘開始時、ブロック+6"
+    },
+    {
+      "id": "shop_gold_glove",
+      "icon": "relic_shop_gold_glove",
+      "name": "黄金の手袋",
+      "kind": "killGold",
+      "value": 12,
+      "rarity": "shop",
+      "desc": "敵を倒すとゴールド+12"
+    },
+    {
+      "id": "shop_spirit_bell",
+      "icon": "relic_shop_spirit_bell",
+      "name": "精霊の鈴",
+      "kind": "card",
+      "perTurn": true,
+      "effect": "block",
+      "count": 4,
+      "value": 3,
+      "rarity": "shop",
+      "desc": "1ターンにカードを4枚使うとブロック+3"
+    },
+    {
       "id": "travelers_charm",
+      "icon": "relic_travelers_charm",
       "name": "旅人のお守り",
       "kind": "winHeal",
       "value": 2,
@@ -298,6 +442,7 @@
     },
     {
       "id": "onslaught_ring",
+      "icon": "relic_onslaught_ring",
       "name": "猛攻の指輪",
       "kind": "attack",
       "perTurn": false,
@@ -309,6 +454,7 @@
     },
     {
       "id": "guard_rhythm",
+      "icon": "relic_guard_rhythm",
       "name": "守勢の律動",
       "kind": "skill",
       "perTurn": false,
@@ -320,6 +466,7 @@
     },
     {
       "id": "nomad_step",
+      "icon": "relic_nomad_step",
       "name": "遊牧の歩",
       "kind": "move",
       "perTurn": false,
@@ -331,6 +478,7 @@
     },
     {
       "id": "gale_flurry",
+      "icon": "relic_gale_flurry",
       "name": "疾風連撃",
       "kind": "attack",
       "perTurn": true,
@@ -342,6 +490,7 @@
     },
     {
       "id": "spell_edge",
+      "icon": "relic_spell_edge",
       "name": "術式の冴え",
       "kind": "skill",
       "perTurn": true,
@@ -353,6 +502,7 @@
     },
     {
       "id": "quick_hands",
+      "icon": "relic_quick_hands",
       "name": "早業の指輪",
       "kind": "card",
       "perTurn": true,

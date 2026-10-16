@@ -6,6 +6,7 @@
 #include "EnumNames.h"
 #include "PlayerDataManager.h"
 #include "RelicManager.h"
+#include "TextureManager.h"
 #include <algorithm>
 #include <cstdio>
 #include <string>
@@ -31,15 +32,11 @@ namespace
         return "";
     }
 
-    // バーの枠の色（SceneManager::DrawRelicBar の rarColor と同じ）
+    // レア度の色（ゲームの RelicManager::RarityColor をそのまま使う＝帯の見た目と一致）
     ImVec4 RarityColor(const std::string& r)
     {
-        if (r == "uncommon") return ImVec4(0.2f, 0.6f, 0.9f, 1);
-        if (r == "rare")     return ImVec4(0.95f, 0.8f, 0.2f, 1);
-        if (r == "boss")     return ImVec4(0.9f, 0.3f, 0.3f, 1);
-        if (r == "event")    return ImVec4(0.3f, 0.8f, 0.4f, 1);
-        if (r == "shop")     return ImVec4(0.7f, 0.4f, 0.9f, 1);
-        return ImVec4(0.55f, 0.55f, 0.55f, 1);
+        DirectX::XMFLOAT4 c = RelicManager::RarityColor(r);
+        return ImVec4(c.x, c.y, c.z, c.w);
     }
 
     struct State
@@ -119,6 +116,17 @@ namespace
                 warn.push_back(u8"count / effect / perTurn はカウント系の kind でしか使われない");
         }
 
+        // 追加効果（extra）：受動加算の kind だけ（カウント系は発火の仕組みが別なので不可）
+        if (r.contains("extra") && r["extra"].is_array())
+            for (auto& e : r["extra"])
+            {
+                std::string ek = e.value("kind", std::string());
+                const EnumNames::RelicKindInfo* ei = EnumNames::FindRelicKind(ek);
+                if (!ei) err.push_back("extra: unknown kind " + ek);
+                else if (ei->counting) err.push_back(u8"extra にカウント系の kind は使えない（" + ek + u8"）");
+                if (e.value("value", 0) == 0) warn.push_back(u8"extra の value が 0（何も起きない）");
+            }
+
         // 説明文の数字と値の食い違い（説明に数字がある時だけ）
         auto nums = NumbersIn(r.value("desc", std::string()));
         bool usesValue = info && kind != "poisonSpread" && kind != "rewardRare";
@@ -143,6 +151,7 @@ namespace
         }
         if (!s.file.Save(RELIC_PATH, BACKUP_PATH)) { s.status = s.file.error; return false; }
         RelicManager::Reload(RELIC_PATH);   // レリックは毎回 id から引き直しているので、そのまま読み直してよい
+        RelicManager::LoadIcons();          // 新しく書いたアイコンもその場で読み込む
         ReloadIdLists();
         s.dirty = false;
         s.status = "Saved (backup: relics.json.bak)";
@@ -275,6 +284,8 @@ namespace
 
         if (ComboKey("rarity", r, "rarity", RarityNames(), "common", false, 120)) s.dirty = true;
         ImGui::SameLine(); ImGui::TextDisabled("%s", RarityHint(r.value("rarity", std::string("common"))));
+        if (InputTextKey("icon", r, "icon", 200)) s.dirty = true;
+        ImGui::SameLine(); ImGui::TextDisabled(u8"(Assets/UI/<icon>.png。保存で読み込み。空なら名前の文字で表示)");
 
         ImGui::SeparatorText(u8"効果");
         if (ComboKey("kind", r, "kind", KindNames(), "", false, 150)) s.dirty = true;
@@ -293,6 +304,35 @@ namespace
             ImGui::TextDisabled(u8"→ %s、%s を %d", info->hint, effect == "energy" ? u8"エナジー" : u8"ブロック", r.value("value", 0));
         }
 
+        // 追加効果（extra）：同じフックに合算される。マイナスの値で代償（ボスレリック用）
+        ImGui::SeparatorText(u8"追加効果（extra。マイナスで代償）");
+        if (r.contains("extra") && r["extra"].is_array())
+        {
+            ojson& ex = r["extra"];
+            for (int i = 0; i < (int)ex.size(); i++)
+            {
+                ImGui::PushID(1000 + i);
+                if (ComboKey("kind", ex[i], "kind", KindNames(), "", false, 150)) s.dirty = true;
+                ImGui::SameLine();
+                if (InputIntKey("value", ex[i], "value", 0, 90)) s.dirty = true;
+                ImGui::SameLine();
+                bool del = ImGui::Button("x");
+                ImGui::PopID();
+                if (del) { ex.erase(ex.begin() + i); s.dirty = true; break; }
+            }
+            if (ex.empty()) r.erase("extra");
+        }
+        if (ImGui::Button("+ extra"))
+        {
+            ojson e;
+            e["kind"] = "maxHp";
+            e["value"] = -10;
+            r["extra"].push_back(e);   // 無ければ配列が作られる
+            s.dirty = true;
+        }
+        ImGui::SameLine();
+        ImGui::TextDisabled(u8"例：kind=steps value=-5 →「代償：歩数-5」。説明文にも書くこと");
+
         ImGui::SeparatorText(u8"説明文");
         if (InputTextMultilineKey("desc", r, "desc", 460, 50)) s.dirty = true;
         ImGui::TextDisabled(u8"説明文は手書き（数字が value / count と合っているかは自動でチェック）");
@@ -304,6 +344,9 @@ namespace
         ImU32 frame = ImGui::GetColorU32(RarityColor(r.value("rarity", std::string("common"))));
         dl->AddRectFilled(p, ImVec2(p.x + 48, p.y + 34), frame, 4.0f);
         dl->AddRectFilled(ImVec2(p.x + 3, p.y + 3), ImVec2(p.x + 45, p.y + 31), IM_COL32(20, 20, 28, 255), 3.0f);
+        if (auto tex = TextureManager::Get(r.value("icon", std::string())))   // アイコン（レア度の色で染める＝ゲームと同じ）
+            dl->AddImage((ImTextureID)(intptr_t)tex, ImVec2(p.x + 10, p.y + 3), ImVec2(p.x + 38, p.y + 31),
+                ImVec2(0, 0), ImVec2(1, 1), frame);
         ImGui::Dummy(ImVec2(52, 34));
         ImGui::SameLine();
         ImGui::BeginGroup();

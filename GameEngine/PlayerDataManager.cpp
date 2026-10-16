@@ -74,6 +74,7 @@ void PlayerDataManager::Save()
 	j["tutorialShop"] = m_data.tutorialShop;
 	j["tutorialRest"] = m_data.tutorialRest;
 	j["seenHints"] = m_data.seenHints;
+	j["bossRelicChoices"] = m_data.bossRelicChoices;                                            // StartNewGame
 
 	j["gold"] = m_data.gold;
 	j["materials"] = m_data.materials;
@@ -137,6 +138,8 @@ void PlayerDataManager::Load()
 		m_data.tutorialShop = j.value("tutorialShop", false);
 		m_data.tutorialRest = j.value("tutorialRest", false);
 		m_data.seenHints = j.value("seenHints", std::set<std::string>{});
+		m_data.bossRelicChoices = j.value("bossRelicChoices", std::vector<std::string>{});   // Load
+		m_data.bossRelicChoices.clear();
 		m_data.removeCount = j.value("removeCount", 0);
 		m_data.layer = j.value("layer", 1);
 
@@ -315,8 +318,14 @@ void PlayerDataManager::AddRelic(const std::string& id)
 		// 取得時に効く永続ステータス系（今後もここに追記）
 		if (auto d = RelicManager::Get(id))
 		{
-			if (d->kind == "maxHp") { m_data.maxHp += d->value; m_data.hp += d->value; }
-			else if (d->kind == "steps") { m_data.fieldSteps += d->value; }
+			int mh = d->ValueOf("maxHp");
+			if (mh != 0)
+			{
+				m_data.maxHp += mh; if (m_data.maxHp < 1) m_data.maxHp = 1;
+				if (mh > 0) m_data.hp += mh;                              // 増えた分は回復
+				if (m_data.hp > m_data.maxHp) m_data.hp = m_data.maxHp;   // 減った時は超えた分だけ削る
+			}
+			m_data.fieldSteps += d->ValueOf("steps");
 		}
 		Save();
 	}
@@ -329,8 +338,10 @@ void PlayerDataManager::RemoveRelic(const std::string& id)
 	if (it == v.end()) return;
 	if (auto d = RelicManager::Get(id))
 	{
-		if (d->kind == "maxHp") { m_data.maxHp -= d->value; if (m_data.maxHp < 1) m_data.maxHp = 1; if (m_data.hp > m_data.maxHp) m_data.hp = m_data.maxHp; }
-		else if (d->kind == "steps") { m_data.fieldSteps -= d->value; }
+		int mh = d->ValueOf("maxHp");
+		m_data.maxHp -= mh; if (m_data.maxHp < 1) m_data.maxHp = 1;
+		if (m_data.hp > m_data.maxHp) m_data.hp = m_data.maxHp;
+		m_data.fieldSteps -= d->ValueOf("steps");
 	}
 	v.erase(it);
 	Save();

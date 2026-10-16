@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <DirectXMath.h>
 
 class RelicManager {
 public:
@@ -24,6 +25,11 @@ public:
     static int   BarPerRow(int screenW);       // 1行に並ぶレリック数
     static float BarExtraHeight(int screenW);  // 2行目以降ぶんの高さ(0=はみ出さない)
     static float BarTotalHeight(int screenW);  // レリック帯の全高(最低1行分。敵パネル等を常にずらす用)
+
+    static std::vector<std::string> RandomUnownedMany(const std::string& tier, int n);   // 重複なしでn個（足りなければある分だけ）
+    static void LoadIcons();   // 全レリックのアイコンを読み込む（起動時とエディタ保存時。読み込み済みは飛ばす）
+    static DirectX::XMFLOAT4 RarityColor(const std::string& rarity);   // レア度の色（帯の枠・アイコンの染め色）
+
 private:
     static std::unordered_map<std::string, RelicDef> s_defs;
     static std::unordered_map<std::string, unsigned long long> s_firedAt;

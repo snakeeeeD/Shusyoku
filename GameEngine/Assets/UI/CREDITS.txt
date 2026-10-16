@@ -6,3 +6,60 @@ icon_hp.png     "Hearts"       by Skoll       https://game-icons.net/1x1/skoll/h
 icon_steps.png  "Footprint"    by Lorc        https://game-icons.net/1x1/lorc/footprint.html
 icon_gold.png   "Two coins"    by Delapouite  https://game-icons.net/1x1/delapouite/two-coins.html
 icon_map.png    "Treasure map" by Lorc        https://game-icons.net/1x1/lorc/treasure-map.html
+icon_layer.png  "Stairs"       by Delapouite  https://game-icons.net/1x1/delapouite/stairs.html
+
+Relic icons (relic_<id>.png), same license (CC BY 3.0), resized to 128x128:
+relic_iron_heart.png  "Heart armor" by Delapouite  https://game-icons.net/1x1/delapouite/heart-armor.html
+relic_healing_spring.png  "Fountain" by Lorc  https://game-icons.net/1x1/lorc/fountain.html
+relic_sturdy_amulet.png  "Gem pendant" by Lorc  https://game-icons.net/1x1/lorc/gem-pendant.html
+relic_loot_bag.png  "Swap bag" by Lorc  https://game-icons.net/1x1/lorc/swap-bag.html
+relic_first_strike.png  "Deadly strike" by Lorc  https://game-icons.net/1x1/lorc/deadly-strike.html
+relic_travelers_map.png  "Trail" by Delapouite  https://game-icons.net/1x1/delapouite/trail.html
+relic_field_blanket.png  "Blanket" by Delapouite  https://game-icons.net/1x1/delapouite/blanket.html
+relic_quick_read.png  "Open book" by Lorc  https://game-icons.net/1x1/lorc/open-book.html
+relic_trapper.png  "Wolf trap" by Lorc  https://game-icons.net/1x1/lorc/wolf-trap.html
+relic_war_god_seal.png  "Wax seal" by Lorc  https://game-icons.net/1x1/lorc/wax-seal.html
+relic_trekker_boots.png  "Steeltoe boots" by Lorc  https://game-icons.net/1x1/lorc/steeltoe-boots.html
+relic_vampire_charm.png  "Fangs" by Skoll  https://game-icons.net/1x1/skoll/fangs.html
+relic_alchemy_shard.png  "Crystal cluster" by Lorc  https://game-icons.net/1x1/lorc/crystal-cluster.html
+relic_transmute_catalyst.png  "Bubbling flask" by Lorc  https://game-icons.net/1x1/lorc/bubbling-flask.html
+relic_trap_master.png  "Land mine" by Lorc  https://game-icons.net/1x1/lorc/land-mine.html
+relic_trap_adept.png  "Mantrap" by Lorc  https://game-icons.net/1x1/lorc/mantrap.html
+relic_life_charm.png  "Ankh" by Lorc  https://game-icons.net/1x1/lorc/ankh.html
+relic_venom_vial.png  "Poison bottle" by Lorc  https://game-icons.net/1x1/lorc/poison-bottle.html
+relic_toxic_lore.png  "Evil book" by Lorc  https://game-icons.net/1x1/lorc/evil-book.html
+relic_knife_whetstone.png  "Curvy knife" by Lorc  https://game-icons.net/1x1/lorc/curvy-knife.html
+relic_cycle_wheel.png  "Cycle" by Lorc  https://game-icons.net/1x1/lorc/cycle.html
+relic_giant_gauntlet.png  "Gauntlet" by Delapouite  https://game-icons.net/1x1/delapouite/gauntlet.html
+relic_wind_boots.png  "Winged leg" by Lorc  https://game-icons.net/1x1/lorc/winged-leg.html
+relic_lucky_coin.png  "Clover" by Lorc  https://game-icons.net/1x1/lorc/clover.html
+relic_warriors_medal.png  "Medal" by Lorc  https://game-icons.net/1x1/lorc/medal.html
+relic_plague_heart.png  "Poison cloud" by Sbed  https://game-icons.net/1x1/sbed/poison-cloud.html
+relic_combo_blade.png  "Spinning blades" by Lorc  https://game-icons.net/1x1/lorc/spinning-blades.html
+relic_expansion_core.png  "Atom core" by Delapouite  https://game-icons.net/1x1/delapouite/atom-core.html
+relic_steel_will.png  "Layered armor" by Lorc  https://game-icons.net/1x1/lorc/layered-armor.html
+relic_boss_furnace.png  "Furnace" by Delapouite  https://game-icons.net/1x1/delapouite/furnace.html
+relic_boss_titan.png  "Muscle up" by Lorc  https://game-icons.net/1x1/lorc/muscle-up.html
+relic_event_fortune.png  "Covered jar" by Delapouite  https://game-icons.net/1x1/delapouite/covered-jar.html
+relic_event_grimoire.png  "Secret book" by Delapouite  https://game-icons.net/1x1/delapouite/secret-book.html
+relic_merchant_seal.png  "Scales" by Lorc  https://game-icons.net/1x1/lorc/scales.html
+relic_shop_ledger.png  "Tied scroll" by Lorc  https://game-icons.net/1x1/lorc/tied-scroll.html
+relic_shop_bandage.png  "Bandage roll" by Lorc  https://game-icons.net/1x1/lorc/bandage-roll.html
+relic_travelers_charm.png  "Feather necklace" by Delapouite  https://game-icons.net/1x1/delapouite/feather-necklace.html
+relic_onslaught_ring.png  "Power ring" by Delapouite  https://game-icons.net/1x1/delapouite/power-ring.html
+relic_guard_rhythm.png  "Shield echoes" by Lorc  https://game-icons.net/1x1/lorc/shield-echoes.html
+relic_nomad_step.png  "Camping tent" by Delapouite  https://game-icons.net/1x1/delapouite/camping-tent.html
+relic_gale_flurry.png  "Whirlwind" by Lorc  https://game-icons.net/1x1/lorc/whirlwind.html
+relic_spell_edge.png  "Crystal wand" by Lorc  https://game-icons.net/1x1/lorc/crystal-wand.html
+relic_quick_hands.png  "Glowing hands" by Lorc  https://game-icons.net/1x1/lorc/glowing-hands.html
+relic_boss_rampart.png  "Castle" by Lorc  https://game-icons.net/1x1/lorc/castle.html
+relic_boss_sage_core.png  "Crystal ball" by Lorc  https://game-icons.net/1x1/lorc/crystal-ball.html
+relic_boss_oni_horn.png  "Bull horns" by Lorc  https://game-icons.net/1x1/lorc/bull-horns.html
+relic_event_compass.png  "Compass" by Lorc  https://game-icons.net/1x1/lorc/compass.html
+relic_event_serpent_fang.png  "Snake bite" by Lorc  https://game-icons.net/1x1/lorc/snake-bite.html
+relic_event_spirit_drop.png  "Drop" by Lorc  https://game-icons.net/1x1/lorc/drop.html
+relic_event_whetstone.png  "Thrown daggers" by Lorc  https://game-icons.net/1x1/lorc/thrown-daggers.html
+relic_shop_hammer.png  "Anvil" by Lorc  https://game-icons.net/1x1/lorc/anvil.html
+relic_shop_ward.png  "Scroll unfurled" by Lorc  https://game-icons.net/1x1/lorc/scroll-unfurled.html
+relic_shop_gold_glove.png  "Gloves" by Delapouite  https://game-icons.net/1x1/delapouite/gloves.html
+relic_shop_spirit_bell.png  "Ringing bell" by Lorc  https://game-icons.net/1x1/lorc/ringing-bell.html
