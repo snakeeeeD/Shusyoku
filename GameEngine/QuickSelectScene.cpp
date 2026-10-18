@@ -140,6 +140,19 @@ void QuickSelectScene::Draw()
 
     UiWindow::Draw(m_sprite, m_white, info.x, info.y, info.w, info.h);
     UiWindow::Draw(m_sprite, m_white, grid.x, grid.y, grid.w, grid.h);
+    // レリックのアイコン（帯と同じ：影＋レア度の色）
+    if (m_selected >= 0)
+    {
+        const auto& relics = PlayerDataManager::GetData().relics;
+        for (int i = 0; i < (int)relics.size(); i++)
+            if (const RelicDef* rd = RelicManager::Get(relics[i]))
+                if (auto tex = TextureManager::Get(rd->icon))
+                {
+                    URect row = RelicRow(i);
+                    m_sprite->DrawSprite(tex, row.x + 1.5f, row.y + 1.5f, 19.0f, 19.0f, 0.0f, XMFLOAT4(0, 0, 0, 0.65f));
+                    m_sprite->DrawSprite(tex, row.x, row.y, 19.0f, 19.0f, 0.0f, RelicManager::RarityColor(rd->rarity));
+                }
+    }
 
     for (int i = 0; i < (int)m_cards.size(); i++)
     {
@@ -181,7 +194,7 @@ void QuickSelectScene::Draw()
             if (auto r = RelicManager::Get(relics[i]))
             {
                 URect row = RelicRow(i);
-                m_text->DrawText(ToWString(r->name).c_str(), row.x + 10.0f, row.y, 15.0f,
+                m_text->DrawText(ToWString(r->name).c_str(), row.x + 26.0f, row.y, 15.0f,
                     row.has(mp) ? D2D1::ColorF(1.0f, 1.0f, 0.5f) : D2D1::ColorF(0.9f, 0.9f, 0.9f));
             }
     }

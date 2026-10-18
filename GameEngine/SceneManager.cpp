@@ -1254,6 +1254,7 @@ void SceneManager::HandleInput()
 					int idx = EventRelicAt(m_uiInput.GetMousePos());
 					if (idx >= 0)
 					{
+						Audio::PlaySE("Assets/Sound/se/click.mp3");
 						std::string to = RelicManager::RandomDrop();   // 別レリック（未所持）
 						if (!to.empty()) { m_eventPickAnimTo = to; m_eventPickAnimIdx = idx; m_eventPickAnimTimer = EVENT_PICK_ANIM_DUR; }
 						else { m_eventPickType.clear(); m_eventResult = m_eventPickChoice; }
@@ -1672,13 +1673,19 @@ void SceneManager::Update(float deltaTime)
 					std::string oldId = relics[m_eventPickAnimIdx];
 					PlayerDataManager::RemoveRelic(oldId);
 					PlayerDataManager::AddRelic(m_eventPickAnimTo);
+					m_eventGains.push_back({ "relic", m_eventPickAnimTo, 1 });   // 結果画面に「何に変わったか」を出す
 				}
 			}
 			else
 			{
 				auto& deck = PlayerDataManager::GetData().deck;
 				if (m_eventPickType == "removeCard") PlayerDataManager::RemoveCard(m_eventPickAnimIdx);
-				else if (m_eventPickAnimIdx < (int)deck.size()) { deck[m_eventPickAnimIdx] = m_eventPickAnimTo; PlayerDataManager::Save(); }
+				else if (m_eventPickAnimIdx < (int)deck.size())
+				{
+					deck[m_eventPickAnimIdx] = m_eventPickAnimTo;
+					PlayerDataManager::Save();
+					m_eventGains.push_back({ "card", m_eventPickAnimTo, 1 });   // 変化・強化した後のカードを結果に出す
+				}
 			}
 			m_eventPickAnimIdx = -1;
 			m_eventPickType.clear();
@@ -3176,31 +3183,35 @@ bool SceneManager::ChoiceEnabled(const EventChoice& c) const
 	return PlayerDataManager::GetData().gold >= need;
 }
 
-void SceneManager::GetEventRelicSlot(int i, float& x, float& y) const
+URect SceneManager::EventRelicPanel() const
 {
-	float w = 160.0f, h = 44.0f, gap = 12.0f; int cols = 6;
-	float startX = (m_screenWidth - (cols * w + (cols - 1) * gap)) / 2.0f;
-	x = startX + (i % cols) * (w + gap);
-	y = 180.0f + (i / cols) * (h + gap);
+	int n = (int)PlayerDataManager::GetData().relics.size();
+	int rows = (n + 5) / 6; if (rows < 1) rows = 1;   // 1行6個（EventRelicRectと同じ）
+	URect r0 = EventRelicRect(0);
+	float gridW = 6 * r0.w + 5 * 14.0f;
+	return { r0.x - 24.0f, r0.y - 24.0f, gridW + 48.0f, rows * (r0.h + 14.0f) - 14.0f + 48.0f };
 }
+
 int SceneManager::EventRelicAt(POINT p) const
 {
-	auto& relics = PlayerDataManager::GetData().relics;
-	for (int i = 0; i < (int)relics.size(); i++)
-	{
-		float x, y; GetEventRelicSlot(i, x, y);
-		if (p.x >= x && p.x <= x + 160.0f && p.y >= y && p.y <= y + 44.0f) return i;
-	}
+	int n = (int)PlayerDataManager::GetData().relics.size();
+	for (int i = 0; i < n; i++)
+		if (EventRelicRect(i).has(p)) return i;
 	return -1;
 }
+
 void SceneManager::DrawEventRelicPicker()
 {
 	auto& relics = PlayerDataManager::GetData().relics;
+	int n = (int)relics.size();
 	bool anim = (m_eventPickAnimIdx >= 0);
 	int hov = anim ? -1 : EventRelicAt(m_uiInput.GetMousePos());
 	ID3D11ShaderResourceView* white = TextureManager::Get("white");
 	float t = anim ? (1.0f - m_eventPickAnimTimer / EVENT_PICK_ANIM_DUR) : 0.0f;
+	URect pn = EventRelicPanel();
+	const float bnW = 480.0f, bnH = 84.0f, bnX = m_screenWidth / 2.0f - bnW / 2.0f, bnY = pn.y - 86.0f;
 
+	// 入れ替え中の枠：前半＝元のレリックが消える／後半＝新しいレリックが現れる
 	auto slotInfo = [&](int i, std::string& id, float& a) {
 		id = relics[i]; a = 1.0f;
 		if (i == m_eventPickAnimIdx)
@@ -3210,26 +3221,63 @@ void SceneManager::DrawEventRelicPicker()
 		}
 		};
 
+	// ---- スプライト ----
 	m_uiSprite->Begin();
 	m_uiSprite->DrawSprite(white, 0, BAR_H, (float)m_screenWidth, (float)m_screenHeight - BAR_H, 0.0f, XMFLOAT4(0.05f, 0.03f, 0.09f, 0.96f));
-	for (int i = 0; i < (int)relics.size(); i++)
+	UiWindow::Draw(m_uiSprite, white, pn.x, pn.y, pn.w, pn.h);
+	if (!anim)
+		m_uiSprite->DrawSprite(TextureManager::Get("ui_banner"), bnX, bnY, bnW, bnH, 0.0f, XMFLOAT4(1, 1, 1, 1));
+	for (int i = 0; i < n; i++)
 	{
-		float x, y; GetEventRelicSlot(i, x, y);
+		URect r = EventRelicRect(i);
 		std::string id; float a; slotInfo(i, id, a);
-		m_uiSprite->DrawSprite(white, x, y, 160.0f, 44.0f, 0.0f, (i == hov) ? XMFLOAT4(0.55f, 0.4f, 0.7f, a) : XMFLOAT4(0.35f, 0.28f, 0.45f, a));
+		float y = (i == hov) ? r.y - 6.0f : r.y;
+		UiWindow::Draw(m_uiSprite, white, r.x, y, r.w, r.h);
+		if (i == hov) UiWindow::Frame(m_uiSprite, white, r.x, y, r.w, r.h, XMFLOAT4(1.0f, 0.85f, 0.2f, 1.0f));
+
+		const RelicDef* d = RelicManager::Get(id);
+		if (!d) continue;
+		auto tex = TextureManager::Get(d->icon);
+		if (!tex) continue;
+		const float is = 64.0f;
+		float ix = r.x + (r.w - is) / 2.0f, iy = y + 14.0f;
+		XMFLOAT4 c = RelicManager::RarityColor(d->rarity); c.w = a;
+		m_uiSprite->DrawSprite(tex, ix + 2.0f, iy + 2.0f, is, is, 0.0f, XMFLOAT4(0, 0, 0, 0.65f * a));   // 影
+		m_uiSprite->DrawSprite(tex, ix, iy, is, is, 0.0f, c);
+		if (i == m_eventPickAnimIdx)   // 入れ替わる瞬間に白く光って膨らむ
+		{
+			float flash = 1.0f - fabsf(t - 0.5f) * 4.0f;
+			if (flash > 0.0f)
+			{
+				float g = is * (1.0f + 0.4f * flash);
+				m_uiSprite->DrawSprite(tex, ix + (is - g) / 2.0f, iy + (is - g) / 2.0f, g, g, 0.0f, XMFLOAT4(1, 1, 1, flash));
+			}
+		}
 	}
 	m_uiSprite->End();
 
+	// ---- 文字 ----
 	m_textRenderer->Begin();
-	if (!anim) m_textRenderer->DrawText(L"入れ替えるレリックを選択", m_screenWidth / 2.0f - 160.0f, 100.0f, 26.0f, D2D1::ColorF(1, 0.9f, 0.6f));
-	for (int i = 0; i < (int)relics.size(); i++)
+	if (!anim)
+		m_textRenderer->DrawOutlinedTextCentered(L"入れ替えるレリックを選ぶ", bnX + bnW / 2.0f, bnY, bnW, bnH, 26.0f,
+			D2D1::ColorF(1.0f, 0.95f, 0.8f), D2D1::ColorF(0.25f, 0.04f, 0.06f), 3.0f);
+	for (int i = 0; i < n; i++)
 	{
-		float x, y; GetEventRelicSlot(i, x, y);
+		URect r = EventRelicRect(i);
 		std::string id; float a; slotInfo(i, id, a);
-		auto d = RelicManager::Get(id);
-		m_textRenderer->DrawText((d ? ToWString(d->name) : L"?").c_str(), x + 8.0f, y + 13.0f, 15.0f, D2D1::ColorF(1, 1, 1, a));
+		const RelicDef* d = RelicManager::Get(id);
+		float y = (i == hov) ? r.y - 6.0f : r.y;
+		m_textRenderer->DrawTextCentered((d ? ToWString(d->name) : L"?").c_str(), r.x + r.w / 2.0f, y + 86.0f,
+			r.w - 12.0f, 15.0f, D2D1::ColorF(1, 1, 1, a), 24.0f);
 	}
 	m_textRenderer->End();
+
+	// ---- ホバー中の説明（タイルの下に、ゲーム中と同じ説明窓） ----
+	if (hov >= 0)
+	{
+		URect r = EventRelicRect(hov);
+		ItemTooltip::Draw(m_uiSprite, m_textRenderer, white, relics[hov], r.x, r.y + r.h + 8.0f, m_screenWidth, m_screenHeight);
+	}
 }
 
 void SceneManager::PlayGeneralBGM()

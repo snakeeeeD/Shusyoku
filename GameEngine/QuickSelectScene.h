@@ -31,7 +31,7 @@ private:
     URect GridRect() const { return { 370.0f, 130.0f, 870.0f, 482.0f }; }
     URect BackBtn() const { return { 40.0f, 640.0f, 160.0f, 50.0f }; }
     URect StartBtn() const { return { 960.0f, 634.0f, 280.0f, 60.0f }; }
-    URect RelicRow(int i) const { URect r = InfoRect(); return { r.x + 20.0f, r.y + 142.0f + i * 22.0f, r.w - 40.0f, 20.0f }; }
+    URect RelicRow(int i) const { URect r = InfoRect(); return { r.x + 20.0f, r.y + 142.0f + i * 21.0f, r.w - 40.0f, 20.0f }; }
     void CardSlot(int i, float& x, float& y) const;   // àÍóóÇÃiñáñ⁄ÇÃç∂è„
 
     SpriteRenderer* m_sprite = nullptr;

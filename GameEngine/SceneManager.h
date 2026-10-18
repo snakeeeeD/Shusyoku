@@ -117,8 +117,16 @@ public:
     void  DrawBackButton();
 
     void DrawEventRelicPicker();
-    void GetEventRelicSlot(int i, float& x, float& y) const;
     int  EventRelicAt(POINT p) const;
+
+    // イベントのレリック選択：1枠の矩形（描画とクリックで共有）／一覧を囲む窓
+    URect EventRelicRect(int i) const
+    {
+        const float w = 150.0f, h = 124.0f, gap = 14.0f; const int cols = 6;
+        float startX = (m_screenWidth - (cols * w + (cols - 1) * gap)) / 2.0f;
+        return { startX + (i % cols) * (w + gap), 170.0f + (i / cols) * (h + gap), w, h };
+    }
+    URect EventRelicPanel() const;
 
     std::string m_generalBgm;
     int m_generalBgmLayer = -1;
