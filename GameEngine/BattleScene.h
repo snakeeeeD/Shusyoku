@@ -258,6 +258,8 @@ private:
     bool CellToScreen(int col, int row, float& sx, float& sy) const;   // マスの中心が今のカメラで画面のどこに映るか
     bool CellInCardRange(const CardData& d, int c, int r) const;   // カードの射程にマスが入るか（使用時・予測で共通）
     int  AttackTargetEnemy() const;   // 攻撃カードを今離したら当たる敵（無ければ-1）
+    int  EnemyIndexAt(int c, int r) const;   // そのマスにいる敵の番号（いなければ-1。多マス敵・蛇の体も含む）
+    bool AimsFreely(const CardData& d) const { return d.dash || d.rangeType == RangeType::Cone; }   // 空きマスを指す意味があるカード（突進先・扇の向き）
     int  FocusEnemy() const;          // 今注目している敵（範囲の点滅・選択枠・パネル強調で共通）
     const Enemy* AttackTarget() const { int i = AttackTargetEnemy(); return i >= 0 ? m_enemies[i] : nullptr; }
     POINT m_prevPathMouse = { -1, -1 };   // 前フレームのマウス位置（経路を変えるのはマウスが動いた時だけにする）

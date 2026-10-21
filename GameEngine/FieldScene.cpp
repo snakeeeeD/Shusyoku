@@ -413,8 +413,6 @@ void FieldScene::Update(float deltaTime)
     }
 
     m_highlightTimer += deltaTime * 2.0f; 
-    if (m_highlightTimer > 3.14159f * 2.0f)
-        m_highlightTimer = 0.0f; 
 }
 
 void FieldScene::Draw()

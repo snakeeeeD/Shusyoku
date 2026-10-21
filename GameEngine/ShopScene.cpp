@@ -59,7 +59,16 @@ void ShopScene::GenerateStock()
     int layer = PlayerDataManager::GetData().layer;
     auto inLayer = [&](int L) { return L == 0 || L == layer; };   // 0=全層
 
+    // カード（デッキのタグに寄せて抽選）。GetSlotBaseは「先頭cardN個=カード段」前提なので必ず最初に積む
+    auto cardIds = CardDataBase::PickRewardCards(CARD_COUNT, false, PlayerDataManager::GetData().deck);
+    for (const auto& id : cardIds)
+    {
+        const CardData* d = CardDataBase::Get(id);
+        if (d) m_items.push_back({ id, PriceFor(d), false, ShopKind::Card });
+    }
+
     std::vector<std::string> coreIds;
+
     for (auto& kv : MaterialDataBase::AllBases())
         if (kv.second.buyPrice > 0 && inLayer(kv.second.layer)) coreIds.push_back(kv.first);
     pickShuffled(coreIds, CORE_COUNT, [&](const std::string& id) {
@@ -72,15 +81,6 @@ void ShopScene::GenerateStock()
     pickShuffled(matIds, MAT_COUNT, [&](const std::string& id) {
         m_items.push_back({ id, MaterialDataBase::GetMaterial(id)->buyPrice, false, ShopKind::Material });
         });
-
-    // カード（デッキのタグに寄せて抽選）
-    auto cardIds = CardDataBase::PickRewardCards(CARD_COUNT, false, PlayerDataManager::GetData().deck);
-    for (const auto& id : cardIds)
-    {
-        const CardData* d = CardDataBase::Get(id);
-        if (d) m_items.push_back({ id, PriceFor(d), false, ShopKind::Card });
-    }
-
 
     // レリック
     auto relicPool = RelicManager::ShopPool();
@@ -141,8 +141,7 @@ void ShopScene::GetSlotBase(int i, float& cardX, float& baseY) const
 void ShopScene::Draw()
 {
     m_spriteRenderer->Begin();
-    m_spriteRenderer->DrawSprite(TextureManager::Get("cardSelect_bg"), 0, 0,
-        (float)m_screenWidth, (float)m_screenHeight, 0.0f, XMFLOAT4(1, 1, 1, 1));
+    m_spriteRenderer->DrawSprite(TextureManager::Get("shop_rug"), 0, 0, (float)m_screenWidth, (float)m_screenHeight, 0.0f, XMFLOAT4(1, 1, 1, 1));
 
     for (int i = 0; i < (int)m_items.size(); i++)
     {
@@ -165,6 +164,7 @@ void ShopScene::Draw()
                 : (m_items[i].kind == ShopKind::Core) ? XMFLOAT4(0.42f, 0.32f, 0.22f, 1.0f)
                 : (m_items[i].kind == ShopKind::Relic) ? XMFLOAT4(0.40f, 0.30f, 0.55f, 1.0f)
                 : XMFLOAT4(0.20f, 0.35f, 0.35f, 1.0f);
+            UiWindow::Button(m_spriteRenderer, m_whiteTexture, x, y, w, h, col);   // 9スライス枠＋種類色の下地
             // 左上にアイコン（コア=金の宝石／素材=青い結晶／レリック=個別アイコンをレア度の色で）
             ID3D11ShaderResourceView* icon = nullptr;
             XMFLOAT4 iconCol(1, 1, 1, 1);
@@ -178,8 +178,8 @@ void ShopScene::Draw()
             if (icon)
             {
                 if (m_items[i].bought) iconCol = XMFLOAT4(0.35f, 0.35f, 0.35f, 1.0f);
-                m_spriteRenderer->DrawSprite(icon, x + 7.5f, y + 9.5f, 30.0f, 30.0f, 0.0f, XMFLOAT4(0, 0, 0, 0.6f));   // 影
-                m_spriteRenderer->DrawSprite(icon, x + 6.0f, y + 8.0f, 30.0f, 30.0f, 0.0f, iconCol);
+                m_spriteRenderer->DrawSprite(icon, x + 13.5f, y + 13.5f, 30.0f, 30.0f, 0.0f, XMFLOAT4(0, 0, 0, 0.6f));   // 影
+                m_spriteRenderer->DrawSprite(icon, x + 12.0f, y + 12.0f, 30.0f, 30.0f, 0.0f, iconCol);
             }
         }
     }
@@ -278,9 +278,9 @@ void ShopScene::Draw()
                 if (r) { nm = ToWString(r->name); desc = ToWString(r->desc); }
                 tag = L"RELIC"; tagCol = D2D1::ColorF(0.85f, 0.7f, 1.0f);
             }
-            m_textRenderer->DrawText(nm.c_str(), x + 40, y + 13, 15.0f, D2D1::ColorF(D2D1::ColorF::White));   // アイコンの右
-            m_textRenderer->DrawText(tag, x + 6, y + 34, 12.0f, tagCol);
-            m_textRenderer->DrawText(CardVisual::WrapText(desc, 9).c_str(), x + 6, y + 56, 12.0f, D2D1::ColorF(D2D1::ColorF::LightGray));
+            m_textRenderer->DrawText(nm.c_str(), x + 46, y + 17, 15.0f, D2D1::ColorF(D2D1::ColorF::White));   // アイコンの右
+            m_textRenderer->DrawText(tag, x + 12, y + 44, 12.0f, tagCol);
+            m_textRenderer->DrawText(CardVisual::WrapText(desc, 9).c_str(), x + 12, y + 62, 12.0f, D2D1::ColorF(D2D1::ColorF::LightGray));
         }
 
         if (m_items[i].bought)
@@ -288,7 +288,7 @@ void ShopScene::Draw()
         else
         {
             wchar_t priceText[32]; swprintf_s(priceText, L"%d G", m_items[i].price);
-            m_textRenderer->DrawText(priceText, x + 6, y + h - 32, 20.0f, D2D1::ColorF(1.0f, 0.9f, 0.3f));
+            m_textRenderer->DrawText(priceText, x + 12, y + h - 32, 20.0f, D2D1::ColorF(1.0f, 0.9f, 0.3f));
         }
     }
 

@@ -177,6 +177,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("deco_shadow", L"Assets/Field/deco_shadow.png");
 		TextureManager::Load("map_bg", L"Assets/Field/Map.jpg");
 		TextureManager::Load("cardSelect_bg", L"Assets/Field/CardSelect.jpeg");
+		TextureManager::Load("shop_rug", L"Assets/Field/shop.png");
 
 		TextureManager::Load("ground_void", L"Assets/Field/ground_void.png");
 		TextureManager::Load("ground_void_awake", L"Assets/Field/ground_void_awake.png");
@@ -934,12 +935,13 @@ void SceneManager::DrawImGui()
 				// チェックON=チュートリアルを表示する（＝各フラグを未表示に戻す）
 				bool showTut = !(pd.tutorialField && pd.tutorialBattle && pd.tutorialCardSelect
 					&& pd.tutorialShop && pd.tutorialRest && pd.tutorialCraft);
-				if (showTut) pd.seenHints.clear();
 				if (ImGui::Checkbox("Show Tutorials", &showTut))
 				{
 					bool seen = !showTut;   // 表示する→フラグfalse / 出さない→true
 					pd.tutorialField = pd.tutorialBattle = pd.tutorialCardSelect =
 						pd.tutorialShop = pd.tutorialRest = pd.tutorialCraft = seen;
+					if (showTut) pd.seenHints.clear();   // ON：ヒントを未読に戻す
+					else Hint::MarkAllSeen();            // OFF：ヒントも全部既読に（録画などで出したくない時）
 					PlayerDataManager::Save();
 				}
 

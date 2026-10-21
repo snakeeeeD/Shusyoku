@@ -1129,10 +1129,8 @@ void BattleScene::Update(float deltaTime)
         }
 
         // ハイライト明滅タイマーを更新
-        m_highlightTimer += deltaTime * 0.5f; // 点滅速度調整
+        m_highlightTimer += deltaTime * 0.5f; // 点滅速度調整（0に戻さない：戻すと整数倍でない点滅・色の入れ替わりがワープする）
         if (m_arrowRevealTimer > 0.0f) m_arrowRevealTimer -= deltaTime;
-        if (m_highlightTimer > 3.14159f * 2.0f)
-            m_highlightTimer = 0.0f;
         if (m_battleResult != BattleResult::None)
         {
             Hint::Clear();   // 勝利/敗北画面にヒントを残さない
@@ -3056,7 +3054,10 @@ void BattleScene::HandleInput()
                     releasePos, m_renderer3D->GetViewMatrix(), m_renderer3D->GetProjectionMatrix(),
                     m_screenWidth, m_screenHeight);
                 bool cellInRange = (result.cell && cellInRng(result.col, result.row));
-                if (result.cell && (cellInRange || !autoAttack))
+                // 射程内の敵が1体だけなら、空きマスで離してもその敵を狙う（予測 AttackTargetEnemy と同じ判定）
+                bool hoverEmpty = !result.cell || EnemyIndexAt(result.col, result.row) < 0;
+                bool forceAuto = autoAttack && hoverEmpty && !AimsFreely(dataCopy);
+                if (result.cell && !forceAuto && (cellInRange || !autoAttack))
                 {
                     // 離したマスに止まっていた時間が短い＝通り過ぎる途中で離した → 使わずに選択したまま（もう一度押せば使える）
                     bool settled = (result.col == m_aimCell.first && result.row == m_aimCell.second)
@@ -3852,6 +3853,15 @@ bool BattleScene::CellInCardRange(const CardData& d, int c, int r) const
     return RangeShape::Contains(m_playerCol, m_playerRow, c, r, d.rangeType, rng, 0, adx, ady);
 }
 
+int BattleScene::EnemyIndexAt(int c, int r) const
+{
+    if (c < 0 || r < 0) return -1;
+    for (int i = 0; i < (int)m_enemies.size(); i++)
+        for (auto& cell : m_enemies[i]->OccupiedCells())
+            if (cell.first == c && cell.second == r) return i;
+    return -1;
+}
+
 int BattleScene::AttackTargetEnemy() const
 {
     if (m_selectedCardIndex < 0 || m_selectedCardIndex >= (int)m_hand.GetCards().size()) return -1;
@@ -3870,14 +3880,13 @@ int BattleScene::AttackTargetEnemy() const
     bool autoAttack = (count == 1);
 
     bool hoverInRange = CellInCardRange(d, m_hoveredCell.first, m_hoveredCell.second);
+    int hoverEnemy = EnemyIndexAt(m_hoveredCell.first, m_hoveredCell.second);
+
+    // 射程内が1体だけなら、空きマスを指していてもその敵（突進先・扇の向きなど指したマスに意味があるカードは除く）
+    if (autoAttack && hoverEnemy < 0 && !AimsFreely(d)) return sole;
+
     if (m_hoveredCell.first >= 0 && (hoverInRange || !autoAttack))
-    {
-        if (!hoverInRange) return -1;   // 射程外を指している＝当たらない
-        for (int i = 0; i < (int)m_enemies.size(); i++)
-            for (auto& cell : m_enemies[i]->OccupiedCells())
-                if (cell == m_hoveredCell) return i;
-        return -1;                      // 空きマスを指している
-    }
+        return hoverInRange ? hoverEnemy : -1;   // 指したマスの敵（射程外・空きマス＝当たらない）
     return autoAttack ? sole : -1;
 }
 
@@ -4045,7 +4054,6 @@ void BattleScene::FreeLookStep(Input& in, float deltaTime)
     m_highlighter.SetSelectedEnemy(FocusEnemy());
     m_highlighter.ClearPlayerHighlight(m_gridMap);
     m_highlightTimer += deltaTime * 0.5f;
-    if (m_highlightTimer > 3.14159f * 2.0f) m_highlightTimer = 0.0f;
     m_highlighter.UpdateEnemyHighlight(m_enemies, m_gridMap, m_player,
         m_playerCol, m_playerRow, m_highlightTimer, m_decoyCol, m_decoyRow);
     if (m_forceHitmark && !m_enemies.empty()) m_enemies[0]->hitsPlayer = true;   // 学習用に強制表示

@@ -18,7 +18,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 3
+              "value": 5
             }
           ],
           "select": {
@@ -376,7 +376,7 @@
           "effects": [
             {
               "kind": "Block",
-              "value": 8
+              "value": 10
             }
           ],
           "select": {

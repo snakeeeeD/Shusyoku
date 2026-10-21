@@ -142,8 +142,13 @@
     },
     {
      "id": "hound",
-     "col": 5,
+     "col": 2,
      "row": 3
+    },
+    {
+     "id": "slime",
+     "col": 5,
+     "row": 1
     }
    ]
   },
@@ -425,8 +430,8 @@
     },
     {
      "id": "cave_slime",
-     "col": 6,
-     "row": 4
+     "col": 4,
+     "row": 0
     }
    ],
    "tier": 1
@@ -458,8 +463,8 @@
    "enemies": [
     {
      "id": "crawler",
-     "col": 6,
-     "row": 3
+     "col": 1,
+     "row": 2
     },
     {
      "id": "bat",
@@ -477,8 +482,8 @@
    "enemies": [
     {
      "id": "crawler",
-     "col": 6,
-     "row": 3
+     "col": 4,
+     "row": 1
     }
    ],
    "tier": 1
@@ -525,8 +530,8 @@
    "enemies": [
     {
      "id": "shrieker",
-     "col": 7,
-     "row": 2
+     "col": 2,
+     "row": 1
     },
     {
      "id": "crawler",
@@ -544,13 +549,13 @@
    "enemies": [
     {
      "id": "myconid",
-     "col": 6,
-     "row": 3
+     "col": 4,
+     "row": 4
     },
     {
      "id": "cave_slime",
-     "col": 5,
-     "row": 3
+     "col": 4,
+     "row": 1
     }
    ],
    "tier": 2
@@ -568,13 +573,13 @@
     },
     {
      "id": "spider",
-     "col": 7,
-     "row": 6
+     "col": 1,
+     "row": 2
     },
     {
      "id": "shrieker",
-     "col": 5,
-     "row": 3
+     "col": 4,
+     "row": 1
     }
    ],
    "tier": 2
@@ -587,8 +592,8 @@
    "enemies": [
     {
      "id": "cave_golem",
-     "col": 6,
-     "row": 3
+     "col": 4,
+     "row": 1
     }
    ],
    "tier": 3
@@ -606,8 +611,8 @@
     },
     {
      "id": "spider",
-     "col": 5,
-     "row": 3
+     "col": 6,
+     "row": 4
     },
     {
      "id": "spider",
@@ -630,7 +635,7 @@
     },
     {
      "id": "crawler",
-     "col": 5,
+     "col": 2,
      "row": 4
     }
    ],
@@ -649,8 +654,8 @@
     },
     {
      "id": "crystal_guard",
-     "col": 5,
-     "row": 4
+     "col": 2,
+     "row": 2
     }
    ],
    "tier": 3
@@ -690,7 +695,7 @@
     {
      "id": "elite_gloomwing",
      "col": 4,
-     "row": 2
+     "row": 1
     }
    ]
   },
@@ -702,8 +707,8 @@
    "enemies": [
     {
      "id": "venomancer",
-     "col": 6,
-     "row": 2
+     "col": 4,
+     "row": 1
     }
    ],
    "tier": 1
@@ -717,6 +722,11 @@
     {
      "id": "cave_golem",
      "col": 6,
+     "row": 3
+    },
+    {
+     "id": "cave_golem",
+     "col": 2,
      "row": 3
     }
    ],
@@ -754,7 +764,7 @@
     },
     {
      "id": "bat",
-     "col": 6,
+     "col": 2,
      "row": 4
     }
    ]
@@ -773,8 +783,8 @@
     },
     {
      "id": "crawler",
-     "col": 6,
-     "row": 4
+     "col": 2,
+     "row": 3
     }
    ]
   },
@@ -797,8 +807,8 @@
     },
     {
      "id": "crawler",
-     "col": 7,
-     "row": 4
+     "col": 2,
+     "row": 2
     }
    ]
   },
@@ -816,7 +826,7 @@
     },
     {
      "id": "crawler",
-     "col": 7,
+     "col": 3,
      "row": 3
     }
    ]
@@ -830,18 +840,18 @@
    "enemies": [
     {
      "id": "bat",
-     "col": 5,
+     "col": 3,
      "row": 2
     },
     {
      "id": "bat",
-     "col": 7,
+     "col": 5,
      "row": 2
     },
     {
      "id": "cave_slime",
-     "col": 6,
-     "row": 4
+     "col": 4,
+     "row": 2
     }
    ]
   },
@@ -854,18 +864,18 @@
    "enemies": [
     {
      "id": "cave_slime",
-     "col": 5,
-     "row": 2
+     "col": 3,
+     "row": 4
     },
     {
      "id": "cave_slime",
-     "col": 7,
-     "row": 2
+     "col": 5,
+     "row": 4
     },
     {
      "id": "bat",
-     "col": 6,
-     "row": 4
+     "col": 4,
+     "row": 2
     }
    ]
   },
@@ -878,7 +888,7 @@
    "enemies": [
     {
      "id": "mutant_stalker",
-     "col": 6,
+     "col": 1,
      "row": 2
     },
     {
@@ -897,12 +907,12 @@
    "enemies": [
     {
      "id": "plasma_wraith",
-     "col": 7,
+     "col": 4,
      "row": 0
     },
     {
      "id": "psi_watcher",
-     "col": 6,
+     "col": 4,
      "row": 1
     }
    ]
@@ -916,13 +926,13 @@
    "enemies": [
     {
      "id": "toxic_bloom",
-     "col": 6,
-     "row": 0
+     "col": 5,
+     "row": 1
     },
     {
      "id": "chem_hound",
-     "col": 6,
-     "row": 1
+     "col": 2,
+     "row": 3
     }
    ]
   },
@@ -935,7 +945,7 @@
    "enemies": [
     {
      "id": "augmented_soldier",
-     "col": 5,
+     "col": 4,
      "row": 6
     }
    ]
@@ -954,13 +964,13 @@
     },
     {
      "id": "nanite_swarm",
-     "col": 4,
-     "row": 6
+     "col": 3,
+     "row": 2
     },
     {
      "id": "glitch_phantom",
-     "col": 7,
-     "row": 6
+     "col": 6,
+     "row": 1
     }
    ]
   },
@@ -973,8 +983,8 @@
    "enemies": [
     {
      "id": "grav_anomaly",
-     "col": 5,
-     "row": 0
+     "col": 2,
+     "row": 2
     },
     {
      "id": "plasma_wraith",
@@ -992,13 +1002,18 @@
    "enemies": [
     {
      "id": "chem_hound",
-     "col": 4,
-     "row": 4
+     "col": 5,
+     "row": 3
     },
     {
      "id": "chem_hound",
      "col": 4,
-     "row": 6
+     "row": 2
+    },
+    {
+     "id": "chem_hound",
+     "col": 3,
+     "row": 3
     }
    ]
   },
@@ -1011,8 +1026,8 @@
    "enemies": [
     {
      "id": "glitch_phantom",
-     "col": 7,
-     "row": 4
+     "col": 1,
+     "row": 3
     },
     {
      "id": "psi_watcher",
@@ -1037,6 +1052,16 @@
      "id": "nanite_swarm",
      "col": 5,
      "row": 4
+    },
+    {
+     "id": "nanite_swarm",
+     "col": 3,
+     "row": 4
+    },
+    {
+     "id": "nanite_swarm",
+     "col": 4,
+     "row": 5
     }
    ]
   },
@@ -1049,13 +1074,13 @@
    "enemies": [
     {
      "id": "toxic_bloom",
-     "col": 7,
-     "row": 4
+     "col": 3,
+     "row": 2
     },
     {
      "id": "toxic_bloom",
-     "col": 6,
-     "row": 3
+     "col": 5,
+     "row": 2
     }
    ]
   },
@@ -1068,18 +1093,18 @@
    "enemies": [
     {
      "id": "mutant_stalker",
-     "col": 7,
-     "row": 4
+     "col": 6,
+     "row": 3
     },
     {
      "id": "chem_hound",
-     "col": 7,
-     "row": 5
+     "col": 2,
+     "row": 3
     },
     {
      "id": "psi_watcher",
      "col": 4,
-     "row": 6
+     "row": 0
     }
    ]
   },
@@ -1092,13 +1117,13 @@
    "enemies": [
     {
      "id": "grav_anomaly",
-     "col": 6,
-     "row": 0
+     "col": 3,
+     "row": 1
     },
     {
      "id": "glitch_phantom",
      "col": 6,
-     "row": 5
+     "row": 3
     }
    ]
   },
@@ -1111,18 +1136,18 @@
    "enemies": [
     {
      "id": "plasma_wraith",
-     "col": 5,
-     "row": 3
+     "col": 8,
+     "row": 6
     },
     {
      "id": "plasma_wraith",
-     "col": 5,
-     "row": 2
+     "col": 0,
+     "row": 6
     },
     {
      "id": "nanite_swarm",
      "col": 4,
-     "row": 4
+     "row": 0
     }
    ]
   },
@@ -1135,12 +1160,12 @@
    "enemies": [
     {
      "id": "augmented_soldier",
-     "col": 5,
+     "col": 2,
      "row": 2
     },
     {
      "id": "psi_watcher",
-     "col": 4,
+     "col": 5,
      "row": 1
     }
    ]
@@ -1155,11 +1180,21 @@
     {
      "id": "chem_hound",
      "col": 5,
-     "row": 0
+     "row": 1
     },
     {
      "id": "grav_anomaly",
-     "col": 6,
+     "col": 5,
+     "row": 5
+    },
+    {
+     "id": "chem_hound",
+     "col": 3,
+     "row": 1
+    },
+    {
+     "id": "grav_anomaly",
+     "col": 3,
      "row": 5
     }
    ]
@@ -1173,13 +1208,13 @@
    "enemies": [
     {
      "id": "glitch_phantom",
-     "col": 7,
-     "row": 2
+     "col": 6,
+     "row": 3
     },
     {
      "id": "mutant_stalker",
-     "col": 4,
-     "row": 5
+     "col": 2,
+     "row": 3
     },
     {
      "id": "toxic_bloom",
@@ -1197,8 +1232,8 @@
    "enemies": [
     {
      "id": "elite_chimera",
-     "col": 6,
-     "row": 0
+     "col": 4,
+     "row": 1
     }
    ]
   },
@@ -1211,8 +1246,8 @@
    "enemies": [
     {
      "id": "elite_corrupted_core",
-     "col": 7,
-     "row": 2
+     "col": 4,
+     "row": 1
     }
    ]
   },
@@ -1225,8 +1260,8 @@
    "enemies": [
     {
      "id": "elite_void_weaver",
-     "col": 7,
-     "row": 3
+     "col": 4,
+     "row": 1
     }
    ]
   },
@@ -1239,13 +1274,28 @@
    "enemies": [
     {
      "id": "nanite_swarm",
-     "col": 7,
+     "col": 6,
      "row": 2
     },
     {
      "id": "glitch_phantom",
+     "col": 4,
+     "row": 0
+    },
+    {
+     "id": "nanite_swarm",
+     "col": 2,
+     "row": 2
+    },
+    {
+     "id": "nanite_swarm",
+     "col": 3,
+     "row": 4
+    },
+    {
+     "id": "nanite_swarm",
      "col": 5,
-     "row": 1
+     "row": 4
     }
    ]
   },
@@ -1259,47 +1309,52 @@
     {
      "id": "toxic_bloom",
      "col": 6,
-     "row": 0
+     "row": 1
     },
     {
      "id": "chem_hound",
      "col": 4,
      "row": 1
+    },
+    {
+     "id": "toxic_bloom",
+     "col": 2,
+     "row": 1
     }
    ]
   },
   {
-    "id": "l3boss",
-    "layer": 3,
-    "category": "boss",
-    "weight": 100,
-    "enemies": [
-      {
-        "id": "l3_sovereign",
-        "col": 4,
-        "row": 0
-      },
-      {
-        "id": "wedge_sword",
-        "col": 1,
-        "row": 1
-      },
-      {
-        "id": "wedge_venom",
-        "col": 7,
-        "row": 1
-      },
-      {
-        "id": "wedge_shield",
-        "col": 7,
-        "row": 5
-      },
-      {
-        "id": "wedge_hex",
-        "col": 1,
-        "row": 5
-      }
-    ]
+   "id": "l3boss",
+   "layer": 3,
+   "category": "boss",
+   "weight": 100,
+   "enemies": [
+    {
+     "id": "l3_sovereign",
+     "col": 4,
+     "row": 0
+    },
+    {
+     "id": "wedge_sword",
+     "col": 1,
+     "row": 1
+    },
+    {
+     "id": "wedge_venom",
+     "col": 7,
+     "row": 1
+    },
+    {
+     "id": "wedge_shield",
+     "col": 7,
+     "row": 5
+    },
+    {
+     "id": "wedge_hex",
+     "col": 1,
+     "row": 5
+    }
+   ]
   }
  ]
 }

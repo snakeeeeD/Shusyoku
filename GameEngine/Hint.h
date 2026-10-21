@@ -20,7 +20,7 @@ public:
     static void Clear();                   // シーン切替・戦闘終了時
     static const HintDef* Current() { return s_cur; }
     static float Alpha();
-
+    static void MarkAllSeen();   // 全ヒントを既読にする（デバッグ・録画用）
 private:
     static const HintDef* Find(const char* id);
     static void Next();

@@ -182,7 +182,11 @@
       "rarity": "Common",
       "tags": "Poison",
       "vfx": "slash",
-      "vfxColor": [ 0.7, 0.3, 1.0 ],
+      "vfxColor": [
+        0.7,
+        0.3,
+        1.0
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -237,7 +241,11 @@
         "Poison"
       ],
       "vfx": "smash",
-      "vfxColor": [ 0.7, 0.3, 1.0 ],
+      "vfxColor": [
+        0.7,
+        0.3,
+        1.0
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Area",
@@ -265,7 +273,11 @@
         "Poison"
       ],
       "vfx": "smash",
-      "vfxColor": [ 0.7, 0.3, 1.0 ],
+      "vfxColor": [
+        0.7,
+        0.3,
+        1.0
+      ],
       "cost": 1,
       "range": 3,
       "rangeType": "Cross",
@@ -294,7 +306,11 @@
         "Poison"
       ],
       "vfx": "smash",
-      "vfxColor": [ 0.7, 0.3, 1.0 ],
+      "vfxColor": [
+        0.7,
+        0.3,
+        1.0
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -328,7 +344,11 @@
         "Poison"
       ],
       "vfx": "slash_fan",
-      "vfxColor": [ 0.7, 0.3, 1.0 ],
+      "vfxColor": [
+        0.7,
+        0.3,
+        1.0
+      ],
       "cost": 1,
       "range": 2,
       "rangeType": "Cone",
@@ -400,7 +420,11 @@
         "Poison"
       ],
       "vfx": "slash_spin",
-      "vfxColor": [ 0.7, 0.3, 1.0 ],
+      "vfxColor": [
+        0.7,
+        0.3,
+        1.0
+      ],
       "cost": 3,
       "range": 2,
       "rangeType": "Area",
@@ -428,7 +452,11 @@
         "Poison"
       ],
       "vfx": "smash",
-      "vfxColor": [ 0.7, 0.3, 1.0 ],
+      "vfxColor": [
+        0.7,
+        0.3,
+        1.0
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -461,7 +489,11 @@
         "Poison"
       ],
       "vfx": "smash",
-      "vfxColor": [ 0.7, 0.3, 1.0 ],
+      "vfxColor": [
+        0.7,
+        0.3,
+        1.0
+      ],
       "cost": 2,
       "range": 1,
       "rangeType": "Adjacent",
@@ -488,7 +520,8 @@
       "description": "{value}ダメージ",
       "exhaust": true,
       "upgrade": {
-        "mainValue": 2
+        "mainValue": 2,
+        "range": 3
       },
       "mainEffect": {
         "type": "Damage",
@@ -550,13 +583,18 @@
       "name": "抜き打ち",
       "type": "Attack",
       "rarity": "Common",
-      "tags": [ "Strike", "Discard" ],
+      "tags": [
+        "Strike",
+        "Discard"
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
       "description": "{value}ダメージ 1枚ドロー 1枚選んで捨てる",
       "vfx": "slash",
-      "upgrade": { "mainValue": 3 },
+      "upgrade": {
+        "mainValue": 3
+      },
       "mainEffect": {
         "type": "Damage",
         "value": 9
@@ -1046,13 +1084,17 @@
       "name": "威圧の盾",
       "type": "Skill",
       "rarity": "Common",
-      "tags": [ "Bulwark" ],
+      "tags": [
+        "Bulwark"
+      ],
       "cost": 1,
       "range": 0,
       "rangeType": "None",
       "description": "ブロック{value} 全敵に弱体2ターン",
       "vfx": "block_gain",
-      "upgrade": { "mainValue": 3 },
+      "upgrade": {
+        "mainValue": 3
+      },
       "mainEffect": {
         "type": "Block",
         "value": 6
@@ -1068,7 +1110,9 @@
       "name": "反攻の構え",
       "type": "Skill",
       "rarity": "Uncommon",
-      "tags": [ "Bulwark" ],
+      "tags": [
+        "Bulwark"
+      ],
       "cost": 1,
       "range": 0,
       "rangeType": "None",
@@ -1094,13 +1138,17 @@
       "name": "土手",
       "type": "Skill",
       "rarity": "Uncommon",
-      "tags": [ "Bulwark" ],
+      "tags": [
+        "Bulwark"
+      ],
       "cost": 2,
       "range": 0,
       "rangeType": "None",
       "description": "ブロック{value} 次のターンまで持ち越し",
       "vfx": "block_gain",
-      "upgrade": { "mainValue": 4 },
+      "upgrade": {
+        "mainValue": 4
+      },
       "mainEffect": {
         "type": "Block",
         "value": 10
@@ -1194,13 +1242,18 @@
       "name": "投棄",
       "type": "Skill",
       "rarity": "Common",
-      "tags": [ "Discard", "Bulwark" ],
+      "tags": [
+        "Discard",
+        "Bulwark"
+      ],
       "cost": 0,
       "range": 0,
       "rangeType": "None",
       "description": "ブロック{value} 1枚選んで捨てる",
       "vfx": "block_gain",
-      "upgrade": { "mainValue": 3 },
+      "upgrade": {
+        "mainValue": 3
+      },
       "mainEffect": {
         "type": "Block",
         "value": 5
@@ -1233,7 +1286,6 @@
       }
     },
     {
-
       "id": "SKL_battle_thirst",
       "name": "戦いの渇き",
       "type": "Skill",
@@ -1743,12 +1795,16 @@
       "name": "守りの一歩",
       "type": "Move",
       "rarity": "Common",
-      "tags": [ "Bulwark" ],
+      "tags": [
+        "Bulwark"
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
       "description": "隣接マスへ移動し ブロック6",
-      "upgrade": { "range": 1 },
+      "upgrade": {
+        "range": 1
+      },
       "mainEffect": {
         "type": "Block",
         "value": 6
@@ -1759,7 +1815,9 @@
       "name": "身軽",
       "type": "Move",
       "rarity": "Common",
-      "tags": [ "Discard" ],
+      "tags": [
+        "Discard"
+      ],
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
@@ -2465,8 +2523,6 @@
         "value": 0
       }
     },
-
-
     {
       "id": "cursed_burden",
       "name": "呪い・重荷",

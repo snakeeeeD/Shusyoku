@@ -65,6 +65,13 @@ void Hint::Clear()
     s_queue.clear();
 }
 
+void Hint::MarkAllSeen()
+{
+    Clear();   // •\¦’†E‡”Ô‘Ò‚¿‚Ìƒqƒ“ƒg‚ğÁ‚·
+    auto& seen = PlayerDataManager::GetData().seenHints;
+    for (auto& d : DEFS) seen.insert(d.id);
+}
+
 float Hint::Alpha()
 {
     if (!s_cur) return 0.0f;
