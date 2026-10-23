@@ -421,11 +421,18 @@ void FieldScene::Draw()
 
     m_spriteRenderer->Begin();
 
+    int layer = PlayerDataManager::GetData().layer;
+    if (layer < 1) layer = 1;
+    if (layer > 3) layer = 3;
     m_spriteRenderer->DrawSprite(
-        TextureManager::Get("map_bg"),  // シーンごとに変える
+        TextureManager::Get("map_bg" + std::to_string(layer)),   // 層ごとの地図
         0.0f, 0.0f,
         (float)m_screenWidth, (float)m_screenHeight,
         0.0f, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+
+    // マスをつなぐ線（羊皮紙の上で沈まないよう、インクっぽい焦げ茶で太めに）
+    const XMFLOAT4 LINE_COL(0.22f, 0.15f, 0.10f, 0.9f);
+    const float    LINE_W = 6.0f;
 
     // 隣接マス間の線を描画
     for (int row = 0; row < GRID_ROWS; row++)
@@ -452,9 +459,9 @@ void FieldScene::Draw()
                     float cx = (cx1 + cx2) / 2.0f;
                     float cy = (cy1 + cy2) / 2.0f;
                     m_spriteRenderer->DrawSprite(m_whiteTexture,
-                        cx - len / 2.0f, cy - 2.0f,
-                        len, 4.0f, 0.0f,
-                        XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f));
+                        cx - len / 2.0f, cy - LINE_W / 2.0f,
+                        len, LINE_W, 0.0f,
+                        LINE_COL);
                 }
             }
 
@@ -471,9 +478,9 @@ void FieldScene::Draw()
                     float cx = (cx1 + cx2) / 2.0f;
                     float cy = (cy1 + cy2) / 2.0f;
                     m_spriteRenderer->DrawSprite(m_whiteTexture,
-                        cx - len / 2.0f, cy - 2.0f,
-                        len, 4.0f, 1.5708f, // 90度
-                        XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f));
+                        cx - len / 2.0f, cy - LINE_W / 2.0f,
+                        len, LINE_W, 1.5708f, // 90度
+                        LINE_COL);
                 }
             }
         }

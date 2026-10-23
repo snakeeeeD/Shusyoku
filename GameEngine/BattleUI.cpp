@@ -2135,49 +2135,129 @@ void BattleUI::DrawPlayerOffScreenIndicator(const BattleUIContext& ctx)
     }
 }
 
-void BattleUI::GetEnemyEntryRect(int i, int screenWidth, float& x, float& y, float& w, float& h)
+// 敵の窓の寸法（ここ1か所で決める）
+static const int   INTENT_CH = 11;      // 予告の1行の文字数（13px・幅170）
+static const float INTENT_TOP = 30.0f;   // 予告の1行目（HPの下）
+static const float INTENT_LH = 15.0f;   // 予告の行の高さ
+static const float ENTRY_MIN_H = 66.0f;   // アイコン(55)＋余白
+static const float DETAIL_W = 220.0f;  // 詳細の窓の幅
+static const int   DETAIL_CH = 13;      // 詳細の1行の文字数（15px・幅200）
+
+std::vector<std::wstring> BattleUI::WrapLines(const std::wstring& s, int maxCh, bool breakAtComma)
 {
-    w = 240.0f; h = 90.0f;
-    x = screenWidth - 250.0f;
-    y = 50.0f + RelicManager::BarTotalHeight(screenWidth) + i * (h + 5.0f);
+    std::vector<std::wstring> out;
+    size_t start = 0;
+    while (start < s.size())
+    {
+        size_t end = s.size();
+        if (breakAtComma)   // 「、」までを1節に
+        {
+            size_t comma = s.find(L'、', start);
+            if (comma != std::wstring::npos) end = comma + 1;
+        }
+        std::wstring wrapped = CardVisual::WrapText(s.substr(start, end - start), maxCh);   // 長い節は折り返す
+        size_t p = 0, nl;
+        while ((nl = wrapped.find(L'\n', p)) != std::wstring::npos) { out.push_back(wrapped.substr(p, nl - p)); p = nl + 1; }
+        out.push_back(wrapped.substr(p));
+        start = end;
+    }
+    return out;
 }
 
-int BattleUI::EnemyEntryAt(POINT p, int count, int screenWidth)
+// 一覧に出す「次の行動」の行
+static std::vector<std::wstring> IntentLines(Enemy* e)
 {
-    for (int i = 0; i < count; i++)
+    const EnemyAction* a = e->GetNextAction();
+    if (!a) return {};
+    return BattleUI::WrapLines(EnemyIntentVisual::GetActionText(*a, e->GetBuffManager()), INTENT_CH, true);
+}
+
+void BattleUI::GetEnemyEntryRect(int i, const std::vector<Enemy*>& enemies, int screenWidth,
+    float& x, float& y, float& w, float& h)
+{
+    w = 240.0f;
+    x = screenWidth - 250.0f;
+    y = 50.0f + RelicManager::BarTotalHeight(screenWidth);
+    if (i < 0) i = 0;
+    for (int k = 0; ; k++)   // 上の敵の窓の高さを積み上げて、i番目の位置を出す
+    {
+        float lines = (k < (int)enemies.size()) ? (float)IntentLines(enemies[k]).size() : 0.0f;
+        h = max(ENTRY_MIN_H, INTENT_TOP + lines * INTENT_LH + 8.0f);   // 予告の行数に合わせて伸びる
+        if (k == i) return;
+        y += h + 5.0f;
+    }
+}
+
+int BattleUI::EnemyEntryAt(POINT p, const std::vector<Enemy*>& enemies, int screenWidth)
+{
+    for (int i = 0; i < (int)enemies.size(); i++)
     {
         float x, y, w, h;
-        GetEnemyEntryRect(i, screenWidth, x, y, w, h);
+        GetEnemyEntryRect(i, enemies, screenWidth, x, y, w, h);
         if (p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h) return i;
     }
     return -1;
 }
 
+// 詳細の窓の中身（行動予定・ブロック・移動不可・バフ）。高さもここで決まる
+std::vector<BattleUI::DetailRow> BattleUI::EnemyDetailRows(Enemy* e, float x, float topY, POINT mp,
+    float minH, float& height) const
+{
+    std::vector<DetailRow> rows;
+    float y = topY + 6.0f;
+    auto add = [&](const std::wstring& s, float size, D2D1_COLOR_F col, float lh, int ch) {
+        for (auto& l : WrapLines(s, ch, false)) { rows.push_back({ l, size, col, y }); y += lh; }
+        };
+
+    for (auto& act : e->GetPlannedActions())
+        add(EnemyIntentVisual::GetActionText(act, e->GetBuffManager()), 15.0f, D2D1::ColorF(1.0f, 0.8f, 0.3f), 20.0f, DETAIL_CH);
+    if (e->GetBlock() > 0)
+        add(L"Block: " + std::to_wstring(e->GetBlock()), 15.0f, D2D1::ColorF(D2D1::ColorF::LightBlue), 18.0f, DETAIL_CH);
+    if (e->IsImmovable())
+        add(L"移動不可", 14.0f, D2D1::ColorF(0.9f, 0.4f, 0.4f), 20.0f, DETAIL_CH);
+
+    for (auto& buff : e->GetBuffManager().GetBuffs())
+    {
+        const auto& info = BuffInfo::Get(buff.type);
+        std::wstring buffText;
+        if (buff.type == BuffType::HeadWeak)
+            buffText = info.name;                       // 弱点は名前だけ（ターン表記なし）
+        else if (BuffInfo::IsDurationBased(buff.type))
+            buffText = info.name + L": " + std::to_wstring(buff.duration) + L"ターン";
+        else
+        {
+            buffText = info.name + L": " + std::to_wstring(buff.value);
+            if (buff.type != BuffType::Poison)
+                buffText += L" (" + std::to_wstring(buff.duration) + L"T)";
+        }
+        bool hov = (mp.x >= x && mp.x <= x + DETAIL_W && mp.y >= y && mp.y <= y + 20.0f);
+        add(buffText, 14.0f, hov ? D2D1::ColorF(1.0f, 1.0f, 0.5f) : D2D1::ColorF(0.6f, 1.0f, 0.6f), 20.0f, DETAIL_CH + 1);
+        if (hov)   // ホバー中のバフは説明も（この分も高さに入る）
+        {
+            int descNum = BuffInfo::IsDurationBased(buff.type) ? buff.duration : buff.value;
+            add(BuffInfo::GetDescription(buff.type, descNum), 12.0f, D2D1::ColorF(0.8f, 0.8f, 0.8f), 16.0f, 16);
+        }
+    }
+    height = max(minH, y + 6.0f - topY);
+    return rows;
+}
+
 void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
 {
-    float panelX, panelY, panelW, entryH;
-    GetEnemyEntryRect(0, ctx.screenWidth, panelX, panelY, panelW, entryH);
+    const auto& enemies = *ctx.enemies;
     float iconSize = 55.0f;
 
     POINT mp = ctx.mousePos;
     int hoveredEnemy = -1;
 
-    for (int i = 0; i < (int)ctx.enemies->size(); i++)
+    for (int i = 0; i < (int)enemies.size(); i++)
     {
-        Enemy* enemy = (*ctx.enemies)[i];
-        float entryY = panelY + i * (entryH + 5.0f);
+        Enemy* enemy = enemies[i];
+        float panelX, entryY, panelW, entryH;
+        GetEnemyEntryRect(i, enemies, ctx.screenWidth, panelX, entryY, panelW, entryH);
 
-        // 背景
-        float detailX = panelX - 200.0f;
-        // 詳細パネルの高さを計算
-        float detailH = 10.0f;
-        detailH += 22.0f * (float)enemy->GetPlannedActions().size();
-        if (enemy->GetBlock() > 0) detailH += 18.0f;
-        if (enemy->IsImmovable()) detailH += 20.0f;
-        for (auto& buff : enemy->GetBuffManager().GetBuffs())
-            detailH += 20.0f;
-        detailH += 18.0f;
-        if (detailH < entryH) detailH = entryH;
+        float detailX = panelX - DETAIL_W - 10.0f, detailH;
+        EnemyDetailRows(enemy, detailX, entryY, mp, entryH, detailH);
         bool isEntryHover = (mp.x >= panelX && mp.x <= panelX + panelW
             && mp.y >= entryY && mp.y <= entryY + entryH);
         bool isDetailHover = (m_panelHoveredEnemy == i)
@@ -2260,18 +2340,11 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
     // ホバー中の詳細背景（スプライト）
     if (hoveredEnemy >= 0)
     {
-        Enemy* hEnemy = (*ctx.enemies)[hoveredEnemy];
-        float detailX = panelX - 200.0f;
-        float detailEntryY = panelY + hoveredEnemy * (entryH + 5.0f);
-        float detailH = 10.0f;
-        detailH += 22.0f * (float)hEnemy->GetPlannedActions().size();
-        if (hEnemy->GetBlock() > 0) detailH += 18.0f;
-        if (hEnemy->IsImmovable()) detailH += 20.0f;
-        for (auto& buff : hEnemy->GetBuffManager().GetBuffs())
-            detailH += 20.0f;
-        detailH += 18.0f;
-        if (detailH < entryH) detailH = entryH;
-        DrawWindow(detailX, detailEntryY, 190.0f, detailH, HighlightPalette::Tint(hEnemy->hueColor, 0.55f));
+        float px, ey, pw, eh;
+        GetEnemyEntryRect(hoveredEnemy, enemies, ctx.screenWidth, px, ey, pw, eh);
+        float detailH;
+        EnemyDetailRows(enemies[hoveredEnemy], px - DETAIL_W - 10.0f, ey, mp, eh, detailH);
+        DrawWindow(px - DETAIL_W - 10.0f, ey, DETAIL_W, detailH, HighlightPalette::Tint(enemies[hoveredEnemy]->hueColor, 0.55f));
     }
 
     m_panelHoveredEnemy = hoveredEnemy;
@@ -2280,17 +2353,20 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
     m_textRenderer->Begin();
 
     // テキスト描画（全エネミーまとめて）
-    for (int i = 0; i < (int)ctx.enemies->size(); i++)
+    const D2D1_COLOR_F OL = D2D1::ColorF(0.0f, 0.0f, 0.0f, 0.85f);   // 文字の縁取り
+    const float OLT = 1.0f;
+    for (int i = 0; i < (int)enemies.size(); i++)
     {
-        Enemy* enemy = (*ctx.enemies)[i];
-        float entryY = panelY + i * (entryH + 5.0f);
+        Enemy* enemy = enemies[i];
+        float panelX, entryY, panelW, entryH;
+        GetEnemyEntryRect(i, enemies, ctx.screenWidth, panelX, entryY, panelW, entryH);
 
         // HP数値
         wchar_t hpText[32];
         swprintf_s(hpText, L"%d/%d", enemy->GetHp(), enemy->GetMaxHp());
-        m_textRenderer->DrawText(hpText,
+        m_textRenderer->DrawOutlinedText(hpText,
             panelX + iconSize + 10.0f, entryY + 16.0f, 15.0f,
-            D2D1::ColorF(D2D1::ColorF::White));
+            D2D1::ColorF(D2D1::ColorF::White), OL, OLT);
 
         if (enemy->GetBlock() > 0)
         {
@@ -2304,114 +2380,27 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
             swprintf_s(blockText, L"%d", enemy->GetBlock());
             float bFont = 11.0f;
             float bTextW = wcslen(blockText) * bFont * 0.5f;
-            m_textRenderer->DrawText(blockText,
-                bIconX + (bIconSize - bTextW) / 2.0f + 1.0f,
-                bIconY + (bIconSize - bFont) / 2.0f + 1.0f,
-                bFont, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
-            m_textRenderer->DrawText(blockText,
+            m_textRenderer->DrawOutlinedText(blockText,
                 bIconX + (bIconSize - bTextW) / 2.0f,
                 bIconY + (bIconSize - bFont) / 2.0f,
-                bFont, D2D1::ColorF(D2D1::ColorF::White));
+                bFont, D2D1::ColorF(D2D1::ColorF::White), OL, OLT);
         }
 
-        // 次の行動
-        const EnemyAction* action = enemy->GetNextAction();
-        if (action)
+        // 次の行動（窓の高さと同じ行で描く）
+        float ty = entryY + INTENT_TOP;
+        for (auto& line : IntentLines(enemy))
         {
-            std::wstring dispText =
-                EnemyIntentVisual::GetActionText(*action, enemy->GetBuffManager());
-
-            const size_t MAXCH = 11;                     // 1行の最大文字数
-            float tx = panelX + iconSize + 10.0f;
-            float ty = entryY + 30.0f;
-
-            size_t start = 0;
-            while (start < dispText.size())
-            {
-                // 「、」までを1節として取り出す
-                size_t comma = dispText.find(L'、', start);
-                size_t clauseEnd = (comma == std::wstring::npos) ? dispText.size() : comma + 1;
-                // 節が長ければMAXCHごとに折り返す
-                size_t p = start;
-                while (p < clauseEnd)
-                {
-                    size_t len = min(MAXCH, clauseEnd - p);
-                    std::wstring line = dispText.substr(p, len);
-                    m_textRenderer->DrawText(line.c_str(), tx, ty, 13.0f,
-                        D2D1::ColorF(D2D1::ColorF::Orange));
-                    ty += 15.0f;
-                    p += len;
-                }
-                start = clauseEnd;
-            }
+            m_textRenderer->DrawOutlinedText(line.c_str(), panelX + iconSize + 10.0f, ty, 13.0f,
+                D2D1::ColorF(D2D1::ColorF::Orange), OL, OLT);
+            ty += INTENT_LH;
         }
 
-        // ホバー中の詳細テキスト
+        // ホバー中の詳細テキスト（背景と同じ行の一覧）
         if (hoveredEnemy == i)
         {
-            float detailX = panelX - 200.0f;
-            float lineY = entryY + 5.0f;
-
-            for (auto& act : enemy->GetPlannedActions())
-            {
-                std::wstring actionText =
-                    EnemyIntentVisual::GetActionText(act, enemy->GetBuffManager());
-                m_textRenderer->DrawText(actionText.c_str(),
-                    detailX + 10.0f, lineY, 15.0f, D2D1::ColorF(1.0f, 0.8f, 0.3f));
-                lineY += 22.0f;
-            }
-
-            if (enemy->GetBlock() > 0)
-            {
-                wchar_t blockText[32];
-                swprintf_s(blockText, L"Block: %d", enemy->GetBlock());
-                m_textRenderer->DrawText(blockText,
-                    detailX + 10.0f, lineY, 15.0f,
-                    D2D1::ColorF(D2D1::ColorF::LightBlue));
-                lineY += 18.0f;
-            }
-
-            // 移動不可表示
-            if (enemy->IsImmovable())
-            {
-                m_textRenderer->DrawText(L"移動不可",
-                    detailX + 10.0f, lineY, 14.0f,
-                    D2D1::ColorF(0.9f, 0.4f, 0.4f));
-                lineY += 20.0f;
-            }
-
-            for (auto& buff : enemy->GetBuffManager().GetBuffs())
-            {
-                const auto& info = BuffInfo::Get(buff.type);
-                std::wstring buffText;
-                if (buff.type == BuffType::HeadWeak)
-                    buffText = info.name;                       // 弱点は名前だけ（ターン表記なし）
-                else if (BuffInfo::IsDurationBased(buff.type))
-                    buffText = info.name + L": " + std::to_wstring(buff.duration) + L"ターン";
-                else
-                {
-                    buffText = info.name + L": " + std::to_wstring(buff.value);
-                    if (buff.type != BuffType::Poison)
-                        buffText += L" (" + std::to_wstring(buff.duration) + L"T)";
-                }
-                bool buffHover = (mp.x >= detailX && mp.x <= detailX + 190.0f
-                    && mp.y >= lineY && mp.y <= lineY + 20.0f);
-                D2D1::ColorF buffColor = buffHover
-                    ? D2D1::ColorF(1.0f, 1.0f, 0.5f)
-                    : D2D1::ColorF(0.6f, 1.0f, 0.6f);
-                m_textRenderer->DrawText(buffText.c_str(),
-                    detailX + 10.0f, lineY, 14.0f, buffColor);
-                lineY += 20.0f;
-                if (buffHover)
-                {
-                    int descNum = BuffInfo::IsDurationBased(buff.type) ? buff.duration : buff.value;
-                    std::wstring desc = BuffInfo::GetDescription(buff.type, descNum);
-                    m_textRenderer->DrawText(desc.c_str(),
-                        detailX + 10.0f, lineY, 12.0f,
-                        D2D1::ColorF(0.8f, 0.8f, 0.8f));
-                    lineY += 18.0f;
-                }
-            }
+            float detailX = panelX - DETAIL_W - 10.0f, detailH;
+            for (auto& r : EnemyDetailRows(enemy, detailX, entryY, mp, entryH, detailH))
+                m_textRenderer->DrawOutlinedText(r.text.c_str(), detailX + 10.0f, r.y, r.size, r.color, OL, OLT);
         }
     }
     m_textRenderer->End();

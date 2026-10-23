@@ -129,13 +129,14 @@ void TextRenderer::DrawTextGradientV(const wchar_t* text, float x, float y, floa
 
 void TextRenderer::DrawOutlinedText(const wchar_t* text,
     float x, float y, float size,
-    D2D1_COLOR_F color, D2D1_COLOR_F outline, float thickness)
+    D2D1_COLOR_F color, D2D1_COLOR_F outline, float thickness,
+    float rotation, float pivotX, float pivotY)
 {
     for (int dx = -1; dx <= 1; dx++)
         for (int dy = -1; dy <= 1; dy++)
             if (dx || dy)
-                DrawText(text, x + dx * thickness, y + dy * thickness, size, outline);
-    DrawText(text, x, y, size, color);
+                DrawText(text, x + dx * thickness, y + dy * thickness, size, outline, rotation, pivotX, pivotY);
+    DrawText(text, x, y, size, color, rotation, pivotX, pivotY);
 }
 
 void TextRenderer::DrawTextCentered(const wchar_t* text, float centerX, float y, float width,

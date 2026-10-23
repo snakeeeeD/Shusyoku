@@ -192,8 +192,8 @@
       "rangeType": "Adjacent",
       "description": "敵に{value}ダメージ、\n毒{onhit}付与",
       "upgrade": {
-        "mainValue": 3,
-        "onHitValue": 2
+        "mainValue": 1,
+        "onHitValue": 1
       },
       "mainEffect": {
         "type": "Damage",
@@ -497,7 +497,7 @@
       "cost": 2,
       "range": 1,
       "rangeType": "Adjacent",
-      "description": "毒を{value}付与し 現在の毒ぶん即ダメージ",
+      "description": "毒を{value}付与し現在の毒ぶん即ダメージ",
       "upgrade": {
         "mainValue": 4
       },

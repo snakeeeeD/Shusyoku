@@ -175,8 +175,10 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("deco_darkrock", L"Assets/Field/deco_darkrock.png");
 		TextureManager::Load("deco_ember", L"Assets/Field/deco_ember.png");
 		TextureManager::Load("deco_shadow", L"Assets/Field/deco_shadow.png");
-		TextureManager::Load("map_bg", L"Assets/Field/Map.jpg");
-		TextureManager::Load("cardSelect_bg", L"Assets/Field/CardSelect.jpeg");
+		TextureManager::Load("map_bg1", L"Assets/Field/Map1.png");
+		TextureManager::Load("map_bg2", L"Assets/Field/Map2.png");
+		TextureManager::Load("map_bg3", L"Assets/Field/Map3.png");
+		TextureManager::Load("reward_bg", L"Assets/Field/CardSelect.png");
 		TextureManager::Load("shop_rug", L"Assets/Field/shop.png");
 
 		TextureManager::Load("ground_void", L"Assets/Field/ground_void.png");

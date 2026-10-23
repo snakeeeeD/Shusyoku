@@ -704,12 +704,15 @@ void BattleScene::Update(float deltaTime)
         ScreenShake::Update(deltaTime);
         EffectManager::Update(deltaTime);
         FloatingTextManager::Update(deltaTime);
-        // 演出中：ボス付近にズームイン
+        // 演出中：ボス付近にズームイン（揺れも乗せる。通常のカメラ更新はこの下でreturnされて通らない）
         if (m_awakenBoss)
         {
+            float shakeX, shakeZ;
+            ScreenShake::GetOffset(shakeX, shakeZ);
+
             float camZ = 0.4f;                        // ズーム（小さいほど寄る）
-            float tx = m_awakenBoss->worldX;
-            float tz = m_awakenBoss->worldZ - 1.5f;
+            float tx = m_awakenBoss->worldX + shakeX;
+            float tz = m_awakenBoss->worldZ - 1.5f + shakeZ;
             XMFLOAT3 tgt(tx, -2.0f, tz);
             XMFLOAT3 pos(tx, tgt.y + 17.0f * camZ, tz + 6.0f * camZ);
             m_renderer3D->SetCamera(pos, tgt, XMFLOAT3(0.0f, 1.0f, 0.0f));
@@ -3660,7 +3663,7 @@ void BattleScene::HandleInput()
         // 敵パネルクリック → 範囲選択＋その敵へカメラ
         if (m_input.GetMouseButtonTrigger(0))
         {
-            int i = BattleUI::EnemyEntryAt(m_input.GetMousePos(), (int)m_enemies.size(), m_screenWidth);
+            int i = BattleUI::EnemyEntryAt(m_input.GetMousePos(), m_enemies, m_screenWidth);
             if (i >= 0)
             {
                 m_selectedEnemyRange = (m_selectedEnemyRange == i) ? -1 : i;
@@ -4035,7 +4038,7 @@ void BattleScene::FreeLookStep(Input& in, float deltaTime)
 
     // 敵パネルクリック → 範囲選択＋その敵へカメラ
     if (in.GetMouseButtonTrigger(0)) {
-        int i = BattleUI::EnemyEntryAt(in.GetMousePos(), (int)m_enemies.size(), m_screenWidth);
+        int i = BattleUI::EnemyEntryAt(in.GetMousePos(), m_enemies, m_screenWidth);
         if (i >= 0) {
             m_selectedEnemyRange = (m_selectedEnemyRange == i) ? -1 : i;
             m_cameraOffsetX = m_enemies[i]->worldX; m_cameraOffsetZ = m_enemies[i]->worldZ;
@@ -4069,8 +4072,8 @@ bool BattleScene::GetEnemyPanelRect(float& x, float& y, float& w, float& h) cons
 {
     if (m_enemies.empty()) return false;
     float ex, ey, ew, eh, lx, ly;
-    BattleUI::GetEnemyEntryRect(0, m_screenWidth, ex, ey, ew, eh);
-    BattleUI::GetEnemyEntryRect((int)m_enemies.size() - 1, m_screenWidth, lx, ly, ew, eh);
+    BattleUI::GetEnemyEntryRect(0, m_enemies, m_screenWidth, ex, ey, ew, eh);
+    BattleUI::GetEnemyEntryRect((int)m_enemies.size() - 1, m_enemies, m_screenWidth, lx, ly, ew, eh);
     x = ex - 6.0f; y = ey - 6.0f;
     w = ew + 12.0f; h = (ly + eh) - ey + 12.0f;   // 先頭〜末尾の敵まで
     return true;

@@ -70,7 +70,8 @@ public:
         for (wchar_t c : s)
         {
             if (c == L'\n') { out += c; lineLen = 0; continue; }
-            if (lineLen >= n) { out += L'\n'; lineLen = 0; }
+            bool noLineHead = (c == L'、' || c == L'。');   // 行頭に来させない文字（前の行にぶら下げる）
+            if (lineLen >= n && !noLineHead) { out += L'\n'; lineLen = 0; }
             out += c;
             lineLen++;
         }
@@ -332,6 +333,8 @@ public:
         float x, y, w, h; GetRect(baseX, baseY, scale, x, y, w, h);
         float px = x + w / 2.0f, py = y + h / 2.0f;
         float s = scale;
+        const D2D1_COLOR_F ol = D2D1::ColorF(0.0f, 0.0f, 0.0f, alpha * 0.85f);   // 縁取り（カードが消える時は一緒に薄く）
+        const float olT = 1.0f * s;                                              // 縁取りの太さ（カードの拡大に合わせる）
 
         bool upgraded = !data->id.empty() && data->id.back() == '+';
         D2D1_COLOR_F nameCol = upgraded
@@ -347,7 +350,7 @@ public:
             if (est > avail && est > 0.0f) nameFont *= avail / est;
             if (nameFont < 7.0f * s) nameFont = 7.0f * s;   // 下限
         }
-        tr->DrawText(data->name.c_str(), x + 34 * s, y + 11 * s, nameFont, nameCol, rot, px, py);
+        tr->DrawOutlinedText(data->name.c_str(), x + 34 * s, y + 11 * s, nameFont, nameCol, ol, olT, rot, px, py);
 
         // コストは左上オーブの上に「数字だけ」
         wchar_t cost[16];
@@ -357,14 +360,14 @@ public:
         float ocy = y + 4.0f * s + os / 2.0f;
         float fh = 20.0f * s;
         float digitW = (data->cost >= 10 ? 10.0f : 5.0f) * s;
-        tr->DrawText(cost, ocx - digitW, ocy - fh * 0.55f, fh,
-            D2D1::ColorF(1, 1, 1, alpha), rot, px, py);
+        tr->DrawOutlinedText(cost, ocx - digitW, ocy - fh * 0.55f, fh,
+            D2D1::ColorF(1, 1, 1, alpha), ol, olT, rot, px, py);
 
         D2D1_COLOR_F dc = IsCardBoosted(data, player)
             ? D2D1::ColorF(0.4f, 1.0f, 0.4f, alpha)
             : D2D1::ColorF(0.8f, 0.8f, 0.8f, alpha);
-        tr->DrawText(GetEffectText(data, player, 10).c_str(),
-            x + 12 * s, y + 82 * s, 10 * s, dc, rot, px, py);
+        tr->DrawOutlinedText(GetEffectText(data, player, 8).c_str(),
+            x + 12 * s, y + 82 * s, 10 * s, dc, ol, olT, rot, px, py);
     }
 
     // カードが参照するバフ/デバフのキーワード（名前, 説明）を重複なしで

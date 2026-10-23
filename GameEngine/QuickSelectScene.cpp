@@ -123,7 +123,7 @@ void QuickSelectScene::Draw()
 
     // ---- スプライト ----
     m_sprite->Begin();
-    m_sprite->DrawSprite(TextureManager::Get("cardSelect_bg"), 0.0f, 0.0f,
+    m_sprite->DrawSprite(TextureManager::Get("reward_bg"), 0.0f, 0.0f,
         (float)m_screenWidth, (float)m_screenHeight, 0.0f, XMFLOAT4(0.6f, 0.6f, 0.6f, 1.0f));   // 少し暗くして文字を読みやすく
     m_sprite->DrawSprite(TextureManager::Get("ui_banner"),
         m_screenWidth / 2.0f - 240.0f, 18.0f, 480.0f, 96.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));

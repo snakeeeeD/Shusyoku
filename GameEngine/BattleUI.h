@@ -166,9 +166,12 @@ public:
     struct PlayerHudRects { URect panel, orb, hp, block; };
     PlayerHudRects PlayerHud() const;
 
-    // 右上の敵パネル1件分の矩形（描画・クリック判定・チュートリアルで共有）
-    static void GetEnemyEntryRect(int i, int screenWidth, float& x, float& y, float& w, float& h);
-    static int  EnemyEntryAt(POINT p, int count, int screenWidth);   // 無ければ-1
+    // 敵の窓（右上）：行動予告の行数で高さが変わる。描画・クリック判定・カメラの回避は全部これを使う
+    static void GetEnemyEntryRect(int i, const std::vector<Enemy*>& enemies, int screenWidth,
+        float& x, float& y, float& w, float& h);
+    static int  EnemyEntryAt(POINT p, const std::vector<Enemy*>& enemies, int screenWidth);   // 無ければ-1
+    // 「、」で区切って（breakAtComma）、maxCh文字で折り返した行の一覧
+    static std::vector<std::wstring> WrapLines(const std::wstring& s, int maxCh, bool breakAtComma);
 
     int GetCardAtScreenPos(POINT p) const;
 
@@ -237,6 +240,10 @@ private:
     void DrawHPBar(float x, float y, float w, float h, const HPBarInfo& info, float time);
     void DrawEnemyHPBar(Enemy* enemy, Renderer3D* renderer3D);
     void DrawEnemyInfoPanel(const BattleUIContext& ctx);
+    // 詳細の窓の1行（描画と高さ計算で同じものを使う）
+    struct DetailRow { std::wstring text; float size; D2D1_COLOR_F color; float y; };
+    std::vector<DetailRow> EnemyDetailRows(Enemy* e, float x, float topY, POINT mp,
+        float minH, float& height) const;
     void DrawPlayerHud(const BattleUIContext& ctx);
     void DrawEnemyKeywords(const BattleUIContext& ctx);
     void DrawTargetIndicators(const BattleUIContext& ctx);
