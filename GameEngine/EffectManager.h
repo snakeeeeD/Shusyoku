@@ -7,6 +7,7 @@
 #include "EffectDataBase.h"
 #include "TextureManager.h"
 #include "ScreenShake.h"
+#include "Se.h"
 
 using namespace DirectX;
 
@@ -198,6 +199,7 @@ public:
         int handle = s_nextHandle++;
         const EffectDef* def = EffectDataBase::Get(id);
         if (!def) return handle;
+        Se::Play(def->se);   // effects.json ‚Ì "se"i’x‰„Ä¶‚Í‚±‚±‚É—ˆ‚½Œ©‚½–Ú‚Æ“¯‚É–Â‚éj
         if (def->shake > 0.0f) ScreenShake::Add(def->shake);
         for (auto& b : def->bursts)
         {

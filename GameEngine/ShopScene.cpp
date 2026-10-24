@@ -7,6 +7,7 @@
 #include "GameUtils.h"
 #include "UiWindow.h"
 #include "Audio.h"
+#include "Se.h"
 #include "Telemetry.h"
 #include "URect.h"
 
@@ -442,6 +443,7 @@ void ShopScene::HandleInput()
                 {"kind", it.kind == ShopKind::Card ? "card" : (it.kind == ShopKind::Relic ? "relic" : "other")},
                 {"price", it.price},
                 });
+            Se::Play(Se::Coin);
             if (it.kind == ShopKind::Card)       PlayerDataManager::AddCard(it.id);
             else if (it.kind == ShopKind::Relic) PlayerDataManager::AddRelic(it.id);
             else                                 PlayerDataManager::AddMaterial(it.id, 1); // Core / Material

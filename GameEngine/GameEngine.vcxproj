@@ -218,6 +218,7 @@
     <ClInclude Include="SceneManager.h" />
     <ClInclude Include="Scenetype.h" />
     <ClInclude Include="ScreenShake.h" />
+    <ClInclude Include="Se.h" />
     <ClInclude Include="Settings.h" />
     <ClInclude Include="ShopScene.h" />
     <ClInclude Include="SpriteRenderer.h" />

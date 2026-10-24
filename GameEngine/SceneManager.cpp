@@ -13,6 +13,7 @@
 #include "RelicManager.h"
 #include "UiWindow.h"
 #include "Audio.h"
+#include "Se.h"
 #include "Hint.h"
 #include "ScreenShake.h"
 #include "HpBar.h"
@@ -486,6 +487,7 @@ void SceneManager::DoChangeScene(SceneType type)
 			scene->onChangeScene = [this](SceneType type) {ChangeScene(type); };
 			m_currentScene = scene;
 			scene->onChangeSceneBlack = [this](SceneType t, std::function<void()> fn) { ChangeScene(t, std::move(fn)); };
+			scene->onOpenSettings = [this]() { m_settingsOpen = true; };
 			break;
 		}
 		case SceneType::Battle:
@@ -702,25 +704,26 @@ void SceneManager::DrawOverlay()
 				m_uiSprite->DrawSprite(tex, r.x + 8.0f, r.y + 3.0f, 22.0f, 22.0f, 0.0f, statCol[i]);
 			}
 
-	m_uiSprite->DrawSprite(TextureManager::Get("ui_items"), m_screenWidth - 470.0f, 5.0f, 90.0f, 30.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
-
-	m_uiSprite->DrawSprite(TextureManager::Get("ui_deck"), btnX, 5.0f, 100.0f, 30.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));             // デッキボタン
+	URect ib = Lifted(BarButtonRect(1)), db = Lifted(BarButtonRect(2));
+	m_uiSprite->DrawSprite(TextureManager::Get("ui_items"), ib.x, ib.y, ib.w, ib.h, 0.0f, XMFLOAT4(1, 1, 1, 1));
+	m_uiSprite->DrawSprite(TextureManager::Get("ui_deck"), db.x, db.y, db.w, db.h, 0.0f, XMFLOAT4(1, 1, 1, 1));   // デッキボタン
 	m_uiSprite->DrawSprite(TextureManager::Get("particle"),
-		btnX + 100.0f - 24.0f, 5.0f + 30.0f - 22.0f, 24.0f, 24.0f, 0.0f, XMFLOAT4(0.10f, 0.09f, 0.13f, 1.0f));
+		db.x + db.w - 24.0f, db.y + db.h - 22.0f, 24.0f, 24.0f, 0.0f, XMFLOAT4(0.10f, 0.09f, 0.13f, 1.0f));
 
 	if (m_currentType != SceneType::Field)   // Mapボタン（フィールドは自身がマップなので非表示）：小さな正方形＋地図のアイコン
 	{
-		URect mb = BarButtonRect(0);
+		URect mbBase = BarButtonRect(0), mb = Lifted(mbBase);
 		UiWindow::Button(m_uiSprite, white, mb.x, mb.y, mb.w, mb.h,
-			mb.has(m_uiInput.GetMousePos()) ? XMFLOAT4(0.4f, 0.4f, 0.5f, 1) : XMFLOAT4(0.22f, 0.22f, 0.3f, 1));
+			mbBase.has(m_uiInput.GetMousePos()) ? XMFLOAT4(0.4f, 0.4f, 0.5f, 1) : XMFLOAT4(0.22f, 0.22f, 0.3f, 1));
 		m_uiSprite->DrawSprite(TextureManager::Get("icon_map"), mb.x + (mb.w - 24.0f) / 2.0f, mb.y + 3.0f, 24.0f, 24.0f,
 			0.0f, XMFLOAT4(0.95f, 0.88f, 0.7f, 1));   // 羊皮紙の色
 	}
 
 	{
 		SettingsUI u = SettingsLayout();
+		URect g = Lifted(u.gear);
 		bool hov = u.gear.has(m_uiInput.GetMousePos());
-		UiWindow::Button(m_uiSprite, white, u.gear.x, u.gear.y, u.gear.w, u.gear.h,
+		UiWindow::Button(m_uiSprite, white, g.x, g.y, g.w, g.h,
 			hov ? XMFLOAT4(0.4f, 0.4f, 0.5f, 1) : XMFLOAT4(0.22f, 0.22f, 0.3f, 1));
 	}
 
@@ -741,7 +744,17 @@ void SceneManager::DrawOverlay()
 			D2D1::ColorF(1, 1, 1), D2D1::ColorF(0, 0, 0), 2.0f);
 	}
 
-	{ SettingsUI u = SettingsLayout(); m_textRenderer->DrawText(L"設定", u.gear.x + 6.0f, u.gear.y + 7.0f, 16.0f, D2D1::ColorF(1, 1, 1)); }
+	{
+		URect db2 = Lifted(BarButtonRect(2));
+		wchar_t t[16]; swprintf_s(t, L"%d", (int)PlayerDataManager::GetData().deck.size());
+		m_textRenderer->DrawOutlinedText(t, db2.x + db2.w - 18.0f, db2.y + db2.h - 20.0f, 17.0f,
+			D2D1::ColorF(1, 1, 1), D2D1::ColorF(0, 0, 0), 2.0f);
+	}
+
+	{
+		SettingsUI u = SettingsLayout(); URect g = Lifted(u.gear);
+		m_textRenderer->DrawTextCentered(L"設定", g.x + g.w / 2.0f, g.y, g.w, 16.0f, D2D1::ColorF(1, 1, 1), g.h);
+	}
 
 	
 	wchar_t gbuf[32];
@@ -1065,6 +1078,9 @@ void SceneManager::HandleInput()
 		return;
 	}
 
+	// 設定パネル（帯のある画面でもタイトルでも、開いている間は他を止める）
+	if (m_settingsOpen) { HandleSettingsInput(); return; }
+
 	if (HasTopBar())
 	{
 		POINT m = m_uiInput.GetMousePos();
@@ -1076,58 +1092,7 @@ void SceneManager::HandleInput()
 		SettingsUI su = SettingsLayout();
 		// ギアで開閉
 		if (click && su.gear.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); m_settingsOpen = !m_settingsOpen; return; }
-		if (m_settingsOpen)
-		{
-			// 確認ダイアログ表示中は はい/いいえ だけ受け付ける
-			if (m_confirmAction != 0)
-			{
-				if (click)
-				{
-					if (su.cfmYes.has(m))
-					{
-						Audio::PlaySE("Assets/Sound/se/click.mp3");
-						if (m_confirmAction == 1) { PostQuitMessage(0); }
-						else if (m_confirmAction == 2)
-						{
-							m_settingsOpen = false; m_confirmAction = 0; Settings::Save();
-							ChangeScene(SceneType::Title); return;
-						}
-						m_confirmAction = 0;
-					}
-					else if (su.cfmNo.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); m_confirmAction = 0; }
-				}
-				return;
-			}
-			auto& s = Settings::Get();
-			if (m_uiInput.GetMouseButtonTrigger(0))
-			{
-				URect bt = su.bgmTrack; bt.y -= 8; bt.h += 16;   // 掴みやすく
-				URect st = su.seTrack;  st.y -= 8; st.h += 16;
-				if (bt.has(m)) m_dragSlider = 0; else if (st.has(m)) m_dragSlider = 1;
-			}
-			if (m_uiInput.GetMouseButtonRelease(0)) { if (m_dragSlider != -1) Settings::Save(); m_dragSlider = -1; }
-			if (m_dragSlider == 0 || m_dragSlider == 1)
-			{
-				const URect& t = (m_dragSlider == 0) ? su.bgmTrack : su.seTrack;
-				float v = (m.x - t.x) / t.w; if (v < 0) v = 0; if (v > 1) v = 1;
-				if (m_dragSlider == 0) { s.bgmVolume = v; Audio::SetBgmVolume(v); }
-				else { s.seVolume = v;  Audio::SetSeMasterVolume(v); }
-			}
-			if (click)
-			{
-				if (su.disp.has(m))
-				{
-					DisplayMode nx = (s.displayMode == DisplayMode::Borderless) ? DisplayMode::Windowed : DisplayMode::Borderless;
-					SetDisplayMode(nx); Audio::PlaySE("Assets/Sound/se/click.mp3");
-				}
-				else if (su.shake.has(m)) { s.screenShake = !s.screenShake; Settings::Save(); Audio::PlaySE("Assets/Sound/se/click.mp3"); }
-				else if (su.aimCam.has(m)) { s.aimCamera = !s.aimCamera; Settings::Save(); Audio::PlaySE("Assets/Sound/se/click.mp3"); }
-				else if (su.title.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); m_confirmAction = 2; }
-				else if (su.gameEnd.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); m_confirmAction = 1; }
-				else if (su.close.has(m) || !su.panel.has(m)) { m_settingsOpen = false; m_dragSlider = -1; Settings::Save(); Audio::PlaySE("Assets/Sound/se/click.mp3"); }
-			}
-			return;   // 設定中は他のバー操作を止める
-		}
+		
 
 		// Map（フィールド以外で開ける・クリックで閉じる）
 		if (m_mapOpen) { if (click && BackBtnHit(m)) m_mapOpen = false; return; }
@@ -1202,7 +1167,7 @@ void SceneManager::HandleInput()
 								if (after != before) 
 								{
 									const std::string& after = PlayerDataManager::GetData().deck[m_deckPreviewIdx];
-									if (after != before) { m_craftFxCard = after; m_craftFxTimer = CRAFT_FX_DURATION; }
+									if (after != before) { m_craftFxCard = after; m_craftFxTimer = CRAFT_FX_DURATION; Se::Play(Se::Upgrade); }
 								}
 								m_deckPreviewIdx = -1;
 								return;
@@ -1277,6 +1242,7 @@ void SceneManager::HandleInput()
 						else if (m_eventPickType == "upgradeCard") m_eventPickAnimTo = CanUpgrade(cur) ? (cur + "+") : cur;
 						m_eventPickAnimIdx = idx;
 						m_eventPickAnimTimer = EVENT_PICK_ANIM_DUR;
+						if (m_eventPickType == "upgradeCard" && m_eventPickAnimTo != cur) Se::Play(Se::Upgrade);   // イベントでの強化
 					}
 				}
 			}
@@ -1475,10 +1441,70 @@ void SceneManager::DrawHint()
 	m_textRenderer->End();
 }
 
+void SceneManager::HandleSettingsInput()
+{
+	POINT m = m_uiInput.GetMousePos();
+	bool click = m_uiInput.GetMouseButtonTrigger(0);
+	SettingsUI su = SettingsLayout();
+
+	// 確認ダイアログ表示中は はい/いいえ だけ受け付ける
+	if (m_confirmAction != 0)
+	{
+		if (click)
+		{
+			if (su.cfmYes.has(m))
+			{
+				Audio::PlaySE("Assets/Sound/se/click.mp3");
+				if (m_confirmAction == 1) { PostQuitMessage(0); }
+				else if (m_confirmAction == 2)
+				{
+					m_settingsOpen = false; m_confirmAction = 0; Settings::Save();
+					ChangeScene(SceneType::Title); return;
+				}
+				m_confirmAction = 0;
+			}
+			else if (su.cfmNo.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); m_confirmAction = 0; }
+		}
+		return;
+	}
+	auto& s = Settings::Get();
+	if (m_uiInput.GetMouseButtonTrigger(0))
+	{
+		URect bt = su.bgmTrack; bt.y -= 8; bt.h += 16;   // 掴みやすく
+		URect st = su.seTrack;  st.y -= 8; st.h += 16;
+		if (bt.has(m)) m_dragSlider = 0; else if (st.has(m)) m_dragSlider = 1;
+	}
+	if (m_uiInput.GetMouseButtonRelease(0)) { if (m_dragSlider != -1) Settings::Save(); m_dragSlider = -1; }
+	if (m_dragSlider == 0 || m_dragSlider == 1)
+	{
+		const URect& t = (m_dragSlider == 0) ? su.bgmTrack : su.seTrack;
+		float v = (m.x - t.x) / t.w; if (v < 0) v = 0; if (v > 1) v = 1;
+		if (m_dragSlider == 0) { s.bgmVolume = v; Audio::SetBgmVolume(v); }
+		else { s.seVolume = v;  Audio::SetSeMasterVolume(v); }
+	}
+	if (click)
+	{
+		if (su.disp.has(m))
+		{
+			DisplayMode nx = (s.displayMode == DisplayMode::Borderless) ? DisplayMode::Windowed : DisplayMode::Borderless;
+			SetDisplayMode(nx); Audio::PlaySE("Assets/Sound/se/click.mp3");
+		}
+		else if (su.shake.has(m)) { s.screenShake = !s.screenShake; Settings::Save(); Audio::PlaySE("Assets/Sound/se/click.mp3"); }
+		else if (su.aimCam.has(m)) { s.aimCamera = !s.aimCamera; Settings::Save(); Audio::PlaySE("Assets/Sound/se/click.mp3"); }
+		else if (su.hasTitle && su.title.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); m_confirmAction = 2; }
+		else if (su.gameEnd.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); m_confirmAction = 1; }
+		else if (su.close.has(m) || !su.panel.has(m)) { m_settingsOpen = false; m_dragSlider = -1; Settings::Save(); Audio::PlaySE("Assets/Sound/se/click.mp3"); }
+	}
+}
+
 void SceneManager::DrawSettings()
 {
 	ID3D11ShaderResourceView* white = TextureManager::Get("white");
 	SettingsUI u = SettingsLayout();
+	// 描く位置はホバーで少し持ち上げる（判定と色は元の u のまま）
+	SettingsUI d = u;
+	for (URect* r : { &d.disp, &d.shake, &d.aimCam, &d.title, &d.gameEnd, &d.close, &d.cfmYes, &d.cfmNo })
+		*r = Lifted(*r);
 	POINT mp = m_uiInput.GetMousePos();
 	auto& s = Settings::Get();
 
@@ -1486,7 +1512,7 @@ void SceneManager::DrawSettings()
 	m_uiSprite->DrawSprite(white, 0, 0, (float)m_screenWidth, (float)m_screenHeight, 0.0f, XMFLOAT4(0, 0, 0, 0.6f)); // 暗幕
 	UiWindow::Draw(m_uiSprite, white, u.panel.x, u.panel.y, u.panel.w, u.panel.h);
 
-	UiWindow::Button(m_uiSprite, white, u.disp.x, u.disp.y, u.disp.w, u.disp.h,
+	UiWindow::Button(m_uiSprite, white, d.disp.x, d.disp.y, d.disp.w, d.disp.h,
 		u.disp.has(mp) ? XMFLOAT4(0.35f, 0.5f, 0.7f, 1) : XMFLOAT4(0.25f, 0.28f, 0.4f, 1));
 
 	auto slider = [&](const URect& t, float val) {
@@ -1497,34 +1523,52 @@ void SceneManager::DrawSettings()
 	slider(u.bgmTrack, s.bgmVolume);
 	slider(u.seTrack, s.seVolume);
 
-	UiWindow::Button(m_uiSprite, white, u.shake.x, u.shake.y, u.shake.w, u.shake.h,
+	UiWindow::Button(m_uiSprite, white, d.shake.x, d.shake.y, d.shake.w, d.shake.h,
 		s.screenShake ? XMFLOAT4(0.3f, 0.55f, 0.3f, 1) : XMFLOAT4(0.45f, 0.3f, 0.3f, 1));
-	UiWindow::Button(m_uiSprite, white, u.aimCam.x, u.aimCam.y, u.aimCam.w, u.aimCam.h,
+	UiWindow::Button(m_uiSprite, white, d.aimCam.x, d.aimCam.y, d.aimCam.w, d.aimCam.h,
 		s.aimCamera ? XMFLOAT4(0.3f, 0.55f, 0.3f, 1) : XMFLOAT4(0.45f, 0.3f, 0.3f, 1));
-	UiWindow::Button(m_uiSprite, white, u.title.x, u.title.y, u.title.w, u.title.h,
+	UiWindow::Button(m_uiSprite, white, d.title.x, d.title.y, d.title.w, d.title.h,
 		u.title.has(mp) ? XMFLOAT4(0.35f, 0.5f, 0.7f, 1) : XMFLOAT4(0.25f, 0.28f, 0.4f, 1));
-	UiWindow::Button(m_uiSprite, white, u.gameEnd.x, u.gameEnd.y, u.gameEnd.w, u.gameEnd.h,
+	UiWindow::Button(m_uiSprite, white, d.gameEnd.x, d.gameEnd.y, d.gameEnd.w, d.gameEnd.h,
 		u.gameEnd.has(mp) ? XMFLOAT4(0.75f, 0.30f, 0.30f, 1) : XMFLOAT4(0.50f, 0.24f, 0.24f, 1));
-	UiWindow::Button(m_uiSprite, white, u.close.x, u.close.y, u.close.w, u.close.h,
+	UiWindow::Button(m_uiSprite, white, d.close.x, d.close.y, d.close.w, d.close.h,
 		u.close.has(mp) ? XMFLOAT4(0.5f, 0.35f, 0.35f, 1) : XMFLOAT4(0.35f, 0.25f, 0.25f, 1));
 	m_uiSprite->End();
 
 	m_textRenderer->Begin();
-	m_textRenderer->DrawText(L"設定", u.panel.x + u.panel.w / 2 - 30, u.panel.y + 14, 26, D2D1::ColorF(1, 0.9f, 0.6f));
-	m_textRenderer->DrawText(L"表示", u.panel.x + 40, u.disp.y + 6, 20, D2D1::ColorF(1, 1, 1));
-	m_textRenderer->DrawText(s.displayMode == DisplayMode::Borderless ? L"全画面" : L"ウィンドウ", u.disp.x + 55, u.disp.y + 6, 20, D2D1::ColorF(1, 1, 1));
-	m_textRenderer->DrawText(L"BGM", u.panel.x + 40, u.bgmTrack.y - 6, 20, D2D1::ColorF(1, 1, 1));
-	m_textRenderer->DrawText(L"SE", u.panel.x + 40, u.seTrack.y - 6, 20, D2D1::ColorF(1, 1, 1));
-	m_textRenderer->DrawText(L"画面シェイク", u.panel.x + 40, u.shake.y + 6, 18, D2D1::ColorF(1, 1, 1));
-	m_textRenderer->DrawText(s.screenShake ? L"ON" : L"OFF", u.shake.x + 46, u.shake.y + 6, 20, D2D1::ColorF(1, 1, 1));
-	m_textRenderer->DrawText(L"移動のカメラ追従", u.panel.x + 40, u.aimCam.y + 6, 18, D2D1::ColorF(1, 1, 1));
-	m_textRenderer->DrawText(s.aimCamera ? L"ON" : L"OFF", u.aimCam.x + 46, u.aimCam.y + 6, 20, D2D1::ColorF(1, 1, 1));
-	m_textRenderer->DrawText(L"タイトルに戻る", u.title.x + 24, u.title.y + 6, 20, D2D1::ColorF(1, 1, 1));
-	m_textRenderer->DrawText(L"ゲーム終了", u.gameEnd.x + 40, u.gameEnd.y + 6, 20, D2D1::ColorF(1, 0.9f, 0.9f));
-	m_textRenderer->DrawText(L"閉じる", u.close.x + 42, u.close.y + 8, 20, D2D1::ColorF(1, 1, 1));
+	// 文字はボタンの枠の中央に（手打ちのオフセットだと文字の幅でずれる）
+	auto inBtn = [&](const wchar_t* t, const URect& r, float size, D2D1_COLOR_F c) {
+		m_textRenderer->DrawTextCentered(t, r.x + r.w / 2.0f, r.y, r.w, size, c, r.h);
+		};
+	// 左の項目名は左揃えのまま、その行の縦の中央に
+	auto rowLabel = [&](const wchar_t* t, const URect& row, float size) {
+		float cy = row.y + row.h / 2.0f;
+		m_textRenderer->DrawText(t, u.panel.x + 40.0f, cy - size * 0.62f, size, D2D1::ColorF(1, 1, 1));
+		};
+	const D2D1_COLOR_F W = D2D1::ColorF(1, 1, 1);
+
+	inBtn(L"設定", { u.panel.x, u.panel.y + 10.0f, u.panel.w, 36.0f }, 26, D2D1::ColorF(1, 0.9f, 0.6f));
+
+	rowLabel(L"表示", u.disp, 20);
+	inBtn(s.displayMode == DisplayMode::Borderless ? L"全画面" : L"ウィンドウ", d.disp, 20, W);
+	rowLabel(L"BGM", u.bgmTrack, 20);
+	rowLabel(L"SE", u.seTrack, 20);
+	rowLabel(L"画面シェイク", u.shake, 18);
+	inBtn(s.screenShake ? L"ON" : L"OFF", d.shake, 20, W);
+	rowLabel(L"移動のカメラ追従", u.aimCam, 18);
+	inBtn(s.aimCamera ? L"ON" : L"OFF", d.aimCam, 20, W);
+	inBtn(L"タイトルに戻る", d.title, 20, W);
+	inBtn(L"ゲーム終了", d.gameEnd, 20, D2D1::ColorF(1, 0.9f, 0.9f));
+	inBtn(L"閉じる", d.close, 20, W);
+
+	// 音量の%（つまみの右、行の縦の中央）
 	wchar_t b[16];
-	swprintf_s(b, L"%d%%", (int)(s.bgmVolume * 100 + 0.5f)); m_textRenderer->DrawText(b, u.bgmTrack.x + u.bgmTrack.w + 14, u.bgmTrack.y - 6, 16, D2D1::ColorF(0.8f, 0.9f, 1));
-	swprintf_s(b, L"%d%%", (int)(s.seVolume * 100 + 0.5f));  m_textRenderer->DrawText(b, u.seTrack.x + u.seTrack.w + 14, u.seTrack.y - 6, 16, D2D1::ColorF(0.8f, 0.9f, 1));
+	auto pct = [&](float v, const URect& t) {
+		swprintf_s(b, L"%d%%", (int)(v * 100 + 0.5f));
+		m_textRenderer->DrawText(b, t.x + t.w + 14.0f, t.y + t.h / 2.0f - 16 * 0.62f, 16, D2D1::ColorF(0.8f, 0.9f, 1));
+		};
+	pct(s.bgmVolume, u.bgmTrack);
+	pct(s.seVolume, u.seTrack);
 	m_textRenderer->End();
 
 	if (m_confirmAction != 0)
@@ -1532,17 +1576,17 @@ void SceneManager::DrawSettings()
 		m_uiSprite->Begin();
 		m_uiSprite->DrawSprite(white, 0, 0, (float)m_screenWidth, (float)m_screenHeight, 0.0f, XMFLOAT4(0, 0, 0, 0.5f));
 		UiWindow::Draw(m_uiSprite, white, u.cfmPanel.x, u.cfmPanel.y, u.cfmPanel.w, u.cfmPanel.h);
-		UiWindow::Button(m_uiSprite, white, u.cfmYes.x, u.cfmYes.y, u.cfmYes.w, u.cfmYes.h,
+		UiWindow::Button(m_uiSprite, white, d.cfmYes.x, d.cfmYes.y, d.cfmYes.w, d.cfmYes.h,
 			u.cfmYes.has(mp) ? XMFLOAT4(0.75f, 0.30f, 0.30f, 1) : XMFLOAT4(0.50f, 0.24f, 0.24f, 1));
-		UiWindow::Button(m_uiSprite, white, u.cfmNo.x, u.cfmNo.y, u.cfmNo.w, u.cfmNo.h,
+		UiWindow::Button(m_uiSprite, white, d.cfmNo.x, d.cfmNo.y, d.cfmNo.w, d.cfmNo.h,
 			u.cfmNo.has(mp) ? XMFLOAT4(0.35f, 0.45f, 0.6f, 1) : XMFLOAT4(0.25f, 0.30f, 0.42f, 1));
 		m_uiSprite->End();
 
 		m_textRenderer->Begin();
 		const wchar_t* msg = (m_confirmAction == 1) ? L"ゲームを終了しますか？" : L"タイトルに戻りますか？";
-		m_textRenderer->DrawText(msg, u.cfmPanel.x + 50, u.cfmPanel.y + 44, 22, D2D1::ColorF(1, 1, 1));
-		m_textRenderer->DrawText(L"はい", u.cfmYes.x + 40, u.cfmYes.y + 9, 20, D2D1::ColorF(1, 0.9f, 0.9f));
-		m_textRenderer->DrawText(L"いいえ", u.cfmNo.x + 32, u.cfmNo.y + 9, 20, D2D1::ColorF(1, 1, 1));
+		m_textRenderer->DrawTextCentered(msg, u.cfmPanel.x + u.cfmPanel.w / 2.0f, u.cfmPanel.y + 30.0f, u.cfmPanel.w, 22, D2D1::ColorF(1, 1, 1), 50.0f);
+		m_textRenderer->DrawTextCentered(L"はい", u.cfmYes.x + u.cfmYes.w / 2.0f, u.cfmYes.y, u.cfmYes.w, 20, D2D1::ColorF(1, 0.9f, 0.9f), u.cfmYes.h);
+		m_textRenderer->DrawTextCentered(L"いいえ", u.cfmNo.x + u.cfmNo.w / 2.0f, u.cfmNo.y, u.cfmNo.w, 20, D2D1::ColorF(1, 1, 1), u.cfmNo.h);
 		m_textRenderer->End();
 	}
 

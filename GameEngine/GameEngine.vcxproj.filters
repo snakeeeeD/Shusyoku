@@ -555,6 +555,9 @@
     <ClInclude Include="EventDataBase.h">
       <Filter>ソース ファイル\02-Scene\40-FieldScene\10-Event\02-EventDataBase</Filter>
     </ClInclude>
+    <ClInclude Include="Se.h">
+      <Filter>ソース ファイル\04-Game内関連\03-Audio</Filter>
+    </ClInclude>
     <ClInclude Include="Audio.h">
       <Filter>ソース ファイル\04-Game内関連\03-Audio</Filter>
     </ClInclude>

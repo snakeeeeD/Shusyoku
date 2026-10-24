@@ -130,8 +130,6 @@ void Player::TakeDamage(int damage, DamageFeel feel)
         return;
     }
 
-    Audio::PlaySE("Assets/Sound/se/shield.mp3");
-
     // Vulnerable: 50%ëù
     if (m_buffManager.HasBuff(BuffType::Vulnerable))
         damage = damage * 150 / 100;
@@ -148,6 +146,7 @@ void Player::TakeDamage(int damage, DamageFeel feel)
     }
     m_hp -= damage;
     if (m_hp < 0) m_hp = 0;
+    Se::Play(damage > 0 ? Se::PlayerHurt : Se::Shield);   // í Ç¡ÇΩÇÁîÌíeÇÃâπÅAëSïîñhÇ¢ÇæÇÁèÇÇÃâπ
 
     if (damage > 0 && feel == DamageFeel::Hit)
     {

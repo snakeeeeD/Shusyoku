@@ -37,7 +37,8 @@ struct SettingsUI
           gear, 
           cfmPanel, 
           cfmYes, 
-          cfmNo; 
+          cfmNo;
+    bool  hasTitle = true;   // 「タイトルに戻る」を出すか（タイトル画面では出さない）
 };
 
 class SceneManager
@@ -281,13 +282,15 @@ private:
     int  m_confirmAction = 0;
     int  m_dragSlider = -1;               // 0=BGM,1=SE,-1=なし
     void DrawSettings();
+    void HandleSettingsInput();   // 設定パネルの操作（帯のある画面・タイトルの両方から）
     bool AnyModalOpen() const;
 
     SettingsUI SettingsLayout() const
     {
         SettingsUI u{};
+        u.hasTitle = (m_currentType != SceneType::Title);   // タイトルでは「タイトルに戻る」を出さない
         u.gear = { (float)m_screenWidth - 58.0f, 5.0f, 48.0f, 30.0f };
-        float pw = 440.0f, ph = 438.0f;               // タイトルボタン分だけ縦を拡張
+        float pw = 440.0f, ph = u.hasTitle ? 438.0f : 396.0f;   // 「タイトルに戻る」の分だけ縦に伸ばす
         float px = (m_screenWidth - pw) / 2.0f, py = (m_screenHeight - ph) / 2.0f;
         u.panel = { px, py, pw, ph };
         u.disp = { px + 180.0f, py + 54.0f, 200.0f, 34.0f };
@@ -295,8 +298,10 @@ private:
         u.seTrack = { px + 180.0f, py + 168.0f, 200.0f, 14.0f };
         u.shake = { px + 180.0f, py + 208.0f, 120.0f, 34.0f };
         u.aimCam = { px + 180.0f, py + 250.0f, 120.0f, 34.0f };
-        u.title = { px + pw / 2.0f - 90.0f, py + 292.0f, 180.0f, 34.0f };   // タイトルに戻る
-        u.gameEnd = { px + pw / 2.0f - 90.0f, py + 334.0f, 180.0f, 34.0f };
+        float by = py + 292.0f;
+        if (u.hasTitle) { u.title = { px + pw / 2.0f - 90.0f, by, 180.0f, 34.0f }; by += 42.0f; }   // タイトルに戻る
+        else            u.title = { -1000.0f, -1000.0f, 0.0f, 0.0f };                             // 画面外（押せない）
+        u.gameEnd = { px + pw / 2.0f - 90.0f, by, 180.0f, 34.0f };
         u.close = { px + pw / 2.0f - 70.0f, py + ph - 52.0f, 140.0f, 38.0f };
 
         // 確認ダイアログ（はい/いいえ）
@@ -322,6 +327,13 @@ private:
         const float xs[] = { (float)m_screenWidth - 680.0f, (float)m_screenWidth - 470.0f, (float)m_screenWidth - 220.0f };
         const float ws[] = { 36.0f, 90.0f, 100.0f };
         return { xs[i], 5.0f, ws[i], 30.0f };
+    }
+
+    // ホバー中のボタンは少し持ち上げて描く（判定と色は元の矩形のまま＝持ち上がっても外れない）
+    static constexpr float HOVER_LIFT = 3.0f;
+    URect Lifted(const URect& r)
+    {
+        return r.has(m_uiInput.GetMousePos()) ? URect{ r.x, r.y - HOVER_LIFT, r.w, r.h } : r;
     }
 
     // 上部のバー（HP・デッキ・設定など）を出すシーンか

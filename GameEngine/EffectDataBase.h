@@ -47,6 +47,8 @@ struct EffectDef
     std::string then;                 // 着弾後などに続けて鳴らすエフェクトid
     float thenDelay = 0.0f;           // その遅延(秒)
     float shake = 0.0f;               // 再生時の画面振動の強さ(0~1)
+    std::string se;                   // 再生時に鳴らすSE（Assets/Sound/se/ のファイル名）
+    float seVol = 1.0f;               // そのSEの音量
 };
 
 class EffectDataBase

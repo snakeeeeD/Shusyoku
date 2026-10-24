@@ -86,13 +86,11 @@ void TitleScene::Draw()
     m_spriteRenderer->End();
 
     m_textRenderer->Begin();
-    m_textRenderer->DrawText(L"ニューゲーム", nx + mw / 2.0f - 84.0f, ny + nDy + 15.0f, 28.0f, D2D1::ColorF(1, 1, 1));
+    m_textRenderer->DrawTextCentered(L"ニューゲーム", nx + mw / 2.0f, ny + nDy, mw, 28.0f, D2D1::ColorF(1, 1, 1), mh);
     if (hasSave)
-        m_textRenderer->DrawText(L"コンティニュー", cx + mw / 2.0f - 98.0f, cy + cDy + 15.0f, 28.0f, D2D1::ColorF(1, 1, 1));
-    m_textRenderer->DrawTextCentered(L"クイックプレイ（5分）", qx + qw / 2.0f, qy + qDy + 15.0f, qw, 26.0f, D2D1::ColorF(1, 1, 1));
-    const wchar_t* label = (Settings::Get().displayMode == DisplayMode::Borderless)
-        ? L"表示: 全画面" : L"表示: ウィンドウ";
-    m_textRenderer->DrawText(label, bx + 16.0f, by + dy + 9.0f, 20.0f, D2D1::ColorF(1, 1, 1));
+        m_textRenderer->DrawTextCentered(L"コンティニュー", cx + mw / 2.0f, cy + cDy, mw, 28.0f, D2D1::ColorF(1, 1, 1), mh);
+    m_textRenderer->DrawTextCentered(L"クイックプレイ（5分）", qx + qw / 2.0f, qy + qDy, qw, 26.0f, D2D1::ColorF(1, 1, 1), qh);
+    m_textRenderer->DrawTextCentered(L"設定", bx + bw / 2.0f, by + dy, bw, 20.0f, D2D1::ColorF(1, 1, 1), bh);
     m_textRenderer->End();
 }
 
@@ -122,12 +120,10 @@ void TitleScene::HandleInput()
 
     if (m_input.GetMouseButtonTrigger(0))
     {
-        if (hov)   // 表示モード切替
+        if (hov)   // 設定を開く（表示モードの切り替えも設定の中にある）
         {
-            DisplayMode next = (Settings::Get().displayMode == DisplayMode::Borderless)
-                ? DisplayMode::Windowed : DisplayMode::Borderless;
-            SetDisplayMode(next);
             Audio::PlaySE("Assets/Sound/se/click.mp3");
+            if (onOpenSettings) onOpenSettings();
             return;
         }
         if (nHov)   // ニューゲーム

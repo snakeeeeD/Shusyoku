@@ -7,6 +7,7 @@
 #include "RangeShape.h"
 #include "ScreenShake.h"
 #include "HitStop.h"
+#include "Se.h"
 #include <algorithm>
 #include <queue>
 #include <map>
@@ -786,6 +787,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             cell.tileEffect.duration = data.mainEffect.duration;
             const TerrainDef* tDef = TerrainDataBase::Get(data.mainEffect.trapType);
             if (tDef) cell.tileEffect.persistent = tDef->persistent;
+            Se::Play(Se::TrapSet);
             for (int i = 0; i < RelicManager::SumValue("trapDraw"); i++)   // 設置成功時のみ
             {
                 std::string did = deck.DrawCard();
@@ -810,6 +812,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                     if (tDef) cell.tileEffect.persistent = tDef->persistent;
                     placed++;
                 }
+            if (placed > 0) Se::Play(Se::TrapSet);
             if (placed > 0)   // 1マスでも新規設置できた時だけ1回ぶん
                 for (int i = 0; i < RelicManager::SumValue("trapDraw"); i++)
                 {

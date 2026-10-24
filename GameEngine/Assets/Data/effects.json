@@ -53,6 +53,8 @@
     },
     {
       "id": "explosion",
+      "se": "explosion.wav",
+      "seVol": 0.8,
       "bursts": [
         {
           "count": 50,
