@@ -33,6 +33,7 @@ struct Cell
 	CellType type;
 	GameObject gameObject;
 	TileEffect tileEffect;
+	int faith = 0;   // 信仰（聖地型）。0～10、10で聖域。ルールは Faith.h
 };
 
 class GridMap

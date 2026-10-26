@@ -366,6 +366,9 @@
     <ClInclude Include="GridMap.h">
       <Filter>ソース ファイル\04-Game内関連\20-GridMap</Filter>
     </ClInclude>
+    <ClInclude Include="Faith.h">
+      <Filter>ソース ファイル\04-Game内関連\20-GridMap</Filter>
+    </ClInclude>
     <ClInclude Include="GameObject.h">
       <Filter>ソース ファイル\03-Object関連\01-GameObject</Filter>
     </ClInclude>

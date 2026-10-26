@@ -247,6 +247,7 @@ void PlayerDataManager::RemoveCard(int index)
 {
 	if (index >= 0 && index < (int)m_data.deck.size())
 	{
+		if (!CardDataBase::CanRemove(m_data.deck[index])) return;   // 削除不可の呪いは、どの経路からも消さない
 		Telemetry::Instance().Log("card_remove", { {"id", m_data.deck[index]} });
 		m_data.deck.erase(m_data.deck.begin() + index);
 		Save();
@@ -326,6 +327,10 @@ void PlayerDataManager::AddRelic(const std::string& id)
 				if (m_data.hp > m_data.maxHp) m_data.hp = m_data.maxHp;   // 減った時は超えた分だけ削る
 			}
 			m_data.fieldSteps += d->ValueOf("steps");
+			// 取得時にデッキへカードを加える（ボスレリックの代償の呪いなど）。value は枚数（省略で1枚）
+			for (auto& e : d->extra)
+				if (e.kind == "addCard" && !e.param.empty())
+					for (int i = 0; i < (e.value > 0 ? e.value : 1); i++) m_data.deck.push_back(e.param);
 		}
 		Save();
 	}

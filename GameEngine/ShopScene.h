@@ -8,6 +8,7 @@
 #include "PlayerDataManager.h"
 #include "input.h"
 #include "Scenetype.h"
+#include "URect.h"
 #include <vector>
 #include <string>
 #include <functional>
@@ -38,6 +39,14 @@ private:
     void GenerateStock();
     void GetSlotBase(int i, float& cardX, float& baseY) const;
     int  PriceFor(const CardData* data) const;
+
+    // 値札（カードの下端からぶら下げる）。描画と文字で同じ矩形を使う
+    URect PriceTagRect(float cardX, float drawY) const
+    {
+        float x, y, w, h; CardVisual::GetRect(cardX, drawY, SHOP_SCALE, x, y, w, h);
+        const float tw = 92.0f, th = 30.0f;
+        return { x + (w - tw) / 2.0f, y + h - 8.0f, tw, th };   // 下端に少し重ねて「付いている」感じに
+    }
 
     SpriteRenderer* m_spriteRenderer = nullptr;
     TextRenderer* m_textRenderer = nullptr;
@@ -85,5 +94,7 @@ private:
 
     int   m_removeAnimIdx = -1;
     float m_removeAnimTimer = 0.0f;
+    float m_removeMsgTimer = 0.0f;                     // 「削除できない」の表示時間
+    static constexpr float REMOVE_MSG_DUR = 1.6f;
     static constexpr float REMOVE_ANIM_DUR = 1.4f;
 };

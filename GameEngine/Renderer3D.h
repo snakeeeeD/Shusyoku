@@ -68,6 +68,7 @@ public:
 
     void SetDepthWrite(bool enabled);
     void SetDepthEnabled(bool enabled);
+    void SetAdditive(bool on);   // 加算合成（下の模様を隠さず、上から光らせる描画用）
 
     bool InitPostProcess();
     void BeginOffscreen();               // 以降の描画をオフスクリーンへ
@@ -88,6 +89,7 @@ private:
     ComPtr<ID3D11Buffer> m_constantBuffer;
     ComPtr<ID3D11SamplerState> m_samplerState;
     ComPtr<ID3D11BlendState> m_blendState;
+    ComPtr<ID3D11BlendState> m_blendAdd;   // 加算合成
     ComPtr<ID3D11RasterizerState> m_rasterState;
     ComPtr<ID3D11DepthStencilState> m_depthStencilState;
     ComPtr<ID3D11DepthStencilView> m_depthStencilView;

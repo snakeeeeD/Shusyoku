@@ -141,6 +141,8 @@
     },
     {
       "id": "poison",
+      "se": "poison.wav",
+      "seVol": 0.7,
       "bursts": [
         {
           "count": 6,
@@ -157,6 +159,8 @@
     },
     {
       "id": "poison_apply",
+      "se": "poison.wav",
+      "seVol": 0.9,
       "bursts": [
         {
           "count": 4,
@@ -252,6 +256,8 @@
     },
     {
       "id": "weaken",
+      "se": "debuff.wav",
+      "seVol": 0.9,
       "bursts": [
         {
           "count": 20,
@@ -277,6 +283,8 @@
     },
     {
       "id": "expose",
+      "se": "debuff.wav",
+      "seVol": 0.9,
       "bursts": [
         {
           "count": 26,
@@ -376,10 +384,53 @@
       "id": "heal",
       "bursts": [
         {
-          "count": 10,
+          "count": 1,
+          "speed": 0.0,
+          "life": 0.6,
+          "scale": 1.1,
+          "gravity": -0.6,
+          "drag": 0.0,
+          "colorStart": [
+            0.45,
+            1.0,
+            0.55,
+            1.0
+          ],
+          "colorEnd": [
+            0.3,
+            0.9,
+            0.4,
+            0.0
+          ],
+          "texture": "cross",
+          "center": true
+        },
+        {
+          "count": 6,
+          "speed": 0.8,
+          "life": 1.0,
+          "scale": 0.28,
+          "gravity": -1.8,
+          "drag": 0.02,
+          "colorStart": [
+            0.5,
+            1.0,
+            0.6,
+            1.0
+          ],
+          "colorEnd": [
+            0.3,
+            0.8,
+            0.4,
+            0.0
+          ],
+          "texture": "cross"
+        },
+        {
+          "count": 8,
           "speed": 0.9,
           "life": 0.9,
-          "scale": 0.28,
+          "scale": 0.1,
           "gravity": -1.8,
           "drag": 0.02,
           "colorStart": [
@@ -604,7 +655,165 @@
           "flipX": true
         }
       ]
+    },
+    {
+      "id": "faith_mote",
+      "bursts": [
+        {
+          "count": 1,
+          "speed": 0.15,
+          "life": 1.4,
+          "scale": 0.05,
+          "gravity": -0.6,
+          "drag": 0.02,
+          "colorStart": [1.0, 0.9, 0.55, 0.9],
+          "colorEnd": [1.0, 0.75, 0.3, 0.0],
+          "texture": "particle"
+        }
+      ]
+    },
+    {
+      "id": "faith_smite",
+      "se": "faith_smite.wav",
+      "seVol": 0.7,
+      "bursts": [
+        {
+          "count": 1,
+          "speed": 0.0,
+          "life": 0.45,
+          "scale": 2.0,
+          "gravity": 0.0,
+          "drag": 0.0,
+          "colorStart": [
+            1.0,
+            0.92,
+            0.6,
+            1.0
+          ],
+          "colorEnd": [
+            1.0,
+            0.75,
+            0.3,
+            0.0
+          ],
+          "texture": "magic",
+          "center": true
+        },
+        {
+          "count": 14,
+          "speed": 2.6,
+          "life": 0.8,
+          "scale": 0.22,
+          "gravity": -2.5,
+          "drag": 0.03,
+          "colorStart": [
+            1.0,
+            0.95,
+            0.7,
+            1.0
+          ],
+          "colorEnd": [
+            1.0,
+            0.7,
+            0.25,
+            0.0
+          ],
+          "texture": "star"
+        },
+        {
+          "count": 20,
+          "speed": 0.8,
+          "life": 0.9,
+          "scale": 0.07,
+          "gravity": -4.0,
+          "drag": 0.02,
+          "colorStart": [
+            1.0,
+            0.9,
+            0.55,
+            1.0
+          ],
+          "colorEnd": [
+            1.0,
+            0.8,
+            0.4,
+            0.0
+          ],
+          "texture": "particle"
+        }
+      ]
+    },
+    {
+      "id": "faith_smite_big",
+      "se": "faith_smite.wav",
+      "seVol": 0.9,
+      "shake": 0.25,
+      "bursts": [
+        {
+          "count": 1,
+          "speed": 0.0,
+          "life": 0.55,
+          "scale": 3.0,
+          "gravity": 0.0,
+          "drag": 0.0,
+          "colorStart": [
+            1.0,
+            0.95,
+            0.7,
+            1.0
+          ],
+          "colorEnd": [
+            1.0,
+            0.75,
+            0.3,
+            0.0
+          ],
+          "texture": "magic",
+          "center": true
+        },
+        {
+          "count": 28,
+          "speed": 3.2,
+          "life": 0.9,
+          "scale": 0.26,
+          "gravity": -2.5,
+          "drag": 0.03,
+          "colorStart": [
+            1.0,
+            0.95,
+            0.7,
+            1.0
+          ],
+          "colorEnd": [
+            1.0,
+            0.7,
+            0.25,
+            0.0
+          ],
+          "texture": "star"
+        },
+        {
+          "count": 40,
+          "speed": 1.0,
+          "life": 1.0,
+          "scale": 0.08,
+          "gravity": -5.0,
+          "drag": 0.02,
+          "colorStart": [
+            1.0,
+            0.9,
+            0.55,
+            1.0
+          ],
+          "colorEnd": [
+            1.0,
+            0.8,
+            0.4,
+            0.0
+          ],
+          "texture": "particle"
+        }
+      ]
     }
-
   ]
 }

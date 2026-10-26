@@ -54,6 +54,9 @@ static void ParseCard(const json& c, CardData& data, CardData& up, bool& hasUp)
     data.ethereal = c.value("ethereal", false);
     data.retain = c.value("retain", false);
     data.endTurnDamage = c.value("endTurnDamage", 0);
+    data.endTurnAddCard = c.value("endTurnAddCard", "");
+    data.hideIntent = c.value("hideIntent", false);
+    data.permanent = c.value("permanent", false);
     data.pierce = c.value("pierce", false);
     data.dash = c.value("dash", false);
     data.drawBeforeDiscard = c.value("drawBeforeDiscard", false);
@@ -375,6 +378,7 @@ CardData CardDataBase::BuildCraftedFrom(const std::string& id, const BaseDef& ba
             case CardEffectType::Heal:       return L"回復" + std::to_wstring(e.value);
             case CardEffectType::Knockback:  return L"ノックバック";
             case CardEffectType::Pull:       return L"引き寄せ";
+            case CardEffectType::Engrave:    return L"信仰" + std::to_wstring(e.value);
             case CardEffectType::ApplyBuff:
             case CardEffectType::ApplyDebuff:
             {

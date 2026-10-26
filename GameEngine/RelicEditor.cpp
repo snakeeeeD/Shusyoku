@@ -316,6 +316,11 @@ namespace
                 ImGui::SameLine();
                 if (InputIntKey("value", ex[i], "value", 0, 90)) s.dirty = true;
                 ImGui::SameLine();
+                if (ex[i].value("kind", std::string()) == "addCard")   // 加えるカード
+                {
+                    if (ComboKey("card", ex[i], "param", CardIds(), "", false, 180)) s.dirty = true;
+                    ImGui::SameLine();
+                }
                 bool del = ImGui::Button("x");
                 ImGui::PopID();
                 if (del) { ex.erase(ex.begin() + i); s.dirty = true; break; }

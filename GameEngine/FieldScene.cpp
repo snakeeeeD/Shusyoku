@@ -842,7 +842,7 @@ void FieldScene::DrawImGui()
     ImGui::Text("Jump to Layer (test)");
     {
         static int archetype = 0;
-        const char* tags[] = { "Strike", "Poison", "Bulwark", "Knife", "Berserk", "Trap" };
+        const char* tags[] = { "Strike", "Poison", "Bulwark", "Knife", "Berserk", "Trap", "Faith" };
         ImGui::Combo("Archetype", &archetype, tags, IM_ARRAYSIZE(tags));
 
         auto jumpTo = [&](int layer, int relicsPer, int archN, int suppN, int randN)

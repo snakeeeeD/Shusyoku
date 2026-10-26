@@ -8,6 +8,7 @@
 #include "ScreenShake.h"
 #include "HitStop.h"
 #include "Se.h"
+#include "Faith.h"
 #include <algorithm>
 #include <queue>
 #include <map>
@@ -79,6 +80,13 @@ static void PlayOnHitVfx(const CardEffectData& e, Enemy* enemy, GridMap* gridMap
         FloatingTextManager::Spawn(wx, 0.7f, wz, std::to_wstring(shown),
             BuffInfo::Get(BuffType::Poison).color, 32.0f);
     }
+}
+
+// 命中時効果の「刻む」：当たった敵の立っているマスに信仰を刻む
+static void ApplyOnHitFaith(const CardEffectData& e, Enemy* enemy, GridMap* gridMap)
+{
+    if (!e.hasEffect || e.type != CardEffectType::Engrave || !enemy) return;
+    Faith::Engrave(gridMap, enemy->gridCol, enemy->gridRow, e.value);
 }
 
 static void ApplyAllEnemyEffect(const CardData& data, std::vector<Enemy*>& enemies, GridMap* gridMap)
@@ -200,6 +208,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                     player->TakeDamage(enemy->GetBuffManager().GetBuffValue(BuffType::Thorns));
                 CardEffect::ApplyOnHitEffect(data.onHitEffect, enemy->GetBuffManager());
                 PlayOnHitVfx(data.onHitEffect, enemy, gridMap);
+                ApplyOnHitFaith(data.onHitEffect, enemy, gridMap);   // 命中時の刻む
 
                 if (data.onHitEffect.hasEffect)
                 {
@@ -274,6 +283,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                             player->TakeDamage(enemy->GetBuffManager().GetBuffValue(BuffType::Thorns));
                         CardEffect::ApplyOnHitEffect(data.onHitEffect, enemy->GetBuffManager());
                         PlayOnHitVfx(data.onHitEffect, enemy, gridMap);
+                        ApplyOnHitFaith(data.onHitEffect, enemy, gridMap);   // 命中時の刻む
                     }
                 }
 
@@ -384,6 +394,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                             player->TakeDamage(hitEnemy->GetBuffManager().GetBuffValue(BuffType::Thorns));
                         CardEffect::ApplyOnHitEffect(data.onHitEffect, hitEnemy->GetBuffManager());
                         PlayOnHitVfx(data.onHitEffect, hitEnemy, gridMap);
+                        ApplyOnHitFaith(data.onHitEffect, hitEnemy, gridMap);   // 命中時の刻む
                     }
 
                     result.cardUsed = true;
@@ -527,7 +538,9 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             CardEffect::ApplyOnHitEffect(data.onHitEffect, target->GetBuffManager());
             CardEffect::ApplyOnHitEffect(data.onHitEffect2, target->GetBuffManager());
             PlayOnHitVfx(data.onHitEffect, target, gridMap); 
+            ApplyOnHitFaith(data.onHitEffect, target, gridMap);   // 命中時の刻む
             PlayOnHitVfx(data.onHitEffect2, target, gridMap);
+            ApplyOnHitFaith(data.onHitEffect2, target, gridMap);   // 命中時の刻む
 
             // ノックバック/引き寄せ
             if (data.onHitEffect.hasEffect)
@@ -734,6 +747,27 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             if (!gridMap->GetCell(targetCol, targetRow).tileEffect.active) return result;
         }
 
+        // 聖地型：使えない時は不発（ノーコスト）
+        {
+            int myFaith = Faith::At(gridMap, playerCol, playerRow);
+            CardEffectType mt = data.mainEffect.type;
+            if (mt == CardEffectType::Engrave && data.range > 0
+                && (!RangeShape::Contains(playerCol, playerRow, targetCol, targetRow, data.rangeType, data.range)
+                    || targetCol < 0 || targetRow < 0 || targetCol >= gridMap->GetCols() || targetRow >= gridMap->GetRows()))
+                return result;                                                       // 刻むマスが射程外
+            if (mt == CardEffectType::Miracle && myFaith <= 0) return result;       // 払う信仰が無い
+            if (mt == CardEffectType::Purify && myFaith < data.mainEffect.value) return result;   // 信仰が足りない
+            if (mt == CardEffectType::Judgement)
+            {
+                bool any = false;
+                for (auto en : enemies)
+                    if (en && en->GetHp() > 0)
+                        for (auto& c : en->OccupiedCells())
+                            if (Faith::At(gridMap, c.first, c.second) > 0) { any = true; break; }
+                if (!any) return result;                                             // 聖地に敵がいない
+            }
+        }
+
         player->UseEnergy(data.cost);
 
         switch (data.mainEffect.type)
@@ -881,6 +915,44 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             result.chainFull = (data.mainEffect.value > 0);
             break;   // 実際の起爆はBattleSceneが時間差で行う
         }
+        case CardEffectType::Engrave:   // 射程0なら自分のマス、射程があれば選んだマス
+            if (data.range > 0) Faith::Engrave(gridMap, targetCol, targetRow, data.mainEffect.value);
+            else                Faith::Engrave(gridMap, playerCol, playerRow, data.mainEffect.value);
+            break;
+        case CardEffectType::EngraveArea:
+            for (int r = 0; r < gridMap->GetRows(); r++)
+                for (int c = 0; c < gridMap->GetCols(); c++)
+                    if (RangeShape::Contains(playerCol, playerRow, c, r, data.rangeType, data.range)
+                        || (c == playerCol && r == playerRow))
+                        Faith::Engrave(gridMap, c, r, data.mainEffect.value);
+            break;
+        case CardEffectType::Judgement:   // 聖地に立つ敵すべてに 信仰×value
+            for (auto en : enemies)
+            {
+                if (!en || en->GetHp() <= 0) continue;
+                int best = 0;
+                for (auto& c : en->OccupiedCells())
+                    if (int f = Faith::At(gridMap, c.first, c.second); f > best) best = f;
+                if (best <= 0) continue;
+                en->TakeDamage(best * data.mainEffect.value);
+                EffectManager::Play("area_burst", en->worldX, en->worldY + 0.5f, en->worldZ);
+            }
+            break;
+        case CardEffectType::Miracle:   // 自分のマスの信仰を全て払い、範囲の敵に 払った信仰×value
+        {
+            int paid = Faith::At(gridMap, playerCol, playerRow);
+            gridMap->GetCell(playerCol, playerRow).faith = 0;
+            for (auto en : GetEnemiesInRange(data, playerCol, playerRow, enemies, 0, 0))
+            {
+                en->TakeDamage(paid * data.mainEffect.value);
+                EffectManager::Play("area_burst", en->worldX, en->worldY + 0.5f, en->worldZ);
+            }
+            break;
+        }
+        case CardEffectType::Purify:   // 信仰を払って、手札の呪いを廃棄（廃棄そのものはシーン側）
+            gridMap->GetCell(playerCol, playerRow).faith -= data.mainEffect.value;
+            result.purgeHandCurses = true;
+            break;
         case CardEffectType::Search:
         case CardEffectType::Salvage:
             result.pendingSelection = data.mainEffect.type;
@@ -947,6 +1019,9 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 hand.AddCard(data.subEffect.cardId);
                 result.drawnCards.push_back(data.subEffect.cardId);
             }
+            break;
+        case CardEffectType::Engrave:   // 自分のマス（移動カードなら移動前のマス）に刻む
+            Faith::Engrave(gridMap, playerCol, playerRow, data.subEffect.value);
             break;
         case CardEffectType::Discard:
             pendingDiscard += data.subEffect.value;

@@ -33,6 +33,11 @@ enum class CardEffectType
     DrainPoison, // 毒を吸収
     PoisonBurst, // 毒を即発動
     BlockDamage, // ブロック分ダメージ
+    Engrave,     // 信仰を刻む（射程0=自分のマス／射程あり=選んだマス／サブ=自分のマス／命中時=敵のマス）
+    EngraveArea, // 自分の周りの範囲すべてに信仰を刻む
+    Judgement,   // 聖地に立つ敵すべてに、そのマスの信仰×value のダメージ
+    Miracle,     // 自分のマスの信仰を全て払い、範囲の敵に 払った信仰×value のダメージ
+    Purify,      // 自分のマスの信仰を value 払い、手札の呪いを全て廃棄
 };
 
 // カードレアリティ
@@ -88,6 +93,9 @@ struct CardData
     bool ethereal = false;     // ターン終了時、手札にあると廃棄（消滅）
     bool retain = false;       // ターン終了時に捨てず手札に保持
     int  endTurnDamage = 0;    // ターン終了時、手札にあると受けるダメージ
+    std::string endTurnAddCard;   // ターン終了時、手札にあると捨て札に加えるカード（呪い・増殖）
+    bool hideIntent = false;      // 手札にある間、敵の行動予告を隠す（呪い・目隠し）
+    bool permanent = false;       // 削除・変化できない（強い呪い）。判定は CardDataBase::CanRemove
 
     bool scaleByTrapCount = false;
 

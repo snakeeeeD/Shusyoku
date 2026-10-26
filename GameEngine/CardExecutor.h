@@ -30,6 +30,7 @@ public:
         bool seqFull = false;
         bool placeDecoy = false;
         int  decoyCol = 0, decoyRow = 0;
+        bool purgeHandCurses = false;   // 浄化：手札の呪いを廃棄してほしい（演出があるのでシーン側で行う）
     };
 
     struct MovePreview 

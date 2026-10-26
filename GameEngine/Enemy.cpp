@@ -329,9 +329,9 @@ void Enemy::TakeDamage(int damage, DamageFeel feel)
         return;
     }
 
-    if (feel == DamageFeel::Poison)
+    if (feel == DamageFeel::Poison || feel == DamageFeel::Holy)
     {
-        // 毒はブロック/弱体を無視して表示値通り与える
+        // 毒・聖地の焼きはブロック/弱体を無視して表示値通り与える
         m_HP -= damage;
         if (m_HP < 0) m_HP = 0;
         DamageFeedback::Play(feel, worldX, worldY + height * 0.5f, worldZ, damage, 0);

@@ -538,7 +538,7 @@ namespace
             else u.erase("description");
             s.dirty = true;
         }
-        if (overrideDesc && InputTextKey("description##up", u, "description", 360)) s.dirty = true;
+        if (overrideDesc && InputTextMultilineKey("description##up", u, "description", 360, 50)) s.dirty = true;   // 改行を含む説明も編集できるよう複数行
 
         if (ImGui::SmallButton("remove upgrade")) { c.erase("upgrade"); s.dirty = true; }
     }
@@ -561,7 +561,7 @@ namespace
         ImGui::SameLine();
         if (IntKeyOmitZero("hits", c, "hits")) s.dirty = true;
 
-        if (InputTextKey("description", c, "description", 420)) s.dirty = true;
+        if (InputTextMultilineKey("description", c, "description", 420, 60)) s.dirty = true;   // 改行を含む説明文も編集できるよう複数行
         {
             std::string ph;
             for (const char* p : EnumNames::CardPlaceholders) { ph += p; ph += " "; }
@@ -584,6 +584,10 @@ namespace
         if (FlagKey("scaleByTrapCount", c, "scaleByTrapCount")) s.dirty = true; ImGui::SameLine();
         if (IntKeyOmitZero("selfDamage", c, "selfDamage")) s.dirty = true;  ImGui::SameLine();
         if (IntKeyOmitZero("endTurnDamage", c, "endTurnDamage")) s.dirty = true;
+        // 呪い用：手札にある間、敵の予告を隠す／ターン終了時に手札にあると捨て札へカードを加える
+        if (FlagKey("hideIntent", c, "hideIntent")) s.dirty = true;         ImGui::SameLine();
+        if (FlagKey("permanent", c, "permanent")) s.dirty = true;           ImGui::SameLine();
+        if (ComboKey("endTurnAddCard", c, "endTurnAddCard", CardIds(), "", true, 180)) s.dirty = true;
 
         // ---- 効果の部品 ----
         DrawEffectBlock(c, "mainEffect", u8"メインの効果（必須）", true);

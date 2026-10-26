@@ -134,6 +134,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("magic", L"Assets/Particles/magic.png");
 		TextureManager::Load("smoke", L"Assets/Particles/smoke.png");
 		TextureManager::Load("star", L"Assets/Particles/star.png");
+		TextureManager::Load("cross", L"Assets/Particles/cross.png");   // 回復の十字
 		TextureManager::Load("skull", L"Assets/Particles/skull.png");
 		TextureManager::Load("crosshair", L"Assets/Particles/crosshair.png");
 
@@ -283,6 +284,14 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 			TextureManager::Load("ui_card", L"Assets/UI/ui_card.png");
 			TextureManager::Load("ui_cost", L"Assets/UI/ui_cost.png");
 			TextureManager::Load("ui_hazard", L"Assets/UI/ui_hazard.png");
+			for (int i = 1; i <= 10; i++)   // 信仰の紋章（外周10区切りのうち i 個が光る）
+			{
+				wchar_t path[64]; swprintf_s(path, L"Assets/UI/faith_%d.png", i);
+				char key[16]; sprintf_s(key, "faith_%d", i);
+				TextureManager::Load(key, path);
+			}
+			TextureManager::Load("faith_aura", L"Assets/UI/faith_aura.png");       // 聖地の四角いオーラ
+			TextureManager::Load("faith_pillar", L"Assets/UI/faith_pillar.png");   // 聖地に立つ敵の前の光
 			TextureManager::Load("ui_threat", L"Assets/UI/ui_threat.png");
 			TextureManager::Load("mat_core", L"Assets/UI/mat_core.png");
 			TextureManager::Load("mat_material", L"Assets/UI/mat_material.png");
@@ -339,6 +348,10 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 			TextureManager::Load("buff_weak", L"Assets/UI/buff_weak.png");
 			TextureManager::Load("buff_vulnerable", L"Assets/UI/buff_vulnerable.png");
 			TextureManager::Load("buff_poison", L"Assets/UI/buff_poison.png");
+			TextureManager::Load("buff_holyground", L"Assets/UI/buff_holyground.png");
+			TextureManager::Load("buff_sanctuary", L"Assets/UI/buff_sanctuary.png");
+			TextureManager::Load("buff_guardianvow", L"Assets/UI/buff_guardianvow.png");
+			TextureManager::Load("buff_cathedral", L"Assets/UI/buff_cathedral.png");
 			TextureManager::Load("buff_burn", L"Assets/UI/buff_burn.png");
 			TextureManager::Load("buff_attackup", L"Assets/UI/buff_attackup.png");
 			TextureManager::Load("buff_rangeup", L"Assets/UI/buff_rangeup.png");
@@ -903,6 +916,14 @@ static bool CanUpgrade(const std::string& id)
 	if (id.rfind("CRAFT:", 0) == 0) return false;        // 合成カードは強化不可
 	if (!id.empty() && id.back() == '+') return false;   // 強化済み
 	return CardDataBase::Get(id + "+") != nullptr;        // +版があるか
+}
+
+// イベントのカード選択で、このカードを選べるか（強化：強化できるもの／削除・変化：外せるもの）
+static bool EventPickable(const std::string& type, const std::string& id)
+{
+	if (type == "upgradeCard") return CanUpgrade(id);
+	if (type == "removeCard" || type == "transformCard") return CardDataBase::CanRemove(id);
+	return true;
 }
 
 std::vector<int> SceneManager::VisibleDeckIndices() const
@@ -2955,11 +2976,13 @@ void SceneManager::DrawBossRelicPick()
 	m_uiSprite->DrawSprite(white, 0, BAR_H, (float)m_screenWidth, (float)m_screenHeight - BAR_H, 0.0f,
 		XMFLOAT4(0.05f, 0.03f, 0.09f, 0.92f));
 	m_uiSprite->DrawSprite(TextureManager::Get("ui_banner"), bnX, bnY, bnW, bnH, 0.0f, XMFLOAT4(1, 1, 1, 1));
+	int hovIdx = -1;
 	for (int i = 0; i < n; i++)
 	{
 		URect r = BossRelicCardRect(i, n);
 		char key[16]; sprintf_s(key, "boss%d", i);
 		bool hov = UiHover(r.x, r.y, r.w, r.h, mp, key, s_lastHoverKey);
+		if (hov) hovIdx = i;
 		float y = hov ? r.y - 6.0f : r.y;
 		UiWindow::Draw(m_uiSprite, white, r.x, y, r.w, r.h);
 		if (hov) UiWindow::Frame(m_uiSprite, white, r.x, y, r.w, r.h, XMFLOAT4(1.0f, 0.85f, 0.2f, 1.0f));
@@ -3009,6 +3032,29 @@ void SceneManager::DrawBossRelicPick()
 	m_textRenderer->DrawTextCentered(L"受け取らない", sk.x + sk.w / 2.0f, skHov ? sk.y - 3.0f : sk.y, sk.w, 18.0f,
 		D2D1::ColorF(1, 1, 1), sk.h);
 	m_textRenderer->End();
+
+	// ホバー中のレリックが代償でカードを加えるなら、その実物を窓の右に並べる
+	// （隣の窓の文字より手前に出したいので、全部描いた後に別のパスで描く）
+	if (hovIdx >= 0)
+	{
+		const RelicDef* hd = RelicManager::Get(choices[hovIdx]);
+		const CardData* ac = (hd && !hd->AddedCard().empty()) ? CardDataBase::Get(hd->AddedCard()) : nullptr;
+		if (ac)
+		{
+			const float S = 1.2f;
+			URect r = BossRelicCardRect(hovIdx, n);
+			float cx = r.x + r.w + 24.0f, cy = r.y + 60.0f;   // カードの基準位置
+			m_uiSprite->Begin();
+			CardVisual::DrawBase(m_uiSprite, white, cx, cy, S, 0.0f, CardVisual::GetCardColor(ac->type, false), ac, m_uiTime);
+			m_uiSprite->End();
+			m_textRenderer->Begin();
+			CardVisual::DrawTexts(m_textRenderer, ac, nullptr, cx, cy, S, 0.0f, 1.0f);
+			float x, y, w, h; CardVisual::GetRect(cx, cy, S, x, y, w, h);
+			m_textRenderer->DrawOutlinedTextCentered(L"代償で加わる", x + w / 2.0f, y - 30.0f, w + 40.0f, 24.0f, 16.0f,
+				D2D1::ColorF(1.0f, 0.45f, 0.45f), D2D1::ColorF(0, 0, 0), 1.5f);
+			m_textRenderer->End();
+		}
+	}
 }
 
 static std::string EventPickerType(const EventChoice& c)
@@ -3043,7 +3089,7 @@ int SceneManager::EventCardAt(POINT p) const
 	auto& deck = PlayerDataManager::GetData().deck;
 	for (int i = 0; i < (int)deck.size(); i++)
 	{
-		if (m_eventPickType == "upgradeCard" && !CanUpgrade(deck[i])) continue;   // 強化できないカードは選べない
+		if (!EventPickable(m_eventPickType, deck[i])) continue;   // 強化できない／外せないカードは選べない
 		float bx, by; GetEventCardSlot(i, bx, by);
 		float x, y, w, h; CardVisual::GetRect(bx, by, 0.85f, x, y, w, h);
 		if (p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h) return i;
@@ -3143,7 +3189,7 @@ void SceneManager::DrawEventPicker()
 			UiWindow::Frame(m_uiSprite, white, rx, ry, rw, rh, XMFLOAT4(1.0f, 0.85f, 0.2f, 1.0f));
 		}
 		CardVisual::DrawBase(m_uiSprite, white, bx, by, 0.85f, 0.0f, CardVisual::GetCardColor(d->type), d, m_uiTime);
-		if (m_eventPickType == "upgradeCard" && !CanUpgrade(deck[i]))   // 強化できないカードは暗く
+		if (!EventPickable(m_eventPickType, deck[i]))   // 選べないカードは暗く
 		{
 			float rx, ry, rw, rh; CardVisual::GetRect(bx, by, 0.85f, rx, ry, rw, rh);
 			m_uiSprite->DrawSprite(white, rx, ry, rw, rh, 0.0f, XMFLOAT4(0, 0, 0, 0.55f));

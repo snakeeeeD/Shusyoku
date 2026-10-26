@@ -60,4 +60,8 @@ enum class BuffType
     DrawPerTurn,    // 毎ターン開始時、追加でカードを引く
     Invincible,     // 無敵：ダメージ完全無効（3層ボス）
     HeadWeak,       // 頭は弱点：頭に攻撃で2倍（表示用）
+    HolyGround,     // 聖地の加護：攻撃+value（立っているマスの信仰から毎フレーム付け外し）
+    Sanctuary,      // 聖域の加護：受けるダメージ半分（同上）
+    GuardianVow,    // 守護の誓い：ターン終了時、聖地に立っていればブロック+value
+    Cathedral,      // 大聖堂：ターン開始時、聖地に立っていれば周り8マスに信仰+value
 };

@@ -1102,6 +1102,10 @@
       "id": "warden",
       "drops": [
         {
+          "id": "holy_water_shard",
+          "chance": 9
+        },
+        {
           "id": "iron_shard",
           "chance": 16
         },
@@ -1266,6 +1270,10 @@
     {
       "id": "wraith",
       "drops": [
+        {
+          "id": "holy_water_shard",
+          "chance": 10
+        },
         {
           "id": "venom_fang",
           "chance": 14

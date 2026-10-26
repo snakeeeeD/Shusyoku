@@ -42,6 +42,11 @@ public:
         case CardEffectType::Catalyst:      name = L"触媒";       desc = L"付与された毒を倍化する"; return true;
         case CardEffectType::DrainPoison:   name = L"毒吸収";     desc = L"敵の毒を奪う"; return true;
         case CardEffectType::PoisonBurst:   name = L"毒爆発";     desc = L"毒を即時ダメージに変える"; return true;
+        case CardEffectType::Engrave:
+        case CardEffectType::EngraveArea:   name = L"刻む";       desc = L"マスに信仰を刻む。信仰のあるマスは聖地、10で聖域になる"; return true;
+        case CardEffectType::Judgement:     name = L"審判";       desc = L"聖地に立つ敵に、そのマスの信仰に応じたダメージ"; return true;
+        case CardEffectType::Miracle:       name = L"奇跡";       desc = L"足元の信仰を全て払い、払った分に応じたダメージ"; return true;
+        case CardEffectType::Purify:        name = L"浄化";       desc = L"手札の呪いを廃棄する"; return true;
         default: return false;
         }
     }
@@ -76,6 +81,9 @@ public:
         if (d->pierce)        push(L"貫通", L"敵を貫通して攻撃できる");
         if (d->hits > 1)      push(L"連撃", L"複数回ヒットする");
         if (d->selfDamage > 0)push(L"自傷", L"自分もダメージを受ける");
+        if (!d->endTurnAddCard.empty()) push(L"増殖", L"ターン終了時に手札にあると、横のカードを捨て札に加える");
+        if (d->hideIntent)    push(L"目くらまし", L"手札にある間、敵の行動予告が見えなくなる");
+        if (d->permanent)     push(L"削除不可", L"ショップやイベントで削除・変化できない");
         return out;
     }
 
@@ -124,6 +132,7 @@ public:
     static const CardData* GeneratedCard(const CardData* d)
     {
         if (!d) return nullptr;
+        if (!d->endTurnAddCard.empty()) return CardDataBase::Get(d->endTurnAddCard);   // 呪い・増殖などが加えるカード
         const CardEffectData* es[] = { &d->mainEffect, &d->onHitEffect, &d->onHitEffect2,
                                        &d->onDiscardEffect, &d->subEffect, &d->allEnemyEffect };
         for (auto* e : es)

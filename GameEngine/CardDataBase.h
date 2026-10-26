@@ -14,6 +14,8 @@ public:
     // JSON1枚分の文字列から CardData を作る（エディタのプレビュー用）。upgrade があれば強化版も作り hasUpgrade=true
     static bool ParseCardText(const std::string& jsonText, CardData& base, CardData& upgraded, bool& hasUpgrade);
     static const CardData* Get(const std::string& id);
+    // デッキから外せるか（削除・変化の対象にできるか）。permanent のカードは外せない
+    static bool CanRemove(const std::string& id) { const CardData* d = Get(id); return !(d && d->permanent); }
 
     static const std::unordered_map<std::string, CardData>& GetAll() { return m_data; }
     static CardData BuildCrafted(const std::string& id);

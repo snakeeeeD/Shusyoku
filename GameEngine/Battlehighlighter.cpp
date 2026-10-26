@@ -149,6 +149,7 @@ void BattleHighlighter::UpdatePlayerHighlight(
             bool isDangerCell = false;
             for (auto enemy : enemies)
             {
+                if (EnemyIntentVisual::Hidden()) break;   // 目隠し中は危険マスも分からない
                 const EnemyAction* action = enemy->GetNextAction();
                 if (!action || !EnemyIntentVisual::IsHarmful(*action)) continue;
                 // 必中は自分のマスだけ危険。それ以外は形状で判定
@@ -290,6 +291,7 @@ void BattleHighlighter::UpdatePlayerHighlight(
         bool isDangerCell = false;
         for (auto enemy : enemies)
         {
+            if (EnemyIntentVisual::Hidden()) break;   // 目隠し中は危険マスも分からない
             const EnemyAction* action = enemy->GetNextAction();
             if (!action || !EnemyIntentVisual::IsHarmful(*action)) continue;
 
@@ -347,6 +349,7 @@ void BattleHighlighter::UpdateEnemyHighlight(
 
     ClearEnemyHighlight(gridMap);
     for (auto e : enemies) { e->color = HighlightPalette::EnemyNormal; e->hitsPlayer = false; }
+    if (EnemyIntentVisual::Hidden()) return;   // 目隠し：攻撃範囲と「当ててくる」印を出さない
 
     std::map<std::pair<int, int>, std::pair<int, int>> cellOwner;  // マス -> (距離, 敵index)
     std::set<std::pair<int, int>> selCells;

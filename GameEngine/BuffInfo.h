@@ -54,6 +54,10 @@ struct BuffInfo
             { L"追加ドロー+",         L"毎ターン開始時 カードを{value}枚多く引く",               {0.4f, 0.8f, 0.9f, 1.0f},    "buff_knifegen" },      // DrawPerTurn
             { L"無敵",                L"ダメージを完全に無効化する",                             {0.55f, 0.8f, 1.0f, 1.0f},   "buff_barricade" },     // Invincible
             { L"弱点",                L"頭を攻撃すると 与ダメージ{value}倍",                     {0.9f, 0.3f, 0.3f, 1.0f},    "buff_headweak" },   // HeadWeak
+            { L"聖地の加護",          L"聖地に立っている間 攻撃力+{value}",                      {1.0f, 0.85f, 0.35f, 1.0f},  "buff_holyground" }, // HolyGround
+            { L"聖域の加護",          L"聖域に立っている間 受けるダメージ半分",                  {1.0f, 0.95f, 0.6f, 1.0f},   "buff_sanctuary" },  // Sanctuary
+            { L"守護の誓い",          L"ターン終了時 聖地に立っていれば ブロック+{value}",       {1.0f, 0.85f, 0.35f, 1.0f},  "buff_guardianvow" }, // GuardianVow
+            { L"大聖堂",              L"ターン開始時 聖地に立っていれば 周りのマスに信仰+{value}", {1.0f, 0.85f, 0.35f, 1.0f},  "buff_cathedral" },   // Cathedral
         };
         return infos[static_cast<int>(type)];
     }

@@ -2590,6 +2590,402 @@
         "type": "None",
         "value": 0
       }
+    },
+    {
+      "id": "cursed_spread",
+      "name": "呪い・増殖",
+      "type": "Curse",
+      "rarity": "Common",
+      "cost": 0,
+      "range": 0,
+      "rangeType": "None",
+      "description": "使用不可。\nターン終了時、手札にあると\n捨て札に分裂体を1枚加える",
+      "generated": true,
+      "unplayable": true,
+      "endTurnAddCard": "cursed_spawn",
+      "mainEffect": {
+        "type": "None",
+        "value": 0
+      }
+    },
+    {
+      "id": "cursed_spawn",
+      "name": "呪いの分裂体",
+      "type": "Curse",
+      "rarity": "Common",
+      "cost": 0,
+      "range": 0,
+      "rangeType": "None",
+      "description": "使用不可。\nターン終了時、手札にあると廃棄",
+      "generated": true,
+      "unplayable": true,
+      "ethereal": true,
+      "mainEffect": {
+        "type": "None",
+        "value": 0
+      }
+    },
+    {
+      "id": "cursed_blind",
+      "name": "呪い・目くらまし",
+      "type": "Curse",
+      "rarity": "Common",
+      "cost": 0,
+      "range": 0,
+      "rangeType": "None",
+      "description": "使用不可。\n手札にある間、\n敵の行動が見えなくなる",
+      "generated": true,
+      "unplayable": true,
+      "hideIntent": true,
+      "mainEffect": {
+        "type": "None",
+        "value": 0
+      }
+    },
+    {
+      "id": "cursed_blindness",
+      "name": "呪い・盲目",
+      "type": "Curse",
+      "rarity": "Common",
+      "cost": 0,
+      "range": 0,
+      "rangeType": "None",
+      "description": "使用不可。\n手札にある間、\n敵の行動が見えなくなる",
+      "generated": true,
+      "unplayable": true,
+      "hideIntent": true,
+      "permanent": true,
+      "mainEffect": {
+        "type": "None",
+        "value": 0
+      }
+    },
+    {
+      "id": "SKL_prayer",
+      "name": "祈り",
+      "type": "Skill",
+      "rarity": "Common",
+      "tags": [
+        "Faith"
+      ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "足元に信仰を{value}刻む。\nブロック{sub}",
+      "upgrade": {
+        "mainValue": 1,
+        "subValue": 2
+      },
+      "mainEffect": {
+        "type": "Engrave",
+        "value": 3
+      },
+      "subEffect": {
+        "type": "Block",
+        "value": 4
+      }
+    },
+    {
+      "id": "SKL_lamp",
+      "name": "灯火",
+      "type": "Skill",
+      "rarity": "Common",
+      "tags": [
+        "Faith"
+      ],
+      "cost": 1,
+      "range": 2,
+      "rangeType": "Diamond",
+      "description": "選んだマスに\n信仰を{value}刻む",
+      "upgrade": {
+        "mainValue": 2
+      },
+      "mainEffect": {
+        "type": "Engrave",
+        "value": 3
+      }
+    },
+    {
+      "id": "MOV_pilgrimage",
+      "name": "巡礼",
+      "type": "Move",
+      "rarity": "Common",
+      "tags": [
+        "Faith"
+      ],
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "隣接マスへ移動。\n移動前のマスに\n信仰を{sub}刻む",
+      "upgrade": {
+        "subValue": 2
+      },
+      "mainEffect": {
+        "type": "None",
+        "value": 0
+      },
+      "subEffect": {
+        "type": "Engrave",
+        "value": 2
+      }
+    },
+    {
+      "id": "ATK_holy_strike",
+      "name": "聖なる一撃",
+      "type": "Attack",
+      "rarity": "Common",
+      "tags": [
+        "Faith"
+      ],
+      "vfx": "slash",
+      "vfxColor": [
+        1.0,
+        0.85,
+        0.4
+      ],
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "{value}ダメージ。\n当たった敵の足元に\n信仰を{onhit}刻む",
+      "upgrade": {
+        "mainValue": 3,
+        "onHitValue": 1
+      },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 6
+      },
+      "onHitEffect": {
+        "type": "Engrave",
+        "value": 1
+      }
+    },
+    {
+      "id": "SKL_kneel",
+      "name": "跪く",
+      "type": "Skill",
+      "rarity": "Common",
+      "tags": [
+        "Faith"
+      ],
+      "cost": 0,
+      "range": 0,
+      "rangeType": "None",
+      "description": "足元に信仰を{value}刻む。\nこのターン移動できない",
+      "upgrade": {
+        "mainValue": 2
+      },
+      "mainEffect": {
+        "type": "Engrave",
+        "value": 4
+      },
+      "subEffect": {
+        "type": "ApplyBuff",
+        "value": 1,
+        "duration": 1,
+        "buffType": "MoveLock"
+      }
+    },
+    {
+      "id": "SKL_consecrate",
+      "name": "聖別",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "tags": [
+        "Faith"
+      ],
+      "cost": 2,
+      "range": 1,
+      "rangeType": "Area",
+      "description": "自分と周りのマスに\n信仰を{value}刻む",
+      "upgrade": {
+        "mainValue": 1
+      },
+      "mainEffect": {
+        "type": "EngraveArea",
+        "value": 2
+      }
+    },
+    {
+      "id": "ATK_beckon",
+      "name": "誘いの祈り",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "tags": [
+        "Faith"
+      ],
+      "vfx": "slash",
+      "vfxColor": [
+        1.0,
+        0.85,
+        0.4
+      ],
+      "cost": 1,
+      "range": 2,
+      "rangeType": "Cross",
+      "description": "{value}ダメージ、\n{onhit}マス引き寄せる。\n足元に信仰を{sub}刻む",
+      "upgrade": {
+        "subValue": 2
+      },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 3
+      },
+      "onHitEffect": {
+        "type": "Pull",
+        "value": 2
+      },
+      "subEffect": {
+        "type": "Engrave",
+        "value": 2
+      }
+    },
+    {
+      "id": "SKL_judgement",
+      "name": "審判",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "tags": [
+        "Faith"
+      ],
+      "cost": 2,
+      "range": 0,
+      "rangeType": "None",
+      "description": "聖地に立つ敵すべてに\n信仰×{value}ダメージ",
+      "upgrade": {
+        "mainValue": 1
+      },
+      "mainEffect": {
+        "type": "Judgement",
+        "value": 2
+      }
+    },
+    {
+      "id": "SKL_purify",
+      "name": "浄化",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "tags": [
+        "Faith"
+      ],
+      "cost": 0,
+      "range": 0,
+      "rangeType": "None",
+      "description": "足元の信仰を{value}払い、\n手札の呪いを全て廃棄",
+      "upgrade": {
+        "mainValue": -2
+      },
+      "mainEffect": {
+        "type": "Purify",
+        "value": 5
+      }
+    },
+    {
+      "id": "SKL_miracle",
+      "name": "奇跡",
+      "type": "Skill",
+      "rarity": "Rare",
+      "tags": [
+        "Faith"
+      ],
+      "cost": 2,
+      "range": 1,
+      "rangeType": "Area",
+      "description": "足元の信仰を全て払い、\n周りの敵に\n払った信仰×{value}ダメージ",
+      "upgrade": {
+        "mainValue": 1
+      },
+      "mainEffect": {
+        "type": "Miracle",
+        "value": 3
+      }
+    },
+    {
+      "id": "SKL_martyr",
+      "name": "殉教",
+      "type": "Skill",
+      "rarity": "Rare",
+      "tags": [
+        "Faith"
+      ],
+      "cost": 0,
+      "range": 0,
+      "rangeType": "None",
+      "description": "HPを5失う。\n足元を聖域にする",
+      "exhaust": true,
+      "selfDamage": 5,
+      "mainEffect": {
+        "type": "Engrave",
+        "value": 10
+      }
+    },
+    {
+      "id": "POW_guardian_vow",
+      "name": "守護の誓い",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "tags": [
+        "Faith"
+      ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "ターン終了時、\n聖地に立っていれば\nブロック{value}",
+      "upgrade": {
+        "mainValue": 3
+      },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 5,
+        "duration": -1,
+        "buffType": "GuardianVow"
+      }
+    },
+    {
+      "id": "POW_cathedral",
+      "name": "大聖堂",
+      "type": "Power",
+      "rarity": "Rare",
+      "tags": [
+        "Faith"
+      ],
+      "cost": 3,
+      "range": 0,
+      "rangeType": "None",
+      "description": "ターン開始時、\n聖地に立っていれば\n周りのマスに信仰を{value}刻む",
+      "upgrade": {
+        "cost": -1
+      },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 1,
+        "duration": -1,
+        "buffType": "Cathedral"
+      }
+    },
+    {
+      "id": "SKL_oracle",
+      "name": "神託",
+      "type": "Skill",
+      "rarity": "Rare",
+      "tags": [
+        "Faith"
+      ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "カードを{sub}枚引き、\n手札の呪いを\n全て廃棄",
+      "upgrade": {
+        "subValue": 1
+      },
+      "mainEffect": {
+        "type": "Purify",
+        "value": 0
+      },
+      "subEffect": {
+        "type": "Draw",
+        "value": 2
+      }
     }
   ]
 }

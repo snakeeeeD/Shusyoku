@@ -120,7 +120,7 @@
             },
             {
               "type": "gold",
-              "value": -80
+              "value": -50
             }
           ]
         },
@@ -143,7 +143,7 @@
           "outcomes": [
             {
               "type": "gold",
-              "value": -80
+              "value": -50
             },
             {
               "type": "removeCard"
@@ -235,6 +235,19 @@
           ]
         },
         {
+          "label": "祭壇に身を委ねる（レリック / 呪い・纏わり）",
+          "result": "番人は眠ったままだ。だが闇が体に纏わりついた。",
+          "outcomes": [
+            {
+              "type": "relic"
+            },
+            {
+              "type": "addCard",
+              "param": "cursed_cling"
+            }
+          ]
+        },
+        {
           "label": "立ち去る",
           "result": "無事に通り過ぎた。",
           "outcomes": []
@@ -270,12 +283,16 @@
       "desc": "土に埋もれた箱。掘り返せば何か出そうだが…",
       "choices": [
         {
-          "label": "掘り返す",
-          "result": "土を掘り進めた…",
+          "label": "掘り返す（財宝 / 呪い・増殖）",
+          "result": "土を掘り進めた…何かが一緒に這い出してきた。",
           "outcomes": [
             {
               "type": "treasure",
               "chance": 100
+            },
+            {
+              "type": "addCard",
+              "param": "cursed_spread"
             },
             {
               "type": "battle",
@@ -370,8 +387,8 @@
       "random": true,
       "choices": [
         {
-          "label": "掘り出す（-50G, レリック）",
-          "result": "遺物を掘り当てた。",
+          "label": "掘り出す（-50G, レリック / 呪い・重荷）",
+          "result": "遺物を掘り当てた。だが鉱脈の澱みがまとわりついた。",
           "outcomes": [
             {
               "type": "gold",
@@ -379,6 +396,10 @@
             },
             {
               "type": "relic"
+            },
+            {
+              "type": "addCard",
+              "param": "cursed_burden"
             }
           ]
         },
@@ -407,12 +428,16 @@
       "random": true,
       "choices": [
         {
-          "label": "データを解析（レアカード）",
-          "result": "戦術データを取得した。",
+          "label": "データを解析（レアカード / 呪い・目くらまし）",
+          "result": "戦術データを取得した。だが端末から何かが流れ込んできた。",
           "outcomes": [
             {
               "type": "pickCard",
               "param": "rare"
+            },
+            {
+              "type": "addCard",
+              "param": "cursed_blind"
             }
           ]
         },
@@ -566,16 +591,16 @@
           ]
         },
         {
-          "label": "呪物を持ち出す（レアカード / 最大HP-5）",
-          "result": "力を得たが、体が少し蝕まれた。",
+          "label": "呪物を持ち出す（レアカード / 呪い・疼き）",
+          "result": "力を得たが、呪物の疼きが残った。",
           "outcomes": [
             {
               "type": "pickCard",
               "param": "rare"
             },
             {
-              "type": "maxHp",
-              "value": -5
+              "type": "addCard",
+              "param": "cursed_ache"
             }
           ]
         },
@@ -742,7 +767,7 @@
             },
             {
               "type": "gold",
-              "value": -40
+              "value": -80
             }
           ]
         },
@@ -752,7 +777,7 @@
           "outcomes": [
             {
               "type": "hp",
-              "value": -8
+              "value": -12
             },
             {
               "type": "randomMaterial",
@@ -797,6 +822,27 @@
             {
               "type": "pickCard",
               "param": "rare"
+            },
+            {
+              "type": "addCard",
+              "param": "cursed_ache"
+            }
+          ]
+        },
+        {
+          "label": "魂を預ける（レリック＋レアカード / 呪い・纏わり＋疼き）",
+          "result": "全てを得た。魂の奥で、何かが嗤っている。",
+          "outcomes": [
+            {
+              "type": "relic"
+            },
+            {
+              "type": "pickCard",
+              "param": "rare"
+            },
+            {
+              "type": "addCard",
+              "param": "cursed_cling"
             },
             {
               "type": "addCard",

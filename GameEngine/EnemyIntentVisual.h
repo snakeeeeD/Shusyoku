@@ -59,6 +59,11 @@ public:
     static inline const BuffManager* s_playerBuffs = nullptr;
     static void SetPlayerBuffs(const BuffManager* pb) { s_playerBuffs = pb; }
 
+    // 呪い・目隠し：手札にある間は敵の予告を隠す（見た目の予告は全部ここを見る。敵の行動そのものは変えない）
+    static inline bool s_hidden = false;
+    static void SetHidden(bool h) { s_hidden = h; }
+    static bool Hidden() { return s_hidden; }
+
     // Player::TakeDamage と同じ補正を表示用に適用
     static int ApplyIncoming(int dmg)
     {
@@ -66,6 +71,7 @@ public:
         if (!pb) return dmg;
         if (pb->HasBuff(BuffType::Vulnerable)) dmg = dmg * 150 / 100;
         if (int fr = pb->GetBuffValue(BuffType::Frenzy)) dmg = dmg * (100 + 50 * fr) / 100;
+        if (pb->HasBuff(BuffType::Sanctuary)) dmg /= 2;   // 聖域：予告の数値も半分で見せる
         return dmg;
     }
 
@@ -80,6 +86,7 @@ public:
     // 説明文の {0} {1} ... を effects[i] のバフ適用後の値に差し替える
     static std::wstring GetActionText(const EnemyAction& a, const BuffManager& buffs)
     {
+        if (s_hidden) return L"？？？";   // 目隠し中は行動の文字も伏せる
         std::wstring result = a.description;
         for (int i = 0; i < (int)a.effects.size(); i++)
         {

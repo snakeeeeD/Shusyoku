@@ -4,6 +4,7 @@
 #include "SpriteRenderer.h"
 #include "TextRenderer.h"
 #include "RelicManager.h"
+#include "Faith.h"
 #include "RangeShape.h"
 #include "TerrainDataBase.h"
 #include "TextureManager.h"
@@ -99,6 +100,9 @@ public:
             }
             else if (data->mainEffect.type == CardEffectType::Block)
                 actualValue = player->GetBuffManager().GetFinalBlock(data->mainEffect.value);
+            else if (data->mainEffect.type == CardEffectType::Engrave
+                || data->mainEffect.type == CardEffectType::EngraveArea)
+                actualValue += Faith::EngraveBonus();   // 聖印ぶんも表示
             else if (data->mainEffect.type == CardEffectType::PlaceTrap
                 || data->mainEffect.type == CardEffectType::PlaceTrapArea)
             {
@@ -121,7 +125,8 @@ public:
 
         size_t sp = result.find(L"{sub}");
         if (sp != std::wstring::npos)
-            result.replace(sp, 5, std::to_wstring(data->subEffect.value));
+            result.replace(sp, 5, std::to_wstring(data->subEffect.value
+                + (data->subEffect.type == CardEffectType::Engrave ? Faith::EngraveBonus() : 0)));
 
         size_t op = result.find(L"{onhit}");
         if (op != std::wstring::npos)
@@ -129,6 +134,8 @@ public:
             int ov = data->onHitEffect.value;
             if (data->onHitEffect.buffType == "Poison")
                 ov += RelicManager::SumValue("poisonAdd");   // 毒の心得ぶんも表示
+            if (data->onHitEffect.type == CardEffectType::Engrave)
+                ov += Faith::EngraveBonus();                  // 聖印ぶんも表示
             result.replace(op, 7, std::to_wstring(ov));
         }
 
@@ -366,8 +373,28 @@ public:
         D2D1_COLOR_F dc = IsCardBoosted(data, player)
             ? D2D1::ColorF(0.4f, 1.0f, 0.4f, alpha)
             : D2D1::ColorF(0.8f, 0.8f, 0.8f, alpha);
-        tr->DrawOutlinedText(GetEffectText(data, player, 8).c_str(),
-            x + 12 * s, y + 82 * s, 10 * s, dc, ol, olT, rot, px, py);
+        // 説明文：説明欄（幅約80・高さ約49、カード1倍の単位）に収まるまで文字を小さくする。
+        // 小さくするたびに1行の文字数も増やして折り返し直す（行数そのものを減らす）
+        const float DESC_W = 80.0f, DESC_H = 49.0f, LINE = 1.25f, MIN_FONT = 7.0f;
+        const bool perm = data->permanent;   // 削除不可は説明の1行目に色を変えて出す（説明文のデータには書かない）
+        float df = 10.0f;
+        std::wstring desc;
+        while (true)
+        {
+            desc = GetEffectText(data, player, (int)(DESC_W / df));   // 全角1文字≒文字サイズの幅
+            int lines = perm ? 2 : 1; for (wchar_t c : desc) if (c == L'\n') lines++;   // 「削除不可」の1行も数える
+            if (lines * df * LINE <= DESC_H || df <= MIN_FONT) break;
+            df -= 0.5f;
+        }
+        float ty = y + 82 * s;
+        if (perm)
+        {
+            tr->DrawOutlinedText(L"削除不可", x + 12 * s, ty, df * s,
+                D2D1::ColorF(1.0f, 0.45f, 0.4f, alpha), ol, olT, rot, px, py);   // 赤系で目立たせる
+            ty += df * LINE * s;
+        }
+        tr->DrawOutlinedText(desc.c_str(),
+            x + 12 * s, ty, df * s, dc, ol, olT, rot, px, py);
     }
 
     // カードが参照するバフ/デバフのキーワード（名前, 説明）を重複なしで

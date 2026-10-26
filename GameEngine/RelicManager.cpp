@@ -31,7 +31,7 @@ void RelicManager::Load(const std::string& path) {
             d.rarity = r.value("rarity", "common");
             d.icon = r.value("icon", "");
             if (r.contains("extra"))
-                for (auto& e : r["extra"]) d.extra.push_back({ e.value("kind", ""), e.value("value", 0) });
+                for (auto& e : r["extra"]) d.extra.push_back({ e.value("kind", ""), e.value("value", 0), e.value("param", "") });
             s_defs[d.id] = d;
         }
         char buf[64]; sprintf_s(buf, "[Relic] loaded %d\n", (int)s_defs.size());

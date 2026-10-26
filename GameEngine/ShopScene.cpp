@@ -98,6 +98,7 @@ void ShopScene::GenerateStock()
 void ShopScene::Update(float deltaTime)
 {
     m_time += deltaTime;
+    if (m_removeMsgTimer > 0.0f) m_removeMsgTimer -= deltaTime;
     m_input.Update();
 
     if (m_removeAnimIdx >= 0)
@@ -183,6 +184,13 @@ void ShopScene::Draw()
                 m_spriteRenderer->DrawSprite(icon, x + 12.0f, y + 12.0f, 30.0f, 30.0f, 0.0f, iconCol);
             }
         }
+        // 値札（暗い木の色の小窓＋コイン）
+        URect tag = PriceTagRect(cardX, drawY);
+        UiWindow::Button(m_spriteRenderer, m_whiteTexture, tag.x, tag.y, tag.w, tag.h,
+            m_items[i].bought ? XMFLOAT4(0.25f, 0.12f, 0.12f, 1.0f) : XMFLOAT4(0.16f, 0.12f, 0.08f, 1.0f));
+        if (!m_items[i].bought)
+            if (auto coin = TextureManager::Get("icon_gold"))
+                m_spriteRenderer->DrawSprite(coin, tag.x + 10.0f, tag.y + 6.0f, 18.0f, 18.0f, 0.0f, XMFLOAT4(1.0f, 0.85f, 0.3f, 1.0f));
     }
     POINT mp = m_input.GetMousePos();
 
@@ -284,12 +292,19 @@ void ShopScene::Draw()
             m_textRenderer->DrawText(CardVisual::WrapText(desc, 9).c_str(), x + 12, y + 62, 12.0f, D2D1::ColorF(D2D1::ColorF::LightGray));
         }
 
+        // 値札の文字（金額はコインの右。所持金が足りない時は赤）
+        URect tag = PriceTagRect(cardX, drawY);
         if (m_items[i].bought)
-            m_textRenderer->DrawText(L"SOLD", x + 40, y + h - 32, 22.0f, D2D1::ColorF(D2D1::ColorF::Red));
+            m_textRenderer->DrawTextCentered(L"SOLD", tag.x + tag.w / 2.0f, tag.y, tag.w, 18.0f,
+                D2D1::ColorF(1.0f, 0.4f, 0.4f), tag.h);
         else
         {
-            wchar_t priceText[32]; swprintf_s(priceText, L"%d G", m_items[i].price);
-            m_textRenderer->DrawText(priceText, x + 12, y + h - 32, 20.0f, D2D1::ColorF(1.0f, 0.9f, 0.3f));
+            wchar_t priceText[32]; swprintf_s(priceText, L"%d", m_items[i].price);
+            bool canBuy = PlayerDataManager::GetData().gold >= m_items[i].price;
+            float left = tag.x + 30.0f;   // コインの右側
+            m_textRenderer->DrawTextCentered(priceText, left + (tag.x + tag.w - left) / 2.0f, tag.y,
+                tag.x + tag.w - left, 18.0f,
+                canBuy ? D2D1::ColorF(1.0f, 0.9f, 0.3f) : D2D1::ColorF(1.0f, 0.35f, 0.3f), tag.h);
         }
     }
 
@@ -357,7 +372,11 @@ void ShopScene::HandleInput()
         if (m_removeAnimIdx < 0 && m_input.GetMouseButtonTrigger(0))   // 演出中はクリック無効
         {
             int idx = DeckCardAt(mousePos);
-            if (idx >= 0 && PlayerDataManager::GetData().gold >= RemovePrice())
+            if (idx >= 0 && !CardDataBase::CanRemove(PlayerDataManager::GetData().deck[idx]))
+            {
+                m_removeMsgTimer = REMOVE_MSG_DUR;     // 削除不可のカード：閉じずに理由を出す
+            }
+            else if (idx >= 0 && PlayerDataManager::GetData().gold >= RemovePrice())
             {
                 Audio::PlaySE("Assets/Sound/se/click.mp3");
                 m_removeAnimIdx = idx;                 // 演出開始（実削除はUpdateの末尾）
@@ -480,7 +499,7 @@ void ShopScene::GetDeckSlot(int i, float& x, float& y) const
 int ShopScene::DeckCardAt(POINT p) const
 {
     auto& deck = PlayerDataManager::GetData().deck;
-    for (int i = 0; i < (int)deck.size(); i++)
+    for (int i = 0; i < (int)deck.size(); i++)   // どのカードを押したかだけ返す（削除できるかは呼ぶ側で判定）
     {
         float bx, by; GetDeckSlot(i, bx, by);
         float x, y, w, h; CardVisual::GetRect(bx, by, 0.9f, x, y, w, h);
@@ -520,7 +539,12 @@ void ShopScene::DrawDeckRemoval()
         if (i == hov) by -= 12.0f;
         CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, bx, by, 0.9f, 0.0f,
             CardVisual::GetCardColor(d->type), d, m_time);
-        if (i == hov)
+        if (!CardDataBase::CanRemove(deck[i]))   // 削除不可は暗く
+        {
+            float rx, ry, rw, rh; CardVisual::GetRect(bx, by, 0.9f, rx, ry, rw, rh);
+            m_spriteRenderer->DrawSprite(m_whiteTexture, rx, ry, rw, rh, 0.0f, XMFLOAT4(0, 0, 0, 0.55f));
+        }
+        if (i == hov && CardDataBase::CanRemove(deck[i]))   // 削除できるカードだけ赤枠
         {
             float rx, ry, rw, rh; CardVisual::GetRect(bx, by, 0.9f, rx, ry, rw, rh);
             XMFLOAT4 rc(0.95f, 0.15f, 0.15f, 1.0f);
@@ -546,6 +570,12 @@ void ShopScene::DrawDeckRemoval()
         CardVisual::DrawTexts(m_textRenderer, d, nullptr, bx, by, 0.9f, 0.0f, 1.0f);
     }
     m_textRenderer->DrawText(L"カードをクリックで削除 / 余白で戻る", m_screenWidth / 2.0f - 170.0f, m_screenHeight - 55.0f, 20.0f, D2D1::ColorF(0.8f, 0.8f, 0.8f));
+    if (m_removeMsgTimer > 0.0f)   // 削除不可のカードを押した時の案内（最後の0.3秒でフェード）
+    {
+        float a = (m_removeMsgTimer < 0.3f) ? m_removeMsgTimer / 0.3f : 1.0f;
+        m_textRenderer->DrawTextCentered(L"このカードは削除できない", m_screenWidth / 2.0f, m_screenHeight - 95.0f, 500.0f,
+            24.0f, D2D1::ColorF(1.0f, 0.4f, 0.35f, a));
+    }
     m_textRenderer->End();
 
     // 削除演出：提示カードを最後に「本体→文字」まとめて（背後の文字より後＝被った所だけ隠れる）

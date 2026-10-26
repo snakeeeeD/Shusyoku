@@ -75,6 +75,11 @@ inline CardEffectType StringToCardEffectType(const std::string& str)
     if (str == "DrainPoison") return CardEffectType::DrainPoison;
     if (str == "PoisonBurst") return CardEffectType::PoisonBurst;
     if (str == "BlockDamage") return CardEffectType::BlockDamage;
+    if (str == "Engrave")     return CardEffectType::Engrave;
+    if (str == "EngraveArea") return CardEffectType::EngraveArea;
+    if (str == "Judgement")   return CardEffectType::Judgement;
+    if (str == "Miracle")     return CardEffectType::Miracle;
+    if (str == "Purify")      return CardEffectType::Purify;
     return CardEffectType::None;
 }
 
@@ -120,6 +125,9 @@ inline BuffType StringToBuffType(const std::string& str)
     if (str == "LastStand") return BuffType::LastStand;
     if (str == "DeepStand") return BuffType::DeepStand;
     if (str == "EmberTrail")  return BuffType::EmberTrail;
+
+    if (str == "GuardianVow") return BuffType::GuardianVow;
+    if (str == "Cathedral")   return BuffType::Cathedral;
 
     return BuffType::AttackUp;
 }

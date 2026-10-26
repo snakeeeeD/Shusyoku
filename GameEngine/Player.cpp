@@ -135,6 +135,7 @@ void Player::TakeDamage(int damage, DamageFeel feel)
         damage = damage * 150 / 100;
     if (int fr = m_buffManager.GetBuffValue(BuffType::Frenzy))
         damage = damage * (100 + 50 * fr) / 100;   // 狂乱：1枚ごとに被ダメ+50%
+    if (m_buffManager.HasBuff(BuffType::Sanctuary)) damage /= 2;   // 聖域：受けるダメージ半分
 
     // ブロックで先に受ける
     int blocked = 0;
@@ -164,10 +165,13 @@ void Player::Heal(int amount)
     m_hp = min(m_hp + amount, m_maxHp);
     int healed = m_hp - before;                 // 実際に回復した量（オーバーヒール除外）
     if (healed > 0)
+    {
+        EffectManager::Play("heal", worldX, worldY + 0.5f, worldZ);   // 緑の十字
         FloatingTextManager::Spawn(
             worldX, worldY + height * 0.5f, worldZ,
             L"+" + std::to_wstring(healed),
             DirectX::XMFLOAT4(0.4f, 1.0f, 0.4f, 1.0f), 40.0f);   // 緑
+    }
 }
 
 void Player::RestoreEnergy()

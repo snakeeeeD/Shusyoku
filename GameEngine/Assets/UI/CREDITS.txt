@@ -63,3 +63,5 @@ relic_shop_hammer.png  "Anvil" by Lorc  https://game-icons.net/1x1/lorc/anvil.ht
 relic_shop_ward.png  "Scroll unfurled" by Lorc  https://game-icons.net/1x1/lorc/scroll-unfurled.html
 relic_shop_gold_glove.png  "Gloves" by Delapouite  https://game-icons.net/1x1/delapouite/gloves.html
 relic_shop_spirit_bell.png  "Ringing bell" by Lorc  https://game-icons.net/1x1/lorc/ringing-bell.html
+relic_holy_seal.png  "Holy symbol" by Lorc  https://game-icons.net/1x1/lorc/holy-symbol.html
+relic_pilgrim_hat.png  "Pilgrim hat" by Delapouite  https://game-icons.net/1x1/delapouite/pilgrim-hat.html

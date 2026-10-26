@@ -1,5 +1,6 @@
 #ifdef _DEBUG
 #include "BattleScene.h"
+#include "Faith.h"
 #include "AnimTune.h"
 #include "External/imgui/imgui.h"
 #include "EncounterDataBase.h"
@@ -33,6 +34,11 @@ void BattleScene::DrawImGui()
         m_battleUI->GetCardAnimCount(),
         m_hoveredCardIndex,
         m_selectedCardIndex);
+
+    if (ImGui::Button("Faith +3 (feet)"))   // 足元のマスに信仰+3（聖地型の確認用）
+        Faith::Engrave(m_gridMap, m_playerCol, m_playerRow, 3);
+    ImGui::SameLine();
+    ImGui::Text("Faith:%d", Faith::At(m_gridMap, m_playerCol, m_playerRow));
 
     if (ImGui::Button("Instant Win"))
         for (auto enemy : m_enemies)

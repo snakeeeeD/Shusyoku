@@ -1,5 +1,6 @@
 ﻿#include "BattleUI.h"
 #include "BuffInfo.h"
+#include "Faith.h"
 #include "CardExecutor.h"
 #include "CardVisual.h"
 #include "CardTooltip.h"
@@ -554,6 +555,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 enemy->GetBuffManager(), ctx.mousePos, ctx.highlightTimer);
 
             // --- 次の行動アイコン（頭上） ---
+            if (!EnemyIntentVisual::Hidden())   // 目隠し中は出さない
             {
                 float iconSize = EnemyIntentVisual::ICON_SIZE;
                 float iconX = barX;
@@ -632,6 +634,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             // 行動の数値（頭上）
             const EnemyAction* action = enemy->GetNextAction();
             // 行動の数値（複合行動はすべて並べる）
+            if (!EnemyIntentVisual::Hidden())   // 目隠し中は出さない
             {
                 float iconSize = EnemyIntentVisual::ICON_SIZE;
                 float ix = barX;
@@ -1085,6 +1088,37 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 m_textRenderer->DrawText(detailText, tipX + 5.0f, tipY + 20.0f, 11.0f,
                     D2D1::ColorF(D2D1::ColorF::LightGray));
             }
+        }
+    }
+
+    // 聖地のホバー詳細（罠と同じマスなら、その下に並べる）
+    if (ctx.hoveredCell.first >= 0 && ctx.hoveredCell.second >= 0
+        && ctx.hoveredCell.first < ctx.gridMap->GetCols()
+        && ctx.hoveredCell.second < ctx.gridMap->GetRows())
+    {
+        auto& fCell = ctx.gridMap->GetCell(ctx.hoveredCell.first, ctx.hoveredCell.second);
+        int f = fCell.faith;
+        if (f > 0)
+        {
+            bool sanct = Faith::IsSanctuary(f);
+            wchar_t l1[48], l2[48], l3[64];
+            swprintf_s(l1, sanct ? L"聖域　信仰 %d/%d" : L"聖地　信仰 %d/%d", f, Faith::MAX);
+            swprintf_s(l2, sanct ? L"立つと 攻撃+%d・被ダメ半分" : L"立つと 攻撃+%d", Faith::AttackBonus(f));
+            swprintf_s(l3, L"ターン終了時 ここの敵に%dダメージ（信仰は半分に）", f);
+
+            float tipX = (float)ctx.mousePos.x + 15.0f;
+            float tipY = (float)ctx.mousePos.y - 50.0f + (fCell.tileEffect.active ? 56.0f : 0.0f);
+            float tipW = 270.0f, tipH = 58.0f;
+
+            m_textRenderer->End();
+            m_spriteRenderer->Begin();
+            DrawWindow(tipX - 4.0f, tipY - 4.0f, tipW + 8.0f, tipH + 8.0f);
+            m_spriteRenderer->End();
+            m_textRenderer->Begin();
+
+            m_textRenderer->DrawText(l1, tipX + 5.0f, tipY + 2.0f, 13.0f, D2D1::ColorF(1.0f, 0.85f, 0.4f));
+            m_textRenderer->DrawText(l2, tipX + 5.0f, tipY + 20.0f, 11.0f, D2D1::ColorF(D2D1::ColorF::LightGray));
+            m_textRenderer->DrawText(l3, tipX + 5.0f, tipY + 36.0f, 11.0f, D2D1::ColorF(D2D1::ColorF::LightGray));
         }
     }
 
@@ -2408,6 +2442,7 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
 
 void BattleUI::DrawEnemyKeywords(const BattleUIContext& ctx)
 {
+    if (EnemyIntentVisual::Hidden()) return;   // 目隠し中は行動のキーワード説明も出さない
     if (m_panelHoveredEnemy < 0 || m_panelHoveredEnemy >= (int)ctx.enemies->size()) return;
     Enemy* enemy = (*ctx.enemies)[m_panelHoveredEnemy];
 

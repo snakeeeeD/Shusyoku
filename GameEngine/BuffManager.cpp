@@ -22,7 +22,9 @@ void BuffManager::AddBuff(const Buff& buff)
         buff.type == BuffType::CardBlock || 
         buff.type == BuffType::KnifeGen || 
         buff.type == BuffType::LastStand || 
-        buff.type == BuffType::DeepStand)
+        buff.type == BuffType::DeepStand ||
+        buff.type == BuffType::GuardianVow ||
+        buff.type == BuffType::Cathedral)
     {
         for (auto& b : m_buffs)
             if (b.type == buff.type) { b.value += buff.value; return; }
@@ -117,6 +119,7 @@ int BuffManager::GetFinalAttack(int baseAttack) const
     int value = baseAttack;
     value += GetBuffValue(BuffType::AttackUp);
     value += GetBuffValue(BuffType::AttackUpTurn);
+    value += GetBuffValue(BuffType::HolyGround);   // êπínÇ…óßÇ¡ÇƒÇ¢ÇÈä‘ÇÃâ¡éZ
     value -= GetBuffValue(BuffType::AttackDown);
 
     if (int fr = GetBuffValue(BuffType::Frenzy))

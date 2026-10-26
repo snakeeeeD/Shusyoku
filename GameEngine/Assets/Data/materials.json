@@ -535,6 +535,26 @@
       "cost": 0,
       "buyPrice": 0,
       "sellPrice": 200
+    },
+    {
+      "id": "holy_water_shard",
+      "name": "聖水の欠片",
+      "tag": "聖",
+      "layer": 1,
+      "desc": "攻撃:命中時に敵の足元へ信仰1 / スキル:足元に信仰1",
+      "cost": 0,
+      "buyPrice": 130,
+      "sellPrice": 15,
+      "Attack": {
+        "slot": "onHit",
+        "type": "Engrave",
+        "value": 1
+      },
+      "Skill": {
+        "slot": "sub",
+        "type": "Engrave",
+        "value": 1
+      }
     }
   ]
 }

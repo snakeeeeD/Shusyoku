@@ -268,8 +268,8 @@
       "kind": "turnEnergy",
       "value": 1,
       "rarity": "boss",
-      "desc": "毎ターン、エナジー+1\n代償：休憩の回復量-10",
-      "extra": [ { "kind": "restHeal", "value": -10 } ]
+      "desc": "毎ターン、エナジー+1\n代償：デッキに呪い・盲目が加わる",
+      "extra": [ { "kind": "addCard", "param": "cursed_blindness", "value": 1 } ]
     },
     {
       "id": "boss_titan",
@@ -511,6 +511,24 @@
       "value": 1,
       "rarity": "uncommon",
       "desc": "1ターンにカードを5枚使うとエナジー+1"
+    },
+    {
+      "id": "holy_seal",
+      "icon": "relic_holy_seal",
+      "name": "聖印",
+      "kind": "engraveAdd",
+      "value": 1,
+      "rarity": "uncommon",
+      "desc": "信仰を刻むとき +1"
+    },
+    {
+      "id": "pilgrim_hat",
+      "icon": "relic_pilgrim_hat",
+      "name": "巡礼者の笠",
+      "kind": "moveEngrave",
+      "value": 1,
+      "rarity": "uncommon",
+      "desc": "移動するたび、元のマスに信仰を1刻む"
     }
   ]
 }

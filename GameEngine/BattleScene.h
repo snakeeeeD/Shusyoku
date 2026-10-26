@@ -85,7 +85,7 @@ public:
 
     void SetHoveredCard(int i) { m_hoveredCardIndex = i; }
 
-    void OnPlayerMoved();
+    void OnPlayerMoved(int fromCol, int fromRow);   // 移動時のレリック（from=移動前のマス）
 
     std::vector<DropShown> m_dropResult;
 
@@ -153,6 +153,8 @@ private:
     float m_awakenRingTimer = 0.0f;   // 円を追加する間隔
     std::vector<float> m_awakenRings; // 拡大中の円の経過時間リスト
     void UpdateBossGimmick();      // 楔の生存でボス無敵/覚醒を制御
+    void SyncFaithBuffs();         // 立っているマスの信仰を、聖地/聖域の加護バフとして付け外し
+    void PurgeHandCurses();        // 浄化：手札の呪いを全て廃棄
     void BossInvulnAction(Enemy* boss);   // 無敵中の妨害・溜め（ダメージなし）
 
     TurnManager m_turnManager;

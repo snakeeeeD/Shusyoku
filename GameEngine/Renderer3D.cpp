@@ -69,6 +69,10 @@ bool Renderer3D::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
     if (FAILED(m_device->CreateBlendState(&blendDesc, m_blendState.GetAddressOf())))
         return false;
+    // 加算合成：下の色に光を足す（重ねても下を隠さない）
+    blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+    if (FAILED(m_device->CreateBlendState(&blendDesc, m_blendAdd.GetAddressOf())))
+        return false;
 
     // ラスタライザー
     D3D11_RASTERIZER_DESC rasterDesc = {};
@@ -283,6 +287,12 @@ void Renderer3D::SetDepthWrite(bool enabled)
         m_context->OMSetDepthStencilState(m_depthStencilState.Get(), 0);
     else
         m_context->OMSetDepthStencilState(m_depthNoWriteState.Get(), 0);
+}
+
+void Renderer3D::SetAdditive(bool on)
+{
+    float bf[4] = {};
+    m_context->OMSetBlendState(on ? m_blendAdd.Get() : m_blendState.Get(), bf, 0xffffffff);
 }
 
 void Renderer3D::SetDepthEnabled(bool enabled)

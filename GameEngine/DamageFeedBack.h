@@ -9,7 +9,7 @@
 using namespace DirectX;
 
 // ダメージの質感。既定はHit（殴打）。DoTはそれぞれの見た目に
-enum class DamageFeel { Hit, Poison, Burn };
+enum class DamageFeel { Hit, Poison, Burn, Holy };   // Holy=聖地の焼き（固定ダメージ）
 
 // 被ダメージの世界座標フィードバック（数字＋パーティクル）を1箇所に集約
 namespace DamageFeedback
@@ -24,6 +24,7 @@ namespace DamageFeedback
             {
             case DamageFeel::Poison: col = BuffInfo::Get(BuffType::Poison).color; break;    // 紫
             case DamageFeel::Burn: col = BuffInfo::Get(BuffType::Burn).color; break;        // オレンジ
+            case DamageFeel::Holy: col = BuffInfo::Get(BuffType::HolyGround).color; break;  // 金
             default:                 col = XMFLOAT4(1.0f, 0.3f, 0.2f, 1.0f); break;         // 赤
             }
             FloatingTextManager::Spawn(x, y, z, std::to_wstring(dmg), col, 44.0f);
@@ -40,6 +41,7 @@ namespace DamageFeedback
         {
         case DamageFeel::Poison: EffectManager::Play("poison", x, y, z); break;
         case DamageFeel::Burn:   EffectManager::Play("burn", x, y, z + 0.4f); break;
+        case DamageFeel::Holy:   break;   // 光の演出は faith_smite 側で出している
         default:                 EffectManager::Play("hit", x, y, z); break;
         }
     }

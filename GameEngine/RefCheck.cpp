@@ -111,6 +111,7 @@ namespace
         { "cards.json", "cards[].*.type",            "cardEffect" },   // mainEffect / subEffect / onHitEffect …
         { "cards.json", "cards[].*.buffType",        "buff" },
         { "cards.json", "cards[].*.cardId",          "cardRef" },
+        { "cards.json", "cards[].endTurnAddCard",    "cardRef" },   // 呪い・増殖などがターン終了時に足すカード
         { "cards.json", "cards[].*.trapType",        "terrain" },
 
         // ---- イベント ----
@@ -135,6 +136,7 @@ namespace
         // ---- レリック ----
         { "relics.json", "relics[].kind",   "relicKind" },
         { "relics.json", "relics[].extra[].kind", "relicKind" },   // 追加効果（代償）
+        { "relics.json", "relics[].extra[].param", "cardRef", "kind", "addCard" },   // 代償で加えるカード
         { "relics.json", "relics[].icon", "texture", nullptr, nullptr, Severity::Warning },   // アイコン（Assets/UI/<icon>.png）
         { "relics.json", "relics[].rarity", "relicRarity" },
         { "relics.json", "relics[].effect", "relicEffect" },

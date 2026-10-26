@@ -41,6 +41,13 @@ public:
     void LoseHp(int amount) { m_hp -= amount; if (m_hp < 0) m_hp = 0; }   // 0まで許可＝自傷で死ぬ
 
     void SetFacing(int dx, int dz) { m_faceDx = dx; m_faceDz = dz; }   // 攻撃時などに明示指定
+    // その場に置く（移動扱いにしない＝向きが変わらない）。戦闘開始時は正面を向いて立つ
+    void PlaceAt(float x, float z)
+    {
+        worldX = x; worldZ = z;
+        m_prevX = x; m_prevZ = z;
+        m_faceDx = 0; m_faceDz = 1;   // 正面（顔が見える向き）
+    }
     enum class Anim { Idle, Attack, Skill, Hurt };
     void StartAttack() { m_anim = Anim::Attack; m_animTime = 0.0f; }   // 攻撃モーション
     void StartSkill() { m_anim = Anim::Skill;  m_animTime = 0.0f; }   // スキル／パワーのモーション

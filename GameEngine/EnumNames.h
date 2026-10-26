@@ -118,6 +118,8 @@ namespace EnumNames
         { BuffType::DeepStand,    "DeepStand" },
         { BuffType::EmberTrail,   "EmberTrail" },
         { BuffType::DrawPerTurn,  "DrawPerTurn" },
+        { BuffType::GuardianVow,  "GuardianVow" },
+        { BuffType::Cathedral,    "Cathedral" },
     };
 
     // ---- カード：効果の種類 ----
@@ -148,6 +150,11 @@ namespace EnumNames
         { CardEffectType::DrainPoison,   "DrainPoison" },
         { CardEffectType::PoisonBurst,   "PoisonBurst" },
         { CardEffectType::BlockDamage,   "BlockDamage" },
+        { CardEffectType::Engrave,       "Engrave" },
+        { CardEffectType::EngraveArea,   "EngraveArea" },
+        { CardEffectType::Judgement,     "Judgement" },
+        { CardEffectType::Miracle,       "Miracle" },
+        { CardEffectType::Purify,        "Purify" },
     };
 
     // ---- カード：種類 ----
@@ -215,6 +222,8 @@ namespace EnumNames
         { "firstAttack",   false, u8"各戦闘の最初の攻撃 ダメージ+value" },
         { "multiHit",      false, u8"連撃攻撃のヒット数+value" },
         { "moveBlock",     false, u8"移動するたび ブロック+value" },
+        { "moveEngrave",   false, u8"移動するたび 元のマスに信仰value" },
+        { "engraveAdd",    false, u8"信仰を刻む量+value" },
         { "moveRange",     false, u8"移動範囲+value" },
         { "poisonAdd",     false, u8"毒を与える量+value" },
         { "poisonSpread",  false, u8"毒の敵を倒すと周りの敵へ毒が移る（value不使用）" },
@@ -231,6 +240,7 @@ namespace EnumNames
         // 戦闘外
         { "maxHp",         false, u8"取得時 最大HP+value" },
         { "steps",         false, u8"取得時 歩数+value" },
+        { "addCard",       false, u8"取得時 paramのカードをvalue枚デッキに加える（代償用）" },
         { "restHeal",      false, u8"休憩の回復+value" },
         { "shopDiscount",  false, u8"ショップ価格 -value%" },
         { "rewardRare",    false, u8"カード報酬にレアが出やすい（value不使用）" },

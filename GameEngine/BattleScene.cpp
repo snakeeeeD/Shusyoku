@@ -17,6 +17,7 @@
 #include "Hint.h"
 #include "Telemetry.h"
 #include "EnemyIntentVisual.h"
+#include "Faith.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -55,6 +56,7 @@ BattleScene::BattleScene()
 BattleScene::~BattleScene()
 {
     EnemyIntentVisual::SetPlayerBuffs(nullptr);
+    EnemyIntentVisual::SetHidden(false);   // 目隠しを戦闘の外に持ち越さない
     delete m_battleUI;
     delete m_gridMap;
     delete m_renderer3D;
@@ -178,8 +180,8 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     m_player = new Player();
     m_player->gridCol = m_playerCol;
     m_player->gridRow = m_playerRow;
-    m_player->worldX = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
-    m_player->worldZ = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+    m_player->PlaceAt((m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f,
+        (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f);   // 正面を向いて立つ
 
     m_cameraOffsetX = m_player->worldX;
     m_cameraOffsetZ = m_player->worldZ - 0.7f;
@@ -262,6 +264,14 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
                         BuffInfo::Get(BuffType::Poison).color, 32.0f);
                 }
 
+            // 大聖堂：ターン開始時、聖地に立っていれば周り8マスに信仰を刻む（自分の足元は増えない）
+            if (int cat = m_player->GetBuffManager().GetBuffValue(BuffType::Cathedral);
+                cat > 0 && Faith::At(m_gridMap, m_playerCol, m_playerRow) > 0)
+                for (int dr = -1; dr <= 1; dr++)
+                    for (int dc = -1; dc <= 1; dc++)
+                        if (dc != 0 || dr != 0)
+                            Faith::Engrave(m_gridMap, m_playerCol + dc, m_playerRow + dr, cat);
+
             // デバフダメージ
             auto dmg = m_player->GetBuffManager().GetTurnEndDamage();
             if (dmg.total() > 0)
@@ -336,6 +346,28 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
                     }
                 }
 
+            // 守護の誓い：ターン終了時、聖地に立っていればブロック（敵ターンの攻撃に備える）
+            if (int gv = m_player->GetBuffManager().GetBuffValue(BuffType::GuardianVow);
+                gv > 0 && Faith::At(m_gridMap, m_playerCol, m_playerRow) > 0)
+            {
+                m_player->AddBlock(gv);
+                EffectManager::Play("block_gain", m_player->worldX, m_player->worldY + 0.4f, m_player->worldZ);
+            }
+
+            // 聖地：プレイヤーのターン終了時、聖地に立つ敵は信仰と同じダメージ。聖域でなければそのマスの信仰は半分に
+            for (auto enemy : m_enemies)
+            {
+                if (!enemy || enemy->GetHp() <= 0) continue;
+                int best = 0, bc = -1, br = -1;   // 大きな敵は、占めているマスのうち信仰が一番高いマスで判定
+                for (auto& c : enemy->OccupiedCells())
+                    if (int f = Faith::At(m_gridMap, c.first, c.second); f > best) { best = f; bc = c.first; br = c.second; }
+                if (best <= 0) continue;
+                enemy->TakeDamage(best, DamageFeel::Holy);   // 表示どおりの固定ダメージ
+                EffectManager::Play(Faith::IsSanctuary(best) ? "faith_smite_big" : "faith_smite",      // 聖域は大きく・画面を揺らす
+                    enemy->worldX, enemy->worldY + 0.5f, enemy->worldZ);
+                m_gridMap->GetCell(bc, br).faith = best / 2;   // 焼いたら、聖域も含めて信仰は半分に（踏ませると居場所が削れる）
+            }
+
             TurnBanner::Show(TurnBannerType::Enemy);
 
             for (auto enemy : m_enemies)
@@ -370,6 +402,15 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
                 m_battleUI->StartDiscardEffectAt(i, dd, seq, ex);   // エセリアル=その場で溶ける
             }
            
+            // 呪い・増殖など：手札にあると捨て札にカードを加える（敵がお邪魔カードを足す時と同じ演出で見せる）
+            for (int i = 0; i < (int)m_hand.GetCards().size(); i++)
+            {
+                const CardData* dd = CardDataBase::Get(m_hand.GetCards()[i]->GetId());
+                if (!dd || dd->endTurnAddCard.empty()) continue;
+                m_deck.DiscardCard(dd->endTurnAddCard);
+                m_battleUI->StartAddedCardEffect(CardDataBase::Get(dd->endTurnAddCard), "discard", 0, 1);
+            }
+
             // 非保留カードだけ手札から取り除く（保留はスロット/アニメ状態を維持）
             for (int i = (int)m_hand.GetCards().size() - 1; i >= 0; i--)
             {
@@ -565,9 +606,10 @@ void BattleScene::SummonNear(Enemy* src, const std::string& id, int count)
             }
 }
 
-void BattleScene::OnPlayerMoved()
+void BattleScene::OnPlayerMoved(int fromCol, int fromRow)
 {
     m_player->AddBlock(RelicManager::SumValue("moveBlock"));
+    Faith::Engrave(m_gridMap, fromCol, fromRow, RelicManager::SumValue("moveEngrave"));   // 巡礼者の笠：元のマスに刻む
     if (m_player->GetBuffManager().HasBuff(BuffType::Frenzy))
         m_player->TakeDamage(1, DamageFeel::Hit);   // 狂乱中の移動は身を削る
     // 今後の「移動時○○」レリックはここに追記
@@ -684,6 +726,37 @@ void BattleScene::Update(float deltaTime)
 {
     m_input.Update();
     if (m_player) EnemyIntentVisual::SetPlayerBuffs(&m_player->GetBuffManager());   // 予告表示に被ダメ補正を反映
+    {
+        // 呪い・目隠しが手札にある間は、敵の予告を隠す
+        auto isBlind = [](const std::string& id) { const CardData* d = CardDataBase::Get(id); return d && d->hideIntent; };
+        bool blind = false;
+        for (auto* c : m_hand.GetCards())
+            if (isBlind(c->GetId())) { blind = true; break; }
+        // 配っている途中（ターン開始〜配り終わり）は、目隠しを引く可能性があれば伏せておく
+        // （敵の次の行動はターン開始時に決まるので、引く前の一瞬に新しい予告が見えてしまうのを防ぐ）
+        if (!blind && (m_drawSeqRemaining > 0 || m_reshuffleFxTimer > 0.0f))
+        {
+            for (auto& id : m_deck.GetDrawPile())    if (isBlind(id)) { blind = true; break; }
+            if (!blind)
+                for (auto& id : m_deck.GetDiscardPile()) if (isBlind(id)) { blind = true; break; }
+        }
+        EnemyIntentVisual::SetHidden(blind);
+    }
+    SyncFaithBuffs();
+    // 信仰のマスから、ときどき光の粒が昇る（信仰が多いほど多い。見た目は effects.json の faith_mote）
+    for (int r = 0; r < m_gridMap->GetRows(); r++)
+        for (int c = 0; c < m_gridMap->GetCols(); c++)
+        {
+            int f = m_gridMap->GetCell(c, r).faith;
+            if (f <= 0) continue;
+            float chance = deltaTime * (0.4f + 0.12f * f);            // 1秒あたり 信仰1→約0.5回、10→約1.6回
+            if ((float)rand() / RAND_MAX >= chance) continue;
+            float ox = ((float)rand() / RAND_MAX - 0.5f) * 0.8f;      // マスの中のどこか
+            float oz = ((float)rand() / RAND_MAX - 0.5f) * 0.8f;
+            EffectManager::Play("faith_mote",
+                (c - m_gridMap->GetCols() / 2.0f) * 1.1f + ox, 0.05f,
+                (r - m_gridMap->GetRows() / 2.0f) * 1.1f + oz);
+        }
     UpdateBossGimmick();   // 3層ボス：楔の生存で無敵/覚醒を制御
     if (m_awakenCinematic > 0.0f)
     {
@@ -2016,6 +2089,21 @@ void BattleScene::Draw()
             }
     }
 
+    // 信仰のマス（敵の範囲より先に・低く描く＝重なっても範囲の模様が上に見える）
+    // 金色の下地＋紋章（外周10区切りのうち信仰の数だけ光る。聖域は全部）
+    for (int row = 0; row < m_gridMap->GetRows(); row++)
+        for (int col = 0; col < m_gridMap->GetCols(); col++)
+        {
+            int f = m_gridMap->GetCell(col, row).faith;
+            if (f <= 0) continue;
+            float x = (col - m_gridMap->GetCols() / 2.0f) * 1.1f;
+            float z = (row - m_gridMap->GetRows() / 2.0f) * 1.1f;
+            float wy = m_gridMap->GetCell(col, row).gameObject.worldY;
+            float pulse = Faith::IsSanctuary(f) ? 0.5f + 0.5f * sinf(m_highlightTimer * 2.0f) : 0.0f;
+            m_renderer3D->DrawTile(m_whiteTexture, x, z, 0.96f,
+                XMFLOAT4(1.0f, 0.82f, 0.3f, 0.10f + 0.025f * f + 0.10f * pulse), wy + 0.008f);   // 下地（範囲の下）
+        }
+
     // 敵の攻撃範囲：所有敵の色でハザード模様を薄く塗る
     ID3D11ShaderResourceView* rangeTex = TextureManager::Get("ui_hazard");
     for (auto& mk : m_highlighter.GetThreatMarks())
@@ -2049,6 +2137,29 @@ void BattleScene::Draw()
         }
         m_renderer3D->SetDepthEnabled(true);
     }
+
+    // 信仰の紋章：敵の範囲の上に加算合成で重ねる（範囲の模様を隠さず、上から光って見える）
+    m_renderer3D->SetAdditive(true);
+    m_renderer3D->SetDepthWrite(false);
+    for (int row = 0; row < m_gridMap->GetRows(); row++)
+        for (int col = 0; col < m_gridMap->GetCols(); col++)
+        {
+            int f = m_gridMap->GetCell(col, row).faith;
+            if (f <= 0) continue;
+            float x = (col - m_gridMap->GetCols() / 2.0f) * 1.1f;
+            float z = (row - m_gridMap->GetRows() / 2.0f) * 1.1f;
+            float wy = m_gridMap->GetCell(col, row).gameObject.worldY;
+            float pulse = Faith::IsSanctuary(f) ? 0.5f + 0.5f * sinf(m_highlightTimer * 2.0f) : 0.0f;
+            // オーラ：ゆっくり呼吸する（マスの位置でタイミングをずらし、光の波が盤面を伝わるように）
+            float breath = 0.5f + 0.5f * sinf(m_highlightTimer * 1.6f - (col + row) * 0.6f);
+            m_renderer3D->DrawTile(TextureManager::Get("faith_aura"), x, z, 1.18f + 0.12f * breath,
+                XMFLOAT4(1.0f, 0.78f, 0.35f, (0.18f + 0.05f * f) * (0.6f + 0.4f * breath) + 0.15f * pulse), wy + 0.024f);
+            char tex[16]; sprintf_s(tex, "faith_%d", f);
+            m_renderer3D->DrawTile(TextureManager::Get(tex), x, z, 0.92f,
+                XMFLOAT4(1.0f, 0.8f, 0.35f, 0.9f + 0.1f * pulse), wy + 0.025f);
+        }
+    m_renderer3D->SetDepthWrite(true);
+    m_renderer3D->SetAdditive(false);
 
     // プレイヤーの攻撃範囲マーカー（水色ブラケット＋クロスヘア）
     for (auto& pc : m_highlighter.GetReachCells())
@@ -2282,21 +2393,13 @@ void BattleScene::Draw()
         }
     }
 
-    m_renderer3D->SetDepthEnabled(true);
-    m_player->Draw3D(m_renderer3D);   // 本体は前面
-
-    // 敵：透明な四角が互いを隠さないよう、深度書き込みOFF＋奥→手前で描く
-    m_renderer3D->SetDepthWrite(false);
-    std::vector<Enemy*> drawOrder(m_enemies.begin(), m_enemies.end());
-    std::sort(drawOrder.begin(), drawOrder.end(),
-        [](Enemy* a, Enemy* b) { return a->worldZ < b->worldZ; });   // 奥(小Z)を先に、手前(大Z)を後に
-
     // 脅威範囲にプレイヤーが入っている敵を、脈動グロー（疑似ぼかし）で強調（自ターン中のみ）
+    // 深度テストを切った区間で、プレイヤー・敵より先に描く（拡大した縁が床にもぐって途切れないように）
     if (!m_turnManager.IsEnemyTurn())
     {
         float thPulse = 0.5f + 0.5f * sinf(m_highlightTimer * 6.0f);   // 0..1
         const int N = 8;                                               // 重ね枚数＝滑らかさ
-        for (auto enemy : drawOrder)
+        for (auto enemy : m_enemies)
         {
             if (!enemy->hitsPlayer || enemy->GetHp() <= 0) continue;
             if (enemy->IsSnake()) continue;   // 蛇は頭タイル側で回転付きグローを出す
@@ -2320,8 +2423,37 @@ void BattleScene::Draw()
         }
     }
 
+
+    m_renderer3D->SetDepthEnabled(true);
+    m_player->Draw3D(m_renderer3D);   // 本体は前面
+
+    // 敵：透明な四角が互いを隠さないよう、深度書き込みOFF＋奥→手前で描く
+    m_renderer3D->SetDepthWrite(false);
+    std::vector<Enemy*> drawOrder(m_enemies.begin(), m_enemies.end());
+    std::sort(drawOrder.begin(), drawOrder.end(),
+        [](Enemy* a, Enemy* b) { return a->worldZ < b->worldZ; });   // 奥(小Z)を先に、手前(大Z)を後に
+
     for (auto enemy : drawOrder)
         enemy->Draw3D(m_renderer3D);
+
+    // 聖地に立っている敵：手前に立ちのぼる光（敵の絵にかぶせて「焼かれる」と一目で分かるように）
+    m_renderer3D->SetDepthEnabled(false);
+    m_renderer3D->SetAdditive(true);
+    for (auto enemy : drawOrder)
+    {
+        if (!enemy || enemy->GetHp() <= 0) continue;
+        int best = 0;
+        for (auto& c : enemy->OccupiedCells())
+            if (int f = Faith::At(m_gridMap, c.first, c.second); f > best) best = f;
+        if (best <= 0) continue;
+        float flick = 0.85f + 0.15f * sinf(m_highlightTimer * 3.0f + enemy->worldX);   // 敵ごとに少しずらして明滅
+        float h = 1.2f + enemy->height * 0.6f;
+        m_renderer3D->DrawBillboard(TextureManager::Get("faith_pillar"),
+            enemy->worldX, h * 0.5f, enemy->worldZ, enemy->width * 0.9f, h, 0.0f,
+            XMFLOAT4(1.0f, 0.82f, 0.4f, (0.25f + 0.05f * best) * flick));
+    }
+    m_renderer3D->SetAdditive(false);
+    m_renderer3D->SetDepthEnabled(true);
     m_renderer3D->SetDepthWrite(true);
 
     m_renderer3D->SetDepthEnabled(false);
@@ -2333,7 +2465,7 @@ void BattleScene::Draw()
     for (auto enemy : m_enemies)
     {
         const EnemyAction* act = enemy->GetNextAction();
-        if (act && act->target.unavoidable) { showCross = true; break; }
+        if (act && act->target.unavoidable && !EnemyIntentVisual::Hidden()) { showCross = true; break; }
     }
     if (showCross)
     {
@@ -2510,7 +2642,8 @@ void BattleScene::Draw()
     ctx.screenHeight = m_screenHeight;
     ctx.cameraZoom = m_cameraZoom;
     ctx.isPlayerTurn = m_turnManager.IsPlayerTurn();
-    ctx.showMoveArrows = !m_turnManager.IsPlayerTurn() || m_arrowRevealTimer <= 0.0f;
+    ctx.showMoveArrows = (!m_turnManager.IsPlayerTurn() || m_arrowRevealTimer <= 0.0f)
+        && !EnemyIntentVisual::Hidden();   // 目隠し中は移動予定も見せない
     ctx.mousePos = m_input.GetMousePos();
     ctx.outOfRangeCells = &m_highlighter.GetOutOfRangeCells();
     ctx.travelPath = &m_movePath;
@@ -3049,7 +3182,8 @@ void BattleScene::HandleInput()
 
             CardEffectType met = cards[m_selectedCardIndex]->GetData()->mainEffect.type;
             bool needCell = (met == CardEffectType::PlaceTrap || met == CardEffectType::DetonateAt
-                || met == CardEffectType::DetonateChain || met == CardEffectType::PlaceDecoy);
+                || met == CardEffectType::DetonateChain || met == CardEffectType::PlaceDecoy
+                || (met == CardEffectType::Engrave && cards[m_selectedCardIndex]->GetData()->range > 0));
             if ((ct == CardType::Attack || ct == CardType::Move || needCell)
                 && !usePath && !moveCanceled)
             {
@@ -3129,6 +3263,7 @@ void BattleScene::HandleInput()
                 );
                 if (execResult.cardUsed)                                   // 実際に使えた時だけ
                     m_player->OnCardUsed(dataCopy.type, targetCol - m_playerCol, targetRow - m_playerRow);
+                if (execResult.purgeHandCurses) PurgeHandCurses();   // 浄化
                 if (execResult.startChainDetonate)
                 {
                     m_chainQueue.clear();
@@ -3178,7 +3313,7 @@ void BattleScene::HandleInput()
                         m_playerRow = newPlayerRow;
                         m_player->gridCol = m_playerCol;
                         m_player->gridRow = m_playerRow;
-                        OnPlayerMoved();   // レリック：移動時
+                        OnPlayerMoved(oldCol, oldRow);   // レリック：移動時
                         float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
                         float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
                         if (usePath && !usePath->empty())
@@ -3436,6 +3571,7 @@ void BattleScene::HandleInput()
                 );
                 if (execResult.cardUsed)                                   // 実際に使えた時だけ
                     m_player->OnCardUsed(dataCopy.type, result.col - m_playerCol, result.row - m_playerRow);
+                if (execResult.purgeHandCurses) PurgeHandCurses();   // 浄化
                 if (execResult.startChainDetonate)
                 {
                     m_chainQueue.clear();
@@ -3483,7 +3619,7 @@ void BattleScene::HandleInput()
                             m_playerRow = newPlayerRow;
                             m_player->gridCol = m_playerCol;
                             m_player->gridRow = m_playerRow;
-                            OnPlayerMoved();   // レリック：移動時
+                            OnPlayerMoved(oldCol, oldRow);   // レリック：移動時
                             float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
                             float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
                             m_player->StartMove(px, pz);
@@ -3916,7 +4052,8 @@ bool BattleScene::SelectedNeedsTarget() const
         || sd->mainEffect.type == CardEffectType::PlaceTrap
         || sd->mainEffect.type == CardEffectType::DetonateAt
         || sd->mainEffect.type == CardEffectType::DetonateChain
-        || sd->mainEffect.type == CardEffectType::PlaceDecoy;
+        || sd->mainEffect.type == CardEffectType::PlaceDecoy
+        || (sd->mainEffect.type == CardEffectType::Engrave && sd->range > 0);   // 灯火：マスを選んで刻む
 }
 
 bool BattleScene::TargetsHiddenByHand(const CardData& d) const
@@ -4116,4 +4253,39 @@ bool BattleScene::IsRelicSpent(const std::string& id) const
     // 最初の攻撃
     if (k == "firstAttack") return m_firstAttackDone;
     return false;
+}
+
+// 立っているマスの信仰を、プレイヤーのバフとして反映する（毎フレーム）
+// バフにしておくと、攻撃の加算がカードの数値表示（強化で緑）とバフ一覧にそのまま出る
+void BattleScene::SyncFaithBuffs()
+{
+    if (!m_player) return;
+    auto& bm = m_player->GetBuffManager();
+    bm.RemoveBuff(BuffType::HolyGround);
+    bm.RemoveBuff(BuffType::Sanctuary);
+
+    int f = Faith::At(m_gridMap, m_playerCol, m_playerRow);
+    auto add = [&](BuffType t, int v) {
+        Buff b; b.type = t; b.value = v; b.duration = -1;   // 永続（離れたら外す）
+        b.name = BuffInfo::Get(t).name; b.description = L"";
+        bm.AddBuff(b);
+        };
+    if (Faith::AttackBonus(f) > 0) add(BuffType::HolyGround, Faith::AttackBonus(f));
+    if (Faith::IsSanctuary(f))     add(BuffType::Sanctuary, 1);
+}
+
+// 浄化：手札の呪いを全て廃棄する（ターン終了のエセリアルと同じく、その場で溶かす）
+void BattleScene::PurgeHandCurses()
+{
+    for (int i = (int)m_hand.GetCards().size() - 1; i >= 0; i--)
+    {
+        const CardData* dd = m_hand.GetCards()[i]->GetData();
+        if (!dd || dd->type != CardType::Curse) continue;
+        m_battleUI->StartDiscardEffectAt(i, dd, 0.0f, true);
+        m_deck.ExhaustCard(m_hand.GetCards()[i]->GetId());
+        m_hand.RemoveCard(i);
+        m_battleUI->OnCardRemoved(i);
+    }
+    m_selectedCardIndex = -1;   // 手札が減ったので、選択とホバーは無効に（index のずれ対策）
+    m_hoveredCardIndex = -1;
 }

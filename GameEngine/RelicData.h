@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 
-struct RelicEffect { std::string kind; int value = 0; };   // 追加効果（マイナスで代償）
+struct RelicEffect { std::string kind; int value = 0; std::string param; };   // 追加効果（マイナスで代償）。param はカードIDなど
 
 struct RelicDef {
     std::string id, name, desc, kind, rarity, effect;   // effect: "block" / "energy"
@@ -25,6 +25,12 @@ struct RelicDef {
         int v = (kind == k) ? value : 0;
         for (auto& e : extra) if (e.kind == k) v += e.value;
         return v;
+    }
+    // 取得時にデッキへ加わるカード（代償の呪いなど）。無ければ空
+    std::string AddedCard() const
+    {
+        for (auto& e : extra) if (e.kind == "addCard") return e.param;
+        return "";
     }
 
     std::string icon;   // アイコンのテクスチャ名（Assets/UI/<icon>.png。空なら名前の文字で表示）
