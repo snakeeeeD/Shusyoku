@@ -2001,26 +2001,34 @@ void BattleScene::Draw()
     }
 
     // 背景テーマ（層＋ボスで地面/装飾/サイズを決定）
-    struct Theme { const char* ground; const char* tex[3]; float w[3]; float h[3]; };
+    struct Theme { const char* ground; const char* tex[3]; float w[3]; float h[3];
+                   const char* cellTex; int cellVariants; XMFLOAT4 cellCol; };   // マスの絵（variants>1 なら _0.._n-1）と空マスの色
     int themeLayer = PlayerDataManager::GetData().layer;
     Theme th;
     if (m_category == EncCategory::Boss && m_battleEnemyId == "l3boss")
     {
         if (m_bossAwakened)
-            th = { "ground_void_awake", { "deco_rift","deco_debris","deco_throne" }, { 2.6f,2.4f,3.4f }, { 3.2f,2.2f,4.2f } };
+            th = { "ground_void_awake", { "deco_rift","deco_debris","deco_throne" }, { 2.6f,2.4f,3.4f }, { 3.2f,2.2f,4.2f },
+                   "cell_stone", 4, { 0.60f, 0.42f, 0.52f, 0.92f } };
         else
-            th = { "ground_void",       { "deco_rift","deco_debris","deco_throne" }, { 2.6f,2.4f,3.4f }, { 3.2f,2.2f,4.2f } };
+            th = { "ground_void",       { "deco_rift","deco_debris","deco_throne" }, { 2.6f,2.4f,3.4f }, { 3.2f,2.2f,4.2f },
+                   "cell_stone", 4, { 0.52f, 0.48f, 0.62f, 0.92f } };
     }
     else if (m_category == EncCategory::Boss && m_battleEnemyId == "l2boss")
-        th = { "ground_snakepit", { "deco_darkspike","deco_bones","deco_egg" }, { 2.6f,2.4f,2.6f }, { 3.8f,3.4f,2.1f } };
+        th = { "ground_snakepit", { "deco_darkspike","deco_bones","deco_egg" }, { 2.6f,2.4f,2.6f }, { 3.8f,3.4f,2.1f },
+               "cell_stone", 4, { 0.50f, 0.56f, 0.44f, 0.92f } };
     else if (m_category == EncCategory::Boss)
-        th = { "ground_scorched", { "deco_deadtree","deco_ember","deco_darkrock" }, { 2.8f,2.6f,2.6f }, { 3.8f,2.1f,2.1f } };   // dragon(1層)
+        th = { "ground_scorched", { "deco_deadtree","deco_ember","deco_darkrock" }, { 2.8f,2.6f,2.6f }, { 3.8f,2.1f,2.1f },   // dragon(1層)
+               "cell_stone", 4, { 0.55f, 0.47f, 0.43f, 0.92f } };
     else if (themeLayer <= 1)
-        th = { "ground_grass",    { "deco_tree","deco_bush","deco_rock" },          { 3.0f,2.4f,2.6f }, { 3.8f,1.8f,2.1f } };
+        th = { "ground_grass",    { "deco_tree","deco_bush","deco_rock" },          { 3.0f,2.4f,2.6f }, { 3.8f,1.8f,2.1f },
+               "cell_stone", 4, { 0.80f, 0.76f, 0.66f, 0.92f } };
     else if (themeLayer == 2)
-        th = { "ground_cave",     { "deco_stalagmite","deco_crystal","deco_caverock" }, { 2.0f,2.4f,2.6f }, { 3.8f,3.4f,2.1f } };
+        th = { "ground_cave",     { "deco_stalagmite","deco_crystal","deco_caverock" }, { 2.0f,2.4f,2.6f }, { 3.8f,3.4f,2.1f },
+               "cell_stone", 4, { 0.60f, 0.66f, 0.78f, 0.92f } };
     else
-        th = { "ground_future",   { "deco_pillar","deco_terminal","deco_techblock" }, { 1.9f,2.6f,2.6f }, { 3.8f,3.0f,2.2f } };
+        th = { "ground_future",   { "deco_pillar","deco_terminal","deco_techblock" }, { 1.9f,2.6f,2.6f }, { 3.8f,3.0f,2.2f },
+               "cell_panel", 1, { 0.62f, 0.70f, 0.78f, 0.92f } };
 
     // === 接地用の地面（見下ろし草地をタイル状に敷く） ===
     {
@@ -2080,12 +2088,11 @@ void BattleScene::Draw()
 
                 XMFLOAT4 cc = cell.gameObject.color;
                 if (cell.type == CellType::Empty && !shown[row * cols + col])
-                {
-                    cc.x = min(1.0f, cc.x * 1.3f);   // 空マスだけ明るく
-                    cc.y = min(1.0f, cc.y * 1.3f);
-                    cc.z = min(1.0f, cc.z * 1.3f);
-                }
-                m_renderer3D->DrawTile(cell.gameObject.texture, x, z, size, cc, cell.gameObject.worldY);
+                    cc = th.cellCol;                                    // 空マスは層の地面に合った色
+                const char* ctex = th.cellTex;                          // 石板は数種をマスごとに使い分け（模様の繰り返しを消す）
+                char vname[24];
+                if (th.cellVariants > 1) { sprintf_s(vname, "%s_%d", th.cellTex, (col * 7 + row * 3) % th.cellVariants); ctex = vname; }
+                m_renderer3D->DrawTile(TextureManager::Get(ctex), x, z, size, cc, cell.gameObject.worldY);
             }
     }
 
@@ -2630,7 +2637,7 @@ void BattleScene::Draw()
     ctx.playerRow = m_playerRow;
     ctx.selectedCardIndex = m_selectedCardIndex;
     ctx.hoveredCardIndex = m_hoveredCardIndex;
-    ctx.hoveredCell = m_hoveredCell;
+    ctx.hoveredCell = m_uiBlocked ? std::pair<int, int>(-1, -1) : m_hoveredCell;   // 窓の後ろでマスの説明を出さない
     ctx.highlightTimer = m_highlightTimer;
     ctx.battleResult = m_battleResult;
     ctx.drops = &m_dropResult;
@@ -2644,7 +2651,7 @@ void BattleScene::Draw()
     ctx.isPlayerTurn = m_turnManager.IsPlayerTurn();
     ctx.showMoveArrows = (!m_turnManager.IsPlayerTurn() || m_arrowRevealTimer <= 0.0f)
         && !EnemyIntentVisual::Hidden();   // 目隠し中は移動予定も見せない
-    ctx.mousePos = m_input.GetMousePos();
+    ctx.mousePos = m_uiBlocked ? POINT{ -10000, -10000 } : m_input.GetMousePos();   // 窓の後ろのボタンにホバーさせない
     ctx.outOfRangeCells = &m_highlighter.GetOutOfRangeCells();
     ctx.travelPath = &m_movePath;
     ctx.selectedEnemy = FocusEnemy();

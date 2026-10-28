@@ -1,5 +1,6 @@
 #pragma once
 #include "Scene.h"
+#include "HoverLift.h"
 #include <memory>
 #include <string> 
 #include <vector>
@@ -333,7 +334,8 @@ private:
     static constexpr float HOVER_LIFT = 3.0f;
     URect Lifted(const URect& r)
     {
-        return r.has(m_uiInput.GetMousePos()) ? URect{ r.x, r.y - HOVER_LIFT, r.w, r.h } : r;
+        float up = HoverLift::Get(r.x, r.y, r.has(m_uiInput.GetMousePos()), HOVER_LIFT);   // 手札と同じ補間で浮く
+        return URect{ r.x, r.y - up, r.w, r.h };
     }
 
     // 上部のバー（HP・デッキ・設定など）を出すシーンか

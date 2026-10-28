@@ -269,7 +269,13 @@
       "value": 1,
       "rarity": "boss",
       "desc": "毎ターン、エナジー+1\n代償：デッキに呪い・盲目が加わる",
-      "extra": [ { "kind": "addCard", "param": "cursed_blindness", "value": 1 } ]
+      "extra": [
+        {
+          "kind": "addCard",
+          "param": "cursed_blindness",
+          "value": 1
+        }
+      ]
     },
     {
       "id": "boss_titan",
@@ -279,7 +285,12 @@
       "value": 30,
       "rarity": "boss",
       "desc": "最大HP+30\n代償：歩数-5",
-      "extra": [ { "kind": "steps", "value": -5 } ]
+      "extra": [
+        {
+          "kind": "steps",
+          "value": -5
+        }
+      ]
     },
     {
       "id": "boss_rampart",
@@ -289,7 +300,12 @@
       "value": 100,
       "rarity": "boss",
       "desc": "ターン終了時、ブロックを全て保持\n代償：最大HP-10",
-      "extra": [ { "kind": "maxHp", "value": -10 } ]
+      "extra": [
+        {
+          "kind": "maxHp",
+          "value": -10
+        }
+      ]
     },
     {
       "id": "boss_sage_core",
@@ -299,7 +315,12 @@
       "value": 2,
       "rarity": "boss",
       "desc": "コアの素材枠+2\n代償：合成カードのコスト+1",
-      "extra": [ { "kind": "craftCostDown", "value": -1 } ]
+      "extra": [
+        {
+          "kind": "craftCostDown",
+          "value": -1
+        }
+      ]
     },
     {
       "id": "boss_oni_horn",
@@ -309,7 +330,12 @@
       "value": 3,
       "rarity": "boss",
       "desc": "戦闘開始時、攻撃力+3\n代償：ショップの価格+25%",
-      "extra": [ { "kind": "shopDiscount", "value": -25 } ]
+      "extra": [
+        {
+          "kind": "shopDiscount",
+          "value": -25
+        }
+      ]
     },
     {
       "id": "event_fortune",
@@ -352,9 +378,9 @@
       "icon": "relic_event_spirit_drop",
       "name": "精霊の雫",
       "kind": "startHeal",
-      "value": 10,
+      "value": 4,
       "rarity": "event",
-      "desc": "戦闘開始時 HP+10"
+      "desc": "戦闘開始時 HP+4\n"
     },
     {
       "id": "event_whetstone",

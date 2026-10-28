@@ -102,6 +102,7 @@ public:
     void FreeLookStep(Input& in, float deltaTime);   // チュートリアル中の「見る系」駆動
 
     void SetForceHitmark(bool b) { m_forceHitmark = b; }
+    void SetUiBlocked(bool b) { m_uiBlocked = b; }   // 上に窓（デッキ・マップ・設定など）が開いている間は、戦闘UIのホバーを止める
     bool GetHitmarkRect(float& x, float& y, float& w, float& h) const;
     bool GetEnemyPanelRect(float& x, float& y, float& w, float& h) const;
 
@@ -302,6 +303,7 @@ private:
     bool m_freeLook = false;
 
     bool m_forceHitmark = false;
+    bool m_uiBlocked = false;      // SetUiBlocked
 
     std::vector<std::pair<int, int>> m_detonateQueue;
     float m_detonateTimer = 0.0f;

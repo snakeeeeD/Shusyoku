@@ -369,6 +369,9 @@
     <ClInclude Include="Faith.h">
       <Filter>ソース ファイル\04-Game内関連\20-GridMap</Filter>
     </ClInclude>
+    <ClInclude Include="HoverLift.h">
+      <Filter>ソース ファイル\01-描画関連\08-UIWindow</Filter>
+    </ClInclude>
     <ClInclude Include="GameObject.h">
       <Filter>ソース ファイル\03-Object関連\01-GameObject</Filter>
     </ClInclude>

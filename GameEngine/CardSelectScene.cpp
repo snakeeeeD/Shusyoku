@@ -1,6 +1,7 @@
 #include "CardSelectScene.h"
 #include "CardTooltip.h"
 #include "RelicManager.h"
+#include "HoverLift.h"
 #include "UiWindow.h"
 #include "Audio.h"
 #include "Telemetry.h"
@@ -116,7 +117,7 @@ void CardSelectScene::Draw()
         && mp.y >= skipY && mp.y <= skipY + skipH;
     if (skipHover && !m_skipHover) Audio::PlaySE("Assets/Sound/se/hover.mp3");
     m_skipHover = skipHover;
-    float skipDy = skipHover ? -4.0f : 0.0f;
+    float skipDy = -HoverLift::Get(skipX, skipY, skipHover, 4.0f);   // ŽèŽD‚Æ“¯‚¶•âŠÔ‚Å•‚‚­
     UiWindow::Button(m_spriteRenderer, m_whiteTexture, skipX, skipY + skipDy, skipW, skipH,
         skipHover ? XMFLOAT4(0.5f, 0.3f, 0.3f, 1.0f) : XMFLOAT4(0.3f, 0.2f, 0.2f, 0.9f));
 

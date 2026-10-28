@@ -1,6 +1,7 @@
 #include "TitleScene.h"
 #include "TextureLoader.h"
 #include "UiWindow.h"
+#include "HoverLift.h"
 #include "Settings.h"
 #include "Audio.h"
 #include "QuickPlay.h"
@@ -53,16 +54,16 @@ void TitleScene::Draw()
     POINT mp = m_input.GetMousePos();
     float bx, by, bw, bh; DispBtnRect(bx, by, bw, bh);
     bool hov = (mp.x >= bx && mp.x <= bx + bw && mp.y >= by && mp.y <= by + bh);
-    float dy = hov ? -4.0f : 0.0f;
+    float dy = -HoverLift::Get(bx, by, hov, 4.0f);   // ŽèŽD‚Æ“¯‚¶•âŠÔ‚Å•‚‚­
 
     float nx, ny, cx, cy, mw, mh; MenuBtnRects(nx, ny, cx, cy, mw, mh);
     bool hasSave = PlayerDataManager::HasSaveData() && !PlayerDataManager::IsRunOver();
     bool nHov = (mp.x >= nx && mp.x <= nx + mw && mp.y >= ny && mp.y <= ny + mh);
     bool cHov = hasSave && (mp.x >= cx && mp.x <= cx + mw && mp.y >= cy && mp.y <= cy + mh);
-    float nDy = nHov ? -4.0f : 0.0f, cDy = cHov ? -4.0f : 0.0f;
+    float nDy = -HoverLift::Get(nx, ny, nHov, 4.0f), cDy = -HoverLift::Get(cx, cy, cHov, 4.0f);
     float qx, qy, qw, qh; QuickBtnRect(qx, qy, qw, qh);
     bool qHov = (mp.x >= qx && mp.x <= qx + qw && mp.y >= qy && mp.y <= qy + qh);
-    float qDy = qHov ? -4.0f : 0.0f;
+    float qDy = -HoverLift::Get(qx, qy, qHov, 4.0f);
 
     m_spriteRenderer->Begin();
     if (m_titleTexture)

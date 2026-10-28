@@ -10,6 +10,7 @@
 #include "Se.h"
 #include "Telemetry.h"
 #include "URect.h"
+#include "HoverLift.h"
 
 #include <cstdlib>
 #include <algorithm>
@@ -536,7 +537,7 @@ void ShopScene::DrawDeckRemoval()
         const CardData* d = CardDataBase::Get(deck[i]);
         if (!d) continue;
         float bx, by; GetDeckSlot(i, bx, by);
-        if (i == hov) by -= 12.0f;
+        by -= HoverLift::Get(bx, by, i == hov, 12.0f);   // 手札と同じ補間で浮く
         CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, bx, by, 0.9f, 0.0f,
             CardVisual::GetCardColor(d->type), d, m_time);
         if (!CardDataBase::CanRemove(deck[i]))   // 削除不可は暗く
@@ -566,7 +567,7 @@ void ShopScene::DrawDeckRemoval()
         const CardData* d = CardDataBase::Get(deck[i]);
         if (!d) continue;
         float bx, by; GetDeckSlot(i, bx, by);
-        if (i == hov) by -= 12.0f;
+        by -= HoverLift::Get(bx, by, i == hov, 12.0f);   // 手札と同じ補間で浮く
         CardVisual::DrawTexts(m_textRenderer, d, nullptr, bx, by, 0.9f, 0.0f, 1.0f);
     }
     m_textRenderer->DrawText(L"カードをクリックで削除 / 余白で戻る", m_screenWidth / 2.0f - 170.0f, m_screenHeight - 55.0f, 20.0f, D2D1::ColorF(0.8f, 0.8f, 0.8f));

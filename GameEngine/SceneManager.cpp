@@ -154,6 +154,14 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("battle_bg", L"Assets/Field/GrassField.jpg");
 		// 1層 草原
 		TextureManager::Load("ground_grass", L"Assets/Field/ground_grass.png");
+		// 盤面のマス（白っぽい板。層ごとの色を掛けて使う）
+		for (int i = 0; i < 4; i++)
+		{
+			std::string key = "cell_stone_" + std::to_string(i);
+			std::wstring path = L"Assets/Field/cell_stone_" + std::to_wstring(i) + L".png";
+			TextureManager::Load(key, path.c_str());
+		}
+		TextureManager::Load("cell_panel", L"Assets/Field/cell_panel.png");
 		TextureManager::Load("deco_tree", L"Assets/Field/deco_tree.png");
 		TextureManager::Load("deco_rock", L"Assets/Field/deco_rock.png");
 		TextureManager::Load("deco_bush", L"Assets/Field/deco_bush.png");
@@ -726,8 +734,7 @@ void SceneManager::DrawOverlay()
 	if (m_currentType != SceneType::Field)   // Mapボタン（フィールドは自身がマップなので非表示）：小さな正方形＋地図のアイコン
 	{
 		URect mbBase = BarButtonRect(0), mb = Lifted(mbBase);
-		UiWindow::Button(m_uiSprite, white, mb.x, mb.y, mb.w, mb.h,
-			mbBase.has(m_uiInput.GetMousePos()) ? XMFLOAT4(0.4f, 0.4f, 0.5f, 1) : XMFLOAT4(0.22f, 0.22f, 0.3f, 1));
+		UiWindow::Button(m_uiSprite, white, mb.x, mb.y, mb.w, mb.h, XMFLOAT4(0.22f, 0.22f, 0.3f, 1));   // ホバーは浮くだけ（色は変えない）
 		m_uiSprite->DrawSprite(TextureManager::Get("icon_map"), mb.x + (mb.w - 24.0f) / 2.0f, mb.y + 3.0f, 24.0f, 24.0f,
 			0.0f, XMFLOAT4(0.95f, 0.88f, 0.7f, 1));   // 羊皮紙の色
 	}
@@ -735,9 +742,7 @@ void SceneManager::DrawOverlay()
 	{
 		SettingsUI u = SettingsLayout();
 		URect g = Lifted(u.gear);
-		bool hov = u.gear.has(m_uiInput.GetMousePos());
-		UiWindow::Button(m_uiSprite, white, g.x, g.y, g.w, g.h,
-			hov ? XMFLOAT4(0.4f, 0.4f, 0.5f, 1) : XMFLOAT4(0.22f, 0.22f, 0.3f, 1));
+		UiWindow::Button(m_uiSprite, white, g.x, g.y, g.w, g.h, XMFLOAT4(0.22f, 0.22f, 0.3f, 1));   // ホバーは浮くだけ（色は変えない）
 	}
 
 	m_uiSprite->End();
@@ -837,7 +842,7 @@ void SceneManager::DrawDeckCards(bool textPass)
 		const CardData* d = CardDataBase::Get(cid);
 		if (!d) continue;
 		float bx, by; GetDeckCardBase(slot, bx, by);
-		if (vis[slot] == hovIdx) by -= 10.0f;              // ← ホバーで浮く
+		by -= HoverLift::Get(bx, by, vis[slot] == hovIdx, 10.0f);   // ← ホバーで浮く（滑らかに）
 
 		if (!textPass)
 		{
@@ -878,7 +883,7 @@ void SceneManager::DrawDeckPreview()
 		bool bHov = (mp.x >= bX && mp.x <= bX + bW && mp.y >= bY && mp.y <= bY + bH);
 		if (bHov && !m_upgradeBtnHov) Audio::PlaySE("Assets/Sound/se/hover.mp3");
 		m_upgradeBtnHov = bHov;
-		float bDy = bHov ? -4.0f : 0.0f;
+		float bDy = -HoverLift::Get(bX, bY, bHov, 4.0f);
 		UiWindow::Button(m_uiSprite, white, bX, bY + bDy, bW, bH,
 			bHov ? XMFLOAT4(0.70f, 0.58f, 0.28f, 1.0f) : XMFLOAT4(0.55f, 0.45f, 0.20f, 1.0f));
 		m_uiSprite->End();
@@ -1664,6 +1669,7 @@ void SceneManager::DrawBarTips()
 
 void SceneManager::Update(float deltaTime)
 {
+	HoverLift::Tick(deltaTime);   // ホバーで浮く動きの時計
 	if (m_fadeState == Fade::Out)
 	{
 		m_fadeAlpha += FADE_SPEED * deltaTime;
@@ -1793,6 +1799,8 @@ void SceneManager::Update(float deltaTime)
 		m_matScroll += (m_matScrollTarget - m_matScroll) * min(1.0f, 15.0f * deltaTime);
 	}
 
+	if (auto battle = dynamic_cast<BattleScene*>(m_currentScene))
+		battle->SetUiBlocked(AnyModalOpen() && !m_tutorialOpen);   // チュートリアルは自前でホバーを動かすので除く
 	if (m_deckOpen || m_craftOpen || m_invOpen || m_restOpen || m_mapOpen || m_eventOpen || m_craftFxTimer > 0.0f) return;
 
 	// チュートリアル中：カード強制ホバー＋戦闘はフリールックで駆動
@@ -1993,7 +2001,7 @@ void SceneManager::DrawCraft()
 			float x, y, w, h; GetCraftBtnRect(x, y, w, h);
 			bool ready = !m_craftBase.empty() && (int)m_craftMods.size() >= CraftModSlots();
 			bool hov = UiHover(x, y, w, h, m_uiInput.GetMousePos(), "craftmake", s_lastHoverKey);   // ホバーSE＋判定
-			float dy = hov ? -4.0f : 0.0f;
+			float dy = -HoverLift::Get(x, y, hov, 4.0f);
 			UiWindow::Button(m_uiSprite, white, x, y + dy, w, h,
 				ready ? XMFLOAT4(0.3f, 0.55f, 0.3f, 1.0f) : XMFLOAT4(0.25f, 0.25f, 0.25f, 1.0f));
 		}
@@ -3182,7 +3190,7 @@ void SceneManager::DrawEventPicker()
 		const CardData* d = CardDataBase::Get(deck[i]);
 		if (!d) continue;
 		float bx, by; GetEventCardSlot(i, bx, by);
-		if (i == hov) by -= 12.0f;
+		by -= HoverLift::Get(bx, by, i == hov, 12.0f);
 		if (i == hov)   // ホバー：色は変えず、浮かせて金の縁
 		{
 			float rx, ry, rw, rh; CardVisual::GetRect(bx, by, 0.85f, rx, ry, rw, rh);
@@ -3213,7 +3221,7 @@ void SceneManager::DrawEventPicker()
 		const CardData* d = CardDataBase::Get(deck[i]);
 		if (!d) continue;
 		float bx, by; GetEventCardSlot(i, bx, by);
-		if (i == hov) by -= 12.0f;
+		by -= HoverLift::Get(bx, by, i == hov, 12.0f);
 		CardVisual::DrawTexts(m_textRenderer, d, nullptr, bx, by, 0.85f, 0.0f, 1.0f);
 	}
 	m_textRenderer->End();

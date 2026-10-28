@@ -191,6 +191,7 @@
     <ClInclude Include="GameUtils.h" />
     <ClInclude Include="GridMap.h" />
     <ClInclude Include="Faith.h" />
+    <ClInclude Include="HoverLift.h" />
     <ClInclude Include="Hand.h" />
     <ClInclude Include="HighlightPalette.h" />
     <ClInclude Include="Hint.h" />
