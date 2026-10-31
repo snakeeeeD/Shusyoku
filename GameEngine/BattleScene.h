@@ -86,6 +86,8 @@ public:
     void SetHoveredCard(int i) { m_hoveredCardIndex = i; }
 
     void OnPlayerMoved(int fromCol, int fromRow);   // 移動時のレリック（from=移動前のマス）
+    void OpenDiscardSelect(int n);                  // 「選んで捨てる」を開く（敵が全員倒れていたら開かない）
+    void CancelDiscardSelect();                     // 開いていれば閉じる（勝敗が決まった時）
 
     std::vector<DropShown> m_dropResult;
 
@@ -325,7 +327,7 @@ private:
     bool  m_windupPlayed = false;   // この行動の落下演出を出したか
 
     // 狙いの確定：離したマスに少し止まっていた時だけ使う（ドラッグ途中で通り過ぎたマスでの誤使用を防ぐ）
-    static constexpr unsigned long long AIM_SETTLE_MS = 150;
+    static constexpr unsigned long long AIM_SETTLE_MS = 200;
     std::pair<int, int> m_aimCell = { -1, -1 };
     unsigned long long m_aimSince = 0;
 

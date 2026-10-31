@@ -265,6 +265,9 @@ private:
     float m_hoveredBuffX = 0;
     float m_hoveredBuffY = 0;
     bool m_hasHoveredBuff = false;
+    static constexpr unsigned long long CELL_TIP_DELAY_MS = 500;   // マスの説明が出るまでの時間
+    std::pair<int, int> m_tipCell{ -1, -1 };                       // カーソルが止まっているマス
+    unsigned long long m_tipSince = 0;                             // そのマスに乗った時刻
     bool m_cardLockedToCenter = false;
 
     bool GetEnemyScreenPos(Enemy* enemy, Renderer3D* renderer3D, float& outX, float& outY) const;

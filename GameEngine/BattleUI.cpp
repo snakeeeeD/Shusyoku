@@ -176,58 +176,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
     float oy = RelicManager::BarExtraHeight(m_screenWidth);   // レリック折り返しぶん下げる
 
-    DrawPlayerHud(ctx);   // 自分の状態（左下）
-    m_spriteRenderer->Begin();
-
     int topIdx = (ctx.selectedCardIndex >= 0) ? ctx.selectedCardIndex : ctx.hoveredCardIndex;
-
-    float drawPileX = 20.0f;
-    float drawPileY = m_screenHeight - 60.0f;
-    float drawPileW = 50.0f;
-    float drawPileH = 40.0f;
-    bool hoverDrawPile = UiHover(drawPileX, drawPileY, drawPileW, drawPileH, ctx.mousePos, "drawpile", s_hoverKey);
-    float dpy = hoverDrawPile ? drawPileY - 6.0f : drawPileY;
-    XMFLOAT4 drawPileColor = hoverDrawPile ? XMFLOAT4(0.3f, 0.3f, 0.9f, 1.0f) : XMFLOAT4(0.2f, 0.2f, 0.6f, 1.0f);
-    XMFLOAT4 dpTint = hoverDrawPile ? XMFLOAT4(1, 1, 1, 1) : XMFLOAT4(0.82f, 0.82f, 0.82f, 1);
-    m_spriteRenderer->DrawSprite(TextureManager::Get("ui_draw"), drawPileX, dpy, drawPileW, drawPileH, 0.0f, dpTint);
-    // 山札バッジ（209の直後）
-    m_spriteRenderer->DrawSprite(TextureManager::Get("particle"),
-        drawPileX + drawPileW - 24.0f, dpy + drawPileH - 22.0f, 24.0f, 24.0f, 0.0f, XMFLOAT4(0.10f, 0.09f, 0.13f, 1.0f));
-
-    float discardX = 80.0f;
-    float discardY = m_screenHeight - 60.0f;
-    float discardW = 50.0f;
-    float discardH = 40.0f;
-    bool hoverDiscard = UiHover(discardX, discardY, discardW, discardH, ctx.mousePos, "discardpile", s_hoverKey);
-    float ddy = hoverDiscard ? discardY - 6.0f : discardY;
-    XMFLOAT4 discardColor = hoverDiscard ? XMFLOAT4(0.8f, 0.3f, 0.3f, 1.0f) : XMFLOAT4(0.5f, 0.2f, 0.2f, 1.0f);
-    XMFLOAT4 dcTint = hoverDiscard ? XMFLOAT4(1, 1, 1, 1) : XMFLOAT4(0.82f, 0.82f, 0.82f, 1);
-    m_spriteRenderer->DrawSprite(TextureManager::Get("ui_discard"), discardX, ddy, discardW, discardH, 0.0f, dcTint);
-    m_spriteRenderer->DrawSprite(TextureManager::Get("particle"),
-        discardX + discardW - 24.0f, ddy + discardH - 22.0f, 24.0f, 24.0f, 0.0f, XMFLOAT4(0.10f, 0.09f, 0.13f, 1.0f));
-
-    if (ctx.deck->GetExhaustPileCount() > 0)
-    {
-        float exhaustX = 140.0f;
-        float exhaustY = m_screenHeight - 60.0f;
-        float exhaustW = 50.0f;
-        float exhaustH = 40.0f;
-        bool hoverExhaust = UiHover(exhaustX, exhaustY, exhaustW, exhaustH, ctx.mousePos, "exhaustpile", s_hoverKey);
-        float epy = hoverExhaust ? exhaustY - 6.0f : exhaustY;
-        XMFLOAT4 exhaustColor = hoverExhaust ? XMFLOAT4(0.6f, 0.6f, 0.3f, 1.0f) : XMFLOAT4(0.4f, 0.4f, 0.2f, 1.0f);
-        XMFLOAT4 exTint = hoverExhaust ? XMFLOAT4(1, 1, 1, 1) : XMFLOAT4(0.82f, 0.82f, 0.82f, 1);
-        m_spriteRenderer->DrawSprite(TextureManager::Get("ui_exhaust"), exhaustX, epy, exhaustW, exhaustH, 0.0f, exTint);
-        m_spriteRenderer->DrawSprite(TextureManager::Get("particle"),
-            exhaustX + exhaustW - 24.0f, epy + exhaustH - 22.0f, 24.0f, 24.0f, 0.0f, XMFLOAT4(0.10f, 0.09f, 0.13f, 1.0f));
-    }
-
-    DrawPlayCardEffectsFull(ctx);
-    DrawDiscardEffectsFull(ctx);
-    DrawExhaustEmbers();
-
-    DrawReshuffleEffect();
-
-    m_spriteRenderer->End();
 
     m_spriteRenderer->Begin();
     DrawTargetIndicators(ctx);
@@ -357,33 +306,6 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         }
 
     DrawPlayerOffScreenIndicator(ctx);
-    if (ctx.discardSelectCount > 0)
-    {
-        if (!ctx.discardViewMode)
-            m_spriteRenderer->DrawSprite(m_whiteTexture, 0.0f, 0.0f,
-                (float)m_screenWidth, (float)m_screenHeight, 0.0f, XMFLOAT4(0, 0, 0, 0.55f));
-
-        int sel = ctx.discardSelected ? (int)ctx.discardSelected->size() : 0;
-        bool ready = (sel == ctx.discardSelectCount);
-
-        // 案内の布バナー
-        m_spriteRenderer->DrawSprite(TextureManager::Get("ui_banner"),
-            m_screenWidth / 2.0f - 220.0f, m_screenHeight - 410.0f, 440.0f, 76.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
-
-        // 確定（選び終わるまで灰色）／盤面を見る：窓の枠のボタン、ホバーで浮く
-        float x, y, w, h;
-        GetDiscardConfirmRect(x, y, w, h);
-        bool hc = ready && UiHover(x, y, w, h, ctx.mousePos, "discardOk", s_hoverKey);
-        UiWindow::Button(m_spriteRenderer, m_whiteTexture, x, hc ? y - 3.0f : y, w, h,
-            !ready ? XMFLOAT4(0.22f, 0.22f, 0.24f, 1.0f)
-            : hc ? XMFLOAT4(0.85f, 0.4f, 0.25f, 1.0f) : XMFLOAT4(0.7f, 0.3f, 0.2f, 1.0f));
-
-        GetDiscardViewRect(x, y, w, h);
-        bool hv = UiHover(x, y, w, h, ctx.mousePos, "discardView", s_hoverKey);
-        UiWindow::Button(m_spriteRenderer, m_whiteTexture, x, hv ? y - 3.0f : y, w, h,
-            ctx.discardViewMode ? XMFLOAT4(0.3f, 0.5f, 0.7f, 1.0f)
-            : hv ? XMFLOAT4(0.4f, 0.4f, 0.5f, 1.0f) : XMFLOAT4(0.25f, 0.28f, 0.4f, 1.0f));
-    }
     m_spriteRenderer->End();
     m_textRenderer->Begin();
 
@@ -426,73 +348,6 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 gw + pad * 2, gh + pad * 2, m_cardAnims[i].currentRot, glow);
         }
     };
-
-    wchar_t drawText[32];
-    // 山札枚数（バッジ上・アウトライン）
-    {
-        wchar_t t[16]; swprintf_s(t, L"%d", ctx.deck->GetDrawPileCount());
-        m_textRenderer->DrawOutlinedText(t, drawPileX + drawPileW - 18.0f, dpy + drawPileH - 20.0f, 17.0f,
-            D2D1::ColorF(1, 1, 1), D2D1::ColorF(0, 0, 0), 2.0f);
-    }
-
-    wchar_t discardText[32];
-    // 捨て札枚数（バッジ上・アウトライン）
-    {
-        wchar_t t[16]; swprintf_s(t, L"%d", ctx.deck->GetDiscardPileCount());
-        m_textRenderer->DrawOutlinedText(t, discardX + discardW - 18.0f, ddy + discardH - 20.0f, 17.0f,
-            D2D1::ColorF(1, 1, 1), D2D1::ColorF(0, 0, 0), 2.0f);
-    }
-
-    if (ctx.deck->GetExhaustPileCount() > 0)
-    {
-        float ex2 = 140.0f, ey2 = m_screenHeight - 60.0f;
-        bool he = ctx.mousePos.x >= ex2 && ctx.mousePos.x <= ex2 + 50.0f
-            && ctx.mousePos.y >= ey2 && ctx.mousePos.y <= ey2 + 40.0f;
-        float ty = he ? ey2 - 6.0f : ey2;                       // ホバーで浮く分
-        wchar_t t[16]; swprintf_s(t, L"%d", ctx.deck->GetExhaustPileCount());   // ← 廃棄札の枚数
-        m_textRenderer->DrawOutlinedText(t, ex2 + 50.0f - 18.0f, ty + 40.0f - 20.0f, 17.0f,
-            D2D1::ColorF(1, 1, 1), D2D1::ColorF(0, 0, 0), 2.0f);
-    }
-
-    // パイルのホバー説明ウィンドウ
-    const wchar_t* pileTip = nullptr;
-    if (hoverDrawPile) pileTip = L"山札：これから引くカード";
-    else if (hoverDiscard)  pileTip = L"捨て札：使ったカード（尽きたら戻る）";
-    else if (ctx.deck->GetExhaustPileCount() > 0
-        && ctx.mousePos.x >= 140.0f && ctx.mousePos.x <= 190.0f
-        && ctx.mousePos.y >= m_screenHeight - 60.0f && ctx.mousePos.y <= m_screenHeight - 20.0f)
-        pileTip = L"廃棄：このバトル中は戻らない";
-
-    if (pileTip)
-    {
-        float tw = 320.0f, th = 28.0f, tx = 20.0f, ty = m_screenHeight - 100.0f;
-        m_textRenderer->End();                                  
-        m_spriteRenderer->Begin();
-        DrawWindow(tx - 6, ty - 6, tw + 12, th + 12);   // 枠分だけ広げてパディング確保
-        m_spriteRenderer->End();
-        m_textRenderer->Begin();                                 // テキスト再開（以降の描画はこのバッチで続く）
-        m_textRenderer->DrawText(pileTip, tx + 10.0f, ty + 5.0f, 15.0f, D2D1::ColorF(1, 1, 1));
-    }
-
-    if (ctx.discardSelectCount > 0)
-    {
-        int sel = ctx.discardSelected ? (int)ctx.discardSelected->size() : 0;
-        bool ready = (sel == ctx.discardSelectCount);
-        wchar_t msg[64];
-        swprintf_s(msg, L"捨てるカードを選ぶ（%d/%d）", sel, ctx.discardSelectCount);
-        m_textRenderer->DrawOutlinedTextCentered(msg, m_screenWidth / 2.0f, m_screenHeight - 410.0f, 440.0f, 76.0f,
-            22.0f, D2D1::ColorF(1.0f, 0.95f, 0.8f), D2D1::ColorF(0.25f, 0.04f, 0.06f), 3.0f);
-
-        float x, y, w, h;
-        GetDiscardConfirmRect(x, y, w, h);
-        float dy = (ready && IsOnDiscardConfirm(ctx.mousePos)) ? -3.0f : 0.0f;
-        m_textRenderer->DrawTextCentered(L"確定", x + w / 2.0f, y + dy, w, 20.0f,
-            ready ? D2D1::ColorF(1, 1, 1) : D2D1::ColorF(0.5f, 0.5f, 0.5f), h);
-        GetDiscardViewRect(x, y, w, h);
-        dy = IsOnDiscardView(ctx.mousePos) ? -3.0f : 0.0f;
-        m_textRenderer->DrawTextCentered(ctx.discardViewMode ? L"戻る" : L"盤面を見る", x + w / 2.0f, y + dy, w, 20.0f,
-            D2D1::ColorF(1, 1, 1), h);
-    }
 
     // 敵UI
         m_textRenderer->End();
@@ -684,6 +539,161 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                     11.0f, D2D1::ColorF(D2D1::ColorF::White));
                 buffIconX += iconSize + 20.0f;
             }
+        }
+
+        // 自分の状態（左下）と山札類：敵のUIより手前に描く
+        m_textRenderer->End();
+        DrawPlayerHud(ctx);
+
+        m_spriteRenderer->Begin();
+        float drawPileX = 20.0f;
+        float drawPileY = m_screenHeight - 60.0f;
+        float drawPileW = 50.0f;
+        float drawPileH = 40.0f;
+        bool hoverDrawPile = UiHover(drawPileX, drawPileY, drawPileW, drawPileH, ctx.mousePos, "drawpile", s_hoverKey);
+        float dpy = hoverDrawPile ? drawPileY - 6.0f : drawPileY;
+        XMFLOAT4 drawPileColor = hoverDrawPile ? XMFLOAT4(0.3f, 0.3f, 0.9f, 1.0f) : XMFLOAT4(0.2f, 0.2f, 0.6f, 1.0f);
+        XMFLOAT4 dpTint = hoverDrawPile ? XMFLOAT4(1, 1, 1, 1) : XMFLOAT4(0.82f, 0.82f, 0.82f, 1);
+        m_spriteRenderer->DrawSprite(TextureManager::Get("ui_draw"), drawPileX, dpy, drawPileW, drawPileH, 0.0f, dpTint);
+        // 山札バッジ（209の直後）
+        m_spriteRenderer->DrawSprite(TextureManager::Get("particle"),
+            drawPileX + drawPileW - 24.0f, dpy + drawPileH - 22.0f, 24.0f, 24.0f, 0.0f, XMFLOAT4(0.10f, 0.09f, 0.13f, 1.0f));
+
+        float discardX = 80.0f;
+        float discardY = m_screenHeight - 60.0f;
+        float discardW = 50.0f;
+        float discardH = 40.0f;
+        bool hoverDiscard = UiHover(discardX, discardY, discardW, discardH, ctx.mousePos, "discardpile", s_hoverKey);
+        float ddy = hoverDiscard ? discardY - 6.0f : discardY;
+        XMFLOAT4 discardColor = hoverDiscard ? XMFLOAT4(0.8f, 0.3f, 0.3f, 1.0f) : XMFLOAT4(0.5f, 0.2f, 0.2f, 1.0f);
+        XMFLOAT4 dcTint = hoverDiscard ? XMFLOAT4(1, 1, 1, 1) : XMFLOAT4(0.82f, 0.82f, 0.82f, 1);
+        m_spriteRenderer->DrawSprite(TextureManager::Get("ui_discard"), discardX, ddy, discardW, discardH, 0.0f, dcTint);
+        m_spriteRenderer->DrawSprite(TextureManager::Get("particle"),
+            discardX + discardW - 24.0f, ddy + discardH - 22.0f, 24.0f, 24.0f, 0.0f, XMFLOAT4(0.10f, 0.09f, 0.13f, 1.0f));
+
+        if (ctx.deck->GetExhaustPileCount() > 0)
+        {
+            float exhaustX = 140.0f;
+            float exhaustY = m_screenHeight - 60.0f;
+            float exhaustW = 50.0f;
+            float exhaustH = 40.0f;
+            bool hoverExhaust = UiHover(exhaustX, exhaustY, exhaustW, exhaustH, ctx.mousePos, "exhaustpile", s_hoverKey);
+            float epy = hoverExhaust ? exhaustY - 6.0f : exhaustY;
+            XMFLOAT4 exhaustColor = hoverExhaust ? XMFLOAT4(0.6f, 0.6f, 0.3f, 1.0f) : XMFLOAT4(0.4f, 0.4f, 0.2f, 1.0f);
+            XMFLOAT4 exTint = hoverExhaust ? XMFLOAT4(1, 1, 1, 1) : XMFLOAT4(0.82f, 0.82f, 0.82f, 1);
+            m_spriteRenderer->DrawSprite(TextureManager::Get("ui_exhaust"), exhaustX, epy, exhaustW, exhaustH, 0.0f, exTint);
+            m_spriteRenderer->DrawSprite(TextureManager::Get("particle"),
+                exhaustX + exhaustW - 24.0f, epy + exhaustH - 22.0f, 24.0f, 24.0f, 0.0f, XMFLOAT4(0.10f, 0.09f, 0.13f, 1.0f));
+        }
+
+        DrawReshuffleEffect();
+        m_spriteRenderer->End();
+        m_textRenderer->Begin();
+
+        wchar_t drawText[32];
+        // 山札枚数（バッジ上・アウトライン）
+        {
+            wchar_t t[16]; swprintf_s(t, L"%d", ctx.deck->GetDrawPileCount());
+            m_textRenderer->DrawOutlinedText(t, drawPileX + drawPileW - 18.0f, dpy + drawPileH - 20.0f, 17.0f,
+                D2D1::ColorF(1, 1, 1), D2D1::ColorF(0, 0, 0), 2.0f);
+        }
+
+        wchar_t discardText[32];
+        // 捨て札枚数（バッジ上・アウトライン）
+        {
+            wchar_t t[16]; swprintf_s(t, L"%d", ctx.deck->GetDiscardPileCount());
+            m_textRenderer->DrawOutlinedText(t, discardX + discardW - 18.0f, ddy + discardH - 20.0f, 17.0f,
+                D2D1::ColorF(1, 1, 1), D2D1::ColorF(0, 0, 0), 2.0f);
+        }
+
+        if (ctx.deck->GetExhaustPileCount() > 0)
+        {
+            float ex2 = 140.0f, ey2 = m_screenHeight - 60.0f;
+            bool he = ctx.mousePos.x >= ex2 && ctx.mousePos.x <= ex2 + 50.0f
+                && ctx.mousePos.y >= ey2 && ctx.mousePos.y <= ey2 + 40.0f;
+            float ty = he ? ey2 - 6.0f : ey2;                       // ホバーで浮く分
+            wchar_t t[16]; swprintf_s(t, L"%d", ctx.deck->GetExhaustPileCount());   // ← 廃棄札の枚数
+            m_textRenderer->DrawOutlinedText(t, ex2 + 50.0f - 18.0f, ty + 40.0f - 20.0f, 17.0f,
+                D2D1::ColorF(1, 1, 1), D2D1::ColorF(0, 0, 0), 2.0f);
+        }
+
+        // パイルのホバー説明ウィンドウ
+        const wchar_t* pileTip = nullptr;
+        if (hoverDrawPile) pileTip = L"山札：これから引くカード";
+        else if (hoverDiscard)  pileTip = L"捨て札：使ったカード（尽きたら戻る）";
+        else if (ctx.deck->GetExhaustPileCount() > 0
+            && ctx.mousePos.x >= 140.0f && ctx.mousePos.x <= 190.0f
+            && ctx.mousePos.y >= m_screenHeight - 60.0f && ctx.mousePos.y <= m_screenHeight - 20.0f)
+            pileTip = L"廃棄：このバトル中は戻らない";
+
+        if (pileTip)
+        {
+            float tw = 320.0f, th = 28.0f, tx = 20.0f, ty = m_screenHeight - 100.0f;
+            m_textRenderer->End();                                  
+            m_spriteRenderer->Begin();
+            DrawWindow(tx - 6, ty - 6, tw + 12, th + 12);   // 枠分だけ広げてパディング確保
+            m_spriteRenderer->End();
+            m_textRenderer->Begin();                                 // テキスト再開（以降の描画はこのバッチで続く）
+            m_textRenderer->DrawText(pileTip, tx + 10.0f, ty + 5.0f, 15.0f, D2D1::ColorF(1, 1, 1));
+        }
+        m_textRenderer->End();
+
+        // 捨てる選択の暗幕：敵のUIも一緒に暗くする（手札と使ったカードは明るいまま）
+        bool discarding = ctx.discardSelectCount > 0;
+        m_spriteRenderer->Begin();
+        if (discarding && !ctx.discardViewMode)
+            m_spriteRenderer->DrawSprite(m_whiteTexture, 0.0f, 0.0f,
+                (float)m_screenWidth, (float)m_screenHeight, 0.0f, XMFLOAT4(0, 0, 0, 0.55f));
+
+        // 使ったカードの演出：敵のHPや行動予告より手前、手札より奥に描く
+        DrawPlayCardEffectsFull(ctx);
+        DrawDiscardEffectsFull(ctx);
+        DrawExhaustEmbers();
+
+        if (discarding)
+        {
+            int sel = ctx.discardSelected ? (int)ctx.discardSelected->size() : 0;
+            bool ready = (sel == ctx.discardSelectCount);
+
+            // 案内の布バナー
+            m_spriteRenderer->DrawSprite(TextureManager::Get("ui_banner"),
+                m_screenWidth / 2.0f - 220.0f, m_screenHeight - 410.0f, 440.0f, 76.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
+
+            // 確定（選び終わるまで灰色）／盤面を見る：窓の枠のボタン、ホバーで浮く
+            float x, y, w, h;
+            GetDiscardConfirmRect(x, y, w, h);
+            bool hc = ready && UiHover(x, y, w, h, ctx.mousePos, "discardOk", s_hoverKey);
+            UiWindow::Button(m_spriteRenderer, m_whiteTexture, x, hc ? y - 3.0f : y, w, h,
+                !ready ? XMFLOAT4(0.22f, 0.22f, 0.24f, 1.0f)
+                : hc ? XMFLOAT4(0.85f, 0.4f, 0.25f, 1.0f) : XMFLOAT4(0.7f, 0.3f, 0.2f, 1.0f));
+
+            GetDiscardViewRect(x, y, w, h);
+            bool hv = UiHover(x, y, w, h, ctx.mousePos, "discardView", s_hoverKey);
+            UiWindow::Button(m_spriteRenderer, m_whiteTexture, x, hv ? y - 3.0f : y, w, h,
+                ctx.discardViewMode ? XMFLOAT4(0.3f, 0.5f, 0.7f, 1.0f)
+                : hv ? XMFLOAT4(0.4f, 0.4f, 0.5f, 1.0f) : XMFLOAT4(0.25f, 0.28f, 0.4f, 1.0f));
+        }
+        m_spriteRenderer->End();
+        m_textRenderer->Begin();
+
+        if (discarding)
+        {
+            int sel = ctx.discardSelected ? (int)ctx.discardSelected->size() : 0;
+            bool ready = (sel == ctx.discardSelectCount);
+            wchar_t msg[64];
+            swprintf_s(msg, L"捨てるカードを選ぶ（%d/%d）", sel, ctx.discardSelectCount);
+            m_textRenderer->DrawOutlinedTextCentered(msg, m_screenWidth / 2.0f, m_screenHeight - 410.0f, 440.0f, 76.0f,
+                22.0f, D2D1::ColorF(1.0f, 0.95f, 0.8f), D2D1::ColorF(0.25f, 0.04f, 0.06f), 3.0f);
+
+            float x, y, w, h;
+            GetDiscardConfirmRect(x, y, w, h);
+            float dy = (ready && IsOnDiscardConfirm(ctx.mousePos)) ? -3.0f : 0.0f;
+            m_textRenderer->DrawTextCentered(L"確定", x + w / 2.0f, y + dy, w, 20.0f,
+                ready ? D2D1::ColorF(1, 1, 1) : D2D1::ColorF(0.5f, 0.5f, 0.5f), h);
+            GetDiscardViewRect(x, y, w, h);
+            dy = IsOnDiscardView(ctx.mousePos) ? -3.0f : 0.0f;
+            m_textRenderer->DrawTextCentered(ctx.discardViewMode ? L"戻る" : L"盤面を見る", x + w / 2.0f, y + dy, w, 20.0f,
+                D2D1::ColorF(1, 1, 1), h);
         }
 
         // 手札：本体→文字 を1枚ずつ交互に描く
@@ -1049,8 +1059,13 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         }
     }
 
+    // マスの説明（罠・聖地）は、カードを持っていない時に同じマスへ少し止めたら出す
+    if (ctx.hoveredCell != m_tipCell) { m_tipCell = ctx.hoveredCell; m_tipSince = GetTickCount64(); }
+    bool showCellTip = ctx.selectedCardIndex < 0 && ctx.hoveredCardIndex < 0
+        && GetTickCount64() - m_tipSince >= CELL_TIP_DELAY_MS;
+
     // 罠のホバー詳細
-    if (ctx.hoveredCell.first >= 0 && ctx.hoveredCell.second >= 0
+    if (showCellTip && ctx.hoveredCell.first >= 0 && ctx.hoveredCell.second >= 0
         && ctx.hoveredCell.first < ctx.gridMap->GetCols()
         && ctx.hoveredCell.second < ctx.gridMap->GetRows())
     {
@@ -1092,7 +1107,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     }
 
     // 聖地のホバー詳細（罠と同じマスなら、その下に並べる）
-    if (ctx.hoveredCell.first >= 0 && ctx.hoveredCell.second >= 0
+    if (showCellTip && ctx.hoveredCell.first >= 0 && ctx.hoveredCell.second >= 0
         && ctx.hoveredCell.first < ctx.gridMap->GetCols()
         && ctx.hoveredCell.second < ctx.gridMap->GetRows())
     {
@@ -1166,8 +1181,11 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     m_textRenderer->End();
 
     m_spriteRenderer->Begin();
-    DrawEnemyInfoPanel(ctx);
-    DrawEnemyKeywords(ctx);
+    if (ctx.discardSelectCount <= 0 || ctx.discardViewMode)   // 暗幕の間は出さない（「盤面を見る」では出す）
+    {
+        DrawEnemyInfoPanel(ctx);
+        DrawEnemyKeywords(ctx);
+    }
 
     if (ctx.hoveredCardIndex >= 0 && ctx.hoveredCardIndex < (int)ctx.hand->GetCards().size())
     {
@@ -1504,37 +1522,6 @@ void BattleUI::DrawTargetIndicators(const BattleUIContext& ctx)
         XMVECTOR clipPos = XMVector4Transform(worldPos, view * proj);
         XMFLOAT4 clip;
         XMStoreFloat4(&clip, clipPos);
-
-        if (data->mainEffect.type == CardEffectType::PlaceTrap)
-        {
-            auto& cell = ctx.gridMap->GetCell(ctx.playerCol, ctx.playerRow);
-            if (cell.tileEffect.active)
-            {
-                // プレイヤーの頭上に×マーク
-                float pitch = XMConvertToRadians(-Renderer3D::BILLBOARD_PITCH);
-                XMVECTOR worldPos = XMVectorSet(
-                    ctx.player->worldX,
-                    ctx.player->worldY + ctx.player->height * cos(pitch),
-                    ctx.player->worldZ + 0.5f - ctx.player->height * sin(pitch),
-                    1.0f);
-                XMMATRIX view = ctx.renderer3D->GetViewMatrix();
-                XMMATRIX proj = ctx.renderer3D->GetProjectionMatrix();
-                XMVECTOR clipPos = XMVector4Transform(worldPos, view * proj);
-                XMFLOAT4 clip;
-                XMStoreFloat4(&clip, clipPos);
-                if (clip.w > 0.0f)
-                {
-                    float sx = (clip.x / clip.w + 1.0f) * 0.5f * m_screenWidth;
-                    float sy = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;
-                    m_spriteRenderer->DrawSprite(m_whiteTexture,
-                        sx - 12.0f, sy - 62.0f, 24.0f, 4.0f, 0.78f,
-                        XMFLOAT4(1.0f, 0.2f, 0.2f, 0.9f));
-                    m_spriteRenderer->DrawSprite(m_whiteTexture,
-                        sx - 12.0f, sy - 62.0f, 24.0f, 4.0f, -0.78f,
-                        XMFLOAT4(1.0f, 0.2f, 0.2f, 0.9f));
-                }
-            }
-        }
 
         if (clip.w > 0.0f)
         {

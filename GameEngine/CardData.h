@@ -101,3 +101,20 @@ struct CardData
 
     float vfxColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };   // vfxの色(tint)。既定は白=無着色
 };
+
+// マスを選んで使うスキルか（罠・灯火・起爆など）
+inline bool PicksCell(const CardData& d)
+{
+    auto t = d.mainEffect.type;
+    return t == CardEffectType::PlaceTrap || t == CardEffectType::DetonateAt
+        || t == CardEffectType::DetonateChain || t == CardEffectType::PlaceDecoy
+        || (t == CardEffectType::Engrave && d.range > 0);
+}
+// 自分のマスも範囲に含むカードか（足元に置く・刻む・起爆する）
+inline bool CanPickOwnCell(const CardData& d)
+{
+    auto t = d.mainEffect.type;
+    return t == CardEffectType::PlaceTrap || t == CardEffectType::Detonate
+        || t == CardEffectType::DetonateAt || t == CardEffectType::DetonateChain
+        || (t == CardEffectType::Engrave && d.range > 0);
+}

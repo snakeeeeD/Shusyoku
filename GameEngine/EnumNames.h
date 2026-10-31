@@ -218,6 +218,7 @@ namespace EnumNames
         { "turnBuffAtk",   false, u8"毎ターン 攻撃UP+value" },
         { "turnCycle",     false, u8"毎ターン 追加でvalue枚引く" },
         { "blockRetain",   false, u8"ターン開始時 ブロックをvalue%残す" },
+        { "blockCarry",    false, u8"ターン開始時 ブロックをvalueだけ減らして持ち越す" },
         // 戦闘中
         { "firstAttack",   false, u8"各戦闘の最初の攻撃 ダメージ+value" },
         { "multiHit",      false, u8"連撃攻撃のヒット数+value" },

@@ -210,6 +210,7 @@ void BattleHighlighter::UpdatePlayerHighlight(
         if (aimDx == 0 && aimDy == 0) aimDy = -1;   // 初期状態は上に扇
     }
     auto candidates = GetCandidates(centerCol, centerRow, data->rangeType, data->range, aimDx, aimDy);
+    if (CanPickOwnCell(*data)) candidates.push_back({ centerCol, centerRow });   // 足元も選べる
 
     int actualRange = player->GetMoveRange(data->range);
 
@@ -252,7 +253,7 @@ void BattleHighlighter::UpdatePlayerHighlight(
         auto& cell = gridMap->GetCell(col, row);
 
         if (data->mainEffect.type == CardEffectType::PlaceTrap &&
-            cell.type != CellType::Empty) continue;   // 罠は空マスのみ
+            cell.type != CellType::Empty && cell.type != CellType::Player) continue;   // 罠は空マスと足元のみ
 
         if (data->type == CardType::Move &&
             (cell.type == CellType::Enemy || cell.type == CellType::Boss)) continue;

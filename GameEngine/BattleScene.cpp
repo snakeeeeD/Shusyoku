@@ -234,9 +234,13 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             m_player->RestoreEnergy();
             m_player->AddEnergy(RelicManager::SumValue("turnEnergy"));   // レリック
             {
-                int keep = m_player->GetBlock() * RelicManager::SumValue("blockRetain") / 100;
-                m_player->ResetBlock();
-                if (keep > 0) m_player->AddBlock(keep);
+                // 持ち越し：一番多く残る手段だけを使う（重ねて増えないように）
+                int block = m_player->GetBlock();
+                int keep = block * min(100, RelicManager::SumValue("blockRetain")) / 100;   // 割合（鋼の意志）
+                if (RelicManager::HasKind("blockCarry"))                                    // 一定量だけ減る（不落の城壁）
+                    keep = max(keep, block - RelicManager::SumValue("blockCarry"));
+                if (m_player->GetBuffManager().HasBuff(BuffType::Barricade)) keep = block;  // 土手・要塞は全部
+                m_player->SetBlock(keep);
             }
             m_player->GetBuffManager().OnTurnEnd();
 
@@ -625,6 +629,23 @@ void BattleScene::OnPlayerMoved(int fromCol, int fromRow)
     if (m_player->GetBuffManager().HasBuff(BuffType::Frenzy))
         m_player->TakeDamage(1, DamageFeel::Hit);   // 狂乱中の移動は身を削る
     // 今後の「移動時○○」レリックはここに追記
+}
+
+void BattleScene::OpenDiscardSelect(int n)
+{
+    // とどめを刺した時は開かない（倒れる演出の後の勝利バナーと被るため）
+    if (std::all_of(m_enemies.begin(), m_enemies.end(),
+        [](const Enemy* e) { return !e || e->GetHp() <= 0; })) return;
+    m_discardSelectCount = min(n, (int)m_hand.GetCards().size());
+    m_discardSelected.clear();
+    m_discardViewMode = false;
+}
+
+void BattleScene::CancelDiscardSelect()
+{
+    m_discardSelectCount = 0;
+    m_discardSelected.clear();
+    m_discardViewMode = false;
 }
 
 void BattleScene::UpdateBossGimmick()
@@ -1317,8 +1338,7 @@ void BattleScene::Update(float deltaTime)
         // 勝利判定
         if (m_enemies.empty())
         {
-            m_battleResult = BattleResult::Win;
-
+            CancelDiscardSelect();   // 捨てる画面と勝利バナーを重ねない
             m_battleResult = BattleResult::Win;
             Telemetry::Instance().Log("battle_end", {
                 {"result", "win"},
@@ -1428,8 +1448,7 @@ void BattleScene::Update(float deltaTime)
         // 敗北判定
         if (m_player->GetHp() <= 0)
         {
-            m_battleResult = BattleResult::Lose;
-
+            CancelDiscardSelect();
             m_battleResult = BattleResult::Lose;
             Telemetry::Instance().Log("battle_end", {
                 {"result", "lose"},
@@ -1951,8 +1970,7 @@ void BattleScene::Draw()
 
                 // 3x3プレビュー
                 if (m_hoveredCell.first >= 0 &&
-                    RangeShape::Contains(m_playerCol, m_playerRow,
-                        m_hoveredCell.first, m_hoveredCell.second, d->rangeType, d->range) &&
+                    CellInCardRange(*d, m_hoveredCell.first, m_hoveredCell.second) &&
                     m_gridMap->GetCell(m_hoveredCell.first, m_hoveredCell.second).tileEffect.active)
                 {
                     for (int dr = -1; dr <= 1; dr++)
@@ -1975,8 +1993,7 @@ void BattleScene::Draw()
 
                 // 連鎖の起点プレビュー（既存のまま）
                 if (m_hoveredCell.first >= 0 &&
-                    RangeShape::Contains(m_playerCol, m_playerRow,
-                        m_hoveredCell.first, m_hoveredCell.second, d->rangeType, d->range) &&
+                    CellInCardRange(*d, m_hoveredCell.first, m_hoveredCell.second) &&
                     m_gridMap->GetCell(m_hoveredCell.first, m_hoveredCell.second).tileEffect.active)
                 {
                     raised.insert({ m_hoveredCell.first, m_hoveredCell.second });
@@ -1989,9 +2006,8 @@ void BattleScene::Draw()
                     raised.insert(cc);
             }
             else if ((d->type == CardType::Skill || d->type == CardType::Power)
-                && d->mainEffect.type != CardEffectType::PlaceTrap
-                && d->mainEffect.type != CardEffectType::Detonate
-                && d->mainEffect.type != CardEffectType::DetonateAt)
+                && !PicksCell(*d)
+                && d->mainEffect.type != CardEffectType::Detonate)
             {
                 raised.insert({ m_playerCol, m_playerRow });
                 m_gridMap->GetCell(m_playerCol, m_playerRow).gameObject.color
@@ -1999,14 +2015,19 @@ void BattleScene::Draw()
             }
             else if (hov.first >= 0)
             {
-                int range = d->range;
-                if (m_player->GetBuffManager().HasBuff(BuffType::Reposition))
-                    range += m_player->GetBuffManager().GetBuffValue(BuffType::Reposition);
-
-                if (RangeShape::Contains(m_playerCol, m_playerRow,
-                    hov.first, hov.second, d->rangeType, range))
+                if (CellInCardRange(*d, hov.first, hov.second))   // 射程の判定は使用時と同じ（足元も上がる）
                     raised.insert({ hov.first, hov.second });
             }
+            // 起爆系：足元の罠も、ほかの罠と同じように上げる
+            if (d->mainEffect.type == CardEffectType::Detonate
+                || d->mainEffect.type == CardEffectType::DetonateAt
+                || d->mainEffect.type == CardEffectType::DetonateChain)
+            {
+                auto& own = m_gridMap->GetCell(m_playerCol, m_playerRow);
+                if (own.tileEffect.active && !own.tileEffect.enemyOwned)
+                    raised.insert({ m_playerCol, m_playerRow });
+            }
+
             // 全敵効果カード：全敵マスも範囲としてハイライト
             if (d->allEnemyEffect.hasEffect)
                 for (auto en : m_enemies)
@@ -2536,67 +2557,6 @@ void BattleScene::Draw()
             gx, gy, gz,
             m_player->width, m_player->height, 0.0f,
             XMFLOAT4(0.5f, 0.7f, 1.0f, 0.3f));
-    }
-
-    // 罠設置不可マーク（フラグだけ保存）
-    float trapBlockX = -1, trapBlockY = -1;
-    float trapAngle1 = 0, trapAngle2 = 0, trapLen = 0;
-
-    if (m_selectedCardIndex >= 0 && m_selectedCardIndex < (int)m_hand.GetCards().size())
-    {
-        const CardData* selData = m_hand.GetCards()[m_selectedCardIndex]->GetData();
-        if (selData && selData->mainEffect.type == CardEffectType::PlaceTrap)
-        {
-            auto& playerCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
-            if (playerCell.tileEffect.active)
-            {
-                float cx = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                float cz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
-                float half = 0.4f;
-
-                XMMATRIX vp = m_renderer3D->GetViewMatrix() * m_renderer3D->GetProjectionMatrix();
-
-                auto toScreen = [&](float wx, float wz, float& outX, float& outY) -> bool {
-                    XMVECTOR w = XMVectorSet(wx, 0.01f, wz, 1.0f);
-                    XMVECTOR c = XMVector4Transform(w, vp);
-                    XMFLOAT4 cl;
-                    XMStoreFloat4(&cl, c);
-                    if (cl.w <= 0) return false;
-                    outX = (cl.x / cl.w + 1.0f) * 0.5f * m_screenWidth;
-                    outY = (1.0f - cl.y / cl.w) * 0.5f * m_screenHeight;
-                    return true;
-                    };
-
-                float sx, sy, rx, ry, bx, by;
-                if (toScreen(cx, cz, sx, sy) &&
-                    toScreen(cx + half, cz, rx, ry) &&
-                    toScreen(cx, cz + half, bx, by))
-                {
-                    trapBlockX = sx;
-                    trapBlockY = sy;
-                    float hw = rx - sx;
-                    float hh = by - sy;
-                    trapAngle1 = atan2f(hh, hw);
-                    trapAngle2 = atan2f(hh, -hw);
-                    trapLen = sqrtf(hw * hw + hh * hh) * 2.0f;
-                }
-            }
-        }
-    }
-   
-    // 罠設置不可×マーク描画
-    if (trapBlockX >= 0)
-    {
-        m_spriteRenderer->Begin();
-        m_spriteRenderer->DrawSprite(m_whiteTexture,
-            trapBlockX - trapLen / 2.0f, trapBlockY - 2.5f,
-            trapLen, 5.0f, trapAngle1,
-            XMFLOAT4(1.0f, 0.1f, 0.1f, 0.8f));
-        m_spriteRenderer->DrawSprite(m_whiteTexture,
-            trapBlockX - trapLen / 2.0f, trapBlockY - 2.5f,
-            trapLen, 5.0f, trapAngle2,
-            XMFLOAT4(1.0f, 0.1f, 0.1f, 0.8f));
-        m_spriteRenderer->End();
     }
 
     // 対象マス（上がっているマス）の四隅にL字枠
@@ -3188,7 +3148,11 @@ void BattleScene::HandleInput()
                 else if (m_moveReleaseSuppress)
                     moveCanceled = true;
                 else if (m_pathBuilding && !m_movePath.empty())
-                    usePath = &m_movePath;
+                {
+                    // 指すマスが変わった直後に離した＝通り過ぎる途中 → 使わずに選択したまま（もう一度押せば使える）
+                    if (GetTickCount64() - m_aimSince >= AIM_SETTLE_MS) usePath = &m_movePath;
+                    else moveCanceled = true;
+                }
                 else if (m_pathBuilding && m_movePath.empty())
                     moveCanceled = true;
             }
@@ -3212,10 +3176,7 @@ void BattleScene::HandleInput()
                 }
             bool autoAttack = (ct == CardType::Attack && inRangeCount == 1 && soleEnemy);
 
-            CardEffectType met = cards[m_selectedCardIndex]->GetData()->mainEffect.type;
-            bool needCell = (met == CardEffectType::PlaceTrap || met == CardEffectType::DetonateAt
-                || met == CardEffectType::DetonateChain || met == CardEffectType::PlaceDecoy
-                || (met == CardEffectType::Engrave && cards[m_selectedCardIndex]->GetData()->range > 0));
+            bool needCell = PicksCell(*cards[m_selectedCardIndex]->GetData());
             if ((ct == CardType::Attack || ct == CardType::Move || needCell)
                 && !usePath && !moveCanceled)
             {
@@ -3458,11 +3419,7 @@ void BattleScene::HandleInput()
                     OnCardPlayed(dataPtr);
 
                     if (execResult.pendingDiscard > 0)
-                    {
-                        m_discardSelectCount = min(execResult.pendingDiscard, (int)m_hand.GetCards().size());
-                        m_discardSelected.clear();
-                        m_discardViewMode = false;
-                    }
+                        OpenDiscardSelect(execResult.pendingDiscard);
                 }
             }
         }
@@ -3751,11 +3708,7 @@ void BattleScene::HandleInput()
                     }
 
                     if (execResult.pendingDiscard > 0)
-                    {
-                        m_discardSelectCount = min(execResult.pendingDiscard, (int)m_hand.GetCards().size());
-                        m_discardSelected.clear();
-                        m_discardViewMode = false;
-                    }
+                        OpenDiscardSelect(execResult.pendingDiscard);
 
                     m_battleUI->OnCardRemoved(m_selectedCardIndex);
                     m_selectedCardIndex = -1;
@@ -4015,6 +3968,7 @@ void BattleScene::OnDrawSequenceComplete()
 bool BattleScene::CellInCardRange(const CardData& d, int c, int r) const
 {
     if (c < 0 || r < 0) return false;
+    if (CanPickOwnCell(d) && c == m_playerCol && r == m_playerRow) return true;   // 足元も選べる
     int rng = d.range;
     if (m_player->GetBuffManager().HasBuff(BuffType::Reposition))
         rng += m_player->GetBuffManager().GetBuffValue(BuffType::Reposition);
@@ -4080,12 +4034,7 @@ bool BattleScene::SelectedNeedsTarget() const
     if (m_selectedCardIndex < 0 || m_selectedCardIndex >= (int)m_hand.GetCards().size()) return false;
     const CardData* sd = m_hand.GetCards()[m_selectedCardIndex]->GetData();
     CardType ct = sd->type;
-    return ct == CardType::Attack || ct == CardType::Move
-        || sd->mainEffect.type == CardEffectType::PlaceTrap
-        || sd->mainEffect.type == CardEffectType::DetonateAt
-        || sd->mainEffect.type == CardEffectType::DetonateChain
-        || sd->mainEffect.type == CardEffectType::PlaceDecoy
-        || (sd->mainEffect.type == CardEffectType::Engrave && sd->range > 0);   // 灯火：マスを選んで刻む
+    return ct == CardType::Attack || ct == CardType::Move || PicksCell(*sd);
 }
 
 bool BattleScene::TargetsHiddenByHand(const CardData& d) const

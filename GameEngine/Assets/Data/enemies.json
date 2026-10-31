@@ -829,7 +829,7 @@
       "sequential": true,
       "actions": [
         {
-          "description": "引き寄せ、引き寄せ",
+          "description": "絡めとる、引き寄せ",
           "target": {
             "unavoidable": true
           },
@@ -1948,7 +1948,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 18
+              "value": 12
             }
           ],
           "select": {
@@ -1965,7 +1965,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 19
+              "value": 12
             },
             {
               "kind": "Buff",
@@ -2079,7 +2079,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 26
+              "value": 19
             }
           ],
           "select": {
@@ -3090,7 +3090,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 4
+              "value": 7
             },
             {
               "kind": "Debuff",
@@ -3112,7 +3112,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 3
+              "value": 6
             },
             {
               "kind": "AddCard",
@@ -3391,7 +3391,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 5,
+              "value": 8,
               "hits": 3
             },
             {
@@ -3415,7 +3415,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 8
+              "value": 16
             },
             {
               "kind": "Debuff",
@@ -3439,7 +3439,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 10
+              "value": 22
             },
             {
               "kind": "KnockbackPlayer",
@@ -3468,7 +3468,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 6
+              "value": 16
             },
             {
               "kind": "Debuff",
@@ -3497,7 +3497,7 @@
             {
               "kind": "Summon",
               "summonId": "nanite_swarm",
-              "value": 1
+              "value": 2
             }
           ],
           "select": {

@@ -707,17 +707,23 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     case CardType::Curse:
     case CardType::Skill:
     {
+        // 起爆の射程：足元の罠も含む
+        auto inRange = [&](int c, int r) {
+            return (CanPickOwnCell(data) && c == playerCol && r == playerRow)
+                || RangeShape::Contains(playerCol, playerRow, c, r, data.rangeType, data.range); };
+
         // 設置カード：エナジー消費前に対象セルを検証
         if (data.mainEffect.type == CardEffectType::PlaceTrap)
         {
-            if (!RangeShape::Contains(playerCol, playerRow, targetCol, targetRow,
+            bool ownCell = (targetCol == playerCol && targetRow == playerRow);   // 足元も置ける
+            if (!ownCell && !RangeShape::Contains(playerCol, playerRow, targetCol, targetRow,
                 data.rangeType, data.range))
                 return result;
             if (targetCol < 0 || targetCol >= gridMap->GetCols() ||
                 targetRow < 0 || targetRow >= gridMap->GetRows())
                 return result;
             auto& cell = gridMap->GetCell(targetCol, targetRow);
-            if (cell.type != CellType::Empty || cell.tileEffect.active)
+            if ((cell.type != CellType::Empty && !ownCell) || cell.tileEffect.active)
                 return result;
         }
 
@@ -726,24 +732,21 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             bool any = false;
             for (int r = 0; r < gridMap->GetRows() && !any; r++)
                 for (int c = 0; c < gridMap->GetCols() && !any; c++)
-                    if (gridMap->GetCell(c, r).tileEffect.active &&
-                        RangeShape::Contains(playerCol, playerRow, c, r, data.rangeType, data.range))
+                    if (gridMap->GetCell(c, r).tileEffect.active && inRange(c, r))
                         any = true;
             if (!any) return result;   // 範囲内に罠が無ければ不発（ノーコスト）
         }
 
         if (data.mainEffect.type == CardEffectType::DetonateAt)
         {
-            if (!RangeShape::Contains(playerCol, playerRow, targetCol, targetRow,
-                data.rangeType, data.range))
+            if (!inRange(targetCol, targetRow))
                 return result;
             if (!gridMap->GetCell(targetCol, targetRow).tileEffect.active)
                 return result;   // 罠が無いマスは不可（ノーコスト）
         }
         if (data.mainEffect.type == CardEffectType::DetonateChain)
         {
-            if (!RangeShape::Contains(playerCol, playerRow, targetCol, targetRow,
-                data.rangeType, data.range)) return result;
+            if (!inRange(targetCol, targetRow)) return result;
             if (!gridMap->GetCell(targetCol, targetRow).tileEffect.active) return result;
         }
 
@@ -752,6 +755,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             int myFaith = Faith::At(gridMap, playerCol, playerRow);
             CardEffectType mt = data.mainEffect.type;
             if (mt == CardEffectType::Engrave && data.range > 0
+                && !(targetCol == playerCol && targetRow == playerRow)   // 足元も刻める
                 && (!RangeShape::Contains(playerCol, playerRow, targetCol, targetRow, data.rangeType, data.range)
                     || targetCol < 0 || targetRow < 0 || targetCol >= gridMap->GetCols() || targetRow >= gridMap->GetRows()))
                 return result;                                                       // 刻むマスが射程外
@@ -873,7 +877,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 {
                     Cell& cell = gridMap->GetCell(c, r);
                     if (!cell.tileEffect.active || cell.tileEffect.enemyOwned) continue;   // 敵床は集めない
-                    if (RangeShape::Contains(playerCol, playerRow, c, r, data.rangeType, data.range))
+                    if (inRange(c, r))
                         result.seqDetonateCells.push_back({ c, r });
                 }
             if (!result.seqDetonateCells.empty()) result.startSeqDetonate = true;

@@ -17,6 +17,7 @@ namespace Se
     inline constexpr const char* TrapSet    = "trap_set.wav";      // 罠を置いた
     inline constexpr const char* Coin       = "coin.wav";          // ショップで購入
     inline constexpr const char* Upgrade    = "upgrade.wav";       // カード強化
+    inline constexpr const char* Engrave    = "faith_engrave.wav"; // 信仰を刻んだ
 
     // 同じ音が同じ瞬間に何重にも鳴る（爆発が24個同時など）と割れるので、
     // 同じファイルは minInterval 秒以内の重複を間引く

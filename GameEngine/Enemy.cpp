@@ -401,6 +401,16 @@ void Enemy::ResetBlock()
     m_block = 0;
 }
 
+// 行動に移動が含まれるか（接近・離脱・引き寄せ）。含むなら棒立ち防止の「＋移動」を足さない
+static bool ActionAlreadyMoves(const EnemyAction& act)
+{
+    if (act.target.approach != ApproachType::None) return true;
+    for (auto& e : act.effects)
+        if (e.kind == EffectKind::MoveToward || e.kind == EffectKind::MoveAway
+            || e.kind == EffectKind::PullPlayer) return true;
+    return false;
+}
+
 void Enemy::PullPlayer(int playerCol, int playerRow, GridMap* gridMap, Player* player, int steps)
 {
     if (!player) return;
@@ -547,11 +557,7 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
         if (m_idleTurns >= 2 && !m_plannedActions.empty())
         {
             auto& act = m_plannedActions[0];
-            bool alreadyMoves = (act.target.approach != ApproachType::None);
-            for (auto& e : act.effects)
-                if (e.kind == EffectKind::MoveToward || e.kind == EffectKind::MoveAway) alreadyMoves = true;
-
-            if (!alreadyMoves)
+            if (!ActionAlreadyMoves(act))
             {
                 Effect e; e.kind = EffectKind::MoveToward; e.value = 2;
                 act.effects.push_back(e);   // 元の行動に移動を追加（説明はそのまま＋移動アイコンが並ぶ）
@@ -604,11 +610,7 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
     if (m_isBoss && !m_isSnake && m_missStreak >= 2 && !m_plannedActions.empty())
     {
         auto& act = m_plannedActions[0];
-        bool alreadyMoves = (act.target.approach != ApproachType::None);
-        for (auto& e : act.effects)
-            if (e.kind == EffectKind::MoveToward || e.kind == EffectKind::MoveAway) alreadyMoves = true;
-
-        if (!alreadyMoves)
+        if (!ActionAlreadyMoves(act))
         {
             Effect e; e.kind = EffectKind::MoveToward; e.value = 2;
             act.effects.push_back(e);

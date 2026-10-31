@@ -296,10 +296,10 @@
       "id": "boss_rampart",
       "icon": "relic_boss_rampart",
       "name": "不落の城壁",
-      "kind": "blockRetain",
-      "value": 100,
+      "kind": "blockCarry",
+      "value": 15,
       "rarity": "boss",
-      "desc": "ターン終了時、ブロックを全て保持\n代償：最大HP-10",
+      "desc": "ターン終了時、ブロックは15だけ減って持ち越す\n代償：最大HP-10",
       "extra": [
         {
           "kind": "maxHp",

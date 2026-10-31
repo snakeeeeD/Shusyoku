@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "GridMap.h"
 #include "RelicManager.h"
+#include "Se.h"
 
 // 聖地型（信仰）のルール。数値と判定はここに集める
 namespace Faith
@@ -24,6 +25,8 @@ namespace Faith
         if (!g || n <= 0 || col < 0 || row < 0 || col >= g->GetCols() || row >= g->GetRows()) return;
         n += EngraveBonus();
         int& f = g->GetCell(col, row).faith;
+        int before = f;
         f = (f + n > MAX) ? MAX : f + n;
+        if (f != before) Se::Play(Se::Engrave, 1.0f);   // 増えた時だけ（同時に刻んでも1秒に1回）
     }
 }
