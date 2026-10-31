@@ -274,6 +274,12 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("enemy_boss3_piller4", L"Assets/Enemy/boss3_piller4.png");
 		TextureManager::Load("darkload", L"Assets/Enemy/finai_boss.png");
 		TextureManager::Load("darkload_awaken", L"Assets/Enemy/final_boss_awaken.png");
+		for (const char* n : { "sword", "venom", "shield", "hex" })   // 3層ボスの鎖（柱ごと）
+		{
+			std::string key = std::string("boss_chain_") + n;
+			std::wstring path = L"Assets/Enemy/" + std::wstring(key.begin(), key.end()) + L".png";
+			TextureManager::Load(key, path.c_str());
+		}
 	}
 
 	// UI

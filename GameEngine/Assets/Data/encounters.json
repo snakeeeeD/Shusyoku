@@ -368,20 +368,20 @@
   },
   {
    "id": "altar_guardian",
-   "layer": 1,
+   "layer": 2,
    "tier": 1,
    "category": "event",
    "weight": 1,
    "enemies": [
     {
-     "id": "warden",
-     "col": 4,
-     "row": 2
+     "id": "venomancer",
+     "col": 7,
+     "row": 1
     },
     {
-     "id": "wraith",
-     "col": 4,
-     "row": 0
+     "id": "crystal_guard",
+     "col": 2,
+     "row": 2
     }
    ]
   },
@@ -770,25 +770,6 @@
    ]
   },
   {
-   "id": "l2n13",
-   "layer": 2,
-   "tier": 1,
-   "category": "normal",
-   "weight": 18,
-   "enemies": [
-    {
-     "id": "cave_slime",
-     "col": 6,
-     "row": 2
-    },
-    {
-     "id": "crawler",
-     "col": 2,
-     "row": 3
-    }
-   ]
-  },
-  {
    "id": "l2n14",
    "layer": 2,
    "tier": 1,
@@ -828,54 +809,6 @@
      "id": "crawler",
      "col": 3,
      "row": 3
-    }
-   ]
-  },
-  {
-   "id": "l2n16",
-   "layer": 2,
-   "tier": 1,
-   "category": "normal",
-   "weight": 18,
-   "enemies": [
-    {
-     "id": "bat",
-     "col": 3,
-     "row": 2
-    },
-    {
-     "id": "bat",
-     "col": 5,
-     "row": 2
-    },
-    {
-     "id": "cave_slime",
-     "col": 4,
-     "row": 2
-    }
-   ]
-  },
-  {
-   "id": "l2n17",
-   "layer": 2,
-   "tier": 1,
-   "category": "normal",
-   "weight": 16,
-   "enemies": [
-    {
-     "id": "cave_slime",
-     "col": 3,
-     "row": 4
-    },
-    {
-     "id": "cave_slime",
-     "col": 5,
-     "row": 4
-    },
-    {
-     "id": "bat",
-     "col": 4,
-     "row": 2
     }
    ]
   },

@@ -30,6 +30,14 @@
 #endif
 
 // ナイフ＋投擲術なら遠距離化（Diamond=範囲内の任意の敵を狙える。単体パスのままなので研磨も効く）
+// 3層ボスの鎖：柱（楔）ごとの鎖の絵と、外れた時の破片
+static const struct { const char* wedge; const char* chain; const char* fx; } BOSS_CHAINS[] = {
+    { "wedge_sword",  "boss_chain_sword",  "chain_break_sword"  },
+    { "wedge_venom",  "boss_chain_venom",  "chain_break_venom"  },
+    { "wedge_shield", "boss_chain_shield", "chain_break_shield" },
+    { "wedge_hex",    "boss_chain_hex",    "chain_break_hex"    },
+};
+
 static void ApplyKnifeThrow(CardData& d, const Player* p)
 {
     if (p->GetBuffManager().HasBuff(BuffType::KnifeThrow)
@@ -573,7 +581,11 @@ void BattleScene::AddEnemy(int col, int row, const std::string& id)
         enemy->GetBuffManager().AddBuff({ BuffType::HeadWeak, 2, -1 });   // 頭弱点マーク（表示用・永続）
     }
 
-    if (id == "l3_sovereign") enemy->SetInvulnerable(true);   // 初手決定前から無敵に
+    if (id == "l3_sovereign")
+    {
+        enemy->SetInvulnerable(true);   // 初手決定前から無敵に
+        for (auto& c : BOSS_CHAINS) enemy->AddOverlay(c.chain);
+    }
 
     // 識別色：今いる敵が使っていない一番小さい番号（誰かが倒れても他の敵の色は変わらない）
     int ci = 0;
@@ -629,6 +641,19 @@ void BattleScene::UpdateBossGimmick()
     if (!boss) return;   // このバトルに3層ボスがいなければ何もしない
 
     if (wedgesAlive > 0) m_bossHadWedges = true;
+
+    // 倒れた柱の鎖を外す（破片＋画面の揺れ）
+    if (m_bossHadWedges)
+        for (auto& c : BOSS_CHAINS)
+        {
+            bool alive = std::any_of(m_enemies.begin(), m_enemies.end(), [&](Enemy* e) {
+                return e && !e->IsDying() && e->GetId() == c.wedge; });
+            if (!alive && boss->RemoveOverlay(c.chain))
+            {
+                EffectManager::Play(c.fx, boss->worldX, 1.4f, boss->worldZ);
+                ScreenShake::Add(0.35f);
+            }
+        }
 
     if (!m_bossAwakened)
     {

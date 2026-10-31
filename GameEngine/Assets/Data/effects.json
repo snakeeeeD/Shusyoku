@@ -814,6 +814,194 @@
           "texture": "particle"
         }
       ]
+    },
+    {
+      "id": "chain_break_sword",
+      "bursts": [
+        {
+          "count": 18,
+          "speed": 3.0,
+          "life": 0.7,
+          "scale": 0.16,
+          "gravity": 6.0,
+          "drag": 0.02,
+          "colorStart": [
+            0.22,
+            0.2,
+            0.24,
+            1.0
+          ],
+          "colorEnd": [
+            0.12,
+            0.1,
+            0.14,
+            0.0
+          ],
+          "texture": "particle"
+        },
+        {
+          "count": 16,
+          "speed": 2.4,
+          "life": 0.8,
+          "scale": 0.24,
+          "gravity": 1.0,
+          "drag": 0.03,
+          "colorStart": [
+            1.0,
+            0.25,
+            0.25,
+            1.0
+          ],
+          "colorEnd": [
+            1.0,
+            0.25,
+            0.25,
+            0.0
+          ],
+          "texture": "star"
+        }
+      ]
+    },
+    {
+      "id": "chain_break_venom",
+      "bursts": [
+        {
+          "count": 18,
+          "speed": 3.0,
+          "life": 0.7,
+          "scale": 0.16,
+          "gravity": 6.0,
+          "drag": 0.02,
+          "colorStart": [
+            0.22,
+            0.2,
+            0.24,
+            1.0
+          ],
+          "colorEnd": [
+            0.12,
+            0.1,
+            0.14,
+            0.0
+          ],
+          "texture": "particle"
+        },
+        {
+          "count": 16,
+          "speed": 2.4,
+          "life": 0.8,
+          "scale": 0.24,
+          "gravity": 1.0,
+          "drag": 0.03,
+          "colorStart": [
+            0.35,
+            1.0,
+            0.4,
+            1.0
+          ],
+          "colorEnd": [
+            0.35,
+            1.0,
+            0.4,
+            0.0
+          ],
+          "texture": "star"
+        }
+      ]
+    },
+    {
+      "id": "chain_break_shield",
+      "bursts": [
+        {
+          "count": 18,
+          "speed": 3.0,
+          "life": 0.7,
+          "scale": 0.16,
+          "gravity": 6.0,
+          "drag": 0.02,
+          "colorStart": [
+            0.22,
+            0.2,
+            0.24,
+            1.0
+          ],
+          "colorEnd": [
+            0.12,
+            0.1,
+            0.14,
+            0.0
+          ],
+          "texture": "particle"
+        },
+        {
+          "count": 16,
+          "speed": 2.4,
+          "life": 0.8,
+          "scale": 0.24,
+          "gravity": 1.0,
+          "drag": 0.03,
+          "colorStart": [
+            0.35,
+            0.85,
+            1.0,
+            1.0
+          ],
+          "colorEnd": [
+            0.35,
+            0.85,
+            1.0,
+            0.0
+          ],
+          "texture": "star"
+        }
+      ]
+    },
+    {
+      "id": "chain_break_hex",
+      "bursts": [
+        {
+          "count": 18,
+          "speed": 3.0,
+          "life": 0.7,
+          "scale": 0.16,
+          "gravity": 6.0,
+          "drag": 0.02,
+          "colorStart": [
+            0.22,
+            0.2,
+            0.24,
+            1.0
+          ],
+          "colorEnd": [
+            0.12,
+            0.1,
+            0.14,
+            0.0
+          ],
+          "texture": "particle"
+        },
+        {
+          "count": 16,
+          "speed": 2.4,
+          "life": 0.8,
+          "scale": 0.24,
+          "gravity": 1.0,
+          "drag": 0.03,
+          "colorStart": [
+            0.7,
+            0.4,
+            1.0,
+            1.0
+          ],
+          "colorEnd": [
+            0.7,
+            0.4,
+            1.0,
+            0.0
+          ],
+          "texture": "star"
+        }
+      ]
     }
   ]
 }

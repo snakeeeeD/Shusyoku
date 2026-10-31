@@ -11,6 +11,7 @@
 #include "ScreenShake.h"
 #include "HitStop.h"
 #include "Audio.h"
+#include <algorithm>
 
 Enemy::Enemy()
     : m_HP(30), m_maxHP(30)
@@ -64,6 +65,20 @@ void Enemy::Draw3D(Renderer3D* renderer)
         TextureManager::Get(m_textureName),
         worldX, y, worldZ + m_drawZ,
         width * s, height * s, 0.0f, drawColor, FacingUV());
+
+    // 重ねる絵は本体とまったく同じ位置・大きさ（絵の中で配置済み）
+    for (auto& o : m_overlays)
+        renderer->DrawBillboard(TextureManager::Get(o),
+            worldX, y, worldZ + m_drawZ,
+            width * s, height * s, 0.0f, drawColor, FacingUV());
+}
+
+bool Enemy::RemoveOverlay(const std::string& t)
+{
+    auto it = std::find(m_overlays.begin(), m_overlays.end(), t);
+    if (it == m_overlays.end()) return false;
+    m_overlays.erase(it);
+    return true;
 }
 
 // プレイヤーの方を向く。画像は左向きが基準なので、右にいる時だけ反転する

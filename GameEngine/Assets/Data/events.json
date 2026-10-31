@@ -293,11 +293,6 @@
             {
               "type": "addCard",
               "param": "cursed_spread"
-            },
-            {
-              "type": "battle",
-              "param": "event",
-              "chance": 40
             }
           ]
         },
@@ -315,7 +310,7 @@
       "desc": "古い封印。中身は空かもしれないが…",
       "choices": [
         {
-          "label": "こじ開ける（-8HP）",
+          "label": "こじ開ける（-8HP, +30G）",
           "result": "封印が砕けた。",
           "outcomes": [
             {
@@ -325,10 +320,6 @@
             {
               "type": "gold",
               "value": 30
-            },
-            {
-              "type": "treasure",
-              "chance": 20
             }
           ]
         },
@@ -518,7 +509,7 @@
           "outcomes": [
             {
               "type": "battle",
-              "param": "event"
+              "param": "l3event0"
             }
           ]
         },

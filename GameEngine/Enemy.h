@@ -29,6 +29,8 @@ public:
 	BuffManager& GetBuffManager() { return m_buffManager; }
 	const std::string& GetTextureName() const { return m_textureName; }
 	void SetTexture(const std::string& t) { m_textureName = t; }
+	void AddOverlay(const std::string& t) { m_overlays.push_back(t); }   // 本体の上に重ねる絵（ボスの鎖など）
+	bool RemoveOverlay(const std::string& t);                            // 外せたら true
 	const std::string& GetId() const { return m_id; }
 	const std::vector<std::pair<int, int>>& GetMovePath() const { return m_movePath; }
 
@@ -171,6 +173,7 @@ private:
 	int m_lastHitCount = 1;
 
 	std::string m_textureName;
+	std::vector<std::string> m_overlays;
 	std::string m_id;
 	std::vector<EnemyAction> m_plannedActions;   // このターンの実行プラン（メイン＋サブ）
 	int m_actionIndex = 0;
