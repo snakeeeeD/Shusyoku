@@ -3625,9 +3625,7 @@
         },
         {
           "description": "虚空の刺突、{0}ダメージ",
-          "target": {
-            "unavoidable": true
-          },
+          "target": {"rangeType": "Column", "anchor": "player"},
           "effects": [
             {
               "kind": "Damage",
@@ -3672,9 +3670,7 @@
         },
         {
           "description": "衰弱、{0}ダメージ、弱体{1}付与",
-          "target": {
-            "unavoidable": true
-          },
+          "target": {"rangeType": "Row", "anchor": "player"},
           "effects": [
             {
               "kind": "Damage",
@@ -3703,9 +3699,7 @@
       "actions": [
         {
           "description": "引き寄せ、{0}ダメージ、引き寄せ",
-          "target": {
-            "unavoidable": true
-          },
+          "target": {"rangeType": "Diagonal", "range": 6},
           "effects": [
             {
               "kind": "Damage",
@@ -3722,10 +3716,7 @@
         },
         {
           "description": "妨害、{0}ダメージ、山札にノイズ",
-          "target": {
-            "rangeType": "Area",
-            "range": 6
-          },
+          "target": {"rangeType": "Diamond", "range": 3},
           "effects": [
             {
               "kind": "Damage",
@@ -3754,10 +3745,7 @@
       "actions": [
         {
           "description": "石弾、{0}ダメージ",
-          "target": {
-            "rangeType": "Area",
-            "range": 6
-          },
+          "target": {"rangeType": "Area", "range": 2},
           "effects": [
             {
               "kind": "Damage",

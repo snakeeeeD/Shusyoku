@@ -1,4 +1,5 @@
 #pragma once
+#include "Se.h"
 #include "HpBar.h"
 
 #include <d3d11.h>
@@ -41,6 +42,7 @@ public:
 
     void StartMove(float toX, float toZ, float duration = 0.3f, bool linear = false)
     {
+        Se::Play(Se::StepFile(), 0.08f);   // ‘«‰¹i“¯‚É“®‚¢‚Ä‚àŠÔˆø‚­j
         m_startWorldX = worldX;
         m_startWorldZ = worldZ;
         m_targetWorldX = toX;

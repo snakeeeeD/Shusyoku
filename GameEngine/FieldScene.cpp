@@ -1,4 +1,5 @@
 ﻿#include "FieldScene.h"
+#include "Se.h"
 #include "FieldMapConfig.h"
 #include "EventDataBase.h"
 #include "EncounterDataBase.h"
@@ -47,6 +48,7 @@ bool FieldScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     m_screenWidth = screenWidth;
     m_screenHeight = screenHeight;
     m_hWnd = hWnd;
+    Se::SetFloor(PlayerDataManager::GetData().layer);   // 足音をこの層の地面に
 
     m_spriteRenderer = new SpriteRenderer();
     if (!m_spriteRenderer->Init(device, context, screenWidth, screenHeight))
@@ -688,6 +690,7 @@ void FieldScene::HandleInput()
                 m_playerCol = col;
                 m_playerRow = row;
                 m_steps--;
+                Se::Play(Se::StepFile(true), 0.2f);   // ざっざっざ
                 if (m_steps <= 0) Hint::Request("steps");
                 
                 if (!node.visited)

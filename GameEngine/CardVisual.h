@@ -90,6 +90,7 @@ public:
             if (data->type == CardType::Attack)
             {
                 actualValue = player->GetBuffManager().GetFinalAttack(data->mainEffect.value);
+                if (data->scaleByFaith) actualValue += player->GetFeetFaith();
                 if (std::find(data->tags.begin(), data->tags.end(), "Knife") != data->tags.end())
                     actualValue += player->GetBuffManager().GetBuffValue(BuffType::KnifePower)
                     + RelicManager::SumValue("knifeBonus");

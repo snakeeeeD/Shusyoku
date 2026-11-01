@@ -1,3 +1,4 @@
+#include "Se.h"
 #include "PlayerDataManager.h"
 #include "CardDataBase.h"
 #include "RelicManager.h"
@@ -257,6 +258,7 @@ void PlayerDataManager::RemoveCard(int index)
 void PlayerDataManager::AddGold(int amount)
 {
 	m_data.gold += amount;
+	if (amount > 0) Se::Play(Se::CoinGet, 0.1f);
 	Save();
 }
 

@@ -38,6 +38,8 @@ static void ParseCard(const json& c, CardData& data, CardData& up, bool& hasUp)
         data.vfxColor[3] = vc.size() > 3 ? (float)vc[3] : 1.0f;
     }
     data.scaleByTrapCount = c.value("scaleByTrapCount", false);
+    data.scaleByFaith = c.value("scaleByFaith", false);
+    data.sanctuaryHits = c.value("sanctuaryHits", 0);
 
     std::string rarityStr = c.value("rarity", "Common");
     if (rarityStr == "Uncommon") data.rarity = CardRarity::Uncommon;

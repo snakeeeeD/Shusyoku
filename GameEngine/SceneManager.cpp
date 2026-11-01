@@ -1737,7 +1737,8 @@ void SceneManager::Update(float deltaTime)
 		if (m_craftFxTimer <= 0.0f)
 		{
 			m_craftFxTimer = 0.0f;
-			if (m_restActive) FinishRest();      // 休憩でのクラフトは演出後に終了
+			if (!m_craftFxQueue.empty()) PlayNextCardFx();   // 続きのカード
+			else if (m_restActive) FinishRest();             // 休憩でのクラフトは演出後に終了
 		}
 	}
 
@@ -2460,13 +2461,15 @@ void SceneManager::DrawCraftFx()
 	m_uiSprite->Begin();
 
 	// フラッシュ（前半で白く光ってフェード）
+	bool curse = card && card->type == CardType::Curse;    // 呪いは暗い紫に光らせる
 	float flash = 1.0f - t * 2.0f;
 	if (flash > 0.0f)
 		m_uiSprite->DrawSprite(white, 0, 0, (float)m_screenWidth, (float)m_screenHeight, 0.0f,
-			XMFLOAT4(1, 1, 1, flash * 0.7f));
+			curse ? XMFLOAT4(0.22f, 0.04f, 0.32f, flash * 0.85f) : XMFLOAT4(1, 1, 1, flash * 0.7f));
 
 	// パーティクル（中心から放射）
-	XMFLOAT4 pcol = card ? CardVisual::GetCardColor(card->type) : XMFLOAT4(1, 1, 1, 1);
+	XMFLOAT4 pcol = curse ? XMFLOAT4(0.7f, 0.3f, 1.0f, 1.0f)
+		: card ? CardVisual::GetCardColor(card->type) : XMFLOAT4(1, 1, 1, 1);
 	int N = 14;
 	float r = t * 300.0f;
 	float psize = 14.0f * (1.0f - t);
@@ -2774,7 +2777,8 @@ void SceneManager::ApplyOutcomes(const EventChoice& c)
 		else if (o.type == "gold")
 		{
 			int before = pd.gold;
-			pd.gold += o.value; if (pd.gold < 0) pd.gold = 0;
+			if (o.value > 0) PlayerDataManager::AddGold(o.value);
+			else { pd.gold += o.value; if (pd.gold < 0) pd.gold = 0; }
 			if (pd.gold != before) m_eventGains.push_back({ "gold", "", pd.gold - before });
 		}
 		else if (o.type == "material")
@@ -2793,13 +2797,28 @@ void SceneManager::ApplyOutcomes(const EventChoice& c)
 			if (rid.empty()) rid = RelicManager::RandomDrop();
 			if (!rid.empty()) { PlayerDataManager::AddRelic(rid); m_eventGains.push_back({ "relic", rid, 1 }); }
 		}
-		else if (o.type == "addCard") { PlayerDataManager::AddCard(o.param); m_eventGains.push_back({ "card", o.param, 1 }); }
+		else if (o.type == "addCard")
+		{
+			PlayerDataManager::AddCard(o.param);
+			m_eventGains.push_back({ "card", o.param, 1 });
+			if (const CardData* d = CardDataBase::Get(o.param); d && d->type == CardType::Curse)
+				m_craftFxQueue.push_back(o.param);   // 呪いは手に入る瞬間を見せる
+		}
 		else if (o.type == "battle") { if (m_eventPending == EventPending::None) { m_eventPending = EventPending::Battle; m_eventBattleParam = o.param; } }
 		else if (o.type == "shop") { if (m_eventPending == EventPending::None) m_eventPending = EventPending::Shop; }
 		else if (o.type == "treasure") { if (m_eventPending == EventPending::None) m_eventPending = EventPending::Treasure; }
 		else if (o.type == "pickCard") { if (m_eventPending == EventPending::None) { m_eventPending = EventPending::CardSelect; m_cardSelectMode = o.param; } }
 	}
 	PlayerDataManager::Save();
+	if (!m_craftFxQueue.empty()) PlayNextCardFx();
+}
+
+void SceneManager::PlayNextCardFx()
+{
+	m_craftFxCard = m_craftFxQueue.front();
+	m_craftFxQueue.erase(m_craftFxQueue.begin());
+	m_craftFxTimer = CRAFT_FX_DURATION;
+	Se::Play("debuff.wav");
 }
 
 void SceneManager::DrawEvent()
@@ -2973,6 +2992,39 @@ void SceneManager::DrawEvent()
 					m_textRenderer->Begin(); DrawBigCard(d, bx, by, s, true); m_textRenderer->End();
 					CardTooltip::Draw(m_uiSprite, m_textRenderer, white, d, tx + w / 2.0f, ty, w, h, m_screenWidth, m_screenHeight);
 				}
+			break;
+		}
+
+	// 選択肢で手に入るカードを、窓の右に実物で見せる（隣の文字より手前に出すので最後に描く）
+	if (m_eventResult < 0)
+		for (int i = 0; i < n; i++)
+		{
+			float x, y, w, h; GetEventChoiceRect(i, x, y, w, h);
+			if (!ChoiceEnabled(e->choices[i]) || mp.x < x || mp.x > x + w || mp.y < y || mp.y > y + h) continue;
+
+			std::vector<const CardData*> cards;
+			for (auto& o : e->choices[i].outcomes)
+				if (o.type == "addCard")
+					if (const CardData* d = CardDataBase::Get(o.param)) cards.push_back(d);
+			if (cards.empty()) break;
+
+			const float s = 1.4f, cw = CardVisual::CARD_W * s, ch = CardVisual::CARD_H * s, gap = 12.0f;
+			float tx = p.x + p.w + 16.0f, ty = y + h / 2.0f - ch / 2.0f;
+			if (ty < 46.0f) ty = 46.0f;
+			bool curse = false;
+			for (int k = 0; k < (int)cards.size(); k++)
+			{
+				float bx = tx + k * (cw + gap) - CardVisual::CARD_W * (1 - s) / 2.0f;
+				float by = ty - CardVisual::CARD_H * (1 - s) / 2.0f;
+				m_uiSprite->Begin();  DrawBigCard(cards[k], bx, by, s, false); m_uiSprite->End();
+				m_textRenderer->Begin(); DrawBigCard(cards[k], bx, by, s, true); m_textRenderer->End();
+				if (cards[k]->type == CardType::Curse) curse = true;
+			}
+			m_textRenderer->Begin();
+			m_textRenderer->DrawOutlinedTextCentered(curse ? L"呪いが加わる" : L"デッキに加わる",
+				tx + cw / 2.0f, ty - 30.0f, cw + 40.0f, 24.0f, 16.0f,
+				curse ? D2D1::ColorF(1.0f, 0.45f, 0.45f) : D2D1::ColorF(1.0f, 0.9f, 0.6f), D2D1::ColorF(0, 0, 0), 1.5f);
+			m_textRenderer->End();
 			break;
 		}
 }

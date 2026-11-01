@@ -26,6 +26,8 @@ public:
     void SetMaxHp(int hp) { m_maxHp = hp; }
     void SetEnergy(int energy) { m_energy = energy; }
     void SetBlock(int block) { m_block = block; }
+    void SetFeetFaith(int f) { m_feetFaith = f; }     // 足元の信仰（毎フレーム BattleScene が入れる）
+    int  GetFeetFaith() const { return m_feetFaith; }
 
     void AddBlock(int amount);
     void TakeDamage(int damage, DamageFeel feel = DamageFeel::Hit);
@@ -61,6 +63,7 @@ private:
     int m_energy;
     int m_maxEnergy;
     int m_block;
+    int m_feetFaith = 0;
     float m_BillboardRotation = 0.0;
 
     BuffManager m_buffManager;

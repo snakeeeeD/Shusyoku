@@ -18,6 +18,15 @@ namespace Se
     inline constexpr const char* Coin       = "coin.wav";          // ショップで購入
     inline constexpr const char* Upgrade    = "upgrade.wav";       // カード強化
     inline constexpr const char* Engrave    = "faith_engrave.wav"; // 信仰を刻んだ
+    inline constexpr const char* CoinGet    = "coin_get.wav";      // ゴールドを手に入れた
+
+    // 足音は層ごとに違う（シーンの開始時に SetFloor で層を入れる）
+    inline int g_floorLayer = 1;
+    inline void SetFloor(int layer) { g_floorLayer = layer < 1 ? 1 : (layer > 3 ? 3 : layer); }
+    inline std::string StepFile(bool three = false)                // three=フィールドの3歩
+    {
+        return std::string(three ? "step3_" : "step_") + std::to_string(g_floorLayer) + ".wav";
+    }
 
     // 同じ音が同じ瞬間に何重にも鳴る（爆発が24個同時など）と割れるので、
     // 同じファイルは minInterval 秒以内の重複を間引く

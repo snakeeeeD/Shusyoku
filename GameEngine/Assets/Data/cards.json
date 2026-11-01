@@ -2986,6 +2986,60 @@
         "type": "Draw",
         "value": 2
       }
+    },
+    {
+      "id": "ATK_holy_blade",
+      "name": "聖なる刃",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "tags": [
+        "Faith"
+      ],
+      "vfx": "slash",
+      "vfxColor": [
+        1.0,
+        0.85,
+        0.4
+      ],
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "{value}ダメージ。\n足元の信仰1につき\nダメージ+1",
+      "upgrade": {
+        "mainValue": 2
+      },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 3
+      },
+      "scaleByFaith": true
+    },
+    {
+      "id": "ATK_judgement_blade",
+      "name": "裁きの剣",
+      "type": "Attack",
+      "rarity": "Rare",
+      "tags": [
+        "Faith"
+      ],
+      "vfx": "smash",
+      "vfxColor": [
+        1.0,
+        0.85,
+        0.4
+      ],
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "{value}ダメージ。\n聖域に立っていれば\n2回攻撃",
+      "upgrade": {
+        "mainValue": 3
+      },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 10
+      },
+      "sanctuaryHits": 1
     }
   ]
 }

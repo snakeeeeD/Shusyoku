@@ -445,6 +445,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             m_enemyActionDelay = max(0.8f, burnEnd + 0.25f);   // 過負荷が全て終わるまで敵は動かない
         };
 
+    Se::SetFloor(PlayerDataManager::GetData().layer);   // 足音をこの層の地面に
     int encCount = EncounterDataBase::GetCount();
     int layer = PlayerDataManager::GetData().layer;
     const EncounterData* encounter = EncounterDataBase::GetById(m_battleEnemyId);   // 指名戦（あれば）
@@ -1415,10 +1416,10 @@ void BattleScene::Update(float deltaTime)
             int nodeIdx = pd.fieldPlayerCol * 7 + pd.fieldPlayerRow;
             if (nodeIdx >= 0 && nodeIdx < (int)pd.fieldNodeVisited.size())
                 pd.fieldNodeVisited[nodeIdx] = true;
-            pd.gold += 8 + rand() % 8;
+            PlayerDataManager::AddGold(8 + rand() % 8);
             if (m_category == EncCategory::Elite)
             {
-                pd.gold += 25;
+                PlayerDataManager::AddGold(25);
                 int em = RelicManager::SumValue("eliteMaterial");
                 // エリート報酬：レリック
                 std::string rr = RelicManager::RandomDrop();
@@ -3828,7 +3829,7 @@ void BattleScene::ProcessDeadEnemies()
 
         m_defeatedEnemyIds.push_back(enemy->GetId());
 
-        PlayerDataManager::GetData().gold += RelicManager::SumValue("killGold");   // レリック
+        PlayerDataManager::AddGold(RelicManager::SumValue("killGold"));   // レリック
         m_player->Heal(RelicManager::SumValue("killHeal"));                        // レリック
         if (int ks = RelicManager::SumValue("killStrength"))                       // レリック（撃破で攻撃UP）
         {
@@ -4246,6 +4247,7 @@ void BattleScene::SyncFaithBuffs()
     bm.RemoveBuff(BuffType::Sanctuary);
 
     int f = Faith::At(m_gridMap, m_playerCol, m_playerRow);
+    m_player->SetFeetFaith(f);
     auto add = [&](BuffType t, int v) {
         Buff b; b.type = t; b.value = v; b.duration = -1;   // 永続（離れたら外す）
         b.name = BuffInfo::Get(t).name; b.description = L"";

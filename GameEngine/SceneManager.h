@@ -212,6 +212,8 @@ private:
     std::string m_craftFxCard;           // 完成カードID
     static constexpr float CRAFT_FX_DURATION = 0.9f;
     void DrawCraftFx();
+    std::vector<std::string> m_craftFxQueue;   // 続けて見せるカード（呪いを2枚もらう時など）
+    void PlayNextCardFx();                     // 列の先頭のカードを出現演出で見せる
 
     void DrawRelicBar();
     void GetRelicRect(int i, float& x, float& y, float& w, float& h) const;

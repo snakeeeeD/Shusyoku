@@ -415,7 +415,7 @@ void ShopScene::HandleInput()
             if (idx >= 0)
             {
                 const std::string id = OwnedItemIds()[idx];
-                PlayerDataManager::GetData().gold += SellPriceOf(id);
+                PlayerDataManager::AddGold(SellPriceOf(id));
                 PlayerDataManager::AddMaterial(id, -1);
                 PlayerDataManager::Save();
             }

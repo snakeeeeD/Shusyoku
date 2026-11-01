@@ -582,6 +582,8 @@ namespace
         if (FlagKey("generated", c, "generated")) s.dirty = true;           ImGui::SameLine();
         if (FlagKey("drawBeforeDiscard", c, "drawBeforeDiscard")) s.dirty = true;
         if (FlagKey("scaleByTrapCount", c, "scaleByTrapCount")) s.dirty = true; ImGui::SameLine();
+        if (FlagKey("scaleByFaith", c, "scaleByFaith")) s.dirty = true;     ImGui::SameLine();
+        if (IntKeyOmitZero("sanctuaryHits", c, "sanctuaryHits")) s.dirty = true; ImGui::SameLine();
         if (IntKeyOmitZero("selfDamage", c, "selfDamage")) s.dirty = true;  ImGui::SameLine();
         if (IntKeyOmitZero("endTurnDamage", c, "endTurnDamage")) s.dirty = true;
         // 呪い用：手札にある間、敵の予告を隠す／ターン終了時に手札にあると捨て札へカードを加える

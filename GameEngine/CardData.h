@@ -98,6 +98,8 @@ struct CardData
     bool permanent = false;       // 削除・変化できない（強い呪い）。判定は CardDataBase::CanRemove
 
     bool scaleByTrapCount = false;
+    bool scaleByFaith = false;    // 足元の信仰1につきダメージ+1
+    int  sanctuaryHits = 0;       // 聖域に立っている時に増える攻撃回数
 
     float vfxColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };   // vfxの色(tint)。既定は白=無着色
 };

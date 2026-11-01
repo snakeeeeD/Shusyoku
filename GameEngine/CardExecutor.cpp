@@ -48,10 +48,11 @@ std::vector<Enemy*> CardExecutor::GetEnemiesInRange(
     return result;
 }
 
-static int EffectiveHits(const CardData& data)
+static int EffectiveHits(const CardData& data, const Player* player)
 {
     int h = data.hits;
-    if (data.type == CardType::Attack && data.hits > 1)   // ← 元々「複数回攻撃」のカードだけ
+    if (data.sanctuaryHits > 0 && Faith::IsSanctuary(player->GetFeetFaith())) h += data.sanctuaryHits;
+    if (data.type == CardType::Attack && h > 1)           // ← 複数回攻撃の時だけ
         h += RelicManager::SumValue("multiHit");
     return h;
 }
@@ -198,7 +199,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 baseVal *= traps;   // 盤面の罠数だけ倍
             }
 
-            int hits = EffectiveHits(data);
+            int hits = EffectiveHits(data, player);
             int dmg = player->GetBuffManager().GetFinalAttack(baseVal);
             for (auto enemy : targets)
             {
@@ -276,7 +277,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                     Enemy* enemy = GetEnemyAt(col, row, enemies);
                     if (enemy)
                     {
-                        for (int h = 0; h < EffectiveHits(data); h++)
+                        for (int h = 0; h < EffectiveHits(data, player); h++)
                             enemy->TakeDamage(player->GetBuffManager().GetFinalAttack(data.mainEffect.value));
 
                         if (enemy->GetBuffManager().HasBuff(BuffType::Thorns))
@@ -388,7 +389,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                     // ダメージ
                     if (hitEnemy)
                     {
-                        for (int h = 0; h < EffectiveHits(data); h++)
+                        for (int h = 0; h < EffectiveHits(data, player); h++)
                             hitEnemy->TakeDamage(player->GetBuffManager().GetFinalAttack(data.mainEffect.value));
                         if (hitEnemy->GetBuffManager().HasBuff(BuffType::Thorns))
                             player->TakeDamage(hitEnemy->GetBuffManager().GetBuffValue(BuffType::Thorns));
@@ -512,6 +513,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             else
             {
                 dmg = player->GetBuffManager().GetFinalAttack(data.mainEffect.value);
+                if (data.scaleByFaith) dmg += player->GetFeetFaith();   // 聖なる刃
 
                 // 背水：低HPで攻撃UP（Powerのバフ値ぶん・今のHPで判定）
                 int hp = player->GetHp(), mhp = player->GetMaxHp();
@@ -525,7 +527,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 target->TakeDamage(dmg);
             }
 
-            int totalHits = EffectiveHits(data);
+            int totalHits = EffectiveHits(data, player);
             if (totalHits > 1)
             {
                 result.multiHitTargets = { target };   // ← 1要素のリスト
@@ -1126,7 +1128,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             vx += dx * d; vz += dz * d;
             float rot = atan2f(-(float)(targetRow - playerRow), (float)(targetCol - playerCol));
 
-            int hits = EffectiveHits(data); if (hits < 1) hits = 1;
+            int hits = EffectiveHits(data, player); if (hits < 1) hits = 1;
             for (int i = 0; i < hits; i++)
             {
                 float ox = ((float)rand() / RAND_MAX - 0.5f) * 0.5f;
