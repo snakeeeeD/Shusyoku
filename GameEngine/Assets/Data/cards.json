@@ -1801,9 +1801,10 @@
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
-      "description": "隣接マスへ移動し ブロック6",
+      "description": "隣接マスへ移動し ブロック{value}",
       "upgrade": {
-        "range": 1
+        "description": "隣接マスへ移動し ブロック{value}",
+        "mainValue": 3
       },
       "mainEffect": {
         "type": "Block",
@@ -2201,7 +2202,7 @@
       },
       "mainEffect": {
         "type": "PlaceTrap",
-        "value": 1,
+        "value": 2,
         "duration": 2,
         "trapType": "root"
       }
@@ -2245,7 +2246,7 @@
       },
       "mainEffect": {
         "type": "PlaceTrap",
-        "value": 3,
+        "value": 2,
         "duration": 3,
         "trapType": "expose"
       }
@@ -2267,7 +2268,7 @@
       },
       "mainEffect": {
         "type": "PlaceTrap",
-        "value": 3,
+        "value": 2,
         "duration": 3,
         "trapType": "weaken"
       }
@@ -3040,6 +3041,154 @@
         "value": 10
       },
       "sanctuaryHits": 1
+    },
+    {
+      "id": "ATK_pin",
+      "name": "縫い止め",
+      "type": "Attack",
+      "rarity": "Common",
+      "tags": [
+        "Trap"
+      ],
+      "vfx": "slash",
+      "cost": 1,
+      "range": 2,
+      "rangeType": "Cross",
+      "description": "{value}ダメージ、\n拘束{onhitdur}ターン",
+      "upgrade": {
+        "mainValue": 2
+      },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 3
+      },
+      "onHitEffect": {
+        "type": "ApplyDebuff",
+        "value": 1,
+        "duration": 1,
+        "buffType": "Root"
+      }
+    },
+    {
+      "id": "SKL_bind_chain",
+      "name": "束縛の鎖",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "tags": [
+        "Trap"
+      ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "ブロック{value}\n全敵に拘束1ターン",
+      "vfx": "block_gain",
+      "exhaust": true,
+      "upgrade": {
+        "mainValue": 3
+      },
+      "mainEffect": {
+        "type": "Block",
+        "value": 3
+      },
+      "allEnemyEffect": {
+        "buffType": "Root",
+        "value": 1,
+        "duration": 1
+      }
+    },    {
+      "id": "ATK_pass_slash",
+      "name": "駆け抜け斬り",
+      "type": "Attack",
+      "rarity": "Common",
+      "cost": 1,
+      "range": 2,
+      "rangeType": "Cross",
+      "description": "2マス以内に突進し{value}ダメージ",
+      "dash": true,
+      "vfx": "slash",
+      "upgrade": {
+        "mainValue": 3
+      },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 5
+      }
+    },
+    {
+      "id": "POW_wind_step",
+      "name": "風の歩法",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "移動1マスにつき ブロック+{value}",
+      "upgrade": {
+        "mainValue": 1
+      },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 1,
+        "duration": -1,
+        "buffType": "Momentum"
+      }
+    },
+    {
+      "id": "POW_hit_and_run",
+      "name": "一撃離脱",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "移動後、隣の敵に{value}ダメージ",
+      "upgrade": {
+        "mainValue": 2
+      },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 4,
+        "duration": -1,
+        "buffType": "HitAndRun"
+      }
+    },
+    {
+      "id": "POW_run_up",
+      "name": "助走",
+      "type": "Power",
+      "rarity": "Rare",
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "移動1マスにつき\nこのターン攻撃力+{value}",
+      "upgrade": {
+        "mainValue": 1
+      },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 1,
+        "duration": -1,
+        "buffType": "Charge"
+      }
+    },
+    {
+      "id": "ATK_inertia",
+      "name": "慣性の一撃",
+      "type": "Attack",
+      "rarity": "Rare",
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Area",
+      "description": "{value}ダメージ\n（移動1マスにつき+3）",
+      "vfx": "smash",
+      "movedBonus": 3,
+      "upgrade": {
+        "mainValue": 3
+      },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 4
+      }
     }
   ]
 }

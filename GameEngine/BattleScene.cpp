@@ -226,6 +226,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     // プレイヤーターン開始時にエネルギー回復
     m_turnManager.onPlayerTurnStart = [this]()
         {
+            m_player->ResetMoved();
             for (auto& id : PlayerDataManager::GetData().relics)
                 if (auto def = RelicManager::Get(id); def && def->perTurn)
                     PlayerDataManager::GetData().relicCounters[id] = 0;
@@ -511,6 +512,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
      FloatingTextManager::Clear();
      UiNotice::Clear();
      EffectManager::Clear();
+     ScreenShake::Clear();   // 前の戦闘の揺れを持ち越さない
 
      RunTurnCycle();
 
@@ -584,6 +586,7 @@ void BattleScene::AddEnemy(int col, int row, const std::string& id)
     {
         enemy->InitSnake(m_gridMap);
         enemy->GetBuffManager().AddBuff({ BuffType::HeadWeak, 2, -1 });   // 頭弱点マーク（表示用・永続）
+        enemy->GetBuffManager().AddBuff({ BuffType::Molt, Enemy::SHED_DAMAGE, -1 });   // 脱皮までの残り（表示用）
     }
 
     if (id == "l3_sovereign")
@@ -623,8 +626,25 @@ void BattleScene::SummonNear(Enemy* src, const std::string& id, int count)
             }
 }
 
-void BattleScene::OnPlayerMoved(int fromCol, int fromRow)
+void BattleScene::OnPlayerMoved(int fromCol, int fromRow, int moveDist)
 {
+    BuffManager& bm = m_player->GetBuffManager();
+    m_player->AddMoved(moveDist);                                        // このターンの移動マス数
+    m_player->AddBlock(bm.GetBuffValue(BuffType::Momentum) * moveDist);
+    if (int charge = bm.GetBuffValue(BuffType::Charge) * moveDist)       // このターンの攻撃力
+    {
+        Buff b; b.type = BuffType::AttackUpTurn; b.value = charge; b.duration = 1;
+        b.name = BuffInfo::Get(BuffType::AttackUpTurn).name; b.description = L"";
+        bm.AddBuff(b);
+    }
+    if (int hit = bm.GetBuffValue(BuffType::HitAndRun))                  // 隣の敵（体も含む）へ
+        for (auto e : m_enemies)
+        {
+            if (e->GetHp() <= 0) continue;
+            bool adj = e->OccupiesCell(m_playerCol + 1, m_playerRow) || e->OccupiesCell(m_playerCol - 1, m_playerRow)
+                || e->OccupiesCell(m_playerCol, m_playerRow + 1) || e->OccupiesCell(m_playerCol, m_playerRow - 1);
+            if (adj) e->TakeDamage(hit);
+        }
     m_player->AddBlock(RelicManager::SumValue("moveBlock"));
     Faith::Engrave(m_gridMap, fromCol, fromRow, RelicManager::SumValue("moveEngrave"));   // 巡礼者の笠：元のマスに刻む
     if (m_player->GetBuffManager().HasBuff(BuffType::Frenzy))
@@ -860,7 +880,7 @@ void BattleScene::Update(float deltaTime)
             {
                 bool alive = false;
                 for (auto e : m_enemies) if (e == t && e->GetHp() > 0) alive = true;
-                if (alive) { t->TakeDamage(m_multiHitDamage); t->StartJump(0.5f, 0.2f); anyAlive = true; }
+                if (alive) { t->ReuseHitPart(); t->TakeDamage(m_multiHitDamage); t->StartJump(0.5f, 0.2f); anyAlive = true; }
             }
             m_multiHitRemain--;
             m_multiHitTimer = MULTI_HIT_INTERVAL;
@@ -994,6 +1014,19 @@ void BattleScene::Update(float deltaTime)
     ScreenShake::Update(deltaTime);
     TurnBanner::Update(deltaTime);
     EffectManager::Update(deltaTime);
+
+    // オロチの脱皮：ターンは使わず、その瞬間に演出だけ出す
+    for (auto enemy : m_enemies)
+        if (enemy->IsSnake() && enemy->ConsumeShed())
+        {
+            auto [hc, hr] = enemy->HitCell();                              // 殴った場所に出す
+            float wx = (hc - m_gridMap->GetCols() / 2.0f) * 1.1f;
+            float wz = (hr - m_gridMap->GetRows() / 2.0f) * 1.1f;
+            EffectManager::Play("chain_break_venom", wx, 0.6f, wz);        // 緑の破片
+            ScreenShake::Add(0.5f);
+            FloatingTextManager::Spawn(wx, 1.0f, wz, L"脱皮！ 巻きつき・攻撃力アップ",
+                XMFLOAT4(0.5f, 1.0f, 0.4f, 1.0f), 40.0f);
+        }
 
     // HP0の敵を「塵化」させ、アニメが終わったら消す
     for (auto enemy : m_enemies)
@@ -1278,6 +1311,12 @@ void BattleScene::Update(float deltaTime)
                 [](const Enemy* e) { return e->hitsPlayer; });
             if (threatened) Hint::Request("threat"); else Hint::Resolve("threat");
             if (m_player->GetEnergy() == 0) Hint::Request("endTurn");
+            for (auto e : m_enemies)
+                if (e->IsSnake() && m_turnManager.GetTurnCount() >= 2)   // オロチの見どころ（体が伸びてから）
+                {
+                    Hint::Request("snakeWeak");
+                    Hint::Request("molt");
+                }
             if (m_turnManager.GetTurnCount() >= 2) { Hint::Request("focus"); Hint::Request("camera"); }
         }
         else Hint::Resolve("endTurn");
@@ -2258,7 +2297,7 @@ void BattleScene::Draw()
                     cell.gameObject.worldY + 0.035f);
 
                 if (def && !def->texture.empty())
-                    m_renderer3D->DrawTile(TextureManager::Get(def->texture), x, z, sz,
+                    m_renderer3D->DrawTileEx(TextureManager::Get(def->texture), x, z, sz, sz, XM_PI,   // カメラが逆向きなので回す
                         XMFLOAT4(bright, bright, bright, 1.0f), cell.gameObject.worldY + 0.04f);
                 else
                     m_renderer3D->DrawTile(m_whiteTexture, x, z, sz,
@@ -2272,8 +2311,7 @@ void BattleScene::Draw()
     for (auto enemy : m_enemies)
     {
         if (!enemy->IsSnake()) continue;
-        std::vector<std::pair<int, int>> chain = enemy->GetBodyCells();   // 尾(0)…
-        chain.push_back({ enemy->gridCol, enemy->gridRow });             // …頭(last)
+        std::vector<std::pair<int, int>> chain = enemy->VisualChain();    // 尾(0)…頭(last)。歩きに合わせて伸び縮みする
         int n = (int)chain.size();
         auto WX = [&](int c) { return (c - m_gridMap->GetCols() / 2.0f) * 1.1f; };
         auto WZ = [&](int r) { return (r - m_gridMap->GetRows() / 2.0f) * 1.1f; };
@@ -2286,6 +2324,7 @@ void BattleScene::Draw()
         for (int i = 0; i < n; i++)
         {
             float x = WX(chain[i].first), z = WZ(chain[i].second);
+            if (i == n - 1) { x = enemy->worldX; z = enemy->worldZ; }     // 頭は歩きの位置に描く
             int bdx = 0, bdy = 0, fdx = 0, fdy = 0;
             if (i > 0) { bdx = chain[i].first - chain[i - 1].first; bdy = chain[i].second - chain[i - 1].second; }
             if (i < n - 1) { fdx = chain[i + 1].first - chain[i].first; fdy = chain[i + 1].second - chain[i].second; }
@@ -2331,8 +2370,21 @@ void BattleScene::Draw()
                 }
             }
 
+            m_renderer3D->SetWhiteMix(min(0.6f, 0.2f * enemy->ShedCount()));   // 脱皮するほど白く（1回20%、最大60%）
             m_renderer3D->DrawTileEx(TextureManager::Get(tex), x, z, size, size, rot,
                 XMFLOAT4(1, 1, 1, 1), cyLift);
+            m_renderer3D->SetWhiteMix(0.0f);
+        }
+
+        // 光るウロコ：殴ると2倍になる場所（脈動する緑の光）
+        if (enemy->GetWeakCell().first >= 0)
+        {
+            auto [wc, wr] = enemy->GetWeakCell();
+            float pulse = 0.65f + 0.35f * sinf(m_highlightTimer * 6.0f);
+            m_renderer3D->SetAdditive(true);
+            m_renderer3D->DrawTile(TextureManager::Get("faith_aura"), WX(wc), WZ(wr), 1.25f,
+                XMFLOAT4(0.4f, 1.0f, 0.3f, pulse), m_gridMap->GetCell(wc, wr).gameObject.worldY + 0.15f);
+            m_renderer3D->SetAdditive(false);
         }
     }
     m_renderer3D->SetDepthWrite(true);
@@ -3307,7 +3359,7 @@ void BattleScene::HandleInput()
                         m_playerRow = newPlayerRow;
                         m_player->gridCol = m_playerCol;
                         m_player->gridRow = m_playerRow;
-                        OnPlayerMoved(oldCol, oldRow);   // レリック：移動時
+                        OnPlayerMoved(oldCol, oldRow, execResult.moveDist);   // レリック：移動時
                         float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
                         float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
                         if (usePath && !usePath->empty())
@@ -3331,7 +3383,7 @@ void BattleScene::HandleInput()
                         if (movedCell.tileEffect.active)
                         {
                             const TerrainDef* def = TerrainDataBase::Get(movedCell.tileEffect.id);
-                            if (def && def->effect == "Slide")
+                            if (def && def->effect == "Slide" && !RelicManager::HasKind("floorImmune"))
                             {
                                 isSlide = true;
                                 int dx = m_playerCol - oldCol;
@@ -3609,7 +3661,7 @@ void BattleScene::HandleInput()
                             m_playerRow = newPlayerRow;
                             m_player->gridCol = m_playerCol;
                             m_player->gridRow = m_playerRow;
-                            OnPlayerMoved(oldCol, oldRow);   // レリック：移動時
+                            OnPlayerMoved(oldCol, oldRow, execResult.moveDist);   // レリック：移動時
                             float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
                             float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
                             m_player->StartMove(px, pz);
@@ -3621,7 +3673,7 @@ void BattleScene::HandleInput()
                             if (movedCell.tileEffect.active)
                             {
                                 const TerrainDef* def = TerrainDataBase::Get(movedCell.tileEffect.id);
-                                if (def && def->effect == "Slide")
+                                if (def && def->effect == "Slide" && !RelicManager::HasKind("floorImmune"))
                                 {
                                     isSlide = true;
                                     int dx = m_playerCol - oldCol;

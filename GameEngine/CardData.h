@@ -99,6 +99,7 @@ struct CardData
 
     bool scaleByTrapCount = false;
     bool scaleByFaith = false;    // 足元の信仰1につきダメージ+1
+    int  movedBonus = 0;          // このターンの移動1マスにつきダメージ+N
     int  sanctuaryHits = 0;       // 聖域に立っている時に増える攻撃回数
 
     float vfxColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };   // vfxの色(tint)。既定は白=無着色

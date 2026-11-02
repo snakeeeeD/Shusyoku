@@ -1002,6 +1002,183 @@
           "texture": "star"
         }
       ]
+    },
+    {
+      "id": "atk_slash",
+      "bursts": [],
+      "sheets": [
+        {
+          "texture": "fx_slash",
+          "cols": 3,
+          "rows": 2,
+          "frames": 6,
+          "fps": 30,
+          "scale": 1.0,
+          "yOffset": 0.3
+        }
+      ]
+    },
+    {
+      "id": "atk_smash",
+      "bursts": [
+        {
+          "count": 6,
+          "speed": 1.4,
+          "life": 0.35,
+          "scale": 0.12,
+          "gravity": 3.0,
+          "drag": 0.04,
+          "colorStart": [
+            0.85,
+            0.8,
+            0.7,
+            0.8
+          ],
+          "colorEnd": [
+            0.5,
+            0.45,
+            0.4,
+            0.0
+          ],
+          "texture": "particle"
+        }
+      ],
+      "sheets": [
+        {
+          "texture": "fx_smash",
+          "cols": 3,
+          "rows": 2,
+          "frames": 6,
+          "fps": 24,
+          "scale": 0.8,
+          "yOffset": 0.2
+        }
+      ]
+    },
+    {
+      "id": "atk_poison",
+      "bursts": [
+        {
+          "count": 5,
+          "speed": 0.6,
+          "life": 0.8,
+          "scale": 0.3,
+          "gravity": -1.0,
+          "drag": 0.02,
+          "colorStart": [
+            0.7,
+            0.4,
+            1.0,
+            0.9
+          ],
+          "colorEnd": [
+            0.4,
+            0.15,
+            0.6,
+            0.0
+          ],
+          "texture": "particle_poison"
+        }
+      ]
+    },
+    {
+      "id": "atk_fire",
+      "bursts": [
+        {
+          "count": 4,
+          "speed": 0.9,
+          "life": 0.5,
+          "scale": 1.1,
+          "gravity": -1.2,
+          "drag": 0.03,
+          "colorStart": [
+            1.0,
+            0.55,
+            0.15,
+            1.0
+          ],
+          "colorEnd": [
+            0.6,
+            0.1,
+            0.0,
+            0.0
+          ],
+          "texture": "fire"
+        }
+      ]
+    },
+    {
+      "id": "atk_magic",
+      "bursts": [
+        {
+          "count": 1,
+          "speed": 0.0,
+          "life": 0.4,
+          "scale": 0.9,
+          "gravity": 0.0,
+          "drag": 0.0,
+          "colorStart": [
+            0.75,
+            0.55,
+            1.0,
+            1.0
+          ],
+          "colorEnd": [
+            0.5,
+            0.3,
+            1.0,
+            0.0
+          ],
+          "texture": "magic"
+        },
+        {
+          "count": 5,
+          "speed": 1.2,
+          "life": 0.5,
+          "scale": 0.14,
+          "gravity": -1.0,
+          "drag": 0.03,
+          "colorStart": [
+            0.85,
+            0.75,
+            1.0,
+            1.0
+          ],
+          "colorEnd": [
+            0.5,
+            0.3,
+            1.0,
+            0.0
+          ],
+          "texture": "star"
+        }
+      ]
+    },
+    {
+      "id": "atk_rock",
+      "bursts": [
+        {
+          "count": 9,
+          "speed": 1.8,
+          "life": 0.5,
+          "scale": 0.13,
+          "gravity": 6.0,
+          "drag": 0.02,
+          "colorStart": [
+            0.55,
+            0.52,
+            0.5,
+            1.0
+          ],
+          "colorEnd": [
+            0.3,
+            0.28,
+            0.27,
+            0.0
+          ],
+          "texture": "particle"
+        }
+      ]
     }
   ]
 }

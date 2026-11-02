@@ -113,6 +113,10 @@ public:
 
 	bool IsSnake() const { return m_isSnake; }
 	const std::vector<std::pair<int, int>>& GetBodyCells() const { return m_bodyCells; }
+	std::vector<std::pair<int, int>> VisualChain();   // 描画用の体の列（尾…頭）
+	bool IsWeakPoint(int c, int r) const { return (c == gridCol && r == gridRow) || (c == m_weakCell.first && r == m_weakCell.second); }   // 頭＋光るウロコ
+	const std::pair<int, int>& GetWeakCell() const { return m_weakCell; }
+	void PickWeakCell(int playerCol, int playerRow);
 	// 占有している全マス（蛇は頭＋体、多マス敵は形の全マス）
 	std::vector<std::pair<int, int>> OccupiedCells() const
 	{
@@ -123,9 +127,20 @@ public:
 	}
 	void InitSnake(GridMap* gridMap);
 	void GrowCoil(GridMap* gridMap, int steps, class Player* player);
+	void LungeTo(GridMap* gridMap);                                 // 予告した経路で首を伸ばす
+	std::vector<std::pair<int, int>> LungePath(int aimCol, int aimRow) const;   // 経路を探す
+	void RetractNeck(GridMap* gridMap);                             // 伸ばした首を戻す
 	bool PushPlayerToCenter(GridMap* gridMap, class Player* player);
 	bool OccupiesCell(int col, int row) const;
-	void MarkHeadHit(bool h) { m_lastHitHead = h; }
+	enum class HitPart { None, Head, Body };                     // カードが当たった部位（蛇）
+	void MarkHeadHit(bool h) { m_hitPart = h ? HitPart::Head : HitPart::Body; m_lastPart = m_hitPart; }
+	void ReuseHitPart() { m_hitPart = m_lastPart; }              // 連撃の2発目以降も同じ部位
+	void MarkWeakHit(int c, int r) { m_hitWeak = (c == m_weakCell.first && r == m_weakCell.second); }   // 光るウロコに当たったか
+	bool ConsumeShed() { bool b = m_shedPending; m_shedPending = false; return b; }   // 脱皮した瞬間か（演出用）
+	static constexpr int SHED_DAMAGE = 120;   // これだけカードで殴られると脱皮
+	void MarkHitCell(int c, int r) { m_hitCell = { c, r }; }      // カードが当たったマス
+	const std::pair<int, int>& HitCell() const { return m_hitCell; }
+	int ShedCount() const { return m_coilBonus / 2; }             // 脱皮した回数
 
 	struct PendingCurse { std::string cardId, target; int count; };
 	std::vector<PendingCurse>& PendingCurses() { return m_pendingCurses; }
@@ -202,10 +217,27 @@ private:
 
 	bool m_isSnake = false;
 	std::vector<std::pair<int, int>> m_bodyCells;   // 胴体（通った跡）
+	std::pair<int, int> m_weakCell{ -1, -1 };       // 光るウロコ（殴ると頭と同じ2倍）
+	bool m_hitWeak = false;
+	std::pair<int, int> m_hitCell{ -1, -1 };
+	int m_cardDamage = 0;                           // カードの攻撃で受けた累計（脱皮の判定）
+	int m_coilBonus = 0;                            // 脱皮で増えた巻きつきの速さ
+	bool m_shedPending = false;
+	int m_neckLen = 0;                              // 伸ばしている首のマス数
+	std::vector<std::pair<int, int>> m_lungePlan;   // 噛みつきの経路（予告の時に決める）
+	struct SnakeOp { bool push; std::pair<int, int> cell; };   // 1マス分の見た目の操作
+	std::vector<SnakeOp> m_snakeOps;
+	int m_opApplied = 0;
+	std::vector<std::pair<int, int>> m_visualBase;
+	void QueueSnakeOp(bool push, std::pair<int, int> cell);
+	GridMap* m_grid = nullptr;                      // 経路探し用（InitSnakeで入れる）
+	int m_turnsSinceLunge = 0;                      // 前の噛みつきからのターン数
+	int m_gridCols = 0, m_gridRows = 0;             // 盤面の大きさ（渦の内側を数える）
 	std::vector<std::pair<int, int>> m_spiral;      // 頭が辿る渦巻き
 	int  m_spiralIdx = 0;
 	bool m_coilComplete = false;
-	bool m_lastHitHead = false;
+	HitPart m_hitPart = HitPart::None;
+	HitPart m_lastPart = HitPart::None;
 	bool m_coilReached = false;   // 中央（距離1以内）に到達したか
 	int  m_coilStuck = 0;       // 到達後の経過ターン（フィニッシャー遅延）
 

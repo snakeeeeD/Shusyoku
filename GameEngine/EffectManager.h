@@ -152,7 +152,7 @@ public:
         }
     }
 
-    static void Clear() { m_particles.clear(); m_sprites.clear(); }
+    static void Clear() { m_particles.clear(); m_sprites.clear(); m_pending.clear(); }   // 時間差の予約も消す（次の戦闘へ持ち越さない）
 
     // 球状にばらまく（講義のCreateRingの分布を流用）
     static void SpawnBurst(float x, float y, float z, int count,

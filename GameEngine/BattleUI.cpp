@@ -173,6 +173,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     const auto& cards = ctx.hand->GetCards();
 
     m_hasHoveredBuff = false;
+    m_overUnitStatus = false;
 
     float oy = RelicManager::BarExtraHeight(m_screenWidth);   // レリック折り返しぶん下げる
 
@@ -205,7 +206,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         for (int ei = 0; ei < (int)ctx.enemies->size(); ei++)
         {
             Enemy* enemy = (*ctx.enemies)[ei];
-            if (enemy->GetHp() <= 0) continue;
+            if (enemy->GetHp() <= 0 || enemy->IsMoving()) continue;   // 動き出したら矢印は消す
 
             const auto& path = enemy->GetPlannedMovePath();
             if (path.empty()) continue;
@@ -359,8 +360,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         {
             float headX, headY, footX, footY;
             if (!GetEnemyScreenPos(enemy, ctx.renderer3D, headX, headY)) continue;
-            if (!GetEnemyFootPos(enemy, ctx.renderer3D, footX, footY)) continue;
-            if (enemy->IsSnake()) footY += 40.0f * (1.0f / ctx.cameraZoom);   // 蛇は平置きなのでUIを下げる
+            if (!GetStatusFoot(enemy, ctx, footX, footY)) continue;
 
             float scale = 1.0f / ctx.cameraZoom;  // ズームアウト時に小さくなる
 
@@ -440,27 +440,45 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                         iconX += EnemyIntentVisual::STEP;
                     }
             }
+        }
 
+        {
+            float footX, footY;
+            if (WorldToScreen(ctx.player->worldX, 0.0f, ctx.player->worldZ + 0.5f, ctx.renderer3D, footX, footY))
             {
-                float footX, footY;
-                if (WorldToScreen(ctx.player->worldX, 0.0f, ctx.player->worldZ + 0.5f, ctx.renderer3D, footX, footY))
+                float scale = 1.0f / ctx.cameraZoom;
+                URect me = UnitStatusRect(footX, footY, scale, false, ctx.player->GetBuffManager());
+                for (auto enemy : *ctx.enemies)                // 敵のUIと重なる時だけ、近いほう（上下）へずらす
                 {
-                    float scale = 1.0f / ctx.cameraZoom;
-                    HPBarInfo pBar;
-                    pBar.currentHP = ctx.player->GetHp(); pBar.maxHP = ctx.player->GetMaxHp();
-                    pBar.displayHP = ctx.player->GetDisplayHp(); pBar.block = ctx.player->GetBlock();
-                    pBar.poisonDmg = ctx.player->GetBuffManager().GetTurnEndDamage().total();
-                    pBar.hasBurn = ctx.player->GetBuffManager().HasBuff(BuffType::Burn);
-
-                    m_spriteRenderer->Begin();
-                    DrawUnitStatusSprites(footX, footY, scale, false, pBar,
-                        ctx.player->GetBuffManager(), ctx.mousePos, ctx.highlightTimer);
-                    m_spriteRenderer->End();
-
-                    m_textRenderer->Begin();
-                    DrawUnitStatusText(footX, footY, scale, false, pBar, ctx.player->GetBuffManager());
-                    m_textRenderer->End();
+                    float ex, ey;
+                    if (!GetStatusFoot(enemy, ctx, ex, ey)) continue;
+                    URect r = UnitStatusRect(ex, ey, scale, enemy->IsBoss(), enemy->GetBuffManager());
+                    if (!EnemyIntentVisual::Hidden())          // 行動アイコンの分も避ける
+                    {
+                        float icon = EnemyIntentVisual::ICON_SIZE + 2.0f;
+                        r.y -= icon; r.h += icon;
+                    }
+                    if (me.x < r.x + r.w && r.x < me.x + me.w && me.y < r.y + r.h && r.y < me.y + me.h)
+                    {
+                        float up = me.y + me.h - r.y, down = r.y + r.h - me.y + 8.0f;   // 下へは少し間を空ける
+                        float d = (up < down ? -up : down);
+                        me.y += d; footY += d;
+                    }
                 }
+                HPBarInfo pBar;
+                pBar.currentHP = ctx.player->GetHp(); pBar.maxHP = ctx.player->GetMaxHp();
+                pBar.displayHP = ctx.player->GetDisplayHp(); pBar.block = ctx.player->GetBlock();
+                pBar.poisonDmg = ctx.player->GetBuffManager().GetTurnEndDamage().total();
+                pBar.hasBurn = ctx.player->GetBuffManager().HasBuff(BuffType::Burn);
+
+                m_spriteRenderer->Begin();
+                DrawUnitStatusSprites(footX, footY, scale, false, pBar,
+                    ctx.player->GetBuffManager(), ctx.mousePos, ctx.highlightTimer);
+                m_spriteRenderer->End();
+
+                m_textRenderer->Begin();
+                DrawUnitStatusText(footX, footY, scale, false, pBar, ctx.player->GetBuffManager());
+                m_textRenderer->End();
             }
         }
 
@@ -471,8 +489,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         {
             float headX, headY, footX, footY;
             if (!GetEnemyScreenPos(enemy, ctx.renderer3D, headX, headY)) continue;
-            if (!GetEnemyFootPos(enemy, ctx.renderer3D, footX, footY)) continue;
-            if (enemy->IsSnake()) footY += 40.0f * (1.0f / ctx.cameraZoom);   // 蛇は平置きなのでUIを下げる
+            if (!GetStatusFoot(enemy, ctx, footX, footY)) continue;
 
             float scale = 1.0f / ctx.cameraZoom;
             float barWidth = (enemy->IsBoss() ? 100.0f : 50.0f) * scale;
@@ -502,13 +519,11 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
                         if (EnemyIntentVisual::HasValue(e))
                         {
-                            int shownVal = EnemyIntentVisual::GetDisplayValue(e, enemy->GetBuffManager());
-                            wchar_t buf[16];
-                            swprintf_s(buf, L"%d", shownVal);
+                            std::wstring shown = EnemyIntentVisual::GetDisplayText(e, enemy->GetBuffManager());
 
-                            m_textRenderer->DrawText(buf, ix + iconSize + 4.0f, iy + 2.0f, 14.0f,
+                            m_textRenderer->DrawText(shown.c_str(), ix + iconSize + 4.0f, iy + 2.0f, 14.0f,
                                 D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
-                            m_textRenderer->DrawText(buf, ix + iconSize + 3.0f, iy + 1.0f, 14.0f,
+                            m_textRenderer->DrawText(shown.c_str(), ix + iconSize + 3.0f, iy + 1.0f, 14.0f,
                                 D2D1::ColorF(D2D1::ColorF::White));
                         }
 
@@ -1010,10 +1025,14 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     {
         const auto& info = BuffInfo::Get(m_hoveredBuffType);
         std::wstring desc = BuffInfo::GetDescription(m_hoveredBuffType, m_hoveredBuffValue);
+        auto lines = WrapLines(desc, 20, false);                // 文の長さで枠を決める
+        float tipW = 230.0f;
+        float tipH = 22.0f + lines.size() * 15.0f;
         float tipX = m_hoveredBuffX;
-        float tipY = m_hoveredBuffY - 40.0f;
-        float tipW = 200.0f;
-        float tipH = 36.0f;
+        float tipY = m_hoveredBuffY - tipH - 8.0f;
+        if (tipX + tipW > m_screenWidth - 8.0f) tipX = m_screenWidth - 8.0f - tipW;   // 画面内に収める
+        if (tipX < 8.0f) tipX = 8.0f;
+        if (tipY < 8.0f) tipY = m_hoveredBuffY + 24.0f;         // 上に出せない時は下へ
 
         m_textRenderer->End();
         m_spriteRenderer->Begin();
@@ -1023,8 +1042,9 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
         m_textRenderer->DrawText(info.name.c_str(), tipX + 5.0f, tipY + 2.0f, 13.0f,
             D2D1::ColorF(1.0f, 1.0f, 0.5f));
-        m_textRenderer->DrawText(desc.c_str(), tipX + 5.0f, tipY + 18.0f, 11.0f,
-            D2D1::ColorF(0.8f, 0.8f, 0.8f));
+        for (int i = 0; i < (int)lines.size(); i++)
+            m_textRenderer->DrawText(lines[i].c_str(), tipX + 5.0f, tipY + 18.0f + i * 15.0f, 11.0f,
+                D2D1::ColorF(0.8f, 0.8f, 0.8f));
     }
 
     // 敵インテントアイコンの説明ウィンドウ
@@ -1062,7 +1082,9 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     // マスの説明（罠・聖地）は、カードを持っていない時に同じマスへ少し止めたら出す
     if (ctx.hoveredCell != m_tipCell) { m_tipCell = ctx.hoveredCell; m_tipSince = GetTickCount64(); }
     bool showCellTip = ctx.selectedCardIndex < 0 && ctx.hoveredCardIndex < 0
+        && !m_overUnitStatus && !m_intentHover
         && GetTickCount64() - m_tipSince >= CELL_TIP_DELAY_MS;
+    float trapTipH = 0.0f;   // 罠の説明の高さ（聖地の説明をその下に並べる）
 
     // 罠のホバー詳細
     if (showCellTip && ctx.hoveredCell.first >= 0 && ctx.hoveredCell.second >= 0
@@ -1075,22 +1097,15 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             const TerrainDef* def = TerrainDataBase::Get(hCell.tileEffect.id);
             if (def)
             {
-                wchar_t detailText[64];
-                if (def->effect == "Damage")
-                    swprintf_s(detailText, L"ダメージ: %d", hCell.tileEffect.value);
-                else if (def->effect == "Slide")
-                    swprintf_s(detailText, L"移動方向に滑る");
-                else
-                {
-                    BuffType bt = StringToBuffType(def->buffType);
-                    const auto& info = BuffInfo::Get(bt);
-                    swprintf_s(detailText, L"%s: %d (%dT)", info.name.c_str(), hCell.tileEffect.value, def->buffDuration);
-                }
+                auto detail = CardTooltip::TrapLines(def, hCell.tileEffect.value);
+                if (hCell.tileEffect.hazardTurns > 0)
+                    detail.back() = L"残り" + std::to_wstring(hCell.tileEffect.hazardTurns) + L"ターン";
 
                 float tipX = (float)ctx.mousePos.x + 15.0f;
                 float tipY = (float)ctx.mousePos.y - 50.0f;
                 float tipW = 150.0f;
-                float tipH = 40.0f;
+                float tipH = 24.0f + detail.size() * 15.0f;
+                trapTipH = tipH + 16.0f;
 
                 m_textRenderer->End();
                 m_spriteRenderer->Begin();
@@ -1100,8 +1115,9 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
                 m_textRenderer->DrawText(def->name.c_str(), tipX + 5.0f, tipY + 2.0f, 13.0f,
                     D2D1::ColorF(def->color.x, def->color.y, def->color.z));
-                m_textRenderer->DrawText(detailText, tipX + 5.0f, tipY + 20.0f, 11.0f,
-                    D2D1::ColorF(D2D1::ColorF::LightGray));
+                for (int i = 0; i < (int)detail.size(); i++)
+                    m_textRenderer->DrawText(detail[i].c_str(), tipX + 5.0f, tipY + 20.0f + i * 15.0f, 11.0f,
+                        D2D1::ColorF(D2D1::ColorF::LightGray));
             }
         }
     }
@@ -1122,7 +1138,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             swprintf_s(l3, L"ターン終了時 ここの敵に%dダメージ（信仰は半分に）", f);
 
             float tipX = (float)ctx.mousePos.x + 15.0f;
-            float tipY = (float)ctx.mousePos.y - 50.0f + (fCell.tileEffect.active ? 56.0f : 0.0f);
+            float tipY = (float)ctx.mousePos.y - 50.0f + trapTipH;
             float tipW = 270.0f, tipH = 58.0f;
 
             m_textRenderer->End();
@@ -1136,6 +1152,24 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             m_textRenderer->DrawText(l3, tipX + 5.0f, tipY + 36.0f, 11.0f, D2D1::ColorF(D2D1::ColorF::LightGray));
         }
     }
+
+    // 光るウロコのホバー説明
+    if (showCellTip && ctx.enemies)
+        for (auto e : *ctx.enemies)
+            if (e->GetWeakCell() == ctx.hoveredCell && ctx.hoveredCell.first >= 0)
+            {
+                float tipX = (float)ctx.mousePos.x + 15.0f, tipY = (float)ctx.mousePos.y - 50.0f;
+                float tipW = 230.0f, tipH = 40.0f;
+                m_textRenderer->End();
+                m_spriteRenderer->Begin();
+                DrawWindow(tipX - 4.0f, tipY - 4.0f, tipW + 8.0f, tipH + 8.0f);
+                m_spriteRenderer->End();
+                m_textRenderer->Begin();
+                m_textRenderer->DrawText(L"光るウロコ", tipX + 5.0f, tipY + 2.0f, 13.0f, D2D1::ColorF(0.5f, 1.0f, 0.4f));
+                m_textRenderer->DrawText(L"殴ると2倍ダメージ（1回で割れる）", tipX + 5.0f, tipY + 20.0f, 11.0f,
+                    D2D1::ColorF(D2D1::ColorF::LightGray));
+                break;
+            }
 
     if (ctx.showDrawPile || ctx.showDiscardPile || ctx.showExhaustPile)
     {
@@ -1427,9 +1461,13 @@ void BattleUI::DrawTargetIndicators(const BattleUIContext& ctx)
                     }
                     else if (data->onHitEffect.type == CardEffectType::Pull)
                     {
+                        auto aim = ctx.hoveredCell;                       // 敵の上ならそのマスを狙う
+                        if (!enemy->OccupiesCell(aim.first, aim.second))
+                            aim = { enemy->gridCol, enemy->gridRow };
                         auto preview = CardExecutor::PreviewPull(
                             enemy, ctx.playerCol, ctx.playerRow,
-                            data->onHitEffect.value, ctx.gridMap, *ctx.enemies);
+                            data->onHitEffect.value, ctx.gridMap, *ctx.enemies,
+                            aim.first, aim.second);
 
                         if (preview.immovable)
                         {
@@ -2164,6 +2202,30 @@ static const float ENTRY_MIN_H = 66.0f;   // アイコン(55)＋余白
 static const float DETAIL_W = 220.0f;  // 詳細の窓の幅
 static const int   DETAIL_CH = 13;      // 詳細の1行の文字数（15px・幅200）
 
+bool BattleUI::GetStatusFoot(Enemy* enemy, const BattleUIContext& ctx, float& outX, float& outY) const
+{
+    if (!GetEnemyFootPos(enemy, ctx.renderer3D, outX, outY)) return false;
+    if (enemy->IsSnake()) outY += 40.0f * (1.0f / ctx.cameraZoom);   // 蛇は平置きなのでUIを下げる
+    return true;
+}
+
+// HPバーとバフ列が占める範囲（DrawUnitStatusSprites と同じ並び方）
+URect BattleUI::UnitStatusRect(float footX, float footY, float scale, bool isBoss, BuffManager& bm) const
+{
+    float barWidth = (isBoss ? 100.0f : 50.0f) * scale;
+    float barHeight = (isBoss ? 15.0f : 10.0f) * scale;
+    float barX = footX - barWidth / 2.0f, barY = footY - 30.0f;
+    float maxX = barX + barWidth + 40.0f;
+    float x = barX, y = barY + barHeight + 4.0f, bottom = barY + barHeight;
+    for (auto& buff : bm.GetBuffs())
+    {
+        if (x + 36.0f > maxX) { x = barX; y += 22.0f; }
+        bottom = y + 16.0f;
+        x += 36.0f;
+    }
+    return { barX - 10.0f, barY, barWidth + 50.0f, bottom - barY };
+}
+
 std::vector<std::wstring> BattleUI::WrapLines(const std::wstring& s, int maxCh, bool breakAtComma)
 {
     std::vector<std::wstring> out;
@@ -2342,15 +2404,11 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
 
         if (enemy->GetBlock() > 0)
         {
-            float bIconSize = barH * 1.5f;
+            float bIconSize = barH * 2.0f;
             float bIconX = barX - bIconSize * 0.35f;
             float bIconY = barY + (barH - bIconSize) / 2.0f;
-            m_spriteRenderer->DrawSprite(m_whiteTexture,
-                bIconX - 1.0f, bIconY - 1.0f, bIconSize + 2.0f, bIconSize + 2.0f,
-                0.0f, XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f));
-            m_spriteRenderer->DrawSprite(m_whiteTexture,
-                bIconX, bIconY, bIconSize, bIconSize,
-                0.0f, XMFLOAT4(0.3f, 0.6f, 1.0f, 1.0f));
+            m_spriteRenderer->DrawSprite(TextureManager::Get("icon_block"),
+                bIconX, bIconY, bIconSize, bIconSize, 0.0f, XMFLOAT4(1, 1, 1, 1));
         }
 
         if (isHover && hoveredEnemy < 0)
@@ -2394,7 +2452,7 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
             float barX = panelX + iconSize + 10.0f;
             float barY = entryY + 5.0f;
             float barH = 12.0f;
-            float bIconSize = barH * 1.5f;
+            float bIconSize = barH * 2.0f;
             float bIconX = barX - bIconSize * 0.35f;
             float bIconY = barY + (barH - bIconSize) / 2.0f;
             wchar_t blockText[16];
@@ -2815,11 +2873,10 @@ void BattleUI::DrawUnitStatusSprites(float footX, float footY, float scale, bool
     // ブロックアイコン（HPバー左端）
     if (bar.block > 0)
     {
-        float iconSize = barHeight * 1.5f;
+        float iconSize = barHeight * 2.0f;
         float iconX = barX - iconSize / 2.0f;
         float iconY = barY + (barHeight - iconSize) / 2.0f;
-        m_spriteRenderer->DrawSprite(m_whiteTexture, iconX - 1.0f, iconY - 1.0f, iconSize + 2.0f, iconSize + 2.0f, 0.0f, XMFLOAT4(0, 0, 0, 1));
-        m_spriteRenderer->DrawSprite(m_whiteTexture, iconX, iconY, iconSize, iconSize, 0.0f, XMFLOAT4(0.3f, 0.6f, 1.0f, 1.0f));
+        m_spriteRenderer->DrawSprite(TextureManager::Get("icon_block"), iconX, iconY, iconSize, iconSize, 0.0f, XMFLOAT4(1, 1, 1, 1));
     }
 
     // バフ/デバフアイコン
@@ -2848,6 +2905,11 @@ void BattleUI::DrawUnitStatusSprites(float footX, float footY, float scale, bool
         }
         bIconX += iconSize + 20.0f;
     }
+
+    URect area = UnitStatusRect(footX, footY, scale, isBoss, bm);
+    if (mousePos.x >= area.x && mousePos.x <= area.x + area.w
+        && mousePos.y >= area.y && mousePos.y <= area.y + area.h)
+        m_overUnitStatus = true;
 }
 
 void BattleUI::DrawUnitStatusText(float footX, float footY, float scale, bool isBoss,
@@ -2870,7 +2932,7 @@ void BattleUI::DrawUnitStatusText(float footX, float footY, float scale, bool is
     // ブロック数値
     if (bar.block > 0)
     {
-        float iconSize = barHeight * 1.5f;
+        float iconSize = barHeight * 2.0f;
         float iconX = barX - iconSize / 2.0f;
         float iconY = barY + (barHeight - iconSize) / 2.0f - 2.0f;
         wchar_t bt[16]; swprintf_s(bt, L"%d", bar.block);

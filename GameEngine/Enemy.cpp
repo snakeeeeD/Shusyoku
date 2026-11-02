@@ -12,6 +12,8 @@
 #include "HitStop.h"
 #include "Audio.h"
 #include <algorithm>
+#include <map>
+#include <queue>
 
 Enemy::Enemy()
     : m_HP(30), m_maxHP(30)
@@ -196,7 +198,7 @@ void Enemy::DropTrail(GridMap* gridMap, int col, int row)
     cell.tileEffect.id = "fire";
     cell.tileEffect.enemyOwned = true;
     cell.tileEffect.value = 2;
-    cell.tileEffect.duration = 3;
+    cell.tileEffect.hazardTurns = m_buffManager.GetBuffValue(BuffType::EmberTrail);   // 付与するバフの数字がターン数
     const TerrainDef* t = TerrainDataBase::Get("fire");
     if (t) cell.tileEffect.persistent = t->persistent;
 }
@@ -346,6 +348,7 @@ void Enemy::TakeDamage(int damage, DamageFeel feel)
 
     if (feel == DamageFeel::Poison || feel == DamageFeel::Holy)
     {
+        if (m_isSnake && feel == DamageFeel::Poison) damage = max(1, damage / 2);   // 毒蛇に毒は効きにくい
         // 毒・聖地の焼きはブロック/弱体を無視して表示値通り与える
         m_HP -= damage;
         if (m_HP < 0) m_HP = 0;
@@ -355,8 +358,23 @@ void Enemy::TakeDamage(int damage, DamageFeel feel)
 
     Audio::PlaySE("Assets/Sound/se/hit.mp3");
 
-    if (m_isSnake && m_lastHitHead) damage *= 2;   // 頭は弱点（2倍）
-    m_lastHitHead = false;
+    if (m_isSnake && m_hitPart == HitPart::Head) damage *= 2;                   // 頭は弱点（2倍）
+    if (m_isSnake && m_hitPart == HitPart::Body) damage = max(1, damage / 2);   // 体は硬い（カードの攻撃だけ半分）
+    if (m_hitWeak && m_hitPart == HitPart::Head) m_weakCell = { -1, -1 };   // 光るウロコは1回で割れる
+    m_hitWeak = false;
+    if (m_isSnake && m_hitPart != HitPart::None)          // カードで殴られた分だけ数える（毒・罠は数えない）
+    {
+        m_cardDamage += damage;
+        if (m_cardDamage >= SHED_DAMAGE)
+        {
+            m_cardDamage -= SHED_DAMAGE;
+            m_coilBonus += 2;                             // 巻きつきが速くなる
+            m_buffManager.AddBuff({ BuffType::AttackUp, 2, -1 });   // 攻撃力も上がる（速いと殴りやすくなる分のリスク）
+            m_shedPending = true;
+        }
+        m_buffManager.AddBuff({ BuffType::Molt, SHED_DAMAGE - m_cardDamage, -1 });   // 残りの表示を更新
+    }
+    m_hitPart = HitPart::None;
 
     // Vulnerable: 50%増
     if (m_buffManager.HasBuff(BuffType::Vulnerable))
@@ -399,6 +417,13 @@ void Enemy::AddBlock(int amount)
 void Enemy::ResetBlock()
 {
     m_block = 0;
+}
+
+// 噛みつき（首を伸ばす）の行動か
+static bool HasLunge(const EnemyAction& a)
+{
+    for (auto& e : a.effects) if (e.kind == EffectKind::Lunge) return true;
+    return false;
 }
 
 // 行動に移動が含まれるか（接近・離脱・引き寄せ）。含むなら棒立ち防止の「＋移動」を足さない
@@ -499,6 +524,8 @@ bool Enemy::ConditionMet(const EnemyAction& a, int playerCol, int playerRow, int
     if (a.select.condition == "afterDodge") return m_lastAttackWhiffed;
     if (a.select.condition == "allyBelow") return m_allyCount < a.select.conditionValue;
     if (a.select.condition == "coiled") return m_coilComplete;
+    if (a.select.condition == "lungeReady") return m_neckLen == 0 && !m_coilComplete && m_turnsSinceLunge >= 3;
+    if (a.select.condition == "lunged")     return m_neckLen > 0;
     if (a.select.condition == "invuln") return IsInvulnerable();   // 無敵中のみ
     if (a.select.condition == "awake")  return !IsInvulnerable();  // 覚醒後のみ
     return true;
@@ -513,6 +540,7 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
     }
 
     m_lockC = playerCol; m_lockR = playerRow;   // Playerアンカーの中心を記録
+    if (m_isSnake) { PickWeakCell(playerCol, playerRow); m_turnsSinceLunge++; }
 
     // 前回の決定時から動いたか（棒立ち検知）
     if (gridCol == m_lastDecideCol && gridRow == m_lastDecideRow) m_idleTurns++;
@@ -578,6 +606,11 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
         else { cond.push_back(&a);   totalC += a.select.chance; }
     }
 
+    // 首を戻す・噛みつきは、他の条件より優先
+    for (const char* must : { "lunged", "lungeReady" })
+        for (auto* a : cond)
+            if (a->select.condition == must) { cond = { a }; totalC = max(1, a->select.chance); break; }
+
     auto& pool = !cond.empty() ? cond : uncond;
     int   total = !cond.empty() ? totalC : totalU;
 
@@ -618,6 +651,10 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
         }
         m_missStreak = 0;   // 移動したのでリセット
     }
+
+    m_lungePlan.clear();
+    if (!m_plannedActions.empty() && HasLunge(m_plannedActions[0]))
+        m_lungePlan = LungePath(playerCol, playerRow);
 }
 
 void Enemy::SetAwakenIntent()
@@ -684,7 +721,9 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
         switch (e.kind)
         {
         case EffectKind::MoveToward: MoveToward(mtC, mtR, gridMap, e.value); break;
-        case EffectKind::Coil: GrowCoil(gridMap, e.value, player); break;
+        case EffectKind::Coil: GrowCoil(gridMap, e.value + m_coilBonus, player); break;
+        case EffectKind::Lunge:   LungeTo(gridMap); break;
+        case EffectKind::Retract: RetractNeck(gridMap); break;
         case EffectKind::MoveAway:
             MoveAway(mtC, mtR, gridMap, e.value);
             m_plannedMovePath.clear();   // 離脱後は接近矢印が残らないよう消す
@@ -769,10 +808,9 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
                     if (cell.type == CellType::Enemy || cell.type == CellType::Boss) continue; // 敵の足元は除外
                     if (cell.tileEffect.active) continue;                                       // 既存の床は上書きしない
                     cell.tileEffect.active = true;
-                    cell.tileEffect.id = "fire";              // 既存のfire地形を流用（踏むとBurn）
+                    cell.tileEffect.id = e.buff.empty() ? "fire" : e.buff;   // 床の種類（terrains.json。省略時は炎）
                     cell.tileEffect.enemyOwned = true;        // 敵が置いたか
-                    cell.tileEffect.value = e.value;          // 踏んだ時のやけし強さ
-                    cell.tileEffect.duration = e.duration;    // 踏み処理用
+                    cell.tileEffect.value = e.value;          // 踏んだ時の強さ
                     cell.tileEffect.persistent = true;        // 踏んでも即消えない
                     cell.tileEffect.hazardTurns = e.duration; // Nターンで自動消滅
                 }
@@ -869,6 +907,9 @@ bool Enemy::IsThreateningCell(int col, int row, const EnemyAction& a) const
     if (IsCellInTarget(col, row, a.target)) return true;
     for (auto& t : a.extraTargets)
         if (IsCellInTarget(col, row, t)) return true;
+    if (HasLunge(a))                                    // 首の通り道に立つと噛まれる
+        for (auto& c : m_lungePlan)
+            if (c.first == col && c.second == row) return true;
     return false;
 }
 
@@ -929,6 +970,7 @@ std::vector<std::pair<int, int>> Enemy::PlannedMovePath(int targetCol, int targe
     std::vector<std::pair<int, int>> path;
     const EnemyAction* a = GetNextAction();
     if (!a) return path;
+    if (HasLunge(*a)) return m_lungePlan;   // 噛みつきは予告の経路そのもの
     const TargetSpec& tg = a->target;
 
     // 攻撃の接近（Dash / Toward）
@@ -1006,8 +1048,10 @@ std::vector<std::pair<int, int>> Enemy::PlannedMovePath(int targetCol, int targe
         }
         if (e.kind == EffectKind::Coil)
         {
-            if (m_coilReached) return path;                 // 中央到達後はもう巻かない
-            for (int s = 1; s <= e.value; s++)
+            for (int k = 0; k < m_neckLen; k++)             // 首を伸ばしている時は、まず首を戻す道を通る
+                path.push_back(m_bodyCells[m_bodyCells.size() - 1 - k]);
+            if (m_coilReached || m_buffManager.HasBuff(BuffType::Root)) return path;   // 中央到達後・拘束中は巻かない
+            for (int s = 1; s <= e.value + m_coilBonus; s++)   // 脱皮で速くなった分も含める
             {
                 int idx = m_spiralIdx + s;
                 if (idx >= (int)m_spiral.size()) break;
@@ -1019,10 +1063,32 @@ std::vector<std::pair<int, int>> Enemy::PlannedMovePath(int targetCol, int targe
     return path;
 }
 
+// 光るウロコ：プレイヤーから4マス以内で、渦の一番内側の体からランダムに選ぶ
+void Enemy::PickWeakCell(int playerCol, int playerRow)
+{
+    constexpr int MAX_DIST = 4;
+    m_weakCell = { -1, -1 };
+    int bestRing = -1, found = 0, nearest = 1 << 30;
+    std::pair<int, int> fallback{ -1, -1 };
+    for (int i = 0; i < (int)m_bodyCells.size(); i++)
+    {
+        auto& b = m_bodyCells[i];
+        int d = abs(b.first - playerCol) + abs(b.second - playerRow);
+        if (d < nearest) { nearest = d; fallback = b; }
+        if (d > MAX_DIST) continue;
+        int ring = min(min(b.first, m_gridCols - 1 - b.first), min(b.second, m_gridRows - 1 - b.second));   // 外周=0、内側ほど大きい
+        if (ring > bestRing) { bestRing = ring; found = 0; }
+        if (ring == bestRing && rand() % ++found == 0) m_weakCell = b;
+    }
+    if (m_weakCell.first < 0) m_weakCell = fallback;   // 4マス以内に体がなければ一番近い体
+}
+
 void Enemy::InitSnake(GridMap* gridMap)
 {
     if (!m_isSnake) return;
     int cols = gridMap->GetCols(), rows = gridMap->GetRows();
+    m_gridCols = cols; m_gridRows = rows;
+    m_grid = gridMap;
     m_spiral.clear(); m_bodyCells.clear(); m_spiralIdx = 0;
     int top = 0, bot = rows - 1, left = 0, right = cols - 1;   // 外周→内へ渦巻き
     while (top <= bot && left <= right)
@@ -1039,9 +1105,16 @@ void Enemy::InitSnake(GridMap* gridMap)
     worldZ = (gridRow - rows / 2.0f) * 1.1f;
 }
 
+// 蛇の1マスの時間：長い距離ほど速く（base より遅くはしない）
+static float SnakeStepDur(int cells, float base)
+{
+    return min(base, 0.03f + 0.2f / cells);
+}
+
 void Enemy::GrowCoil(GridMap* gridMap, int steps, Player* player)
 {
     if (!m_isSnake || m_spiral.empty()) return;
+    if (m_buffManager.HasBuff(BuffType::Root)) return;   // 拘束中は巻きつきも、まるのみの準備も止まる
 
     // 中央到達後は伸ばさず、数ターン待ってからフィニッシャー解禁
     if (m_coilReached)
@@ -1049,7 +1122,7 @@ void Enemy::GrowCoil(GridMap* gridMap, int steps, Player* player)
         if (++m_coilStuck >= 4) m_coilComplete = true;   // この 2 を増やすほど遅い
     }
 
-    m_lastHitHead = false;                       // とぐろ移動の罠は2倍対象外
+    m_hitPart = HitPart::None;                       // とぐろ移動の罠は2倍対象外
     std::vector<std::pair<float, float>> pts;
     for (int s = 0; s < steps; s++)
     {
@@ -1064,6 +1137,7 @@ void Enemy::GrowCoil(GridMap* gridMap, int steps, Player* player)
             if (!PushPlayerToCenter(gridMap, player)) break;
         }
         // 以降、頭を nx へ進める（既存のまま）
+        QueueSnakeOp(true, nx);
         m_bodyCells.push_back({ gridCol, gridRow });
         gridMap->SetCellType(gridCol, gridRow, CellType::Boss);
         gridCol = nx.first; gridRow = nx.second;
@@ -1075,7 +1149,114 @@ void Enemy::GrowCoil(GridMap* gridMap, int steps, Player* player)
         pts.push_back({ (gridCol - gridMap->GetCols() / 2.0f) * 1.1f,
                         (gridRow - gridMap->GetRows() / 2.0f) * 1.1f });
     }
-    if (!pts.empty()) StartWalk(pts, 0.1f);
+    if (!pts.empty())                          // 首を戻す歩きの続きにつなぐ（合わせた距離で速さを決める）
+        AppendWalk(pts, SnakeStepDur((int)(m_walkPoints.size() + pts.size()), 0.1f));
+}
+
+// 頭からプレイヤーのマスまでの経路（空きマスだけを通る、最大8マス）
+std::vector<std::pair<int, int>> Enemy::LungePath(int aimCol, int aimRow) const
+{
+    constexpr int MAX_LEN = 8;
+    static const int DIRS[4][2] = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
+    std::map<std::pair<int, int>, std::pair<int, int>> from;
+    std::queue<std::pair<std::pair<int, int>, int>> q;
+    std::pair<int, int> start{ gridCol, gridRow }, goal{ aimCol, aimRow };
+    q.push({ start, 0 }); from[start] = start;
+    bool found = false;
+    while (!q.empty() && !found)
+    {
+        auto [p, d] = q.front(); q.pop();
+        if (p == goal) { found = true; break; }
+        if (d >= MAX_LEN) continue;
+        for (auto& dir : DIRS)
+        {
+            std::pair<int, int> n{ p.first + dir[0], p.second + dir[1] };
+            if (n.first < 0 || n.first >= m_gridCols || n.second < 0 || n.second >= m_gridRows) continue;
+            bool free = (n == goal) || m_grid->GetCell(n.first, n.second).type == CellType::Empty;
+            if (from.count(n) || !free) continue;
+            from[n] = p; q.push({ n, d + 1 });
+        }
+    }
+    std::vector<std::pair<int, int>> path;
+    if (!found) return path;
+    for (auto p = goal; p != start; p = from[p]) path.push_back(p);
+    std::reverse(path.begin(), path.end());
+    return path;
+}
+
+// 噛みつき：予告した経路を進む。空いていないマス（プレイヤーなど）の手前で止まる
+void Enemy::LungeTo(GridMap* gridMap)
+{
+    m_turnsSinceLunge = 0;
+    std::vector<std::pair<float, float>> pts;
+    for (auto& c : m_lungePlan)
+    {
+        if (gridMap->GetCell(c.first, c.second).type != CellType::Empty) break;
+        QueueSnakeOp(true, c);
+        m_bodyCells.push_back({ gridCol, gridRow });
+        gridCol = c.first; gridRow = c.second;
+        gridMap->SetCellType(gridCol, gridRow, CellType::Boss);
+        m_movePath.push_back(c);
+        pts.push_back({ (gridCol - m_gridCols / 2.0f) * 1.1f, (gridRow - m_gridRows / 2.0f) * 1.1f });
+        m_neckLen++;
+    }
+    m_lungePlan.clear();
+    m_plannedMovePath.clear();   // 手前で止まっても矢印が残らないよう消す
+    if (!pts.empty()) StartWalk(pts, SnakeStepDur((int)pts.size(), 0.06f));
+}
+
+// 体の見た目の操作をためる（最初の1つの時に、今の体を土台として保存）
+void Enemy::QueueSnakeOp(bool push, std::pair<int, int> cell)
+{
+    if (m_snakeOps.empty())
+    {
+        m_visualBase = m_bodyCells;
+        m_visualBase.push_back({ gridCol, gridRow });
+        m_opApplied = 0;
+    }
+    m_snakeOps.push_back({ push, cell });
+}
+
+// 描画用の体の列：頭の歩きの進み具合に合わせて、操作を1つずつ反映する
+std::vector<std::pair<int, int>> Enemy::VisualChain()
+{
+    bool walking = IsMoving() || !m_walkPoints.empty();
+    if (!walking) { m_snakeOps.clear(); m_visualBase.clear(); }
+    if (m_snakeOps.empty())
+    {
+        auto chain = m_bodyCells;
+        chain.push_back({ gridCol, gridRow });
+        return chain;
+    }
+    int done = m_walkIndex;                                       // 歩き終えたマス数
+    while (m_opApplied < (int)m_snakeOps.size())
+    {
+        auto& op = m_snakeOps[m_opApplied];
+        if (op.push ? m_opApplied < done : m_opApplied <= done)   // 伸ばす＝通過後、戻す＝歩き始めに反映
+        {
+            if (op.push) m_visualBase.push_back(op.cell); else m_visualBase.pop_back();
+            m_opApplied++;
+        }
+        else break;
+    }
+    auto chain = m_visualBase;
+    if (done < (int)m_snakeOps.size() && m_snakeOps[done].push)
+        chain.push_back(m_snakeOps[done].cell);                   // 今向かっているマス（頭の向きと曲がり角のため）
+    return chain;
+}
+
+void Enemy::RetractNeck(GridMap* gridMap)
+{
+    std::vector<std::pair<float, float>> pts;
+    for (; m_neckLen > 0; m_neckLen--)
+    {
+        QueueSnakeOp(false, m_bodyCells.back());
+        gridMap->SetCellType(gridCol, gridRow, CellType::Empty);
+        auto b = m_bodyCells.back(); m_bodyCells.pop_back();
+        gridCol = b.first; gridRow = b.second;
+        pts.push_back({ (gridCol - m_gridCols / 2.0f) * 1.1f, (gridRow - m_gridRows / 2.0f) * 1.1f });
+    }
+    if (!pts.empty()) StartWalk(pts, SnakeStepDur((int)pts.size(), 0.06f));
 }
 
 bool Enemy::PushPlayerToCenter(GridMap* gridMap, Player* player)

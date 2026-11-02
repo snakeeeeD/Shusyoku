@@ -13,6 +13,9 @@ void BuffManager::AddBuff(const Buff& buff)
         buff.type == BuffType::AttackUpTurn ||
         buff.type == BuffType::AttackGrowth ||
         buff.type == BuffType::Frenzy ||
+        buff.type == BuffType::Momentum ||
+        buff.type == BuffType::Charge ||
+        buff.type == BuffType::HitAndRun ||
         buff.type == BuffType::RangeUp ||
         buff.type == BuffType::NoxiousFumes ||
         buff.type == BuffType::ToxicRhythm || 

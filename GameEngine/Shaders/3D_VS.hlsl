@@ -5,6 +5,7 @@ cbuffer ConstantBuffer : register(b0)
     matrix Projection;
     float4 Color;
     float4 UvRect; // xy=原点, zw=サイズ（全面は 0,0,1,1）
+    float4 Extra;  // x=白を混ぜる量（0～1）
 };
 
 struct VS_INPUT

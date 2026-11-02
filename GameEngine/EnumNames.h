@@ -71,6 +71,8 @@ namespace EnumNames
         { EffectKind::Hazard,          "Hazard" },
         { EffectKind::Heal,            "Heal" },
         { EffectKind::Coil,            "Coil" },
+        { EffectKind::Lunge,           "Lunge" },
+        { EffectKind::Retract,         "Retract" },
         { EffectKind::AddCard,         "AddCard" },
     };
 
@@ -185,7 +187,7 @@ namespace EnumNames
     // ---- 敵：行動を選ぶ条件（enum ではなく文字列のまま使われている。Enemy::ConditionMet と一致させる）----
     inline constexpr const char* Conditions[] = {
         "near", "far", "hpBelow", "turnAbove", "turnMultiple", "turnExact",
-        "afterDodge", "allyBelow", "coiled", "invuln", "awake",
+        "afterDodge", "allyBelow", "coiled", "invuln", "awake", "lungeReady", "lunged",
     };
 
     // ---- 合成：素材の効果の付き方（CardDataBase.cpp の applyEntry と一致させる）----
@@ -232,6 +234,7 @@ namespace EnumNames
         { "trapDamage",    false, u8"罠のダメージ+value" },
         { "trapDebuff",    false, u8"罠のデバフ+value" },
         { "trapDraw",      false, u8"罠を置くとvalue枚引く" },
+        { "floorImmune",   false, u8"床の効果を受けない（value不使用）" },
         // 撃破・勝利
         { "killGold",      false, u8"敵を倒すと ゴールド+value" },
         { "killHeal",      false, u8"敵を倒すと HP+value" },

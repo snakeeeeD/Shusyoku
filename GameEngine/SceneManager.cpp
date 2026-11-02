@@ -364,6 +364,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 			TextureManager::Load("buff_poison", L"Assets/UI/buff_poison.png");
 			TextureManager::Load("buff_holyground", L"Assets/UI/buff_holyground.png");
 			TextureManager::Load("buff_sanctuary", L"Assets/UI/buff_sanctuary.png");
+			TextureManager::Load("buff_molt", L"Assets/UI/buff_molt.png");
 			TextureManager::Load("buff_guardianvow", L"Assets/UI/buff_guardianvow.png");
 			TextureManager::Load("buff_cathedral", L"Assets/UI/buff_cathedral.png");
 			TextureManager::Load("buff_burn", L"Assets/UI/buff_burn.png");

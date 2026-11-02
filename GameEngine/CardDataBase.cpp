@@ -39,6 +39,7 @@ static void ParseCard(const json& c, CardData& data, CardData& up, bool& hasUp)
     }
     data.scaleByTrapCount = c.value("scaleByTrapCount", false);
     data.scaleByFaith = c.value("scaleByFaith", false);
+    data.movedBonus = c.value("movedBonus", 0);
     data.sanctuaryHits = c.value("sanctuaryHits", 0);
 
     std::string rarityStr = c.value("rarity", "Common");

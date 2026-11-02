@@ -20,6 +20,7 @@ struct ConstantBuffer3D
 	XMMATRIX Projection;
 	XMFLOAT4 Color;
     XMFLOAT4 UvRect = { 0, 0, 1, 1 };
+    XMFLOAT4 Extra = { 0, 0, 0, 0 };   // x=白を混ぜる量（0～1）
 };
 
 class Renderer3D
@@ -69,6 +70,7 @@ public:
     void SetDepthWrite(bool enabled);
     void SetDepthEnabled(bool enabled);
     void SetAdditive(bool on);   // 加算合成（下の模様を隠さず、上から光らせる描画用）
+    void SetWhiteMix(float v) { m_whiteMix = v; }   // DrawTileEx に効く（使ったら0に戻す）
 
     bool InitPostProcess();
     void BeginOffscreen();               // 以降の描画をオフスクリーンへ
@@ -90,6 +92,7 @@ private:
     ComPtr<ID3D11SamplerState> m_samplerState;
     ComPtr<ID3D11BlendState> m_blendState;
     ComPtr<ID3D11BlendState> m_blendAdd;   // 加算合成
+    float m_whiteMix = 0.0f;               // 白を混ぜる量
     ComPtr<ID3D11RasterizerState> m_rasterState;
     ComPtr<ID3D11DepthStencilState> m_depthStencilState;
     ComPtr<ID3D11DepthStencilView> m_depthStencilView;

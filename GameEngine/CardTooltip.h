@@ -87,6 +87,38 @@ public:
         return out;
     }
 
+    // 罠の効果の説明（カードの横の表示とマスのホバーで共通）
+    static std::vector<std::wstring> TrapLines(const TerrainDef* t, int value)
+    {
+        std::vector<std::wstring> out;
+        wchar_t buf[64];
+        if (t->effect == "Damage")
+        {
+            swprintf_s(buf, L"ダメージ: %d", value + (t->persistent ? 0 : RelicManager::SumValue("trapDamage")));
+            out.push_back(buf);
+            if (t->aoe)
+            {
+                swprintf_s(buf, L"周囲のマス: %d", value / 2);
+                out.push_back(buf);
+            }
+        }
+        else if (t->effect == "Slide")
+            out.push_back(L"移動方向に滑る");
+        else
+        {
+            int extra = t->persistent ? 0 : RelicManager::SumValue("trapDebuff");
+            BuffType bt = StringToBuffType(t->buffType);
+            const auto& info = BuffInfo::Get(bt);
+            if (BuffInfo::IsDurationBased(bt))
+                swprintf_s(buf, L"%s: %dT", info.name.c_str(), value + extra);
+            else
+                swprintf_s(buf, L"%s: %d (%dT)", info.name.c_str(), value + extra, t->buffDuration + extra);
+            out.push_back(buf);
+        }
+        out.push_back(t->persistent ? L"踏んでも消えない" : L"踏むと消える");
+        return out;
+    }
+
     // カード上端中央あたりに解説パネルを出す。シーンDrawの最後（パス外）で呼ぶ
     static void Draw(SpriteRenderer* sr, TextRenderer* tr, ID3D11ShaderResourceView* white,
         const CardData* d, float ccx, float cty, float cardW, float cardH, int sw, int sh,
@@ -111,9 +143,25 @@ public:
         float gy = cty;
         if (gen && gx + gw > sw - 6.0f) gx = ccx - cardW / 2.0f - gw - 14.0f;   // 右に入らなければ左
 
+        // 罠カード：置かれる罠の見た目と効果（カードの横）
+        const TerrainDef* trap = d->mainEffect.trapType.empty() ? nullptr : TerrainDataBase::Get(d->mainEffect.trapType);
+        std::vector<std::wstring> trapLines;
+        if (trap) trapLines = TrapLines(trap, d->mainEffect.value);
+        const float tw = 170.0f, th = 146.0f + trapLines.size() * 16.0f;
+        float tx = ccx + cardW / 2.0f + 14.0f;
+        if (tx + tw > sw - 6.0f) tx = ccx - cardW / 2.0f - tw - 14.0f;
+        float ty = cty;
+        if (ty + th > sh - 6.0f) ty = sh - 6.0f - th;
+
         sr->Begin();
         UiWindow::Draw(sr, white, px, py, pw, ph);
         if (gen) CardVisual::DrawBase(sr, white, gx, gy, gs, 0.0f, CardVisual::GetCardColor(gen->type), gen, 0.0f);
+        if (trap)
+        {
+            UiWindow::Draw(sr, white, tx, ty, tw, th);
+            if (auto tex = TextureManager::Get(trap->texture))
+                sr->DrawSprite(tex, tx + (tw - 96.0f) / 2.0f, ty + 36.0f, 96.0f, 96.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
+        }
         sr->End();
 
         tr->Begin();
@@ -125,6 +173,12 @@ public:
             y += rowH;
         }
         if (gen) CardVisual::DrawTexts(tr, gen, nullptr, gx, gy, gs, 0.0f, 1.0f);
+        if (trap)
+        {
+            tr->DrawText(trap->name.c_str(), tx + 14.0f, ty + 10.0f, 16.0f, D2D1::ColorF(1.0f, 0.85f, 0.4f));
+            for (int i = 0; i < (int)trapLines.size(); i++)
+                tr->DrawText(trapLines[i].c_str(), tx + 14.0f, ty + 140.0f + i * 16.0f, 12.0f, D2D1::ColorF(0.9f, 0.9f, 0.9f));
+        }
         tr->End();
 
     }

@@ -64,4 +64,5 @@ enum class BuffType
     Sanctuary,      // 聖域の加護：受けるダメージ半分（同上）
     GuardianVow,    // 守護の誓い：ターン終了時、聖地に立っていればブロック+value
     Cathedral,      // 大聖堂：ターン開始時、聖地に立っていれば周り8マスに信仰+value
+    Molt,           // 脱皮まで：カードの攻撃であと value ダメージ（オロチ）
 };

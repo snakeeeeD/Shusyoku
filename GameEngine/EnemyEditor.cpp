@@ -5,11 +5,13 @@
 #include "EditorCommon.h"
 #include "EditorHub.h"
 #include "EnumNames.h"
+#include "EffectDataBase.h"
 #include "EnemyDataBase.h"
 #include "EnemyIntentVisual.h"
 #include "RangeShape.h"
 #include "TextureManager.h"
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <set>
@@ -22,6 +24,87 @@ using namespace EditorCommon;
 namespace
 {
     constexpr float CELL = 52.0f;   // プレビュー盤面の1マス(px)
+
+    // ---- 演出のプレビュー：effects.json の粒とコマを、盤面の上に2Dで動かす ----
+    constexpr float FX_PX = CELL / 1.1f;       // ワールド1単位のピクセル数
+    struct FxParticle { ImVec2 pos, vel; XMFLOAT4 c0, c1; float delay, life, lifeMax, size, gravity, drag; ID3D11ShaderResourceView* tex; };
+    struct FxSheet { ImVec2 pos; const SheetAnim* a; float t; ID3D11ShaderResourceView* tex; };
+    std::vector<FxParticle> g_fxParticles;
+    std::vector<FxSheet> g_fxSheets;
+    std::string g_fxReqId, g_fxReqKey;         // 再生ボタンの要求
+    int g_fxReqAct = -1;
+
+    void SpawnFx(const std::string& id, ImVec2 at, float delay)
+    {
+        const EffectDef* def = EffectDataBase::Get(id);
+        if (!def) return;
+        for (auto& b : def->bursts)
+        {
+            auto* tex = TextureManager::Get(b.texture.empty() ? "particle" : b.texture);
+            for (int i = 0; i < b.count; i++)
+            {
+                float ang = (rand() % 628) / 100.0f, sp = b.speed * (0.5f + (rand() % 50) / 100.0f);
+                float life = b.life * (0.7f + (rand() % 60) / 100.0f);
+                g_fxParticles.push_back({ at, ImVec2(cosf(ang) * sp * FX_PX, -(b.speed * 0.5f) * FX_PX),
+                    b.colorStart, b.colorEnd, delay, life, life, b.scale * FX_PX, b.gravity * FX_PX, b.drag, tex });
+            }
+        }
+        for (auto& s : def->sheets)
+            g_fxSheets.push_back({ ImVec2(at.x, at.y - s.yOffset * FX_PX), &s, -(delay + s.delay), TextureManager::Get(s.texture) });
+        if (!def->then.empty()) SpawnFx(def->then, at, delay + def->thenDelay);
+    }
+
+    void UpdateAndDrawFx(ImDrawList* dl, float dt)
+    {
+        for (auto& p : g_fxParticles)
+        {
+            if (p.delay > 0) { p.delay -= dt; continue; }
+            p.life -= dt;
+            p.vel.y += p.gravity * dt;
+            p.vel.x *= 1.0f - p.drag; p.vel.y *= 1.0f - p.drag;
+            p.pos.x += p.vel.x * dt; p.pos.y += p.vel.y * dt;
+            float t = 1.0f - p.life / p.lifeMax;
+            auto mix = [t](float a, float b) { return a + (b - a) * t; };
+            ImU32 col = ImColor(mix(p.c0.x, p.c1.x), mix(p.c0.y, p.c1.y), mix(p.c0.z, p.c1.z), mix(p.c0.w, p.c1.w));
+            float h = p.size / 2.0f;
+            dl->AddImage(ImTextureRef((ImTextureID)(intptr_t)p.tex), ImVec2(p.pos.x - h, p.pos.y - h), ImVec2(p.pos.x + h, p.pos.y + h),
+                ImVec2(0, 0), ImVec2(1, 1), col);
+        }
+        g_fxParticles.erase(std::remove_if(g_fxParticles.begin(), g_fxParticles.end(),
+            [](const FxParticle& p) { return p.life <= 0; }), g_fxParticles.end());
+
+        for (auto& s : g_fxSheets)
+        {
+            s.t += dt;
+            if (s.t < 0) continue;
+            int total = s.a->frames > 0 ? s.a->frames : s.a->cols * s.a->rows;
+            int f = (int)(s.t * s.a->fps);
+            if (f >= total) continue;
+            int idx = s.a->startFrame + f, col = idx % s.a->cols, row = idx / s.a->cols;
+            float h = s.a->scale * FX_PX / 2.0f;
+            ImVec2 uv0((float)col / s.a->cols, (float)row / s.a->rows), uv1((col + 1.0f) / s.a->cols, (row + 1.0f) / s.a->rows);
+            dl->AddImage(ImTextureRef((ImTextureID)(intptr_t)s.tex), ImVec2(s.pos.x - h, s.pos.y - h), ImVec2(s.pos.x + h, s.pos.y + h), uv0, uv1,
+                ImColor(s.a->color.x, s.a->color.y, s.a->color.z, s.a->color.w));
+        }
+        g_fxSheets.erase(std::remove_if(g_fxSheets.begin(), g_fxSheets.end(), [](const FxSheet& s) {
+            int total = s.a->frames > 0 ? s.a->frames : s.a->cols * s.a->rows;
+            return s.t * s.a->fps >= total; }), g_fxSheets.end());
+    }
+
+    // 演出の1行：選択欄＋再生ボタン＋説明（再生は右の盤面の上で動く）
+    bool VfxRow(ojson& act, int actIndex, const char* key, const char* fallback, const char* note)
+    {
+        bool changed = ComboKey(key, act, key, EffectIds(), "", true, 140);
+        std::string id = act.value(key, std::string(fallback));
+        ImGui::SameLine();
+        ImGui::PushID(key);
+        ImGui::BeginDisabled(id.empty());
+        if (ImGui::SmallButton(u8"再生")) { g_fxReqId = id; g_fxReqKey = key; g_fxReqAct = actIndex; }
+        ImGui::EndDisabled();
+        ImGui::PopID();
+        ImGui::SameLine(); ImGui::TextDisabled("%s", note);
+        return changed;
+    }
 
     const char* ENEMY_PATH  = "Assets/Data/enemies.json";
     const char* BACKUP_PATH = "Assets/Data/enemies.json.bak";
@@ -422,6 +505,8 @@ namespace
             break;
         case EffectKind::Hazard:
             ImGui::SameLine();
+            if (ComboKey("floor", e, "buff", TerrainIds(), "fire", true, 110)) s.dirty = true;
+            ImGui::SameLine();
             if (InputIntKey("duration", e, "duration", 0, 80)) s.dirty = true;
             ImGui::TextDisabled(u8"範囲のマスに炎の床。value = やけどの強さ / duration = 残るターン");
             break;
@@ -461,7 +546,12 @@ namespace
             ID3D11ShaderResourceView* tex = TextureManager::Get(EnemyIntentVisual::GetIconTexture(e));
             ImGui::SameLine();
             if (tex) ImGui::Image(ImTextureRef((ImTextureID)(intptr_t)tex), ImVec2(18, 18));
-            if (EnemyIntentVisual::HasValue(e)) { ImGui::SameLine(0, 2); ImGui::Text("%d", e.value); }
+            if (EnemyIntentVisual::HasValue(e))
+            {
+                BuffManager none;
+                std::wstring w = EnemyIntentVisual::GetDisplayText(e, none);
+                ImGui::SameLine(0, 2); ImGui::Text("%s", std::string(w.begin(), w.end()).c_str());
+            }
         }
     }
 
@@ -571,15 +661,11 @@ namespace
 
                 // ---- 演出 ----
                 ImGui::SeparatorText("vfx");
-                if (ComboKey("vfx", act, "vfx", EffectIds(), "", true, 140)) s.dirty = true;
-                ImGui::SameLine(); ImGui::TextDisabled(u8"命中した時、プレイヤーの位置（未指定なら smash）");
-                if (ComboKey("selfVfx", act, "selfVfx", EffectIds(), "", true, 140)) s.dirty = true;
-                ImGui::SameLine(); ImGui::TextDisabled(u8"行動した時、敵自身の位置（バフ・構えなど）");
-                if (ComboKey("impactVfx", act, "impactVfx", EffectIds(), "", true, 140)) s.dirty = true;
-                ImGui::SameLine(); ImGui::TextDisabled(u8"着弾点（当たり外れに関係なし）");
-                if (ComboKey("areaVfx", act, "areaVfx", EffectIds(), "", true, 140)) s.dirty = true;
-                ImGui::SameLine(); ImGui::TextDisabled(u8"範囲の各マス（未指定なら area_burst）");
-                if (ComboKey("windupVfx", act, "windupVfx", EffectIds(), "", true, 140)) s.dirty = true;
+                if (VfxRow(act, a, "vfx", "", u8"命中した時、プレイヤーの位置（未指定なら smash）")) s.dirty = true;
+                if (VfxRow(act, a, "selfVfx", "", u8"行動した時、敵自身の位置（バフ・構えなど）")) s.dirty = true;
+                if (VfxRow(act, a, "impactVfx", "", u8"着弾点（当たり外れに関係なし）")) s.dirty = true;
+                if (VfxRow(act, a, "areaVfx", "area_burst", u8"範囲の各マス（未指定なら area_burst）")) s.dirty = true;
+                if (VfxRow(act, a, "windupVfx", "", u8"着弾の前に飛ばす演出")) s.dirty = true;
                 if (act.contains("windupVfx"))
                 {
                     ImGui::SameLine();
@@ -648,6 +734,7 @@ namespace
     void DrawPreview(ojson& en)
     {
         ImGui::SeparatorText("Preview");
+        if (g_fxReqAct >= 0) s.act = g_fxReqAct;   // 再生を押した行動の範囲を表示する
         ImGui::TextDisabled(u8"敵とプレイヤー(P)はドラッグで移動");
         ImGui::Checkbox("show approach", &s.showMove);
 
@@ -703,6 +790,23 @@ namespace
         // プレイヤー
         g.FillCell(s.pc, s.pr, IM_COL32(60, 110, 200, 200));
         g.dl->AddText(ImVec2(g.Min(s.pc, s.pr).x + CELL * 0.4f, g.Min(s.pc, s.pr).y + CELL * 0.3f), IM_COL32(255, 255, 255, 255), "P");
+
+        // 再生の要求：演出の種類ごとに、ゲームと同じ場所・タイミングで出す
+        if (!g_fxReqId.empty())
+        {
+            auto center = [&](int c, int r) { return ImVec2(g.Min(c, r).x + CELL / 2, g.Min(c, r).y + CELL / 2); };
+            if (g_fxReqKey == "areaVfx" && act)
+            {
+                for (int r = 0; r < GRID_ROWS; r++)
+                    for (int c = 0; c < GRID_COLS; c++)
+                        if (Threatens(c, r, *act, s.ec, s.er, shape))
+                            SpawnFx(g_fxReqId, center(c, r), 0.04f * (abs(c - s.ec) + abs(r - s.er)));
+            }
+            else if (g_fxReqKey == "selfVfx") SpawnFx(g_fxReqId, center(s.ec, s.er), 0.0f);
+            else SpawnFx(g_fxReqId, center(s.pc, s.pr), 0.0f);
+            g_fxReqId.clear(); g_fxReqAct = -1;
+        }
+        UpdateAndDrawFx(g.dl, ImGui::GetIO().DeltaTime);
 
         // ---- ドラッグ ----
         if (g.HoverCell() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))

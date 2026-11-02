@@ -555,6 +555,15 @@
       "value": 1,
       "rarity": "uncommon",
       "desc": "移動するたび、元のマスに信仰を1刻む"
+    },
+    {
+      "id": "floating_sandals",
+      "icon": "relic_floating_sandals",
+      "name": "浮遊のサンダル",
+      "kind": "floorImmune",
+      "value": 1,
+      "rarity": "uncommon",
+      "desc": "敵が置いた床の効果を受けない"
     }
   ]
 }

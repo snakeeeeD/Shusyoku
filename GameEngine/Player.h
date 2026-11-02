@@ -28,6 +28,9 @@ public:
     void SetBlock(int block) { m_block = block; }
     void SetFeetFaith(int f) { m_feetFaith = f; }     // 足元の信仰（毎フレーム BattleScene が入れる）
     int  GetFeetFaith() const { return m_feetFaith; }
+    void AddMoved(int n) { m_movedThisTurn += n; }    // このターンに移動したマス数
+    int  GetMoved() const { return m_movedThisTurn; }
+    void ResetMoved() { m_movedThisTurn = 0; }
 
     void AddBlock(int amount);
     void TakeDamage(int damage, DamageFeel feel = DamageFeel::Hit);
@@ -64,6 +67,7 @@ private:
     int m_maxEnergy;
     int m_block;
     int m_feetFaith = 0;
+    int m_movedThisTurn = 0;
     float m_BillboardRotation = 0.0;
 
     BuffManager m_buffManager;

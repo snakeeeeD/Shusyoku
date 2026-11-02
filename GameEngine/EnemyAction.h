@@ -11,7 +11,8 @@ enum class AnchorType { Self, Player, Fixed };
 // ‰½‚ª‹N‚«‚é‚©
 enum class EffectKind {
     Damage, Block, Buff, Debuff, MoveToward,
-    MoveAway, PullPlayer, KnockbackPlayer, Summon, Hazard, Heal, Coil, AddCard
+    MoveAway, PullPlayer, KnockbackPlayer, Summon, Hazard, Heal, Coil, AddCard,
+    Lunge, Retract   // ÖFñ‚ğL‚Î‚µ‚ÄŠš‚İ‚Â‚­^L‚Î‚µ‚½ñ‚ğ–ß‚·
 };
 
 // ’N‚ÉŒø‚­‚©

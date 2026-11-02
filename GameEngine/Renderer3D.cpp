@@ -335,6 +335,7 @@ void Renderer3D::DrawTileEx(ID3D11ShaderResourceView* texture,
     cb.View = XMMatrixTranspose(m_viewMatrix);
     cb.Projection = XMMatrixTranspose(m_projectionMatrix);
     cb.Color = color;
+    cb.Extra.x = m_whiteMix;
 
     m_context->UpdateSubresource(m_constantBuffer.Get(), 0, nullptr, &cb, 0, 0);
     m_context->VSSetConstantBuffers(0, 1, m_constantBuffer.GetAddressOf());

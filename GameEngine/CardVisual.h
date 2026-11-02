@@ -91,6 +91,7 @@ public:
             {
                 actualValue = player->GetBuffManager().GetFinalAttack(data->mainEffect.value);
                 if (data->scaleByFaith) actualValue += player->GetFeetFaith();
+                actualValue += player->GetMoved() * data->movedBonus;
                 if (std::find(data->tags.begin(), data->tags.end(), "Knife") != data->tags.end())
                     actualValue += player->GetBuffManager().GetBuffValue(BuffType::KnifePower)
                     + RelicManager::SumValue("knifeBonus");

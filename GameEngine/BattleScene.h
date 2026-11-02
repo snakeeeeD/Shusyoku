@@ -85,7 +85,7 @@ public:
 
     void SetHoveredCard(int i) { m_hoveredCardIndex = i; }
 
-    void OnPlayerMoved(int fromCol, int fromRow);   // 移動時のレリック（from=移動前のマス）
+    void OnPlayerMoved(int fromCol, int fromRow, int moveDist);   // 移動時のレリック（from=移動前のマス）
     void OpenDiscardSelect(int n);                  // 「選んで捨てる」を開く（敵が全員倒れていたら開かない）
     void CancelDiscardSelect();                     // 開いていれば閉じる（勝敗が決まった時）
 

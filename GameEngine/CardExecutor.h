@@ -16,6 +16,7 @@ public:
     {
         bool success;
         bool cardUsed;
+        int  moveDist = 0;                    // このカードで移動したマス数
         std::vector<std::string> drawnCards;
         CardEffectType pendingSelection = CardEffectType::None;
         int pendingDiscard = 0;
@@ -64,7 +65,8 @@ public:
     static MovePreview PreviewKnockback(Enemy* target, int playerCol, int playerRow,
         int distance, GridMap* gridMap, std::vector<Enemy*>& enemies);
     static MovePreview PreviewPull(Enemy* target, int playerCol, int playerRow,
-        int distance, GridMap* gridMap, std::vector<Enemy*>& enemies);
+        int distance, GridMap* gridMap, std::vector<Enemy*>& enemies,
+        int aimCol, int aimRow);
 
     static void TriggerTrap(Cell& cell, Enemy* enemy, int col, int row,
         GridMap* gridMap, std::vector<Enemy*>& enemies);

@@ -265,6 +265,7 @@ private:
     float m_hoveredBuffX = 0;
     float m_hoveredBuffY = 0;
     bool m_hasHoveredBuff = false;
+    bool m_overUnitStatus = false;   // マウスがHPバー・バフの上にある
     static constexpr unsigned long long CELL_TIP_DELAY_MS = 500;   // マスの説明が出るまでの時間
     std::pair<int, int> m_tipCell{ -1, -1 };                       // カーソルが止まっているマス
     unsigned long long m_tipSince = 0;                             // そのマスに乗った時刻
@@ -272,6 +273,8 @@ private:
 
     bool GetEnemyScreenPos(Enemy* enemy, Renderer3D* renderer3D, float& outX, float& outY) const;
     bool GetEnemyFootPos(Enemy* enemy, Renderer3D* renderer3D, float& outX, float& outY) const;
+    bool GetStatusFoot(Enemy* enemy, const BattleUIContext& ctx, float& outX, float& outY) const;   // 敵UIの基準位置
+    URect UnitStatusRect(float footX, float footY, float scale, bool isBoss, BuffManager& bm) const;
 
     static void GridToWorld(GridMap* gridMap, int col, int row, float& outX, float& outZ);
     void GetPlayEffectTransform(const PlayCardEffect& e, float& x, float& y, float& scale, float& rot);

@@ -89,6 +89,14 @@ public:
         StartMove(pts[0].first, pts[0].second, stepDur, true);
     }
 
+    // 今の歩きの続きに経路をつなぐ（歩いていなければそのまま歩く）
+    void AppendWalk(const std::vector<std::pair<float, float>>& pts, float stepDur = 0.1f)
+    {
+        if (m_walkPoints.empty()) { StartWalk(pts, stepDur); return; }
+        m_walkPoints.insert(m_walkPoints.end(), pts.begin(), pts.end());
+        m_walkStepDur = stepDur;
+    }
+
     bool IsMoving() const { return m_isMoving; }
 
     // ランジ（攻撃突進）アニメーション

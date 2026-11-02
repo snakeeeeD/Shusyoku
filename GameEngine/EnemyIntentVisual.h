@@ -1,5 +1,6 @@
 #pragma once
 #include "EnemyAction.h"
+#include "TerrainDataBase.h"
 #include "BuffManager.h"
 #include "TextureManager.h"
 #include "SpriteRenderer.h"
@@ -34,6 +35,7 @@ public:
     {
         if (e.kind == EffectKind::MoveToward || e.kind == EffectKind::MoveAway) return false;
         if (e.kind == EffectKind::AddCard) return e.value > 0;
+        if (e.kind == EffectKind::Hazard) return e.duration > 0;
         return e.value > 0;
     }
 
@@ -81,6 +83,15 @@ public:
         if (e.kind == EffectKind::Damage) return ApplyIncoming(buffs.GetFinalAttack(e.value));
         if (e.kind == EffectKind::Block)  return buffs.GetFinalBlock(e.value);
         return e.value;
+    }
+
+    // アイコンの横に出す文字（連続攻撃は 5*3、床は残りターン）
+    static std::wstring GetDisplayText(const Effect& e, const BuffManager& buffs)
+    {
+        if (e.kind == EffectKind::Hazard) return std::to_wstring(e.duration) + L"T";
+        std::wstring s = std::to_wstring(GetDisplayValue(e, buffs));
+        if (e.kind == EffectKind::Damage && e.hits > 1) s += L"*" + std::to_wstring(e.hits);
+        return s;
     }
 
     // 説明文の {0} {1} ... を effects[i] のバフ適用後の値に差し替える
@@ -176,12 +187,13 @@ public:
             break;
         }
         case EffectKind::Hazard:
-            title = L"地形";
-            body = (e.value > 0)
-                ? L"マスに危険地形を設置\n踏むと " + std::to_wstring(e.value) + L" ダメージ"
-                : L"マスに危険地形を設置\n踏むと効果を受ける";
+        {
+            const TerrainDef* def = TerrainDataBase::Get(e.buff.empty() ? "fire" : e.buff);
+            title = def ? def->name : L"地形";
+            body = L"マスに床を設置（" + std::to_wstring(e.duration) + L"ターン）\n踏むと効果を受ける";
             { std::wstring r = RangeText(a.target); if (!r.empty()) body += L"\n範囲: " + r; }
             break;
+        }
         default: title = L""; body = L""; break;
         }
     }

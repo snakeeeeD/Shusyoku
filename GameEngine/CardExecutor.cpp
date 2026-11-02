@@ -18,7 +18,9 @@ Enemy* CardExecutor::GetEnemyAt(int col, int row, std::vector<Enemy*>& enemies)
     for (auto enemy : enemies)
         if (enemy->OccupiesCell(col, row))                                    // 頭＋胴体
         {
-            enemy->MarkHeadHit(col == enemy->gridCol && row == enemy->gridRow); // 頭ヒットか
+            enemy->MarkHeadHit(enemy->IsWeakPoint(col, row));   // 頭か光るウロコ
+            enemy->MarkWeakHit(col, row);
+            enemy->MarkHitCell(col, row);
             return enemy;
         }
     return nullptr;
@@ -40,7 +42,8 @@ std::vector<Enemy*> CardExecutor::GetEnemiesInRange(
             if (enemy->OccupiesCell(cc, cr))
             {
                 inRange = true;
-                if (cc == enemy->gridCol && cr == enemy->gridRow) headHit = true;  // 頭を含む
+                enemy->MarkHitCell(cc, cr);
+                if (enemy->IsWeakPoint(cc, cr)) { headHit = true; enemy->MarkWeakHit(cc, cr); }   // 頭か光るウロコを含む
             }
         }
         if (inRange) { enemy->MarkHeadHit(headHit); result.push_back(enemy); }
@@ -201,6 +204,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
 
             int hits = EffectiveHits(data, player);
             int dmg = player->GetBuffManager().GetFinalAttack(baseVal);
+            dmg += player->GetMoved() * data.movedBonus;   // 移動マス数で増える
             for (auto enemy : targets)
             {
                 enemy->TakeDamage(dmg);
@@ -358,32 +362,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                         if (player->GetBuffManager().HasBuff(BuffType::Burn))
                             player->TakeDamage(player->GetBuffManager().GetBuffValue(BuffType::Burn) * moveDist, DamageFeel::Burn);
 
-                        if (player->GetBuffManager().HasBuff(BuffType::Momentum))
-                            player->AddBlock(player->GetBuffManager().GetBuffValue(BuffType::Momentum) * moveDist);
-
-                        if (player->GetBuffManager().HasBuff(BuffType::Charge))
-                        {
-                            int bonus = player->GetBuffManager().GetBuffValue(BuffType::Charge) * moveDist;
-                            Buff atkBuff;
-                            atkBuff.type = BuffType::AttackUp;
-                            atkBuff.value = player->GetBuffManager().GetBuffValue(BuffType::AttackUp) + bonus;
-                            atkBuff.duration = 1;
-                            atkBuff.name = L"チャージ攻撃UP";
-                            atkBuff.description = L"";
-                            player->GetBuffManager().AddBuff(atkBuff);
-                        }
-
-                        if (player->GetBuffManager().HasBuff(BuffType::HitAndRun))
-                        {
-                            int hitDmg = player->GetBuffManager().GetBuffValue(BuffType::HitAndRun);
-                            for (auto enemy : enemies)
-                            {
-                                int ex = abs(moveCol - enemy->gridCol);
-                                int ey = abs(moveRow - enemy->gridRow);
-                                if (ex + ey == 1)
-                                    enemy->TakeDamage(hitDmg);
-                            }
-                        }
+                        result.moveDist = moveDist;   // 移動の効果は BattleScene::OnPlayerMoved
                     }
 
                     // ダメージ
@@ -423,19 +402,20 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 return result;
             player->UseEnergy(data.cost);
 
-            // dash: 敵の手前まで移動
+            // dash: 狙ったマスの手前まで移動（蛇の体を狙うと、頭は一直線上にいるとは限らない）
             if (data.dash && target)
             {
                 int dx = 0, dy = 0;
-                if (playerCol < target->gridCol) dx = 1;
-                else if (playerCol > target->gridCol) dx = -1;
-                if (playerRow < target->gridRow) dy = 1;
-                else if (playerRow > target->gridRow) dy = -1;
+                if (playerCol < targetCol) dx = 1;
+                else if (playerCol > targetCol) dx = -1;
+                if (playerRow < targetRow) dy = 1;
+                else if (playerRow > targetRow) dy = -1;
 
-                int destCol = target->gridCol - dx;
-                int destRow = target->gridRow - dy;
+                int destCol = targetCol - dx;
+                int destRow = targetRow - dy;
 
                 if ((destCol != playerCol || destRow != playerRow)
+                    && RangeShape::Contains(playerCol, playerRow, targetCol, targetRow, data.rangeType, range)
                     && destCol >= 0 && destCol < gridMap->GetCols()
                     && destRow >= 0 && destRow < gridMap->GetRows()
                     && gridMap->GetCell(destCol, destRow).type == CellType::Empty)
@@ -454,6 +434,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                     outNewPlayerCol = destCol;
                     outNewPlayerRow = destRow;
                     gridMap->SetCellType(destCol, destRow, CellType::Player);
+                    result.moveDist = abs(destCol - playerCol) + abs(destRow - playerRow);
                 }
             }
 
@@ -514,6 +495,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             {
                 dmg = player->GetBuffManager().GetFinalAttack(data.mainEffect.value);
                 if (data.scaleByFaith) dmg += player->GetFeetFaith();   // 聖なる刃
+                dmg += player->GetMoved() * data.movedBonus;            // 移動マス数で増える
 
                 // 背水：低HPで攻撃UP（Powerのバフ値ぶん・今のHPで判定）
                 int hp = player->GetHp(), mhp = player->GetMaxHp();
@@ -659,32 +641,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
            if (player->GetBuffManager().HasBuff(BuffType::Burn))
                player->TakeDamage(player->GetBuffManager().GetBuffValue(BuffType::Burn) * moveDist, DamageFeel::Burn);
 
-           if (player->GetBuffManager().HasBuff(BuffType::Momentum))
-               player->AddBlock(player->GetBuffManager().GetBuffValue(BuffType::Momentum) * moveDist);
-
-           if (player->GetBuffManager().HasBuff(BuffType::Charge))
-           {
-               int bonus = player->GetBuffManager().GetBuffValue(BuffType::Charge) * moveDist;
-               Buff atkBuff;
-               atkBuff.type = BuffType::AttackUp;
-               atkBuff.value = player->GetBuffManager().GetBuffValue(BuffType::AttackUp) + bonus;
-               atkBuff.duration = 1;
-               atkBuff.name = L"チャージ攻撃UP";
-               atkBuff.description = L"";
-               player->GetBuffManager().AddBuff(atkBuff);
-           }
-
-           if (player->GetBuffManager().HasBuff(BuffType::HitAndRun))
-           {
-               int hitDmg = player->GetBuffManager().GetBuffValue(BuffType::HitAndRun);
-               for (auto enemy : enemies)
-               {
-                   int ex = abs(targetCol - enemy->gridCol);
-                   int ey = abs(targetRow - enemy->gridRow);
-                   if (ex + ey == 1)
-                       enemy->TakeDamage(hitDmg);
-               }
-           }
+           result.moveDist = moveDist;   // 移動の効果は BattleScene::OnPlayerMoved
 
            // 移動カード自身の付随効果（移動＋α）
            switch (data.mainEffect.type)
@@ -1184,8 +1141,9 @@ void CardExecutor::TriggerTrap(Cell& cell, Enemy* enemy, int col, int row,
     {
         Buff debuff;
         debuff.type = StringToBuffType(def->buffType);
-        debuff.value = cell.tileEffect.value + RelicManager::SumValue("trapDebuff");   // ←毒等の値
-        debuff.duration = def->buffDuration + RelicManager::SumValue("trapDebuff");   // ←二値の持続
+        int extra = RelicManager::SumValue("trapDebuff");
+        debuff.value = cell.tileEffect.value + extra;   // ←毒等の値
+        debuff.duration = (BuffInfo::IsDurationBased(debuff.type) ? cell.tileEffect.value : def->buffDuration) + extra;   // 持続で効くデバフは罠の数字が持続
         debuff.name = def->name;
         debuff.description = L"";
         enemy->GetBuffManager().AddBuff(debuff);
@@ -1199,6 +1157,7 @@ void CardExecutor::TriggerTerrain(Cell& cell, Player* player)
 {
     if (!cell.tileEffect.active) return;
     if (!cell.tileEffect.persistent) return;  // 罠はここでは発動しない
+    if (RelicManager::HasKind("floorImmune")) return;   // 床の効果を受けないレリック
 
     const TerrainDef* def = TerrainDataBase::Get(cell.tileEffect.id);
     if (!def) return;
@@ -1218,13 +1177,6 @@ void CardExecutor::TriggerTerrain(Cell& cell, Player* player)
         player->GetBuffManager().AddBuff(debuff);
     }
 
-    // duration管理（-1は永続）
-    if (cell.tileEffect.duration > 0)
-    {
-        cell.tileEffect.duration--;
-        if (cell.tileEffect.duration <= 0)
-            cell.tileEffect = TileEffect();
-    }
 }
 
 bool CardExecutor::DetonateTrap(Cell& cell, int col, int row,
@@ -1260,7 +1212,8 @@ bool CardExecutor::DetonateTrap(Cell& cell, int col, int row,
             {
                 Buff b; b.type = StringToBuffType(def->buffType);
                 b.value = val + RelicManager::SumValue("trapDebuff");
-                b.duration = def->buffDuration + RelicManager::SumValue("trapDebuff");
+                b.duration = (BuffInfo::IsDurationBased(b.type) ? cell.tileEffect.value : def->buffDuration)
+                    + RelicManager::SumValue("trapDebuff");   // 持続で効くデバフは罠の数字が持続
                 b.name = def->name; b.description = L"";
                 e->GetBuffManager().AddBuff(b);
             }
@@ -1359,9 +1312,9 @@ void CardExecutor::ApplyPull(Enemy* target, int playerCol, int playerRow,
 {
     if (target->IsImmovable())
     {
-        // プレイヤーが敵の方へ引っ張られる
-        int dc = target->gridCol - playerCol;
-        int dr = target->gridRow - playerRow;
+        // プレイヤーが、当たったマスの方へ引っ張られる（蛇の体など）
+        int dc = target->HitCell().first - playerCol;
+        int dr = target->HitCell().second - playerRow;
         int dirC = 0, dirR = 0;
         if (abs(dc) >= abs(dr))
             dirC = (dc > 0) ? 1 : -1;
@@ -1377,8 +1330,8 @@ void CardExecutor::ApplyPull(Enemy* target, int playerCol, int playerRow,
                 || nextRow < 0 || nextRow >= gridMap->GetRows()
                 || gridMap->GetCell(nextCol, nextRow).type == CellType::Wall)
                 break;
-            // 敵マスには入らない
-            if (gridMap->GetCell(nextCol, nextRow).type == CellType::Enemy)
+            // 空きマスにしか入らない（敵もボスも止まる）
+            if (gridMap->GetCell(nextCol, nextRow).type != CellType::Empty)
                 break;
 
             gridMap->SetCellType(outNewPlayerCol, outNewPlayerRow, CellType::Empty);
@@ -1497,7 +1450,8 @@ CardExecutor::MovePreview CardExecutor::PreviewKnockback(
 
 CardExecutor::MovePreview CardExecutor::PreviewPull(
     Enemy* target, int playerCol, int playerRow,
-    int distance, GridMap* gridMap, std::vector<Enemy*>& enemies)
+    int distance, GridMap* gridMap, std::vector<Enemy*>& enemies,
+    int aimCol, int aimRow)
 {
     MovePreview preview;
     preview.destCol = target->gridCol;
@@ -1509,8 +1463,8 @@ CardExecutor::MovePreview CardExecutor::PreviewPull(
         preview.playerDestCol = playerCol;
         preview.playerDestRow = playerRow;
 
-        int dc = target->gridCol - playerCol;
-        int dr = target->gridRow - playerRow;
+        int dc = aimCol - playerCol;
+        int dr = aimRow - playerRow;
         int dirC = 0, dirR = 0;
         if (abs(dc) >= abs(dr))
             dirC = (dc > 0) ? 1 : -1;
@@ -1526,7 +1480,7 @@ CardExecutor::MovePreview CardExecutor::PreviewPull(
                 || nextRow < 0 || nextRow >= gridMap->GetRows()
                 || gridMap->GetCell(nextCol, nextRow).type == CellType::Wall)
                 break;
-            if (gridMap->GetCell(nextCol, nextRow).type == CellType::Enemy)
+            if (gridMap->GetCell(nextCol, nextRow).type != CellType::Empty)
                 break;
 
             preview.playerDestCol = nextCol;

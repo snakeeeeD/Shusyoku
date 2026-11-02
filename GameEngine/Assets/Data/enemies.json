@@ -9,6 +9,7 @@
       "actions": [
         {
           "description": "攻撃、{0}ダメージ",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -27,6 +28,7 @@
         },
         {
           "description": "攻撃、{0}ダメージ、毒{1}付与",
+          "areaVfx": "atk_poison",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -97,6 +99,7 @@
       "actions": [
         {
           "description": "攻撃、{0}ダメージ、攻撃力↑付与",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -122,6 +125,7 @@
         },
         {
           "description": "薙ぎ払い、{0}ダメージ、攻撃力↑付与",
+          "areaVfx": "atk_slash",
           "vfx": "slash",
           "target": {
             "rangeType": "Area",
@@ -149,6 +153,7 @@
         },
         {
           "description": "攻撃、{0}ダメージ、後退",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -188,6 +193,7 @@
         },
         {
           "description": "突進、{0}ダメージ",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Cross",
             "range": 1,
@@ -206,6 +212,7 @@
         },
         {
           "description": "扇薙ぎ、{0}ダメージ",
+          "areaVfx": "atk_slash",
           "target": {
             "rangeType": "Cone",
             "range": 3,
@@ -303,6 +310,23 @@
               "value": 4
             }
           ]
+        },
+        {
+          "description": "火の爪、{0}ダメージ",
+          "areaVfx": "atk_fire",
+          "target": {
+            "rangeType": "Area",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 2
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 4
+            }
+          ],
+          "select": {}
         }
       ]
     },
@@ -334,6 +358,7 @@
       "actions": [
         {
           "description": "攻撃、{0}ダメージ",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -352,6 +377,7 @@
         },
         {
           "description": "攻撃、{0}ダメージ",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Cross",
             "range": 5,
@@ -405,6 +431,7 @@
         },
         {
           "description": "攻撃、{0}ダメージ",
+          "areaVfx": "atk_smash",
           "vfx": "explosion",
           "target": {
             "rangeType": "Area",
@@ -454,6 +481,7 @@
       "actions": [
         {
           "description": "噛みつき、{0}ダメージ",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Area",
             "range": 1
@@ -470,6 +498,7 @@
         },
         {
           "description": "炎ブレス、{0}ダメージ、火傷{1}付与",
+          "areaVfx": "atk_fire",
           "target": {
             "rangeType": "Cone",
             "range": 4
@@ -493,6 +522,7 @@
         },
         {
           "description": "尾なぎ払い、{0}ダメージ、ノックバック",
+          "areaVfx": "atk_slash",
           "target": {
             "rangeType": "Area",
             "range": 2
@@ -513,6 +543,7 @@
         },
         {
           "description": "灼熱のブレス、{0}ダメージ、火傷{1}付与、床設置",
+          "areaVfx": "atk_fire",
           "target": {
             "rangeType": "Cone",
             "range": 4
@@ -532,7 +563,7 @@
             {
               "kind": "Hazard",
               "value": 1,
-              "duration": 1
+              "duration": 2
             }
           ],
           "select": {
@@ -543,6 +574,7 @@
         },
         {
           "description": "メテオ、{0}ダメージ、火傷{1}付与",
+          "areaVfx": "atk_fire",
           "windupVfx": "meteor_fall",
           "windup": 0.6,
           "impactVfx": "explosion",
@@ -569,6 +601,7 @@
         },
         {
           "description": "噛み砕き、{0}ダメージ",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Area",
             "range": 1
@@ -587,6 +620,7 @@
         },
         {
           "description": "滅びの息吹、{0}ダメージ、弱体{1}付与",
+          "areaVfx": "atk_fire",
           "target": {
             "rangeType": "Area",
             "range": 3
@@ -631,6 +665,7 @@
       "actions": [
         {
           "description": "強打、{0}ダメージ",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -649,6 +684,7 @@
         },
         {
           "description": "薙ぎ払い、{0}ダメージ",
+          "areaVfx": "atk_slash",
           "target": {
             "rangeType": "Area",
             "range": 2,
@@ -667,6 +703,7 @@
         },
         {
           "description": "叩き込み、{0}ダメージ、山札にガラクタ",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -761,6 +798,7 @@
       "actions": [
         {
           "description": "波動、{0}ダメージ",
+          "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Area",
             "range": 3,
@@ -781,7 +819,8 @@
           }
         },
         {
-          "description": "攻撃、{0}ダメージ",
+          "description": "氷撃、{0}ダメージ、氷設置",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -792,6 +831,12 @@
             {
               "kind": "Damage",
               "value": 5
+            },
+            {
+              "kind": "Hazard",
+              "buff": "ice",
+              "value": 0,
+              "duration": 2
             }
           ],
           "select": {
@@ -846,6 +891,7 @@
         },
         {
           "description": "薙ぎ払い、{0}ダメージ",
+          "areaVfx": "atk_slash",
           "target": {
             "rangeType": "Area",
             "range": 2
@@ -919,7 +965,8 @@
           }
         },
         {
-          "description": "のしかかり、{0}ダメージ",
+          "description": "のしかかり、{0}ダメージ、沼設置",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -930,6 +977,12 @@
             {
               "kind": "Damage",
               "value": 14
+            },
+            {
+              "kind": "Hazard",
+              "buff": "swamp",
+              "value": 1,
+              "duration": 2
             }
           ],
           "select": {
@@ -938,6 +991,7 @@
         },
         {
           "description": "攻撃、{0}ダメージ、毒{1}付与",
+          "areaVfx": "atk_poison",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -958,6 +1012,26 @@
           ],
           "select": {
             "chance": 30
+          }
+        },
+        {
+          "description": "連打、{0}ダメージ×3",
+          "areaVfx": "atk_smash",
+          "target": {
+            "rangeType": "Area",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 1
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 3,
+              "hits": 3
+            }
+          ],
+          "select": {
+            "chance": 25
           }
         }
       ],
@@ -991,6 +1065,7 @@
       "actions": [
         {
           "description": "追撃、{0}ダメージ",
+          "areaVfx": "atk_slash",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -1009,6 +1084,7 @@
         },
         {
           "description": "突進、{0}ダメージ",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Cross",
             "range": 1,
@@ -1027,6 +1103,7 @@
         },
         {
           "description": "たたきつけ、{0}ダメージ",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Area",
             "range": 2
@@ -1130,6 +1207,7 @@
       "actions": [
         {
           "description": "石塊、{0}ダメージ",
+          "areaVfx": "atk_rock",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -1163,6 +1241,7 @@
         },
         {
           "description": "渾身の一撃、{0}ダメージ",
+          "areaVfx": "atk_smash",
           "vfx": "explosion",
           "target": {
             "rangeType": "Area",
@@ -1210,6 +1289,7 @@
         },
         {
           "description": "喰らいつき、{0}ダメージ",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Area",
             "range": 2,
@@ -1243,6 +1323,7 @@
         },
         {
           "description": "まやかし、{0}ダメージ、山札にガラクタ",
+          "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -1316,6 +1397,7 @@
         },
         {
           "description": "呪詛、{0}ダメージ、脱力{1}付与",
+          "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Area",
             "range": 4,
@@ -1478,6 +1560,7 @@
         },
         {
           "description": "攻撃、{0}ダメージ",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -1515,6 +1598,7 @@
       "actions": [
         {
           "description": "胞子爆発、{0}ダメージ",
+          "areaVfx": "atk_poison",
           "vfx": "explosion",
           "target": {
             "rangeType": "Area",
@@ -1536,6 +1620,7 @@
         },
         {
           "description": "火の粉、{0}ダメージ",
+          "areaVfx": "atk_fire",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -1573,6 +1658,7 @@
       "actions": [
         {
           "description": "突進、{0}ダメージ",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Cross",
             "range": 1,
@@ -1590,7 +1676,8 @@
           }
         },
         {
-          "description": "噛みつき、{0}ダメージ",
+          "description": "噛みつき、{0}ダメージ×2",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -1600,7 +1687,8 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 6
+              "value": 3,
+              "hits": 2
             }
           ],
           "select": {
@@ -1656,6 +1744,7 @@
       "actions": [
         {
           "description": "吸血、{0}ダメージ、{1}回復",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -1731,6 +1820,7 @@
       "actions": [
         {
           "description": "体当たり、{0}ダメージ",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -1749,6 +1839,7 @@
         },
         {
           "description": "酸を吐く、{0}ダメージ、弱体{1}付与",
+          "areaVfx": "atk_poison",
           "target": {
             "rangeType": "Cross",
             "range": 2,
@@ -1772,7 +1863,8 @@
           }
         },
         {
-          "description": "粘着質、{0}ダメージ、捨て札にガラクタ",
+          "description": "粘着質、{0}ダメージ、捨て札にガラクタ、沼設置",
+          "areaVfx": "atk_poison",
           "target": {
             "rangeType": "Area",
             "range": 1
@@ -1787,6 +1879,12 @@
               "summonId": "status_junk",
               "buff": "discard",
               "value": 1
+            },
+            {
+              "kind": "Hazard",
+              "buff": "swamp",
+              "value": 1,
+              "duration": 2
             }
           ],
           "select": {
@@ -1829,7 +1927,8 @@
           }
         },
         {
-          "description": "食らいつき、{0}ダメージ",
+          "description": "食らいつき、{0}ダメージ×2、棘設置",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -1839,7 +1938,14 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 13
+              "value": 7,
+              "hits": 2
+            },
+            {
+              "kind": "Hazard",
+              "buff": "thorn",
+              "value": 2,
+              "duration": 2
             }
           ],
           "select": {
@@ -1867,6 +1973,7 @@
       "actions": [
         {
           "description": "毒噛み、{0}ダメージ、毒{1}付与",
+          "areaVfx": "atk_poison",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -1891,6 +1998,7 @@
         },
         {
           "description": "糸を吐く、{0}ダメージ、脱力{1}付与",
+          "areaVfx": "atk_poison",
           "target": {
             "rangeType": "Cross",
             "range": 3,
@@ -1911,6 +2019,26 @@
           ],
           "select": {
             "chance": 45
+          }
+        },
+        {
+          "description": "連続噛み、{0}ダメージ×2",
+          "areaVfx": "atk_smash",
+          "target": {
+            "rangeType": "Area",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 1
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 3,
+              "hits": 2
+            }
+          ],
+          "select": {
+            "chance": 30
           }
         }
       ],
@@ -1939,6 +2067,7 @@
       "actions": [
         {
           "description": "晶片、{0}ダメージ",
+          "areaVfx": "atk_rock",
           "target": {
             "rangeType": "Cross",
             "range": 4,
@@ -1958,6 +2087,7 @@
         },
         {
           "description": "怒りの咆哮、{0}ダメージ、攻撃力↑付与",
+          "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Area",
             "range": 2
@@ -1989,7 +2119,7 @@
           "effects": [
             {
               "kind": "MoveAway",
-              "value": 2
+              "value": 1
             }
           ],
           "select": {
@@ -1998,6 +2128,7 @@
         },
         {
           "description": "不協和音、{0}ダメージ、山札にノイズ",
+          "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Cross",
             "range": 3,
@@ -2046,6 +2177,7 @@
       "actions": [
         {
           "description": "胞子爆発、{0}ダメージ、毒{1}付与",
+          "areaVfx": "atk_poison",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -2070,6 +2202,7 @@
         },
         {
           "description": "殴打、{0}ダメージ",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -2128,6 +2261,7 @@
         },
         {
           "description": "岩振り、{0}ダメージ、ノックバック",
+          "areaVfx": "atk_rock",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -2150,6 +2284,7 @@
         },
         {
           "description": "突進、{0}ダメージ",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Cross",
             "range": 1,
@@ -2215,6 +2350,7 @@
         },
         {
           "description": "衰弱の霧、{0}ダメージ、弱体{1}付与",
+          "areaVfx": "atk_poison",
           "target": {
             "rangeType": "Cross",
             "range": 3,
@@ -2257,6 +2393,7 @@
         },
         {
           "description": "過剰投与、{0}ダメージ、手札に過負荷",
+          "areaVfx": "atk_poison",
           "target": {
             "rangeType": "Area",
             "range": 1
@@ -2322,6 +2459,7 @@
         },
         {
           "description": "晶ビーム、{0}ダメージ",
+          "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Cross",
             "range": 5,
@@ -2336,6 +2474,29 @@
           ],
           "select": {
             "chance": 45
+          }
+        },
+        {
+          "description": "晶の棘、{0}ダメージ、棘設置",
+          "areaVfx": "atk_magic",
+          "target": {
+            "rangeType": "Area",
+            "range": 1
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 8
+            },
+            {
+              "kind": "Hazard",
+              "buff": "thorn",
+              "value": 3,
+              "duration": 2
+            }
+          ],
+          "select": {
+            "chance": 25
           }
         },
         {
@@ -2399,6 +2560,7 @@
         },
         {
           "description": "毒牙、{0}ダメージ、毒{1}付与",
+          "areaVfx": "atk_poison",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -2423,6 +2585,7 @@
         },
         {
           "description": "糸縛り、{0}ダメージ、脱力{1}付与",
+          "areaVfx": "atk_poison",
           "target": {
             "rangeType": "Cross",
             "range": 3,
@@ -2443,6 +2606,26 @@
           ],
           "select": {
             "chance": 40
+          }
+        },
+        {
+          "description": "爪連撃、{0}ダメージ×3",
+          "areaVfx": "atk_smash",
+          "target": {
+            "rangeType": "Area",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 1
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 4,
+              "hits": 3
+            }
+          ],
+          "select": {
+            "chance": 30
           }
         }
       ],
@@ -2499,6 +2682,7 @@
         },
         {
           "description": "震撼、{0}ダメージ、ノックバック",
+          "areaVfx": "atk_rock",
           "target": {
             "rangeType": "Area",
             "range": 2,
@@ -2521,6 +2705,7 @@
         },
         {
           "description": "怒りの一撃、{0}ダメージ",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -2570,6 +2755,7 @@
       "actions": [
         {
           "description": "急襲、{0}ダメージ",
+          "areaVfx": "atk_slash",
           "target": {
             "rangeType": "Cross",
             "range": 1,
@@ -2588,6 +2774,7 @@
         },
         {
           "description": "乱舞、{0}ダメージ×3",
+          "areaVfx": "atk_slash",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -2625,6 +2812,7 @@
         },
         {
           "description": "突進、{0}ダメージ",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Cross",
             "range": 1,
@@ -2667,7 +2855,7 @@
       "id": "orochi",
       "texture": "snake_head",
       "isBoss": true,
-      "hp": 512,
+      "hp": 450,
       "width": 1.4,
       "height": 1.4,
       "gridShape": [
@@ -2679,9 +2867,10 @@
       "actions": [
         {
           "description": "薙ぎ払い、{0}ダメージ、ノックバック",
+          "areaVfx": "atk_slash",
           "target": {
             "rangeType": "Area",
-            "range": 2
+            "range": 3
           },
           "effects": [
             {
@@ -2705,9 +2894,10 @@
         },
         {
           "description": "毒噴き、{0}ダメージ、毒{1}付与",
+          "areaVfx": "atk_poison",
           "target": {
             "rangeType": "Area",
-            "range": 1
+            "range": 2
           },
           "vfx": "poison",
           "effects": [
@@ -2734,6 +2924,7 @@
         },
         {
           "description": "ウロコ飛ばし、{0}ダメージ、毒{1}付与",
+          "areaVfx": "atk_poison",
           "target": {
             "rangeType": "Column",
             "anchor": "player"
@@ -2761,6 +2952,7 @@
         },
         {
           "description": "ウロコ飛ばし、{0}ダメージ、毒{1}付与",
+          "areaVfx": "atk_poison",
           "target": {
             "rangeType": "Row",
             "anchor": "player"
@@ -2787,7 +2979,8 @@
           }
         },
         {
-          "description": "絞め上げ、{0}ダメージ",
+          "description": "絞め上げ、{0}ダメージ×3",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Square",
             "range": 1,
@@ -2796,7 +2989,8 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 13
+              "value": 5,
+              "hits": 3
             },
             {
               "kind": "Coil",
@@ -2825,8 +3019,50 @@
             "condition": "coiled",
             "chance": 100
           }
+        },
+        {
+          "description": "噛みつき、{0}ダメージ",
+          "areaVfx": "atk_smash",
+          "target": {
+            "rangeType": "Square",
+            "range": 1,
+            "anchor": "player"
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 18
+            },
+            {
+              "kind": "Lunge"
+            }
+          ],
+          "select": {
+            "condition": "lungeReady",
+            "chance": 100
+          }
+        },
+        {
+          "description": "首を戻す",
+          "target": {
+            "rangeType": "None"
+          },
+          "effects": [
+            {
+              "kind": "Retract"
+            },
+            {
+              "kind": "Coil",
+              "value": 3
+            }
+          ],
+          "select": {
+            "condition": "lunged",
+            "chance": 100
+          }
         }
       ],
+      "immovable": true,
       "snake": true
     },
     {
@@ -2837,7 +3073,8 @@
       "height": 1.0,
       "actions": [
         {
-          "description": "突進の一撃、{0}ダメージ、攻撃力↑付与",
+          "description": "突進の一撃、{0}ダメージ、攻撃力↑付与、氷設置",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -2855,6 +3092,12 @@
               "value": 1,
               "duration": 2,
               "applyTo": "Self"
+            },
+            {
+              "kind": "Hazard",
+              "buff": "ice",
+              "value": 0,
+              "duration": 1
             }
           ],
           "select": {
@@ -2907,6 +3150,7 @@
       "actions": [
         {
           "description": "放電、{0}ダメージ、鈍足{1}付与",
+          "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Cross",
             "range": 3,
@@ -2956,6 +3200,7 @@
       "actions": [
         {
           "description": "胞子噴射、{0}ダメージ、床設置、毒{2}付与",
+          "areaVfx": "atk_poison",
           "target": {
             "rangeType": "Area",
             "range": 2
@@ -3010,6 +3255,7 @@
       "actions": [
         {
           "description": "シールドバッシュ、{0}ダメージ、{1}ブロック、ノックバック",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Adjacent",
             "range": 1
@@ -3034,6 +3280,7 @@
         },
         {
           "description": "制圧射撃、{0}ダメージ、山札にガラクタ",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Cross",
             "range": 4,
@@ -3083,6 +3330,7 @@
       "actions": [
         {
           "description": "侵蝕の霧、{0}ダメージ、毒{1}付与",
+          "areaVfx": "atk_poison",
           "target": {
             "rangeType": "Area",
             "range": 2
@@ -3105,6 +3353,7 @@
         },
         {
           "description": "拡散、{0}ダメージ、山札にノイズ",
+          "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Area",
             "range": 1
@@ -3155,6 +3404,7 @@
       "actions": [
         {
           "description": "精神照射、{0}ダメージ、弱体{1}付与",
+          "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Cross",
             "range": 4,
@@ -3204,6 +3454,7 @@
       "actions": [
         {
           "description": "重力崩壊、{0}ダメージ、引き寄せ",
+          "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Area",
             "range": 2
@@ -3251,6 +3502,7 @@
       "actions": [
         {
           "description": "毒牙、{0}ダメージ、毒{1}付与",
+          "areaVfx": "atk_poison",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -3318,7 +3570,8 @@
       "height": 1.0,
       "actions": [
         {
-          "description": "グリッチ斬、{0}ダメージ、脱力{1}付与",
+          "description": "グリッチ斬、{0}ダメージ×3、脱力{1}付与",
+          "areaVfx": "atk_slash",
           "target": {
             "rangeType": "Adjacent",
             "range": 1
@@ -3326,7 +3579,8 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 7
+              "value": 3,
+              "hits": 3
             },
             {
               "kind": "Debuff",
@@ -3384,6 +3638,7 @@
       "actions": [
         {
           "description": "乱撃、{0}ダメージ×3、攻撃力↑付与",
+          "areaVfx": "atk_slash",
           "target": {
             "rangeType": "Adjacent",
             "range": 1
@@ -3408,6 +3663,7 @@
         },
         {
           "description": "咆哮弾、{0}ダメージ、弱体{1}付与",
+          "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Area",
             "range": 2
@@ -3430,6 +3686,7 @@
         },
         {
           "description": "突進、{0}ダメージ、ノックバック",
+          "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -3461,6 +3718,7 @@
       "actions": [
         {
           "description": "データ侵蝕、{0}ダメージ、脱力{1}付与、捨て札にノイズ",
+          "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Area",
             "range": 3
@@ -3533,6 +3791,7 @@
       "actions": [
         {
           "description": "次元の糸、{0}ダメージ、拘束{1}付与、引き寄せ",
+          "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Cross",
             "range": 4,
@@ -3561,6 +3820,7 @@
         },
         {
           "description": "虚無の波、{0}ダメージ、弱体{1}付与",
+          "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Area",
             "range": 2
@@ -3609,6 +3869,7 @@
       "actions": [
         {
           "description": "斬撃波、{0}ダメージ",
+          "areaVfx": "atk_slash",
           "target": {
             "rangeType": "Cross",
             "range": 6
@@ -3624,12 +3885,22 @@
           }
         },
         {
-          "description": "虚空の刺突、{0}ダメージ",
-          "target": {"rangeType": "Column", "anchor": "player"},
+          "description": "虚空の刺突、{0}ダメージ、炎設置",
+          "areaVfx": "atk_slash",
+          "target": {
+            "rangeType": "Column",
+            "anchor": "player"
+          },
           "effects": [
             {
               "kind": "Damage",
               "value": 8
+            },
+            {
+              "kind": "Hazard",
+              "buff": "fire",
+              "value": 1,
+              "duration": 1
             }
           ],
           "select": {
@@ -3648,6 +3919,7 @@
       "actions": [
         {
           "description": "毒の射線、{0}ダメージ、毒{1}付与",
+          "areaVfx": "atk_poison",
           "target": {
             "rangeType": "Cross",
             "range": 6
@@ -3669,8 +3941,12 @@
           }
         },
         {
-          "description": "衰弱、{0}ダメージ、弱体{1}付与",
-          "target": {"rangeType": "Row", "anchor": "player"},
+          "description": "衰弱、{0}ダメージ、弱体{1}付与、沼設置",
+          "areaVfx": "atk_poison",
+          "target": {
+            "rangeType": "Row",
+            "anchor": "player"
+          },
           "effects": [
             {
               "kind": "Damage",
@@ -3681,6 +3957,12 @@
               "buff": "Vulnerable",
               "value": 1,
               "duration": 2
+            },
+            {
+              "kind": "Hazard",
+              "buff": "swamp",
+              "value": 1,
+              "duration": 1
             }
           ],
           "select": {
@@ -3699,7 +3981,11 @@
       "actions": [
         {
           "description": "引き寄せ、{0}ダメージ、引き寄せ",
-          "target": {"rangeType": "Diagonal", "range": 6},
+          "areaVfx": "atk_magic",
+          "target": {
+            "rangeType": "Diagonal",
+            "range": 6
+          },
           "effects": [
             {
               "kind": "Damage",
@@ -3715,8 +4001,12 @@
           }
         },
         {
-          "description": "妨害、{0}ダメージ、山札にノイズ",
-          "target": {"rangeType": "Diamond", "range": 3},
+          "description": "妨害、{0}ダメージ、山札にノイズ、氷設置",
+          "areaVfx": "atk_magic",
+          "target": {
+            "rangeType": "Diamond",
+            "range": 3
+          },
           "effects": [
             {
               "kind": "Damage",
@@ -3727,6 +4017,12 @@
               "summonId": "status_static",
               "buff": "deck",
               "value": 1
+            },
+            {
+              "kind": "Hazard",
+              "buff": "ice",
+              "value": 0,
+              "duration": 1
             }
           ],
           "select": {
@@ -3744,12 +4040,22 @@
       "immovable": true,
       "actions": [
         {
-          "description": "石弾、{0}ダメージ",
-          "target": {"rangeType": "Area", "range": 2},
+          "description": "石弾、{0}ダメージ、棘設置",
+          "areaVfx": "atk_rock",
+          "target": {
+            "rangeType": "Area",
+            "range": 2
+          },
           "effects": [
             {
               "kind": "Damage",
               "value": 8
+            },
+            {
+              "kind": "Hazard",
+              "buff": "thorn",
+              "value": 2,
+              "duration": 1
             }
           ],
           "select": {
@@ -3848,6 +4154,7 @@
         },
         {
           "description": "次元崩し、{0}ダメージ",
+          "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Area",
             "range": 3
@@ -3887,6 +4194,7 @@
         },
         {
           "description": "領域崩落",
+          "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Grid",
             "range": 3,
@@ -3905,6 +4213,7 @@
         },
         {
           "description": "次元十字、{0}ダメージ",
+          "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Column",
             "anchor": "player"
@@ -3927,7 +4236,8 @@
           }
         },
         {
-          "description": "次元圧壊、{0}ダメージ",
+          "description": "次元圧壊、{0}ダメージ×3",
+          "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Square",
             "range": 1,
@@ -3936,7 +4246,8 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 16
+              "value": 6,
+              "hits": 3
             }
           ],
           "select": {
@@ -3946,6 +4257,7 @@
         },
         {
           "description": "双柱、{0}ダメージ",
+          "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Column",
             "anchor": "fixed",

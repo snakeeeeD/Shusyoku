@@ -153,6 +153,8 @@ inline EffectKind StringToEffectKind(const std::string& s)
     if (s == "Hazard") return EffectKind::Hazard;
     if (s == "Heal") return EffectKind::Heal;
     if (s == "Coil") return EffectKind::Coil;
+    if (s == "Lunge") return EffectKind::Lunge;
+    if (s == "Retract") return EffectKind::Retract;
     if (s == "AddCard") return EffectKind::AddCard;
     return EffectKind::Damage;
 }
