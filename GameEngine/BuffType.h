@@ -65,4 +65,6 @@ enum class BuffType
     GuardianVow,    // 守護の誓い：ターン終了時、聖地に立っていればブロック+value
     Cathedral,      // 大聖堂：ターン開始時、聖地に立っていれば周り8マスに信仰+value
     Molt,           // 脱皮まで：カードの攻撃であと value ダメージ（オロチ）
+    Mire,           // 沼：移動距離-value（沼の上にいる間）
+    Immovable,      // 移動不可：押し出し・引き寄せで動かない（表示用・永続）
 };

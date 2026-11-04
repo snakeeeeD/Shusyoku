@@ -1,4 +1,5 @@
 #include "ShopScene.h"
+#include "CardConfirm.h"
 #include "CardTooltip.h"
 #include "ItemTooltip.h"
 #include "MaterialDataBase.h"
@@ -380,8 +381,10 @@ void ShopScene::HandleInput()
             else if (idx >= 0 && PlayerDataManager::GetData().gold >= RemovePrice())
             {
                 Audio::PlaySE("Assets/Sound/se/click.mp3");
-                m_removeAnimIdx = idx;                 // 演出開始（実削除はUpdateの末尾）
-                m_removeAnimTimer = REMOVE_ANIM_DUR;
+                CardConfirm::Open(ConfirmKind::Remove, PlayerDataManager::GetData().deck[idx], [this, idx]() {
+                    m_removeAnimIdx = idx;             // 演出開始（実削除はUpdateの末尾）
+                    m_removeAnimTimer = REMOVE_ANIM_DUR;
+                    });
             }
             else
             {

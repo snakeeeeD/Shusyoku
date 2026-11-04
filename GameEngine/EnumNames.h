@@ -119,6 +119,7 @@ namespace EnumNames
         { BuffType::LastStand,    "LastStand" },
         { BuffType::DeepStand,    "DeepStand" },
         { BuffType::EmberTrail,   "EmberTrail" },
+        { BuffType::Mire,         "Mire" },
         { BuffType::DrawPerTurn,  "DrawPerTurn" },
         { BuffType::GuardianVow,  "GuardianVow" },
         { BuffType::Cathedral,    "Cathedral" },

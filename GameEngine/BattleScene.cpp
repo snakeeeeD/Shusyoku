@@ -1,4 +1,5 @@
 ﻿#include "BattleScene.h"
+#include "CardTooltip.h"
 #include "TextureLoader.h"
 #include "EffectManager.h"
 #include "RelicManager.h"
@@ -31,6 +32,8 @@
 
 // ナイフ＋投擲術なら遠距離化（Diamond=範囲内の任意の敵を狙える。単体パスのままなので研磨も効く）
 // 3層ボスの鎖：柱（楔）ごとの鎖の絵と、外れた時の破片
+static constexpr float RAISE_H = 0.12f;   // 狙ったマスが浮く高さ（上げすぎると奥のマスに食い込んで見える）
+
 static const struct { const char* wedge; const char* chain; const char* fx; } BOSS_CHAINS[] = {
     { "wedge_sword",  "boss_chain_sword",  "chain_break_sword"  },
     { "wedge_venom",  "boss_chain_venom",  "chain_break_venom"  },
@@ -337,7 +340,9 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
             // 残りを時間差で引く（引く→山札が尽きたらリシャッフル演出→残りを引く）
             int extraDraw = m_player->GetBuffManager().GetBuffValue(BuffType::DrawPerTurn);
-            int keep = m_hand.GetCardCount();                   // 保留で残っている枚数
+            int keep = m_hand.GetCardCount() - m_enemyAddedToHand;   // 保留で残っている枚数（敵に入れられたお邪魔は数えない）
+            if (keep < 0) keep = 0;
+            m_enemyAddedToHand = 0;
             int drawN = HAND_SIZE - 1 + extraDraw - keep;
             if (drawN < 0) drawN = 0;
             StartDrawSequence(drawN);
@@ -564,18 +569,9 @@ void BattleScene::AddEnemy(int col, int row, const std::string& id)
     enemy->Init(id);
     enemy->gridCol = col;
     enemy->gridRow = row;
+    enemy->BindGrid(m_gridMap, m_gridMap->GetCols(), m_gridMap->GetRows());
 
-    // 形の中心を計算してワールド座標を設定
-    float sumCol = 0, sumRow = 0;
-    for (auto& [dc, dr] : enemy->GetGridShape())
-    {
-        sumCol += col + dc;
-        sumRow += row + dr;
-    }
-    float centerCol = sumCol / enemy->GetGridShape().size();
-    float centerRow = sumRow / enemy->GetGridShape().size();
-    enemy->worldX = (centerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
-    enemy->worldZ = (centerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+    enemy->CenterWorld(col, row, m_gridMap, enemy->worldX, enemy->worldZ);   // 形の中心に置く
 
     // 占有マスをセット
     CellType cellType = enemy->IsBoss() ? CellType::Boss : CellType::Enemy;
@@ -588,6 +584,8 @@ void BattleScene::AddEnemy(int col, int row, const std::string& id)
         enemy->GetBuffManager().AddBuff({ BuffType::HeadWeak, 2, -1 });   // 頭弱点マーク（表示用・永続）
         enemy->GetBuffManager().AddBuff({ BuffType::Molt, Enemy::SHED_DAMAGE, -1 });   // 脱皮までの残り（表示用）
     }
+    if (enemy->IsImmovable())
+        enemy->GetBuffManager().AddBuff({ BuffType::Immovable, 0, -1 });   // 移動不可マーク（表示用・永続）
 
     if (id == "l3_sovereign")
     {
@@ -608,6 +606,19 @@ void BattleScene::AddEnemy(int col, int row, const std::string& id)
 
 void BattleScene::SummonNear(Enemy* src, const std::string& id, int count)
 {
+    if (!src->SummonPlan().empty())                                        // 予告した場所に出す
+    {
+        for (auto& [c, r] : src->SummonPlan())
+        {
+            if (m_gridMap->GetCell(c, r).type != CellType::Empty) continue;   // 塞がれたら出ない
+            AddEnemy(c, r, id);
+            m_enemies.back()->MarkJustSummoned();
+            EffectManager::Play("summon", m_enemies.back()->worldX, 0.4f, m_enemies.back()->worldZ);
+        }
+        src->ClearSummonPlan();
+        return;
+    }
+
     int placed = 0;
     // 召喚主の周囲を近い順（外周リング）に探索。敵/ボス/障害のマスは飛ばして隣の空きへ
     for (int r = 1; r <= 5 && placed < count; r++)
@@ -1312,7 +1323,7 @@ void BattleScene::Update(float deltaTime)
             if (threatened) Hint::Request("threat"); else Hint::Resolve("threat");
             if (m_player->GetEnergy() == 0) Hint::Request("endTurn");
             for (auto e : m_enemies)
-                if (e->IsSnake() && m_turnManager.GetTurnCount() >= 2)   // オロチの見どころ（体が伸びてから）
+                if (e->IsSnake())   // オロチの見どころ（出会った時点で）
                 {
                     Hint::Request("snakeWeak");
                     Hint::Request("molt");
@@ -1321,6 +1332,12 @@ void BattleScene::Update(float deltaTime)
         }
         else Hint::Resolve("endTurn");
 
+        if (int n = m_deck.ConsumeReshuffled())   // 手番中のドローで山札を戻した時：戻す演出 → 終わってから引いたカードを出す
+        {
+            m_battleUI->StartReshuffleEffect();
+            m_battleUI->HoldNewestDraws(n, CardVisual::RESHUFFLE_FX_DUR);
+            Audio::PlaySE("Assets/Sound/se/card.mp3");
+        }
         m_battleUI->UpdateDrawCardEffects(deltaTime);
         // 時間差ドローの進行
         if (m_reshuffleFxTimer > 0.0f)
@@ -1702,7 +1719,7 @@ void BattleScene::Update(float deltaTime)
                     const CardData* cd = CardDataBase::Get(pc.cardId);
                     for (int k = 0; k < pc.count; k++)
                     {
-                        if (pc.target == "hand")         m_hand.AddCard(pc.cardId);
+                        if (pc.target == "hand")         { m_hand.AddCard(pc.cardId); m_enemyAddedToHand++; }
                         else if (pc.target == "discard")  m_deck.DiscardCard(pc.cardId);
                         else                              m_deck.AddCardRandom(pc.cardId);
                         if (pc.target != "hand")          // 山札/捨て札は見せてから飛ばす
@@ -2081,7 +2098,7 @@ void BattleScene::Draw()
             for (int col = 0; col < m_gridMap->GetCols(); col++)
             {
                 auto& cell = m_gridMap->GetCell(col, row);
-                float target = raised.count({ col, row }) ? 0.30f : 0.0f;
+                float target = raised.count({ col, row }) ? RAISE_H : 0.0f;
                 cell.gameObject.worldY += (target - cell.gameObject.worldY) * 0.2f;   // 補間
             }
     }
@@ -2150,7 +2167,8 @@ void BattleScene::Draw()
         m_renderer3D->DrawBillboard(TextureManager::Get(tex),
             dc.x, -0.10f, dc.z, w, h, 0.0f, XMFLOAT4(1, 1, 1, 1));  // y=中心ではなく足元(地面)
     }
-    m_renderer3D->SetDepthWrite(true);
+    // マスの地面は深度を書かない：手前のマスが浮いても、奥に立つ敵やプレイヤーを隠さない（めり込み防止）。
+    // 奥の行から順に描くので、マス同士の重なりは描く順で正しくなる（depth-write は装飾から OFF のまま）
 
     // 明るくするのは「何も表示していない空マス」だけ（範囲・ハイライトは素の色のまま）
     {
@@ -2178,9 +2196,13 @@ void BattleScene::Draw()
                 const char* ctex = th.cellTex;                          // 石板は数種をマスごとに使い分け（模様の繰り返しを消す）
                 char vname[24];
                 if (th.cellVariants > 1) { sprintf_s(vname, "%s_%d", th.cellTex, (col * 7 + row * 3) % th.cellVariants); ctex = vname; }
+                if (cell.gameObject.worldY > 0.01f)   // 浮いたマス：元の位置に暗い台を残して、厚み（側面）に見せる
+                    m_renderer3D->DrawTile(m_whiteTexture, x, z, size,
+                        XMFLOAT4(cc.x * 0.4f, cc.y * 0.4f, cc.z * 0.4f, 1.0f), 0.005f);
                 m_renderer3D->DrawTile(TextureManager::Get(ctex), x, z, size, cc, cell.gameObject.worldY);
             }
     }
+    // 地面に貼る印（信仰・敵の範囲・自分の範囲・罠）も深度を書かない。浮いたマスの印が奥の敵を隠さないように
 
     // 信仰のマス（敵の範囲より先に・低く描く＝重なっても範囲の模様が上に見える）
     // 金色の下地＋紋章（外周10区切りのうち信仰の数だけ光る。聖域は全部）
@@ -2251,7 +2273,7 @@ void BattleScene::Draw()
             m_renderer3D->DrawTile(TextureManager::Get(tex), x, z, 0.92f,
                 XMFLOAT4(1.0f, 0.8f, 0.35f, 0.9f + 0.1f * pulse), wy + 0.025f);
         }
-    m_renderer3D->SetDepthWrite(true);
+    // （深度は書かないまま：プレイヤーの攻撃範囲マーカー・罠も地面の印）
     m_renderer3D->SetAdditive(false);
 
     // プレイヤーの攻撃範囲マーカー（水色ブラケット＋クロスヘア）
@@ -2531,16 +2553,25 @@ void BattleScene::Draw()
 
 
     m_renderer3D->SetDepthEnabled(true);
-    m_player->Draw3D(m_renderer3D);   // 本体は前面
 
-    // 敵：透明な四角が互いを隠さないよう、深度書き込みOFF＋奥→手前で描く
+    // プレイヤーと敵：透明な四角が互いを隠さないよう、深度書き込みOFF＋奥→手前で描く
+    // （プレイヤーだけ深度を書くと、透明な部分が奥の敵の足元を隠して埋まって見える）
     m_renderer3D->SetDepthWrite(false);
     std::vector<Enemy*> drawOrder(m_enemies.begin(), m_enemies.end());
     std::sort(drawOrder.begin(), drawOrder.end(),
         [](Enemy* a, Enemy* b) { return a->worldZ < b->worldZ; });   // 奥(小Z)を先に、手前(大Z)を後に
 
+    bool playerDrawn = false;
     for (auto enemy : drawOrder)
+    {
+        if (!playerDrawn && enemy->worldZ > m_player->worldZ)   // プレイヤーより手前の敵の前に、プレイヤーを描く
+        {
+            m_player->Draw3D(m_renderer3D);
+            playerDrawn = true;
+        }
         enemy->Draw3D(m_renderer3D);
+    }
+    if (!playerDrawn) m_player->Draw3D(m_renderer3D);
 
     // 聖地に立っている敵：手前に立ちのぼる光（敵の絵にかぶせて「焼かれる」と一目で分かるように）
     m_renderer3D->SetDepthEnabled(false);
@@ -2858,7 +2889,12 @@ void BattleScene::HandleInput()
             return;
         }
 
-        m_hoveredCardIndex = m_battleUI->GetCardAtScreenPos(mp);
+        // 「捨てる」「盤面を見る」の上では説明を消す（説明の窓がボタンに重なって押せなくなるため）
+        bool onBtn = m_battleUI->IsOnDiscardConfirm(mp) || m_battleUI->IsOnDiscardView(mp);
+        if (onBtn) CardTooltip::ClearHeld();
+        m_hoveredCardIndex = onBtn ? -1 : m_battleUI->GetCardAtScreenPos(mp);
+        if (m_hoveredCardIndex < 0 && !onBtn && CardTooltip::MouseInHold())   // 説明へ移る間はカードを浮かせたまま
+            m_hoveredCardIndex = m_prevHoveredCard;
 
         if (m_hoveredCardIndex != m_prevHoveredCard)
         {
@@ -3788,7 +3824,7 @@ void BattleScene::HandleInput()
         }
         else
         {
-            int cost = m_hand.GetCards()[cardUnder]->GetData()->cost;
+            int cost = m_player->CostOf(*m_hand.GetCards()[cardUnder]->GetData());
             if (m_player->GetEnergy() < cost)
             {
                 // エナジー不足：アウトライン付き浮遊テキストで通知し、自動で選択解除
@@ -4159,8 +4195,7 @@ bool BattleScene::CellToScreen(int col, int row, float& sx, float& sy) const
 void BattleScene::DashGlideTo(int c, int r)
 {
     if (!m_dashEnemy) return;
-    float wx = (c - m_gridMap->GetCols() / 2.0f) * 1.1f;
-    float wz = (r - m_gridMap->GetRows() / 2.0f) * 1.1f;
+    float wx, wz; m_dashEnemy->CenterWorld(c, r, m_gridMap, wx, wz);   // 形の中心へ
     float dist = fabsf(wx - m_dashEnemy->worldX) + fabsf(wz - m_dashEnemy->worldZ);
     float dur = (dist / 1.1f) * 0.07f;   // 1マスあたり0.07秒＝距離で時間が伸びる＝速度一定感を避けつつ滑らか
     if (dur < 0.06f) dur = 0.06f;
@@ -4307,6 +4342,12 @@ void BattleScene::SyncFaithBuffs()
         };
     if (Faith::AttackBonus(f) > 0) add(BuffType::HolyGround, Faith::AttackBonus(f));
     if (Faith::IsSanctuary(f))     add(BuffType::Sanctuary, 1);
+
+    bm.RemoveBuff(BuffType::Mire);                                  // 沼は上にいる間だけ
+    const auto& tile = m_gridMap->GetCell(m_playerCol, m_playerRow).tileEffect;
+    const TerrainDef* def = tile.active ? TerrainDataBase::Get(tile.id) : nullptr;
+    if (def && def->effect == "WhileOn" && !RelicManager::HasKind("floorImmune"))
+        add(StringToBuffType(def->buffType), tile.value);
 }
 
 // 浄化：手札の呪いを全て廃棄する（ターン終了のエセリアルと同じく、その場で溶かす）

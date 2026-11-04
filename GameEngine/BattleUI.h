@@ -35,6 +35,8 @@ struct DrawCardEffect
     float alpha;
     float timer;
     bool  done;
+    float delay = 0.0f;      // >0 の間は待つ（リシャッフル演出の後に飛ばす）
+    bool  started = false;   // 動き出した（音を鳴らした）か
 };
 
 struct DiscardCardEffect {
@@ -57,6 +59,7 @@ struct CardAnimState {
     float currentX, currentY;
     float currentScale = 1.0f;
     float currentRot = 0.0f;
+    float holdTimer = 0.0f;       // >0 の間は山札で待機（見えない・押せない）
     float peekTimer = -1000.0f;   // 呪い(保留)の中央往復。-1000=無効 / -delay~で予約
 };
 
@@ -141,6 +144,7 @@ public:
     void UpdateDrawCardEffects(float deltaTime);
     void StartDrawCardEffect(const std::string& cardId);
     void StartReshuffleEffect();
+    void HoldNewestDraws(int n, float t);   // 最後に引いた n 枚を t 秒待たせる（リシャッフル演出の後に出す）
     void UpdateReshuffleEffect(float deltaTime);
     void DrawReshuffleEffect();
     void StartDiscardEffects();
@@ -232,6 +236,8 @@ private:
 
     struct ReshuffleFx { bool active = false; float timer = 0.0f; };
     ReshuffleFx m_reshuffleFx;
+    int   m_pendingHoldN = 0;      // 手札側の待機の予約（次の UpdateCardAnimations で最後の n 枚に当てる）
+    float m_pendingHoldT = 0.0f;
 
     static constexpr float CARD_HOVER_W = 110.0f;
     static constexpr float CARD_HOVER_H = 140.0f;
@@ -245,7 +251,6 @@ private:
     std::vector<DetailRow> EnemyDetailRows(Enemy* e, float x, float topY, POINT mp,
         float minH, float& height) const;
     void DrawPlayerHud(const BattleUIContext& ctx);
-    void DrawEnemyKeywords(const BattleUIContext& ctx);
     void DrawTargetIndicators(const BattleUIContext& ctx);
     void DrawArrowIndicator(float sx, float sy, const DirectX::XMFLOAT4& color, float highlightTimer);
     void DrawPileViewer(const BattleUIContext& ctx);

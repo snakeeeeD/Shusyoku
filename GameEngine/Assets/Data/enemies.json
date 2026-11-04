@@ -944,13 +944,32 @@
       "id": "elite_slimeking",
       "texture": "enemy_slimeking",
       "hp": 117,
-      "width": 1.3,
-      "height": 1.3,
+      "width": 1.7,
+      "height": 1.7,
+      "gridShape": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
       "actions": [
         {
           "description": "分裂、召喚",
           "target": {
-            "rangeType": "None"
+            "rangeType": "Area",
+            "range": 2
           },
           "effects": [
             {
@@ -986,7 +1005,7 @@
             }
           ],
           "select": {
-            "chance": 20
+            "chance": 30
           }
         },
         {
@@ -1060,8 +1079,26 @@
       "id": "elite_bear",
       "texture": "enemy_bear",
       "hp": 117,
-      "width": 1.3,
-      "height": 1.3,
+      "width": 1.7,
+      "height": 1.7,
+      "gridShape": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
       "actions": [
         {
           "description": "追撃、{0}ダメージ",
@@ -2240,8 +2277,26 @@
       "id": "cave_golem",
       "texture": "enemy_cavegolem",
       "hp": 128,
-      "width": 1.3,
-      "height": 1.3,
+      "width": 1.7,
+      "height": 1.7,
+      "gridShape": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
       "actions": [
         {
           "description": "防御、{0}ブロック",
@@ -2536,14 +2591,32 @@
       "id": "elite_broodmother",
       "texture": "enemy_broodmother",
       "hp": 125,
-      "width": 1.3,
-      "height": 1.3,
+      "width": 1.7,
+      "height": 1.7,
+      "gridShape": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
       "actions": [
         {
           "description": "産卵、召喚",
           "target": {
-            "rangeType": "None",
-            "range": 1
+            "rangeType": "Area",
+            "range": 2
           },
           "effects": [
             {
@@ -2654,8 +2727,26 @@
       "id": "elite_stonelord",
       "texture": "enemy_stonelord",
       "hp": 245,
-      "width": 1.5,
-      "height": 1.5,
+      "width": 1.8,
+      "height": 1.8,
+      "gridShape": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
       "actions": [
         {
           "description": "大地の守り、防壁付与、{1}ブロック",
@@ -2750,8 +2841,18 @@
       "id": "elite_gloomwing",
       "texture": "enemy_gloomwing",
       "hp": 180,
-      "width": 1.2,
-      "height": 1.2,
+      "width": 1.5,
+      "height": 1.5,
+      "gridShape": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ]
+      ],
       "actions": [
         {
           "description": "急襲、{0}ダメージ",
@@ -3748,8 +3849,8 @@
         {
           "description": "ドローン、召喚",
           "target": {
-            "rangeType": "None",
-            "range": 1
+            "rangeType": "Area",
+            "range": 3
           },
           "effects": [
             {
@@ -3898,7 +3999,7 @@
             },
             {
               "kind": "Hazard",
-              "buff": "fire",
+              "buff": "thorn",
               "value": 1,
               "duration": 1
             }
@@ -4289,6 +4390,34 @@
           "select": {
             "condition": "awake",
             "chance": 35
+          }
+        }
+      ]
+    },
+    {
+      "id": "rec_dummy",
+      "drops": [],
+      "texture": "enemy_zako",
+      "hp": 58,
+      "width": 1.2,
+      "height": 1.2,
+      "immovable": true,
+      "actions": [
+        {
+          "description": "叩きつけ、{0}ダメージ",
+          "areaVfx": "atk_smash",
+          "target": {
+            "rangeType": "Area",
+            "range": 1
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 8
+            }
+          ],
+          "select": {
+            "chance": 100
           }
         }
       ]

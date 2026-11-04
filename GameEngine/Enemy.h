@@ -91,6 +91,10 @@ public:
 	std::vector<std::pair<int, int>> GetThreatCells(const EnemyAction& a, class GridMap* gridMap) const;
 
 	const std::vector<std::pair<int, int>>& GetGridShape() const { return m_gridShape; }
+	void ClearFootprint(GridMap* gridMap);
+	void MarkFootprint(GridMap* gridMap);
+	bool CanOccupy(GridMap* gridMap, int newCol, int newRow) const;
+	void CenterWorld(int col, int row, GridMap* gridMap, float& x, float& z) const;   // 形の中心のワールド座標
 
 	void ApplyDifficulty(float hpMul, float dmgMul, int bonusActions);
 
@@ -126,6 +130,9 @@ public:
 		return v;
 	}
 	void InitSnake(GridMap* gridMap);
+	void BindGrid(GridMap* gridMap, int cols, int rows) { m_grid = gridMap; m_gridCols = cols; m_gridRows = rows; }
+	const std::vector<std::pair<int, int>>& SummonPlan() const { return m_summonPlan; }
+	void ClearSummonPlan() { m_summonPlan.clear(); }
 	void GrowCoil(GridMap* gridMap, int steps, class Player* player);
 	void LungeTo(GridMap* gridMap);                                 // 予告した経路で首を伸ばす
 	std::vector<std::pair<int, int>> LungePath(int aimCol, int aimRow) const;   // 経路を探す
@@ -210,9 +217,6 @@ private:
 	bool m_justSummoned = false;
 	std::vector<std::pair<std::string, int>> m_pendingSummons;
 
-	void ClearFootprint(GridMap* gridMap);
-	void MarkFootprint(GridMap* gridMap);
-	bool CanOccupy(GridMap* gridMap, int newCol, int newRow) const;
 
 
 	bool m_isSnake = false;
@@ -225,6 +229,8 @@ private:
 	bool m_shedPending = false;
 	int m_neckLen = 0;                              // 伸ばしている首のマス数
 	std::vector<std::pair<int, int>> m_lungePlan;   // 噛みつきの経路（予告の時に決める）
+	std::vector<std::pair<int, int>> m_summonPlan;   // 生成位置（予告の時に決める）
+	void PlanSummon(const EnemyAction& a);
 	struct SnakeOp { bool push; std::pair<int, int> cell; };   // 1マス分の見た目の操作
 	std::vector<SnakeOp> m_snakeOps;
 	int m_opApplied = 0;

@@ -79,6 +79,7 @@ private:
     static constexpr int   GRID_COLS = 12;
     static constexpr int   GRID_ROWS = 7;
     static constexpr int   INITIAL_STEPS = 20;
+    static constexpr int   MIN_STEPS = -5;   // ï‡êîÇÕÇ±Ç±Ç≈é~Ç‹ÇÈÅiìGÇÃã≠âªÇ‡Ç±Ç±Ç‹Ç≈Åj
     static constexpr float CELL_SIZE = 60.0f;
     static constexpr float CELL_GAP = 20.0f;
 

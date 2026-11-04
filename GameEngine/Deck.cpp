@@ -21,10 +21,12 @@ std::string Deck::DrawCard()
     {
         if (m_discardPile.empty()) return ""; // —¼•û‹ó‚È‚ç‰½‚à‚È‚µ
         Reset();
+        m_reshuffled = true;   // ‰‰o‚Í BattleScene ‚ªE‚¤
     }
 
     std::string card = m_drawPile.back();
     m_drawPile.pop_back();
+    if (m_reshuffled) m_drawnAfterReshuffle++;
     return card;
 }
 

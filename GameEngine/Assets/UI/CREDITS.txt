@@ -65,3 +65,69 @@ relic_shop_gold_glove.png  "Gloves" by Delapouite  https://game-icons.net/1x1/de
 relic_shop_spirit_bell.png  "Ringing bell" by Lorc  https://game-icons.net/1x1/lorc/ringing-bell.html
 relic_holy_seal.png  "Holy symbol" by Lorc  https://game-icons.net/1x1/lorc/holy-symbol.html
 relic_pilgrim_hat.png  "Pilgrim hat" by Delapouite  https://game-icons.net/1x1/delapouite/pilgrim-hat.html
+
+Fonts (SIL Open Font License 1.1, Assets/Font/OFL.txt):
+  Noto Serif JP - Copyright 2017 Adobe (https://fonts.google.com/specimen/Noto+Serif+JP)
+  M PLUS 1p - Copyright 2016 The M+ Project Authors (https://fonts.google.com/specimen/M+PLUS+1p)
+
+Buff / debuff icons (buff_<id>.png), same license (CC BY 3.0), white glyph on a drawn badge, 128x128:
+buff_attackup.png  "Biceps" by Delapouite  https://game-icons.net/1x1/delapouite/biceps.html
+buff_rangeup.png  "Target arrows" by Lorc  https://game-icons.net/1x1/lorc/target-arrows.html
+buff_defenseup.png  "Checked shield" by Lorc  https://game-icons.net/1x1/lorc/checked-shield.html
+buff_barricade.png  "Stone wall" by Delapouite  https://game-icons.net/1x1/delapouite/stone-wall.html
+buff_thorns.png  "Thorny vine" by Lorc  https://game-icons.net/1x1/lorc/thorny-vine.html
+buff_momentum.png  "Running shoe" by Delapouite  https://game-icons.net/1x1/delapouite/running-shoe.html
+buff_moveup.png  "Wingfoot" by Lorc  https://game-icons.net/1x1/lorc/wingfoot.html
+buff_charge.png  "Sprint" by Lorc  https://game-icons.net/1x1/lorc/sprint.html
+buff_hitandrun.png  "Punch blast" by Lorc  https://game-icons.net/1x1/lorc/punch-blast.html
+buff_reposition.png  "Back forth" by Lorc  https://game-icons.net/1x1/lorc/back-forth.html
+buff_attackdown.png  "Shattered sword" by Lorc  https://game-icons.net/1x1/lorc/shattered-sword.html
+buff_weak.png  "Despair" by Lorc  https://game-icons.net/1x1/lorc/despair.html
+buff_defensedown.png  "Broken shield" by Lorc  https://game-icons.net/1x1/lorc/broken-shield.html
+buff_frail.png  "Broken bone" by Lorc  https://game-icons.net/1x1/lorc/broken-bone.html
+buff_vulnerable.png  "Achilles heel" by Delapouite  https://game-icons.net/1x1/delapouite/achilles-heel.html
+buff_root.png  "Manacles" by Lorc  https://game-icons.net/1x1/lorc/manacles.html
+buff_slow.png  "Snail" by Lorc  https://game-icons.net/1x1/lorc/snail.html
+buff_burn.png  "Flame" by Carl-olsen  https://game-icons.net/1x1/carl-olsen/flame.html
+buff_poison.png  "Poison bottle" by Lorc  https://game-icons.net/1x1/lorc/poison-bottle.html
+buff_attackupturn.png  "Sword brandish" by Delapouite  https://game-icons.net/1x1/delapouite/sword-brandish.html
+buff_attackgrowth.png  "Aura" by Lorc  https://game-icons.net/1x1/lorc/aura.html
+buff_frenzy.png  "Enrage" by Delapouite  https://game-icons.net/1x1/delapouite/enrage.html
+buff_noxiousfumes.png  "Poison gas" by Lorc  https://game-icons.net/1x1/lorc/poison-gas.html
+buff_toxicrhythm.png  "Heart beats" by Delapouite  https://game-icons.net/1x1/delapouite/heart-beats.html
+buff_movelock.png  "Stop sign" by Delapouite  https://game-icons.net/1x1/delapouite/stop-sign.html
+buff_riposte.png  "Sword clash" by Lorc  https://game-icons.net/1x1/lorc/sword-clash.html
+buff_knifepower.png  "Sword smithing" by Lorc  https://game-icons.net/1x1/lorc/sword-smithing.html
+buff_knifethrow.png  "Thrown daggers" by Lorc  https://game-icons.net/1x1/lorc/thrown-daggers.html
+buff_cardblock.png  "Sword array" by Lorc  https://game-icons.net/1x1/lorc/sword-array.html
+buff_knifegen.png  "Daggers" by Lorc  https://game-icons.net/1x1/lorc/daggers.html
+buff_laststand.png  "Heartburn" by Lorc  https://game-icons.net/1x1/lorc/heartburn.html
+buff_deepstand.png  "Skull crossed bones" by Lorc  https://game-icons.net/1x1/lorc/skull-crossed-bones.html
+buff_embertrail.png  "Fire dash" by Lorc  https://game-icons.net/1x1/lorc/fire-dash.html
+buff_drawperturn.png  "Card draw" by Faithtoken  https://game-icons.net/1x1/faithtoken/card-draw.html
+buff_invincible.png  "Shield echoes" by Lorc  https://game-icons.net/1x1/lorc/shield-echoes.html
+buff_headweak.png  "Bullseye" by Skoll  https://game-icons.net/1x1/skoll/bullseye.html
+buff_holyground.png  "Sunbeams" by Lorc  https://game-icons.net/1x1/lorc/sunbeams.html
+buff_sanctuary.png  "Angel outfit" by Lorc  https://game-icons.net/1x1/lorc/angel-outfit.html
+buff_guardianvow.png  "Templar shield" by Delapouite  https://game-icons.net/1x1/delapouite/templar-shield.html
+buff_cathedral.png  "Church" by Delapouite  https://game-icons.net/1x1/delapouite/church.html
+buff_molt.png  "Snake" by Lorc  https://game-icons.net/1x1/lorc/snake.html
+buff_mire.png  "Quicksand" by Lorc  https://game-icons.net/1x1/lorc/quicksand.html
+buff_immovable.png  "Anchor" by Lorc  https://game-icons.net/1x1/lorc/anchor.html
+
+Enemy intent icons (intent_<id>.png), same license (CC BY 3.0), white glyph on a drawn badge, 128x128:
+intent_attack.png  "Crossed swords" by Lorc  https://game-icons.net/1x1/lorc/crossed-swords.html
+intent_multihit.png  "Triple scratches" by Lorc  https://game-icons.net/1x1/lorc/triple-scratches.html
+intent_block.png  "Shield" by Sbed  https://game-icons.net/1x1/sbed/shield.html
+intent_buff.png  "Upgrade" by Delapouite  https://game-icons.net/1x1/delapouite/upgrade.html
+intent_debuff.png  "Despair" by Lorc  https://game-icons.net/1x1/lorc/despair.html
+intent_move.png  "Footsteps" by Skoll  https://game-icons.net/1x1/skoll/footsteps.html
+intent_pull.png  "Fishing hook" by Lorc  https://game-icons.net/1x1/lorc/fishing-hook.html
+intent_knockback.png  "Push" by Delapouite  https://game-icons.net/1x1/delapouite/push.html
+intent_summon.png  "Minions" by Lorc  https://game-icons.net/1x1/lorc/minions.html
+intent_coil.png  "Snake" by Lorc  https://game-icons.net/1x1/lorc/snake.html
+intent_curse.png  "Card burn" by Delapouite  https://game-icons.net/1x1/delapouite/card-burn.html
+intent_hazard.png  "Hazard sign" by Lorc  https://game-icons.net/1x1/lorc/hazard-sign.html
+intent_heal.png  "Healing" by Delapouite  https://game-icons.net/1x1/delapouite/healing.html
+
+Video decoding: PL_MPEG by Dominic Szablewski (MIT License)  https://github.com/phoboslab/pl_mpeg

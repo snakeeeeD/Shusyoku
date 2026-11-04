@@ -4,6 +4,8 @@
 #include "DamageFeedback.h"
 #include "CardType.h"
 
+struct CardData;
+
 class Player : public GameObject
 {
 public:
@@ -39,6 +41,7 @@ public:
     void AddEnergy(int amount) { m_energy += amount; }
 
     void RestoreEnergy();          // ターン開始時に回復
+    int  CostOf(const CardData& d) const;   // 実際のコスト（沼の上は移動カード+N）
     bool UseEnergy(int cost);      // エネルギー消費（足りなければfalse）
 
     void ResetBlock() { if (!m_buffManager.HasBuff(BuffType::Barricade)) m_block = 0; }

@@ -5,6 +5,7 @@
 #include "input.h"
 #include "Settings.h"
 #include "RenderConfig.h"
+#include "ClipRecorder.h"
 #ifdef _DEBUG
 #include "External/imgui/imgui.h"
 #include "External/imgui/backends/imgui_impl_win32.h"
@@ -289,6 +290,9 @@ void Render()
     {
         g_game->Draw();
     }
+#ifdef _DEBUG
+    ClipRecorder::Frame(g_pd3dDevice, g_pImmediateContext, g_pSwapChain, g_hWnd);   // F9 で録画（用語集の動画の素材）
+#endif
 
 #ifdef _DEBUG
     ImGui_ImplDX11_NewFrame();

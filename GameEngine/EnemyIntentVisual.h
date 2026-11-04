@@ -226,7 +226,6 @@ public:
             case EffectKind::PullPlayer:      push(L"引き寄せ", L"プレイヤーを敵の方へ引き寄せる"); break;
             case EffectKind::KnockbackPlayer: push(L"ノックバック", L"プレイヤーを突き飛ばす"); break;
             case EffectKind::Summon:          push(L"召喚", L"新たな敵を呼び出す"); break;
-            case EffectKind::Hazard:          push(L"地形", L"マスに危険地形を設置する。踏むとやけど"); break;
             case EffectKind::Coil:            push(L"とぐろ", L"体が伸び、通り道のプレイヤーを押し出す"); break;
             case EffectKind::AddCard:         push(L"お邪魔", L"デッキ・手札・捨て札にお邪魔カードを加えてくる"); break;
             default: break;
@@ -243,6 +242,14 @@ public:
             if (e.kind == EffectKind::Damage) return true;
             if (e.kind == EffectKind::Debuff && e.applyTo == ApplyTo::Player) return true;
         }
+        return false;
+    }
+
+    // 範囲を見せる行動か（害はないが、生成位置は見せる）
+    static bool ShowsRange(const EnemyAction& a)
+    {
+        if (IsHarmful(a)) return true;
+        for (auto& e : a.effects) if (e.kind == EffectKind::Summon) return true;
         return false;
     }
 
@@ -264,19 +271,19 @@ public:
     {
         switch (e.kind)
         {
-        case EffectKind::Damage:            return (e.hits > 1) ? "icon_multihit" : "icon_attack";
-        case EffectKind::Block:             return "icon_block";
-        case EffectKind::Buff:              return "icon_buff";
-        case EffectKind::Debuff:            return "icon_debuff";
+        case EffectKind::Damage:            return (e.hits > 1) ? "intent_multihit" : "intent_attack";
+        case EffectKind::Block:             return "intent_block";
+        case EffectKind::Buff:              return "intent_buff";
+        case EffectKind::Debuff:            return "intent_debuff";
         case EffectKind::MoveToward:
-        case EffectKind::MoveAway:          return "icon_move";
-        case EffectKind::PullPlayer:        return "icon_attack";
-        case EffectKind::KnockbackPlayer :  return "icon_attack";
-        case EffectKind::Summon:            return "icon_summon";
-        case EffectKind::Coil:              return "icon_coil";
-        case EffectKind::AddCard:           return "icon_curse";
-        case EffectKind::Hazard:            return "icon_hazard";
-        case EffectKind::Heal:              return "icon_buff";
+        case EffectKind::MoveAway:          return "intent_move";
+        case EffectKind::PullPlayer:        return "intent_pull";
+        case EffectKind::KnockbackPlayer:   return "intent_knockback";
+        case EffectKind::Summon:            return "intent_summon";
+        case EffectKind::Coil:              return "intent_coil";
+        case EffectKind::AddCard:           return "intent_curse";
+        case EffectKind::Hazard:            return "intent_hazard";
+        case EffectKind::Heal:              return "intent_heal";
         default:                            return "";
         }
     }

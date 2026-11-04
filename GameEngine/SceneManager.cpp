@@ -20,6 +20,12 @@
 #include "Settings.h"
 #include "QuickPlay.h"
 #include "QuickSelectScene.h"
+#include "Glossary.h"
+#include "CardConfirm.h"
+#define PL_MPEG_IMPLEMENTATION
+#include "VideoClip.h"
+extern ID3D11Device* g_pd3dDevice;
+extern ID3D11DeviceContext* g_pImmediateContext;
 
 #include <cmath>
 
@@ -105,6 +111,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 	EncounterDataBase::Init();
 	CardDataBase::Init();
 	TerrainDataBase::Load("Assets/Data/terrains.json");
+	Glossary::All();   // 用語集を読む（カードの説明の色付けにも使う）
 	EffectDataBase::Load("Assets/Data/effects.json");
 	MaterialDataBase::Load("Assets/Data/materials.json");
 	RelicManager::Load("Assets/Data/relics.json");
@@ -357,6 +364,19 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 			TextureManager::Load("icon_summon", L"Assets/UI/icon_summon.png");
 			TextureManager::Load("icon_coil", L"Assets/UI/icon_coil.png");
 			TextureManager::Load("icon_hazard", L"Assets/UI/icon_hazard.png");
+TextureManager::Load("intent_attack", L"Assets/UI/intent_attack.png");
+TextureManager::Load("intent_multihit", L"Assets/UI/intent_multihit.png");
+TextureManager::Load("intent_block", L"Assets/UI/intent_block.png");
+TextureManager::Load("intent_buff", L"Assets/UI/intent_buff.png");
+TextureManager::Load("intent_debuff", L"Assets/UI/intent_debuff.png");
+TextureManager::Load("intent_move", L"Assets/UI/intent_move.png");
+TextureManager::Load("intent_pull", L"Assets/UI/intent_pull.png");
+TextureManager::Load("intent_knockback", L"Assets/UI/intent_knockback.png");
+TextureManager::Load("intent_summon", L"Assets/UI/intent_summon.png");
+TextureManager::Load("intent_coil", L"Assets/UI/intent_coil.png");
+TextureManager::Load("intent_curse", L"Assets/UI/intent_curse.png");
+TextureManager::Load("intent_hazard", L"Assets/UI/intent_hazard.png");
+TextureManager::Load("intent_heal", L"Assets/UI/intent_heal.png");
 			TextureManager::Load("buff_attackup", L"Assets/UI/buff_attackup.png");
 			TextureManager::Load("buff_defenseup", L"Assets/UI/buff_defenseup.png");
 			TextureManager::Load("buff_weak", L"Assets/UI/buff_weak.png");
@@ -385,6 +405,9 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 			TextureManager::Load("buff_vulnerable", L"Assets/UI/buff_vulnerable.png");
 			TextureManager::Load("buff_root", L"Assets/UI/buff_root.png");
 			TextureManager::Load("buff_slow", L"Assets/UI/buff_slow.png");
+TextureManager::Load("buff_drawperturn", L"Assets/UI/buff_drawperturn.png");
+TextureManager::Load("buff_invincible", L"Assets/UI/buff_invincible.png");
+TextureManager::Load("buff_mire", L"Assets/UI/buff_mire.png");
 			TextureManager::Load("buff_burn", L"Assets/UI/buff_burn.png");
 			TextureManager::Load("buff_poison", L"Assets/UI/buff_poison.png");
 			TextureManager::Load("buff_attackupturn", L"Assets/UI/buff_attackupturn.png");
@@ -402,6 +425,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 			TextureManager::Load("buff_deepstand", L"Assets/UI/buff_deepstand.png");
 			TextureManager::Load("buff_embertrail", L"Assets/UI/buff_embertrail.png");
 			TextureManager::Load("buff_headweak", L"Assets/UI/buff_headweak.png");
+			TextureManager::Load("buff_immovable", L"Assets/UI/buff_immovable.png");
 		}
 	}
 
@@ -429,6 +453,7 @@ void SceneManager::ChangeScene(SceneType type)
 
 void SceneManager::ChangeScene(SceneType type, std::function<void()> onBlack)
 {
+	CardTooltip::ClearHeld();
 	if (m_fadeState == Fade::Out) return;
 	m_pendingScene = type;
 	m_onBlack = std::move(onBlack);
@@ -639,7 +664,7 @@ void SceneManager::Draw()
 {
 	if (auto field = dynamic_cast<FieldScene*>(m_currentScene))
 	{
-		bool overlay = m_settingsOpen || m_craftOpen || m_restOpen || m_mapOpen
+		bool overlay = m_settingsOpen || m_glossaryOpen || m_craftOpen || m_restOpen || m_mapOpen
 			|| m_invOpen || m_deckOpen || m_tutorialOpen || BossRelicPickOpen();
 		field->SetHoverEnabled(!overlay);
 	}
@@ -662,11 +687,17 @@ void SceneManager::Draw()
 	if (BossRelicPickOpen() && !fading) DrawBossRelicPick();
 	if (!TutorialActive() && !fading) DrawHint();
 	if (m_settingsOpen) DrawSettings();
+	if (m_glossaryOpen) DrawGlossary();
 
 	if (m_tutorialOpen) DrawTutorial();
 
 	// ドロップ説明ウィンドウは暗幕の上に出す（勝利画面のホバー）
 	if (auto b = dynamic_cast<BattleScene*>(m_currentScene)) b->DrawDropTooltipTop();
+
+	if (!TooltipBlocked()) CardTooltip::EndFrame(m_uiSprite, m_textRenderer, TextureManager::Get("white"));   // 説明を残す
+	else CardTooltip::ClearHeld();
+	CardConfirm::Draw(m_uiSprite, m_textRenderer, TextureManager::Get("white"), m_uiInput.GetMousePos(),
+		m_screenWidth, m_screenHeight);   // 強化・削除の確認（一番手前）
 
 	if (m_fadeAlpha > 0.0f)
 	{
@@ -811,7 +842,7 @@ void SceneManager::DrawOverlay()
 	// デッキのキーワード解説（パス外で描く）
 	if (m_deckOpen && m_deckPreviewIdx < 0)
 	{
-		int hk = GetDeckCardAt(m_uiInput.GetMousePos());
+		int hk = DeckHoverIndex();
 		auto vis = VisibleDeckIndices();
 		for (int slot = 0; hk >= 0 && slot < (int)vis.size(); slot++)
 			if (vis[slot] == hk)
@@ -828,13 +859,21 @@ void SceneManager::DrawOverlay()
 
 static bool CanUpgrade(const std::string& id);   // 前方宣言（定義は下にある）
 
+// デッキ確認のホバー中のカード。説明のウィンドウの上にいる間は、隣のカードに切り替えない
+int SceneManager::DeckHoverIndex()
+{
+	if (CardTooltip::MouseInPanel()) return m_deckTipIdx;
+	m_deckTipIdx = GetDeckCardAt(m_uiInput.GetMousePos());
+	return m_deckTipIdx;
+}
+
 void SceneManager::DrawDeckCards(bool textPass)
 {
 	auto& deck = PlayerDataManager::GetData().deck;
 	ID3D11ShaderResourceView* white = TextureManager::Get("white");
 	auto vis = VisibleDeckIndices();
 
-	int hovIdx = (m_deckPreviewIdx >= 0) ? -1 : GetDeckCardAt(m_uiInput.GetMousePos()); // ホバー中のデッキindex
+	int hovIdx = (m_deckPreviewIdx >= 0) ? -1 : DeckHoverIndex(); // ホバー中のデッキindex
 
 	if (!textPass && hovIdx != m_deckHoveredPrev)           // SEは1回だけ（spriteパス）
 	{
@@ -972,6 +1011,7 @@ void SceneManager::DrawImGui()
 				PlayerDataManager::GetData().gold = gold;
 				PlayerDataManager::Save();
 			}
+			ImGui::Checkbox(u8"録画用：説明とターン表示を隠す", &CardTooltip::s_debugHide);   // カード・敵・マスの説明
 
 			auto& pd = PlayerDataManager::GetData();
 			float mv = pd.masterVolume, bv = pd.bgmVolume;
@@ -1025,6 +1065,19 @@ void SceneManager::DrawImGui()
 void SceneManager::HandleInput()
 {
 	m_uiInput.Update();
+	if (CardConfirm::Active())   // 強化・削除の確認（一番手前。他の操作は止める）
+	{
+		CardConfirm::HandleInput(m_uiInput.GetMousePos(), m_uiInput.GetMouseButtonTrigger(0), m_screenWidth, m_screenHeight);
+		m_swallowSceneClick = true;
+		return;
+	}
+	{
+		// カードの説明の上のクリックは説明が使う（シーンには渡さない）
+		POINT tm = m_uiInput.GetMousePos();
+		bool tclick = m_uiInput.GetMouseButtonTrigger(0);
+		CardTooltip::SetMouse((float)tm.x, (float)tm.y, tclick);
+		if (tclick && CardTooltip::MouseInPanel() && !TooltipBlocked()) { m_swallowSceneClick = true; return; }
+	}
 	if (AnyModalOpen()) m_swallowSceneClick = true;   // 開いている間に押されたクリックは、閉じた後もシーンに渡さない
 	if (m_fadeState != Fade::None) return;   // フェード中は入力無効
 
@@ -1110,6 +1163,11 @@ void SceneManager::HandleInput()
 		}
 		return;
 	}
+
+	// 用語集（キーワードのクリックなど、どこからでも開ける）
+	std::string glossId;
+	if (Glossary::TakeRequest(glossId)) OpenGlossary(glossId);
+	if (m_glossaryOpen) { HandleGlossaryInput(); return; }
 
 	// 設定パネル（帯のある画面でもタイトルでも、開いている間は他を止める）
 	if (m_settingsOpen) { HandleSettingsInput(); return; }
@@ -1209,7 +1267,20 @@ void SceneManager::HandleInput()
 						m_deckPreviewIdx = -1; return;   // ボタン外で閉じる
 					}
 					int idx = GetDeckCardAt(m);
-					if (idx >= 0) { m_deckPreviewIdx = idx; Audio::PlaySE("Assets/Sound/se/click.mp3"); return; }   // クリックで拡大
+					if (idx >= 0)
+					{
+						Audio::PlaySE("Assets/Sound/se/click.mp3");
+						std::string baseId = PlayerDataManager::GetData().deck[idx];
+						if (!CanUpgrade(baseId)) { m_deckPreviewIdx = idx; return; }   // 強化できないカードは今まで通り拡大
+						CardConfirm::Open(ConfirmKind::Upgrade, baseId, [this, idx, baseId]() {   // 強化前と強化後を見せて確認
+							auto& deck = PlayerDataManager::GetData().deck;
+							if (idx >= (int)deck.size() || deck[idx] != baseId) return;
+							PlayerDataManager::UpgradeCard(idx);
+							const std::string& after = PlayerDataManager::GetData().deck[idx];
+							if (after != baseId) { m_craftFxCard = after; m_craftFxTimer = CRAFT_FX_DURATION; Se::Play(Se::Upgrade); }
+							});
+						return;
+					}
 					/*if (m_restActive) { m_deckOpen = false; m_deckUpgradeMode = false; m_restOpen = true; return; }
 					m_deckUpgradeMode = false; return;*/
 					return;
@@ -1270,12 +1341,17 @@ void SceneManager::HandleInput()
 						Audio::PlaySE("Assets/Sound/se/click.mp3");
 						auto& deck = PlayerDataManager::GetData().deck;
 						std::string cur = deck[idx];
-						if (m_eventPickType == "removeCard") m_eventPickAnimTo = "";
-						else if (m_eventPickType == "transformCard") m_eventPickAnimTo = CardDataBase::RandomCard();
-						else if (m_eventPickType == "upgradeCard") m_eventPickAnimTo = CanUpgrade(cur) ? (cur + "+") : cur;
-						m_eventPickAnimIdx = idx;
-						m_eventPickAnimTimer = EVENT_PICK_ANIM_DUR;
-						if (m_eventPickType == "upgradeCard" && m_eventPickAnimTo != cur) Se::Play(Se::Upgrade);   // イベントでの強化
+						auto start = [this, idx, cur]() {
+							if (m_eventPickType == "removeCard") m_eventPickAnimTo = "";
+							else if (m_eventPickType == "transformCard") m_eventPickAnimTo = CardDataBase::RandomCard();
+							else if (m_eventPickType == "upgradeCard") m_eventPickAnimTo = CanUpgrade(cur) ? (cur + "+") : cur;
+							m_eventPickAnimIdx = idx;
+							m_eventPickAnimTimer = EVENT_PICK_ANIM_DUR;
+							if (m_eventPickType == "upgradeCard" && m_eventPickAnimTo != cur) Se::Play(Se::Upgrade);   // イベントでの強化
+							};
+						if (m_eventPickType == "removeCard") CardConfirm::Open(ConfirmKind::Remove, cur, start);   // 確認してから
+						else if (m_eventPickType == "upgradeCard" && CanUpgrade(cur)) CardConfirm::Open(ConfirmKind::Upgrade, cur, start);
+						else start();
 					}
 				}
 			}
@@ -1416,13 +1492,14 @@ void SceneManager::DrawTutorial()
 	}
 
 	// テキストボックス（対象が上なら下側、下なら上側に置く）
-	float bw = 560.0f, bh = 150.0f, bx = sw / 2.0f - bw / 2.0f;
+	float bw = 560.0f, tw = bw - 50.0f, bx = sw / 2.0f - bw / 2.0f;
+	float bh = max(150.0f, 25.0f + m_textRenderer->Measure(pg.text.c_str(), 22.0f, FontRole::Body, tw).height + 50.0f);   // 本文＋「クリックで次へ」
 	float by = (pg.hy + pg.hh * 0.5f < sh * 0.5f) ? sh - bh - 60.0f : 80.0f;
 	UiWindow::Draw(m_uiSprite, white, bx - 6, by - 6, bw + 12, bh + 12);
 	m_uiSprite->End();
 
 	m_textRenderer->Begin();
-	m_textRenderer->DrawText(pg.text.c_str(), bx + 25.0f, by + 25.0f, 22.0f, D2D1::ColorF(1, 1, 1));
+	m_textRenderer->DrawTextBox(pg.text.c_str(), bx + 25.0f, by + 25.0f, tw, 22.0f, D2D1::ColorF(1, 1, 1));
 	wchar_t pgn[32]; swprintf_s(pgn, L"%d / %d", m_tutorialPage + 1, (int)m_tutorialPages.size());
 	m_textRenderer->DrawText(pgn, bx + bw - 80.0f, by + 10.0f, 16.0f, D2D1::ColorF(0.7f, 0.7f, 0.7f));
 	bool last = (m_tutorialPage == (int)m_tutorialPages.size() - 1);
@@ -1456,9 +1533,8 @@ void SceneManager::DrawHint()
 	float a = Hint::Alpha();
 	ID3D11ShaderResourceView* white = TextureManager::Get("white");
 
-	int lines = 1;
-	for (const wchar_t* p = h->text; *p; p++) if (*p == L'\n') lines++;
-	float w = 470.0f, bh = 26.0f + lines * 24.0f;
+	float w = 520.0f, tw = w - 34.0f;   // 文の幅（左の金帯と余白を除く）。長い文はこの幅で折り返す
+	float bh = 26.0f + m_textRenderer->Measure(h->text, 18.0f, FontRole::Body, tw).height;
 	float x = (m_screenWidth - w) / 2.0f, y = 110.0f;
 
 	m_uiSprite->Begin();
@@ -1470,7 +1546,7 @@ void SceneManager::DrawHint()
 	m_uiSprite->End();
 
 	m_textRenderer->Begin();
-	m_textRenderer->DrawText(h->text, x + 22.0f, y + 13.0f, 18.0f, D2D1::ColorF(1, 1, 1, a));
+	m_textRenderer->DrawTextBox(h->text, x + 22.0f, y + 13.0f, tw, 18.0f, D2D1::ColorF(1, 1, 1, a));
 	m_textRenderer->End();
 }
 
@@ -1524,10 +1600,242 @@ void SceneManager::HandleSettingsInput()
 		}
 		else if (su.shake.has(m)) { s.screenShake = !s.screenShake; Settings::Save(); Audio::PlaySE("Assets/Sound/se/click.mp3"); }
 		else if (su.aimCam.has(m)) { s.aimCamera = !s.aimCamera; Settings::Save(); Audio::PlaySE("Assets/Sound/se/click.mp3"); }
+		else if (su.glossary.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); OpenGlossary(""); }
 		else if (su.hasTitle && su.title.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); m_confirmAction = 2; }
 		else if (su.gameEnd.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); m_confirmAction = 1; }
 		else if (su.close.has(m) || !su.panel.has(m)) { m_settingsOpen = false; m_dragSlider = -1; Settings::Save(); Audio::PlaySE("Assets/Sound/se/click.mp3"); }
 	}
+}
+
+// ---- 用語集 ----
+struct GlossUI { URect panel, close, cat0, list, detail; float catStep, rowH; int rows; };
+static GlossUI GlossLayout(int sw, int sh)
+{
+	GlossUI g;
+	float pw = 960.0f, ph = 650.0f, px = (sw - pw) / 2.0f, py = (sh - ph) / 2.0f;
+	g.panel = { px, py, pw, ph };
+	g.cat0 = { px + 20.0f, py + 64.0f, 150.0f, 38.0f }; g.catStep = 44.0f;
+	g.list = { px + 186.0f, py + 64.0f, 262.0f, 510.0f }; g.rowH = 35.0f; g.rows = (int)(g.list.h / g.rowH);
+	g.detail = { px + 464.0f, py + 64.0f, 476.0f, 510.0f };
+	g.close = { px + pw / 2.0f - 70.0f, py + ph - 52.0f, 140.0f, 38.0f };
+	return g;
+}
+
+// 動画の枠（説明欄の名前の下）
+static URect GlossVideoRect(const URect& d) { return { d.x + 14.0f, d.y + 54.0f, 448.0f, 252.0f }; }
+
+// 説明文の上端（動画・アイコンの有無で変わる。描画・クリック・関連ボタンで共有）
+static float GlossDescTop(const GlossaryEntry& e, const URect& d)
+{
+	if (!e.clip.empty()) return GlossVideoRect(d).y + GlossVideoRect(d).h + 12.0f;
+	return d.y + (e.icon.empty() ? 52.0f : 96.0f);
+}
+
+// 今のカテゴリの用語（Glossary::All() の添字）
+std::vector<int> SceneManager::GlossaryItems() const
+{
+	std::vector<int> v;
+	auto& cats = Glossary::Categories();
+	auto& all = Glossary::All();
+	if (m_glossCat < 0 || m_glossCat >= (int)cats.size()) return v;
+	for (int i = 0; i < (int)all.size(); i++)
+		if (all[i].category == cats[m_glossCat] && !Glossary::Locked(all[i])) v.push_back(i);   // まだ出会っていない敵の用語は隠す
+	return v;
+}
+
+// 関連する用語のボタン（説明文の下に並べる）。描画とクリック判定で共有
+std::vector<std::pair<URect, std::string>> SceneManager::GlossaryRelated(const GlossaryEntry& e, const URect& d)
+{
+	std::vector<std::pair<URect, std::string>> out;
+	float top = GlossDescTop(e, d);
+	float y = top + m_textRenderer->Measure(e.desc.c_str(), 17.0f, FontRole::Body, d.w - 24.0f).height + 40.0f;
+	float x = d.x + 12.0f;
+	for (auto& id : e.related)
+	{
+		const GlossaryEntry* r = Glossary::Get(id);
+		if (!r || Glossary::Locked(*r)) continue;
+		float w = m_textRenderer->Measure(r->name.c_str(), 16.0f, FontRole::Body).width + 28.0f;
+		if (x + w > d.x + d.w - 12.0f) { x = d.x + 12.0f; y += 40.0f; }
+		out.push_back({ { x, y, w, 32.0f }, id });
+		x += w + 8.0f;
+	}
+	return out;
+}
+
+// id のページを開く（空なら先頭）
+void SceneManager::OpenGlossary(const std::string& id)
+{
+	m_glossaryOpen = true;
+	m_glossCat = 0; m_glossSel = 0; m_glossScroll = 0;
+	const GlossaryEntry* e = id.empty() ? nullptr : Glossary::Get(id);
+	if (!e || Glossary::Locked(*e)) return;
+	auto& cats = Glossary::Categories();
+	for (int c = 0; c < (int)cats.size(); c++) if (cats[c] == e->category) m_glossCat = c;
+	auto items = GlossaryItems();
+	for (int i = 0; i < (int)items.size(); i++) if (Glossary::All()[items[i]].id == id) m_glossSel = i;
+	GlossUI g = GlossLayout(m_screenWidth, m_screenHeight);
+	if (m_glossSel >= g.rows) m_glossScroll = m_glossSel - g.rows + 1;
+}
+
+void SceneManager::HandleGlossaryInput()
+{
+	POINT m = m_uiInput.GetMousePos();
+	bool click = m_uiInput.GetMouseButtonTrigger(0);
+	GlossUI g = GlossLayout(m_screenWidth, m_screenHeight);
+	auto items = GlossaryItems();
+	int maxScroll = (int)items.size() - g.rows; if (maxScroll < 0) maxScroll = 0;
+
+	int wheel = m_uiInput.GetMouseWheelDelta();
+	if (wheel != 0 && g.list.has(m))
+	{
+		m_glossScroll += (wheel > 0) ? -1 : 1;
+		if (m_glossScroll < 0) m_glossScroll = 0;
+		if (m_glossScroll > maxScroll) m_glossScroll = maxScroll;
+	}
+	if (m_uiInput.GetKeyTrigger(VK_ESCAPE)) { m_glossaryOpen = false; return; }
+	if (!click) return;
+
+	if (g.close.has(m) || !g.panel.has(m))
+	{
+		Audio::PlaySE("Assets/Sound/se/click.mp3");
+		m_glossaryOpen = false;
+		if (m_glossVideo) m_glossVideo->Close();
+		return;
+	}
+	auto& cats = Glossary::Categories();
+	for (int c = 0; c < (int)cats.size(); c++)
+	{
+		URect r = { g.cat0.x, g.cat0.y + c * g.catStep, g.cat0.w, g.cat0.h };
+		if (r.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); m_glossCat = c; m_glossSel = 0; m_glossScroll = 0; return; }
+	}
+	for (int row = 0; row < g.rows; row++)
+	{
+		int i = m_glossScroll + row;
+		if (i >= (int)items.size()) break;
+		URect r = { g.list.x, g.list.y + row * g.rowH, g.list.w, g.rowH - 3.0f };
+		if (r.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); m_glossSel = i; return; }
+	}
+	if (m_glossSel >= 0 && m_glossSel < (int)items.size())
+	{
+		const GlossaryEntry& e = Glossary::All()[items[m_glossSel]];
+		for (auto& [r, id] : GlossaryRelated(e, g.detail))
+			if (r.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); OpenGlossary(id); return; }
+		auto hits = Glossary::FindTerms(e.desc, e.name);             // 説明文の中の用語
+		float top = GlossDescTop(e, g.detail);
+		int h = m_textRenderer->HitTestSpans(e.desc.c_str(), g.detail.x + 12.0f, top, g.detail.w - 24.0f, 17.0f,
+			GlossaryLink::Spans(hits), (float)m.x, (float)m.y);
+		if (h >= 0) { Audio::PlaySE("Assets/Sound/se/click.mp3"); OpenGlossary(hits[h].id); return; }
+	}
+}
+
+void SceneManager::DrawGlossary()
+{
+	ID3D11ShaderResourceView* white = TextureManager::Get("white");
+	GlossUI g = GlossLayout(m_screenWidth, m_screenHeight);
+	POINT mp = m_uiInput.GetMousePos();
+	auto& cats = Glossary::Categories();
+	auto& all = Glossary::All();
+	auto items = GlossaryItems();
+	if (m_glossSel >= (int)items.size()) m_glossSel = 0;
+	const GlossaryEntry* sel = items.empty() ? nullptr : &all[items[m_glossSel]];
+	std::vector<std::pair<URect, std::string>> related;
+	if (sel) related = GlossaryRelated(*sel, g.detail);
+
+	m_uiSprite->Begin();
+	m_uiSprite->DrawSprite(white, 0, 0, (float)m_screenWidth, (float)m_screenHeight, 0.0f, XMFLOAT4(0, 0, 0, 0.6f)); // 暗幕
+	UiWindow::Draw(m_uiSprite, white, g.panel.x, g.panel.y, g.panel.w, g.panel.h);
+	for (int c = 0; c < (int)cats.size(); c++)
+	{
+		URect r = { g.cat0.x, g.cat0.y + c * g.catStep, g.cat0.w, g.cat0.h };
+		XMFLOAT4 col = (c == m_glossCat) ? XMFLOAT4(0.55f, 0.45f, 0.25f, 1)
+			: r.has(mp) ? XMFLOAT4(0.32f, 0.36f, 0.5f, 1) : XMFLOAT4(0.22f, 0.24f, 0.34f, 1);
+		UiWindow::Button(m_uiSprite, white, r.x, r.y, r.w, r.h, col);
+	}
+	UiWindow::Draw(m_uiSprite, white, g.list.x - 6.0f, g.list.y - 6.0f, g.list.w + 12.0f, g.list.h + 12.0f);
+	for (int row = 0; row < g.rows; row++)
+	{
+		int i = m_glossScroll + row;
+		if (i >= (int)items.size()) break;
+		URect r = { g.list.x, g.list.y + row * g.rowH, g.list.w, g.rowH - 3.0f };
+		if (i == m_glossSel)   m_uiSprite->DrawSprite(white, r.x, r.y, r.w, r.h, 0.0f, XMFLOAT4(0.55f, 0.45f, 0.25f, 0.55f));
+		else if (r.has(mp))    m_uiSprite->DrawSprite(white, r.x, r.y, r.w, r.h, 0.0f, XMFLOAT4(0.4f, 0.45f, 0.6f, 0.35f));
+	}
+	UiWindow::Draw(m_uiSprite, white, g.detail.x, g.detail.y, g.detail.w, g.detail.h);
+	if (sel && sel->clip.empty() && !sel->icon.empty())
+		if (auto tex = TextureManager::Get(sel->icon))
+			m_uiSprite->DrawSprite(tex, g.detail.x + 14.0f, g.detail.y + 14.0f, 64.0f, 64.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
+
+	// 動画：選んでいる用語の分だけ開いてループ再生
+	std::string clipPath = sel ? sel->clip : "";
+	if (!m_glossVideo) m_glossVideo = std::make_unique<VideoClip>();
+	if (m_glossVideo->Path() != clipPath)
+	{
+		m_glossVideo->Close();
+		if (!clipPath.empty()) m_glossVideo->Open(g_pd3dDevice, clipPath);
+		m_glossVideoTick = GetTickCount64();
+	}
+	if (!clipPath.empty())
+	{
+		ULONGLONG now = GetTickCount64();
+		m_glossVideo->Update(g_pImmediateContext, (now - m_glossVideoTick) / 1000.0);
+		m_glossVideoTick = now;
+		URect v = GlossVideoRect(g.detail);
+		m_uiSprite->DrawSprite(white, v.x - 2.0f, v.y - 2.0f, v.w + 4.0f, v.h + 4.0f, 0.0f, XMFLOAT4(0.8f, 0.66f, 0.32f, 1));   // 金の縁
+		if (auto srv = m_glossVideo->SRV())
+			m_uiSprite->DrawSprite(srv, v.x, v.y, v.w, v.h, 0.0f, XMFLOAT4(1, 1, 1, 1));
+		else
+			m_uiSprite->DrawSprite(white, v.x, v.y, v.w, v.h, 0.0f, XMFLOAT4(0.05f, 0.05f, 0.08f, 1));
+	}
+	for (auto& [r, id] : related)
+		UiWindow::Button(m_uiSprite, white, r.x, r.y, r.w, r.h,
+			r.has(mp) ? XMFLOAT4(0.35f, 0.5f, 0.7f, 1) : XMFLOAT4(0.25f, 0.28f, 0.4f, 1));
+	UiWindow::Button(m_uiSprite, white, g.close.x, g.close.y, g.close.w, g.close.h,
+		g.close.has(mp) ? XMFLOAT4(0.5f, 0.35f, 0.35f, 1) : XMFLOAT4(0.35f, 0.25f, 0.25f, 1));
+	m_uiSprite->End();
+
+	m_textRenderer->Begin();
+	const D2D1_COLOR_F W = D2D1::ColorF(1, 1, 1), GOLD = D2D1::ColorF(1.0f, 0.85f, 0.4f);
+	m_textRenderer->DrawTextCentered(L"用語集", g.panel.x + g.panel.w / 2.0f, g.panel.y + 12.0f, g.panel.w, 26.0f,
+		D2D1::ColorF(1, 0.9f, 0.6f), 40.0f);
+	for (int c = 0; c < (int)cats.size(); c++)
+		m_textRenderer->DrawTextCentered(cats[c].c_str(), g.cat0.x + g.cat0.w / 2.0f, g.cat0.y + c * g.catStep,
+			g.cat0.w, 18.0f, W, g.cat0.h);
+	for (int row = 0; row < g.rows; row++)
+	{
+		int i = m_glossScroll + row;
+		if (i >= (int)items.size()) break;
+		float y = g.list.y + row * g.rowH;
+		m_textRenderer->DrawText(all[items[i]].name.c_str(), g.list.x + 12.0f, y + 5.0f, 17.0f, i == m_glossSel ? GOLD : W);
+	}
+	if ((int)items.size() > g.rows)   // まだ下（上）にある時の目印
+	{
+		if (m_glossScroll > 0)
+			m_textRenderer->DrawText(L"▲", g.list.x + g.list.w - 22.0f, g.list.y - 2.0f, 14.0f, GOLD);
+		if (m_glossScroll + g.rows < (int)items.size())
+			m_textRenderer->DrawText(L"▼", g.list.x + g.list.w - 22.0f, g.list.y + g.list.h - 18.0f, 14.0f, GOLD);
+	}
+	if (sel)
+	{
+		float tx = g.detail.x + ((sel->icon.empty() || !sel->clip.empty()) ? 14.0f : 90.0f);
+		{
+			TextRenderer::RoleScope heading(*m_textRenderer, FontRole::Heading);
+			m_textRenderer->DrawText(sel->name.c_str(), tx, g.detail.y + 18.0f, 26.0f, GOLD);
+		}
+		float top = GlossDescTop(*sel, g.detail);
+		auto hits = Glossary::FindTerms(sel->desc, sel->name);       // 用語は色付き、マウスが乗ると明るく
+		int hov = m_textRenderer->HitTestSpans(sel->desc.c_str(), g.detail.x + 12.0f, top, g.detail.w - 24.0f, 17.0f,
+			GlossaryLink::Spans(hits), (float)mp.x, (float)mp.y);
+		m_textRenderer->DrawTextSpans(sel->desc.c_str(), g.detail.x + 12.0f, top, g.detail.w - 24.0f, 17.0f, W,
+			GlossaryLink::Spans(hits, hov));
+		if (!related.empty())
+			m_textRenderer->DrawText(L"関連", related[0].first.x, related[0].first.y - 22.0f, 14.0f,
+				D2D1::ColorF(0.7f, 0.75f, 0.85f));
+		for (auto& [r, id] : related)
+			if (const GlossaryEntry* re = Glossary::Get(id))
+				m_textRenderer->DrawTextCentered(re->name.c_str(), r.x + r.w / 2.0f, r.y, r.w, 16.0f, W, r.h);
+	}
+	m_textRenderer->DrawTextCentered(L"閉じる", g.close.x + g.close.w / 2.0f, g.close.y, g.close.w, 20.0f, W, g.close.h);
+	m_textRenderer->End();
 }
 
 void SceneManager::DrawSettings()
@@ -1536,7 +1844,7 @@ void SceneManager::DrawSettings()
 	SettingsUI u = SettingsLayout();
 	// 描く位置はホバーで少し持ち上げる（判定と色は元の u のまま）
 	SettingsUI d = u;
-	for (URect* r : { &d.disp, &d.shake, &d.aimCam, &d.title, &d.gameEnd, &d.close, &d.cfmYes, &d.cfmNo })
+	for (URect* r : { &d.disp, &d.shake, &d.aimCam, &d.glossary, &d.title, &d.gameEnd, &d.close, &d.cfmYes, &d.cfmNo })
 		*r = Lifted(*r);
 	POINT mp = m_uiInput.GetMousePos();
 	auto& s = Settings::Get();
@@ -1560,6 +1868,8 @@ void SceneManager::DrawSettings()
 		s.screenShake ? XMFLOAT4(0.3f, 0.55f, 0.3f, 1) : XMFLOAT4(0.45f, 0.3f, 0.3f, 1));
 	UiWindow::Button(m_uiSprite, white, d.aimCam.x, d.aimCam.y, d.aimCam.w, d.aimCam.h,
 		s.aimCamera ? XMFLOAT4(0.3f, 0.55f, 0.3f, 1) : XMFLOAT4(0.45f, 0.3f, 0.3f, 1));
+	UiWindow::Button(m_uiSprite, white, d.glossary.x, d.glossary.y, d.glossary.w, d.glossary.h,
+		u.glossary.has(mp) ? XMFLOAT4(0.55f, 0.45f, 0.25f, 1) : XMFLOAT4(0.4f, 0.33f, 0.2f, 1));
 	UiWindow::Button(m_uiSprite, white, d.title.x, d.title.y, d.title.w, d.title.h,
 		u.title.has(mp) ? XMFLOAT4(0.35f, 0.5f, 0.7f, 1) : XMFLOAT4(0.25f, 0.28f, 0.4f, 1));
 	UiWindow::Button(m_uiSprite, white, d.gameEnd.x, d.gameEnd.y, d.gameEnd.w, d.gameEnd.h,
@@ -1576,6 +1886,9 @@ void SceneManager::DrawSettings()
 	// 左の項目名は左揃えのまま、その行の縦の中央に
 	auto rowLabel = [&](const wchar_t* t, const URect& row, float size) {
 		float cy = row.y + row.h / 2.0f;
+		float maxW = row.x - (u.panel.x + 40.0f) - 12.0f;            // ボタンの手前まで
+		float w = m_textRenderer->Measure(t, size, FontRole::Body).width;
+		if (w > maxW) size *= maxW / w;                               // 入りきらない時だけ縮める
 		m_textRenderer->DrawText(t, u.panel.x + 40.0f, cy - size * 0.62f, size, D2D1::ColorF(1, 1, 1));
 		};
 	const D2D1_COLOR_F W = D2D1::ColorF(1, 1, 1);
@@ -1590,6 +1903,7 @@ void SceneManager::DrawSettings()
 	inBtn(s.screenShake ? L"ON" : L"OFF", d.shake, 20, W);
 	rowLabel(L"移動のカメラ追従", u.aimCam, 18);
 	inBtn(s.aimCamera ? L"ON" : L"OFF", d.aimCam, 20, W);
+	inBtn(L"用語集", d.glossary, 20, W);
 	inBtn(L"タイトルに戻る", d.title, 20, W);
 	inBtn(L"ゲーム終了", d.gameEnd, 20, D2D1::ColorF(1, 0.9f, 0.9f));
 	inBtn(L"閉じる", d.close, 20, W);
@@ -2035,6 +2349,9 @@ void SceneManager::DrawCraft()
 
 	// --- テキスト ---
 	m_textRenderer->Begin();
+	// 枠の高さの中で、文字の上下を真ん中に（左寄せの文字用）
+	auto midY = [&](const wchar_t* s, float size, float y, float h) {
+		return y + (h - m_textRenderer->Measure(s, size, FontRole::Body).height) / 2.0f; };
 	m_textRenderer->DrawText(L"Craft", m_screenWidth / 2.0f - 30.0f, 70.0f, 28.0f, D2D1::ColorF(1, 1, 1));
 
 	for (int i = 0; i < nSlots; i++)
@@ -2043,12 +2360,12 @@ void SceneManager::DrawCraft()
 		std::wstring t = (i == 0) ? L"Base" : (L"Mod" + std::to_wstring(i));
 		if (i == 0 && !m_craftBase.empty()) t = matName(m_craftBase);
 		if (i > 0 && (int)m_craftMods.size() >= i) t = matName(m_craftMods[i - 1]);
-		m_textRenderer->DrawText(t.c_str(), x + 8.0f, y + 18.0f, 18.0f, D2D1::ColorF(1, 1, 1));
+		m_textRenderer->DrawText(t.c_str(), x + 10.0f, midY(t.c_str(), 18.0f, y, h), 18.0f, D2D1::ColorF(1, 1, 1));
 	}
 	// 見出し
 	float hdrX = m_screenWidth / 2.0f - (6 * 150.0f + 5 * 8.0f) / 2.0f;   // 箱の左端に揃える
-	m_textRenderer->DrawText(L"CORE", hdrX, CoreTop() - 24.0f, 18.0f, D2D1::ColorF(1, 0.85f, 0.5f));
-	m_textRenderer->DrawText(L"MATERIAL", hdrX, MatTop() - 26.0f, 18.0f, D2D1::ColorF(0.6f, 0.9f, 0.9f));
+	m_textRenderer->DrawTextCentered(L"CORE", hdrX - 10.0f + 60.0f, CoreTop() - 30.0f, 120.0f, 18.0f, D2D1::ColorF(1, 0.85f, 0.5f), 28.0f);
+	m_textRenderer->DrawTextCentered(L"MATERIAL", hdrX - 10.0f + 75.0f, MatTop() - 32.0f, 150.0f, 18.0f, D2D1::ColorF(0.6f, 0.9f, 0.9f), 28.0f);
 
 	auto bases = CraftBases();
 	for (int i = 0; i < (int)bases.size(); i++)
@@ -2056,22 +2373,23 @@ void SceneManager::DrawCraft()
 		float x, y, w, h; GetCraftBaseRect(i, x, y, w, h);
 		wchar_t buf[64];
 		swprintf_s(buf, L"%s x%d", matName(bases[i].first).c_str(), bases[i].second);
-		m_textRenderer->DrawText(buf, x + 6.0f, y + 8.0f, 15.0f, D2D1::ColorF(1, 1, 1));
+		m_textRenderer->DrawText(buf, x + 6.0f, midY(buf, 15.0f, y, h), 15.0f, D2D1::ColorF(1, 1, 1));
 	}
 	auto mods = CraftMods();
 	for (int i = 0; i < (int)mods.size(); i++) 
 	{
 		float x, y, w, h; GetCraftModRect(i, x, y, w, h);
-		float aT = MatAlphaAt(y + 8.0f), aB = MatAlphaAt(y + 8.0f + 15.0f);
-		if (aT <= 0.0f && aB <= 0.0f) continue;
 		wchar_t buf[64]; swprintf_s(buf, L"%s x%d", matName(mods[i].first).c_str(), mods[i].second);
-		m_textRenderer->DrawTextGradientV(buf, x + 6.0f, y + 8.0f, 15.0f, D2D1::ColorF(1, 1, 1), aT, aB);
+		float ty = midY(buf, 15.0f, y, h);
+		float aT = MatAlphaAt(ty), aB = MatAlphaAt(ty + 15.0f);
+		if (aT <= 0.0f && aB <= 0.0f) continue;
+		m_textRenderer->DrawTextGradientV(buf, x + 6.0f, ty, 15.0f, D2D1::ColorF(1, 1, 1), aT, aB);
 	}
 	{
 		float x, y, w, h; GetCraftBtnRect(x, y, w, h);
 		POINT mp = m_uiInput.GetMousePos();
 		float dy = (mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h) ? -4.0f : 0.0f;
-		m_textRenderer->DrawText(L"Make", x + 55.0f, y + dy + 12.0f, 20.0f, D2D1::ColorF(1, 1, 1));
+		m_textRenderer->DrawTextCentered(L"Make", x + w / 2.0f, y + dy, w, 20.0f, D2D1::ColorF(1, 1, 1), h);
 	}
 	if (prev)
 		CardVisual::DrawTexts(m_textRenderer, prev, nullptr,
@@ -3470,10 +3788,16 @@ void SceneManager::DrawBigCard(const CardData* d, float x, float y, float scale,
 		CardVisual::DrawTexts(m_textRenderer, d, nullptr, x, y, scale, 0.0f, 1.0f);
 }
 
+// カードの説明を残せない画面（説明より手前に出るもの）
+bool SceneManager::TooltipBlocked() const
+{
+	return m_glossaryOpen || m_settingsOpen || m_tutorialOpen || m_confirmAction != 0 || CardConfirm::Active();
+}
+
 bool SceneManager::AnyModalOpen() const
 {
 	return m_tutorialOpen || m_deckOpen || m_craftOpen || m_invOpen
-		|| m_mapOpen || m_restOpen || m_eventOpen || m_settingsOpen
+		|| m_mapOpen || m_restOpen || m_eventOpen || m_settingsOpen || m_glossaryOpen || CardConfirm::Active()
 		|| m_confirmAction != 0 || BossRelicPickOpen();
 }
 

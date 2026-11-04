@@ -51,14 +51,16 @@ struct BuffInfo
             { L"火事場の力",          L"HP半分以下で攻撃+{value}",                               {0.9f, 0.4f, 0.2f, 1.0f},	  "buff_laststand" },     // LastStand
             { L"決死の覚悟",          L"HP1/4以下で攻撃+{value}",                                {0.9f, 0.2f, 0.2f, 1.0f},	  "buff_deepstand" },     // DeepStand
             { L"炎の軌跡",            L"移動した通り道に炎を残す",                               {1.0f, 0.4f, 0.1f, 1.0f},	  "buff_embertrail" },    // EmberTrail
-            { L"追加ドロー+",         L"毎ターン開始時 カードを{value}枚多く引く",               {0.4f, 0.8f, 0.9f, 1.0f},    "buff_knifegen" },      // DrawPerTurn
-            { L"無敵",                L"ダメージを完全に無効化する",                             {0.55f, 0.8f, 1.0f, 1.0f},   "buff_barricade" },     // Invincible
+            { L"追加ドロー+",         L"毎ターン開始時 カードを{value}枚多く引く",               {0.4f, 0.8f, 0.9f, 1.0f},    "buff_drawperturn" },      // DrawPerTurn
+            { L"無敵",                L"ダメージを完全に無効化する",                             {0.55f, 0.8f, 1.0f, 1.0f},   "buff_invincible" },     // Invincible
             { L"弱点",                L"頭と光るウロコへの攻撃は{value}倍、体へは半分。毒は半減",                     {0.9f, 0.3f, 0.3f, 1.0f},    "buff_headweak" },   // HeadWeak
             { L"聖地の加護",          L"聖地に立っている間 攻撃力+{value}",                      {1.0f, 0.85f, 0.35f, 1.0f},  "buff_holyground" }, // HolyGround
             { L"聖域の加護",          L"聖域に立っている間 受けるダメージ半分",                  {1.0f, 0.95f, 0.6f, 1.0f},   "buff_sanctuary" },  // Sanctuary
             { L"守護の誓い",          L"ターン終了時 聖地に立っていれば ブロック+{value}",       {1.0f, 0.85f, 0.35f, 1.0f},  "buff_guardianvow" }, // GuardianVow
             { L"大聖堂",              L"ターン開始時 聖地に立っていれば 周りのマスに信仰+{value}", {1.0f, 0.85f, 0.35f, 1.0f},  "buff_cathedral" },   // Cathedral
             { L"脱皮",                L"カードの攻撃であと{value}ダメージ受けると脱皮し、巻きつきと攻撃力が上がる。毒・罠・聖地では脱皮しない", {0.5f, 1.0f, 0.4f, 1.0f}, "buff_molt" },   // Molt
+            { L"沼",                  L"移動カードのコスト+{value}（沼の上にいる間）",  {0.5f, 0.5f, 0.3f, 1.0f},	"buff_mire" },         // Mire
+            { L"移動不可",            L"押し出しや引き寄せで動かない。引き寄せると自分のほうが寄っていく", {0.75f, 0.7f, 0.6f, 1.0f}, "buff_immovable" }, // Immovable
         };
         return infos[static_cast<int>(type)];
     }
@@ -95,5 +97,8 @@ struct BuffInfo
         return t == BuffType::Weak || t == BuffType::Vulnerable
             || t == BuffType::Frail || t == BuffType::Root;
     }
+
+    // アイコンだけで数字を出さないバフ（状態を示すだけのもの）
+    static bool HidesValue(BuffType t) { return t == BuffType::Immovable; }
 
 };

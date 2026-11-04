@@ -4,6 +4,7 @@
 #include "CardExecutor.h"
 #include "CardVisual.h"
 #include "CardTooltip.h"
+#include "GlossaryLink.h"
 #include "EnemyIntentVisual.h"
 #include "TerrainDataBase.h"
 #include "GameUtils.h"
@@ -31,6 +32,7 @@ BattleUI::~BattleUI()
 }
 
 static std::string s_hoverKey;
+static bool StatusAboveHead(Enemy* enemy, Player* player);   // 下の GetStatusFoot の上で定義
 
 bool BattleUI::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     int screenWidth, int screenHeight, IDXGISwapChain* swapChain)
@@ -48,6 +50,12 @@ bool BattleUI::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
     m_whiteTexture = TextureManager::Get("white");
     return true;
+}
+
+// 文字列の幅（実際のフォントで測る）
+static float TextWidth(TextRenderer* tr, const std::wstring& s, float size)
+{
+    return tr->Measure(s.c_str(), size, FontRole::Body).width;
 }
 
 void BattleUI::GridToWorld(GridMap* gridMap, int col, int row, float& outX, float& outZ)
@@ -222,15 +230,19 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 return true;
                 };
 
+            auto toArrow = [&](int c, int r, float& wx, float& wz) {   // マスの形の中心を矢印の座標で返す
+                enemy->CenterWorld(c, r, ctx.gridMap, wx, wz);
+                wx += 0.55f; wz += 0.55f;   // GridToWorld と同じ基準
+                };
+
             // 敵の見た目マスが最終目的地に着いたら消す
-            int evc = (int)lroundf(enemy->worldX / 1.1f + ctx.gridMap->GetCols() / 2.0f);
-            int evr = (int)lroundf(enemy->worldZ / 1.1f + ctx.gridMap->GetRows() / 2.0f);
-            if (evc == path.back().first && evr == path.back().second) continue;
+            float gx, gz; enemy->CenterWorld(path.back().first, path.back().second, ctx.gridMap, gx, gz);
+            if (fabsf(enemy->worldX - gx) < 0.55f && fabsf(enemy->worldZ - gz) < 0.55f) continue;
 
             // 始点：プレイヤーターン中はマス中心。敵ターン中は見た目位置を GridToWorld 系に変換
             float swx, swz;
             if (ctx.isPlayerTurn)
-                GridToWorld(ctx.gridMap, enemy->gridCol, enemy->gridRow, swx, swz);
+                toArrow(enemy->gridCol, enemy->gridRow, swx, swz);
             else
             {
                 float fcol = enemy->worldX / 1.1f + ctx.gridMap->GetCols() / 2.0f;
@@ -248,7 +260,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             pts.push_back({ esx, esy });
             for (auto& cell : path)
             {
-                float wx, wz; GridToWorld(ctx.gridMap, cell.first, cell.second, wx, wz);
+                float wx, wz; toArrow(cell.first, cell.second, wx, wz);
                 float px, py; if (proj(wx, wz, px, py)) pts.push_back({ px, py });
             }
             if ((int)pts.size() < 2) continue;
@@ -314,7 +326,8 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     auto drawPlayableGlow = [&](int i) {
         if (ctx.discardSelectCount > 0) return;   // 捨て選択中は使用可グローを出さない
         if (i < 0 || i >= (int)m_cardAnims.size()) return;
-        if (cards[i]->GetData()->cost > ctx.player->GetEnergy()) return;
+        if (m_cardAnims[i].holdTimer > 0.0f) return;   // 山札で待機中
+        if (ctx.player->CostOf(*cards[i]->GetData()) > ctx.player->GetEnergy()) return;
         float gx, gy, gw, gh;
         CardVisual::GetRect(m_cardAnims[i].currentX, m_cardAnims[i].currentY,
             m_cardAnims[i].currentScale, gx, gy, gw, gh);
@@ -335,6 +348,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     auto drawDiscardGlow = [&](int i) {
         if (ctx.discardSelectCount <= 0) return;
         if (i < 0 || i >= (int)m_cardAnims.size()) return;
+        if (m_cardAnims[i].holdTimer > 0.0f) return;   // 山札で待機中
         if (!cards[i]->GetData()->onDiscardEffect.hasEffect) return;
         float gx, gy, gw, gh;
         CardVisual::GetRect(m_cardAnims[i].currentX, m_cardAnims[i].currentY,
@@ -377,6 +391,8 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 float mk = 34.0f;   
                 float mx = headX - mk / 2.0f;
                 float my = headY - mk - 14.0f;
+                if (StatusAboveHead(enemy, ctx.player))   // UIを頭上へ上げた時は、行動予告のさらに上に
+                    my = barY - EnemyIntentVisual::ICON_SIZE - 2.0f - mk - 4.0f;
                 float pulse = 0.75f + 0.25f * sinf(ctx.highlightTimer * 6.0f);
                 const XMFLOAT4& hue = enemy->hueColor;
                 m_spriteRenderer->DrawSprite(TextureManager::Get("ui_hitring"),
@@ -549,9 +565,10 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                     swprintf_s(buffVal, L"%dT", buff.duration);
                 else
                     swprintf_s(buffVal, L"%d", buff.value);
-                m_textRenderer->DrawText(buffVal,
-                    buffIconX + iconSize + 2.0f, buffIconY + 1.0f,
-                    11.0f, D2D1::ColorF(D2D1::ColorF::White));
+                if (!BuffInfo::HidesValue(buff.type))
+                    m_textRenderer->DrawText(buffVal,
+                        buffIconX + iconSize + 2.0f, buffIconY + 1.0f,
+                        11.0f, D2D1::ColorF(D2D1::ColorF::White));
                 buffIconX += iconSize + 20.0f;
             }
         }
@@ -661,7 +678,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 (float)m_screenWidth, (float)m_screenHeight, 0.0f, XMFLOAT4(0, 0, 0, 0.55f));
 
         // 使ったカードの演出：敵のHPや行動予告より手前、手札より奥に描く
-        DrawPlayCardEffectsFull(ctx);
+        if (!CardTooltip::s_debugHide) DrawPlayCardEffectsFull(ctx);   // 録画用に隠せる（中央へ飛ぶカード）
         DrawDiscardEffectsFull(ctx);
         DrawExhaustEmbers();
 
@@ -716,6 +733,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         {
             if (i >= (int)m_cardAnims.size()) continue;
             if (i == topIdx) continue;
+            if (m_cardAnims[i].holdTimer > 0.0f) continue;   // 山札で待機中（リシャッフル演出の後に出す）
 
             XMFLOAT4 col = CardVisual::GetCardColor(cards[i]->GetData()->type, false);   // ← 上書きしない（元の色）
 
@@ -1021,12 +1039,14 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             D2D1::ColorF(1, 1, 1), D2D1::ColorF(0.1f, 0.1f, 0.1f), 2.0f);
     }
 
-    if (m_hasHoveredBuff)
+    if (m_hasHoveredBuff && !CardTooltip::s_debugHide)
     {
         const auto& info = BuffInfo::Get(m_hoveredBuffType);
         std::wstring desc = BuffInfo::GetDescription(m_hoveredBuffType, m_hoveredBuffValue);
         auto lines = WrapLines(desc, 20, false);                // 文の長さで枠を決める
-        float tipW = 230.0f;
+        float tipW = TextWidth(m_textRenderer, info.name, 13.0f);               // 一番長い行に合わせる
+        for (auto& l : lines) tipW = max(tipW, TextWidth(m_textRenderer, l, 11.0f));
+        tipW += 12.0f;
         float tipH = 22.0f + lines.size() * 15.0f;
         float tipX = m_hoveredBuffX;
         float tipY = m_hoveredBuffY - tipH - 8.0f;
@@ -1048,10 +1068,20 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     }
 
     // 敵インテントアイコンの説明ウィンドウ
-    if (m_intentHover)
+    if (m_intentHover && !CardTooltip::s_debugHide)
     {
-        bool twoLines = (m_intentBody.find(L'\n') != std::wstring::npos);
-        float tw = 220.0f, th = twoLines ? 64.0f : 46.0f;
+        std::vector<std::wstring> bodyLines;                    // 行ごとに分ける
+        for (size_t s = 0; s <= m_intentBody.size(); )
+        {
+            size_t n = m_intentBody.find(L'\n', s);
+            if (n == std::wstring::npos) n = m_intentBody.size();
+            bodyLines.push_back(m_intentBody.substr(s, n - s));
+            s = n + 1;
+        }
+        float tw = TextWidth(m_textRenderer, m_intentTitle, 15.0f);             // 一番長い行に合わせる
+        for (auto& l : bodyLines) tw = max(tw, TextWidth(m_textRenderer, l, 12.0f));
+        tw += 20.0f;
+        float th = 30.0f + bodyLines.size() * 17.0f;
         float tx = m_intentX - tw * 0.5f;
         float ty = m_intentY - th - 8.0f;
         if (tx < 4.0f) tx = 4.0f;
@@ -1066,22 +1096,17 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
         m_textRenderer->DrawText(m_intentTitle.c_str(), tx + 10.0f, ty + 6.0f, 15.0f,
             D2D1::ColorF(1.0f, 0.85f, 0.35f));
-        size_t nl = m_intentBody.find(L'\n');
-        if (nl == std::wstring::npos)
-            m_textRenderer->DrawText(m_intentBody.c_str(), tx + 10.0f, ty + 25.0f, 12.0f,
-                D2D1::ColorF(0.9f, 0.9f, 0.9f));
-        else
+        for (int i = 0; i < (int)bodyLines.size(); i++)
         {
-            m_textRenderer->DrawText(m_intentBody.substr(0, nl).c_str(), tx + 10.0f, ty + 25.0f, 12.0f,
-                D2D1::ColorF(0.9f, 0.9f, 0.9f));
-            m_textRenderer->DrawText(m_intentBody.substr(nl + 1).c_str(), tx + 10.0f, ty + 42.0f, 12.0f,
-                D2D1::ColorF(0.75f, 0.85f, 1.0f));   // 範囲行は青系
+            bool rangeLine = bodyLines[i].rfind(L"範囲", 0) == 0;   // 範囲行は青系
+            m_textRenderer->DrawText(bodyLines[i].c_str(), tx + 10.0f, ty + 25.0f + i * 17.0f, 12.0f,
+                rangeLine ? D2D1::ColorF(0.75f, 0.85f, 1.0f) : D2D1::ColorF(0.9f, 0.9f, 0.9f));
         }
     }
 
     // マスの説明（罠・聖地）は、カードを持っていない時に同じマスへ少し止めたら出す
     if (ctx.hoveredCell != m_tipCell) { m_tipCell = ctx.hoveredCell; m_tipSince = GetTickCount64(); }
-    bool showCellTip = ctx.selectedCardIndex < 0 && ctx.hoveredCardIndex < 0
+    bool showCellTip = ctx.selectedCardIndex < 0 && ctx.hoveredCardIndex < 0 && !CardTooltip::s_debugHide
         && !m_overUnitStatus && !m_intentHover
         && GetTickCount64() - m_tipSince >= CELL_TIP_DELAY_MS;
     float trapTipH = 0.0f;   // 罠の説明の高さ（聖地の説明をその下に並べる）
@@ -1103,7 +1128,9 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
                 float tipX = (float)ctx.mousePos.x + 15.0f;
                 float tipY = (float)ctx.mousePos.y - 50.0f;
-                float tipW = 150.0f;
+                float tipW = TextWidth(m_textRenderer, def->name, 13.0f);       // 一番長い行に合わせる
+                for (auto& l : detail) tipW = max(tipW, TextWidth(m_textRenderer, l, 11.0f));
+                tipW += 12.0f;
                 float tipH = 24.0f + detail.size() * 15.0f;
                 trapTipH = tipH + 16.0f;
 
@@ -1181,7 +1208,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
    DrawFloatingTexts(ctx);
 
     // ターンバナー（最前面：全ステータスの後に描く）
-   if (TurnBanner::IsActive())
+   if (TurnBanner::IsActive() && !CardTooltip::s_debugHide)   // 録画用に隠せる
    {
        float a = TurnBanner::GetAlpha();
        float ox = TurnBanner::GetSlideX();
@@ -1193,11 +1220,15 @@ void BattleUI::Draw(const BattleUIContext& ctx)
        else { txt = L"敵のターン";       col = D2D1::ColorF(1.0f, 0.4f, 0.35f, a); chars = 5.0f; charW = 44.0f; spacing = 18.0f; }
 
        float fh = 64.0f;
-       float step = charW + spacing;
+       TextRenderer::RoleScope heading(*m_textRenderer, FontRole::Heading);   // 見出しのフォント
+       auto charWidth = [&](wchar_t c) {                                      // 1文字ずつ実際の幅を測る
+           wchar_t s[2] = { c, L'\0' };
+           return m_textRenderer->Measure(s, fh, FontRole::Heading).width;
+           };
        float totalW = 0.0f;
        for (int ci = 0; ci < (int)chars; ci++)
        {
-           totalW += (txt[ci] == L'ー') ? charW * 0.5f : charW;
+           totalW += charWidth(txt[ci]);
            if (ci < (int)chars - 1) totalW += spacing;
        }
        float startX = m_screenWidth / 2.0f - totalW / 2.0f + ox;
@@ -1206,7 +1237,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
        for (int ci = 0; ci < (int)chars; ci++)
        {
            wchar_t ch[2] = { txt[ci], L'\0' };
-           float w = (txt[ci] == L'ー') ? charW * 0.5f : charW;
+           float w = charWidth(txt[ci]);
            m_textRenderer->DrawOutlinedText(ch, cx, y, fh, col, D2D1::ColorF(0, 0, 0, a), 2.5f);
            cx += w + spacing;
        }
@@ -1218,7 +1249,6 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     if (ctx.discardSelectCount <= 0 || ctx.discardViewMode)   // 暗幕の間は出さない（「盤面を見る」では出す）
     {
         DrawEnemyInfoPanel(ctx);
-        DrawEnemyKeywords(ctx);
     }
 
     if (ctx.hoveredCardIndex >= 0 && ctx.hoveredCardIndex < (int)ctx.hand->GetCards().size())
@@ -1419,7 +1449,7 @@ void BattleUI::DrawTargetIndicators(const BattleUIContext& ctx)
                         else if (preview.destCol != enemy->gridCol || preview.destRow != enemy->gridRow)
                         {
                             float wx, wz;
-                            GridToWorld(ctx.gridMap, preview.destCol, preview.destRow, wx, wz);
+                            enemy->CenterWorld(preview.destCol, preview.destRow, ctx.gridMap, wx, wz); wx += 0.55f; wz += 0.55f;   // GridToWorld と同じ基準
 
                             XMVECTOR worldPos = XMVectorSet(wx - 0.5f, 0.01f, wz - 0.5f, 1.0f);
                             XMMATRIX view = ctx.renderer3D->GetViewMatrix();
@@ -1511,7 +1541,7 @@ void BattleUI::DrawTargetIndicators(const BattleUIContext& ctx)
                         else if (preview.destCol != enemy->gridCol || preview.destRow != enemy->gridRow)
                         {
                             float wx, wz;
-                            GridToWorld(ctx.gridMap, preview.destCol, preview.destRow, wx, wz);
+                            enemy->CenterWorld(preview.destCol, preview.destRow, ctx.gridMap, wx, wz); wx += 0.55f; wz += 0.55f;   // GridToWorld と同じ基準
 
                             XMVECTOR worldPos = XMVectorSet(wx - 0.5f, 0.01f, wz - 0.5f, 1.0f);
                             XMMATRIX view = ctx.renderer3D->GetViewMatrix();
@@ -1732,9 +1762,7 @@ void BattleUI::DrawPileViewer(const BattleUIContext& ctx)
 
 void BattleUI::StartDrawCardEffect(const std::string& cardId)
 {
-    Audio::PlaySE("Assets/Sound/se/draw.mp3");
-
-    DrawCardEffect effect;
+    DrawCardEffect effect;   // 引く音は動き出した時に鳴らす（UpdateDrawCardEffects）
     effect.cardId = cardId;
     effect.x = 20.0f;
     effect.y = m_screenHeight - 60.0f;
@@ -1750,6 +1778,14 @@ void BattleUI::StartReshuffleEffect()
 {
     m_reshuffleFx.active = true;
     m_reshuffleFx.timer = 0.0f;
+}
+
+void BattleUI::HoldNewestDraws(int n, float t)
+{
+    int k = 0;
+    for (auto it = m_drawCardEffects.rbegin(); it != m_drawCardEffects.rend() && k < n; ++it, ++k)
+        it->delay = t;                       // 飛ぶ演出は待ってから
+    m_pendingHoldN = n; m_pendingHoldT = t;  // 手札側は次の UpdateCardAnimations で当てる
 }
 
 void BattleUI::UpdateReshuffleEffect(float deltaTime)
@@ -1782,6 +1818,8 @@ void BattleUI::UpdateDrawCardEffects(float deltaTime)
     for (auto& effect : m_drawCardEffects)
     {
         if (effect.done) continue;
+        if (effect.delay > 0.0f) { effect.delay -= deltaTime; continue; }
+        if (!effect.started) { effect.started = true; Audio::PlaySE("Assets/Sound/se/draw.mp3"); }
 
         effect.timer += deltaTime;
         float t = min(1.0f, effect.timer / DRAW_EFFECT_DURATION);
@@ -1806,6 +1844,7 @@ void BattleUI::DrawCardEffects()
 {
     for (auto& effect : m_drawCardEffects)
     {
+        if (effect.delay > 0.0f) continue;   // まだ待機中
         const CardData* d = CardDataBase::Get(effect.cardId);
         XMFLOAT4 color = d ? CardVisual::GetCardColor(d->type, false)
             : XMFLOAT4(0.2f, 0.4f, 0.8f, 1.0f);
@@ -1998,6 +2037,17 @@ void BattleUI::UpdateCardAnimations(float deltaTime, int handSize, int hoveredIn
     while ((int)m_cardAnims.size() > handSize)
         m_cardAnims.pop_back();
 
+    if (m_pendingHoldN > 0)   // リシャッフル演出の間、そのあと引いたカード（手札の最後の n 枚）は山札で待たせる
+    {
+        for (int i = max(0, handSize - m_pendingHoldN); i < handSize; i++)
+        {
+            m_cardAnims[i].holdTimer = m_pendingHoldT;
+            m_cardAnims[i].currentX = 20.0f;
+            m_cardAnims[i].currentY = (float)(m_screenHeight - 60);
+        }
+        m_pendingHoldN = 0;
+    }
+
     float cardHideY = m_screenHeight - CardVisual::CARD_HIDE_Y_OFFSET;
     float cardHoverY = m_screenHeight - CardVisual::CARD_H - CardVisual::CARD_HOVER_Y_OFFSET;
     float speed = 12.0f;
@@ -2005,6 +2055,8 @@ void BattleUI::UpdateCardAnimations(float deltaTime, int handSize, int hoveredIn
 
     for (int i = 0; i < handSize; i++)
     {
+        if (m_cardAnims[i].holdTimer > 0.0f) { m_cardAnims[i].holdTimer -= deltaTime; continue; }   // 山札で待機中
+
         // 呪い(保留)：中央へピークして戻る（自分の手札アニメを一時的に上書き）
         if (m_cardAnims[i].peekTimer > -100.0f)
         {
@@ -2128,6 +2180,7 @@ int BattleUI::GetCardAtScreenPos(POINT p) const
     // 上に描かれている（右・ホバー中）カードを優先 → 逆順で最初のヒット
     for (int i = n - 1; i >= 0; i--)
     {
+        if (m_cardAnims[i].holdTimer > 0.0f) continue;   // 山札で待機中は押せない
         float x, y, w, h;
         CardVisual::GetRect(m_cardAnims[i].currentX, m_cardAnims[i].currentY,
             m_cardAnims[i].currentScale, x, y, w, h);   // 実際の描画位置・拡大に一致
@@ -2202,10 +2255,32 @@ static const float ENTRY_MIN_H = 66.0f;   // アイコン(55)＋余白
 static const float DETAIL_W = 220.0f;  // 詳細の窓の幅
 static const int   DETAIL_CH = 13;      // 詳細の1行の文字数（15px・幅200）
 
+// 自分のすぐ上のマスに立つ敵か（その敵のUIは足元ではなく頭の上に出す。足元だと自分のキャラやUIと重なる）
+static bool StatusAboveHead(Enemy* enemy, Player* player)
+{
+    if (enemy->IsSnake())   // 蛇のUIは頭のマスの下に出るので、頭の真下にいる時だけ
+        return enemy->gridCol == player->gridCol && enemy->gridRow == player->gridRow - 1;
+    for (auto& [c, r] : enemy->OccupiedCells())
+        if (c == player->gridCol && r == player->gridRow - 1) return true;
+    return false;
+}
+
 bool BattleUI::GetStatusFoot(Enemy* enemy, const BattleUIContext& ctx, float& outX, float& outY) const
 {
     if (!GetEnemyFootPos(enemy, ctx.renderer3D, outX, outY)) return false;
-    if (enemy->IsSnake()) outY += 40.0f * (1.0f / ctx.cameraZoom);   // 蛇は平置きなのでUIを下げる
+    if (StatusAboveHead(enemy, ctx.player))
+    {
+        float hx, hy;   // HPバー・バフの下端を頭のすぐ上へ（行動予告はバーの上に並ぶので、さらに上）
+        bool ok = enemy->IsSnake()   // 蛇は平置きなので、頭のマスの奥の縁を「頭の上」とする
+            ? WorldToScreen(enemy->worldX, 0.0f, enemy->worldZ - 0.55f, ctx.renderer3D, hx, hy)
+            : GetEnemyScreenPos(enemy, ctx.renderer3D, hx, hy);
+        if (ok)
+        {
+            URect r = UnitStatusRect(outX, outY, 1.0f / ctx.cameraZoom, enemy->IsBoss(), enemy->GetBuffManager());
+            outY += (hy - 6.0f) - (r.y + r.h);
+        }
+    }
+    else if (enemy->IsSnake()) outY += 40.0f * (1.0f / ctx.cameraZoom);   // 蛇は平置きなのでUIを下げる
     return true;
 }
 
@@ -2296,14 +2371,12 @@ std::vector<BattleUI::DetailRow> BattleUI::EnemyDetailRows(Enemy* e, float x, fl
         add(EnemyIntentVisual::GetActionText(act, e->GetBuffManager()), 15.0f, D2D1::ColorF(1.0f, 0.8f, 0.3f), 20.0f, DETAIL_CH);
     if (e->GetBlock() > 0)
         add(L"Block: " + std::to_wstring(e->GetBlock()), 15.0f, D2D1::ColorF(D2D1::ColorF::LightBlue), 18.0f, DETAIL_CH);
-    if (e->IsImmovable())
-        add(L"移動不可", 14.0f, D2D1::ColorF(0.9f, 0.4f, 0.4f), 20.0f, DETAIL_CH);
 
     for (auto& buff : e->GetBuffManager().GetBuffs())
     {
         const auto& info = BuffInfo::Get(buff.type);
         std::wstring buffText;
-        if (buff.type == BuffType::HeadWeak)
+        if (buff.type == BuffType::HeadWeak || BuffInfo::HidesValue(buff.type))
             buffText = info.name;                       // 弱点は名前だけ（ターン表記なし）
         else if (BuffInfo::IsDurationBased(buff.type))
             buffText = info.name + L": " + std::to_wstring(buff.duration) + L"ターン";
@@ -2417,7 +2490,7 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
     }
 
     // ホバー中の詳細背景（スプライト）
-    if (hoveredEnemy >= 0)
+    if (hoveredEnemy >= 0 && !CardTooltip::s_debugHide)
     {
         float px, ey, pw, eh;
         GetEnemyEntryRect(hoveredEnemy, enemies, ctx.screenWidth, px, ey, pw, eh);
@@ -2475,53 +2548,12 @@ void BattleUI::DrawEnemyInfoPanel(const BattleUIContext& ctx)
         }
 
         // ホバー中の詳細テキスト（背景と同じ行の一覧）
-        if (hoveredEnemy == i)
+        if (hoveredEnemy == i && !CardTooltip::s_debugHide)
         {
             float detailX = panelX - DETAIL_W - 10.0f, detailH;
             for (auto& r : EnemyDetailRows(enemy, detailX, entryY, mp, entryH, detailH))
                 m_textRenderer->DrawOutlinedText(r.text.c_str(), detailX + 10.0f, r.y, r.size, r.color, OL, OLT);
         }
-    }
-    m_textRenderer->End();
-}
-
-void BattleUI::DrawEnemyKeywords(const BattleUIContext& ctx)
-{
-    if (EnemyIntentVisual::Hidden()) return;   // 目隠し中は行動のキーワード説明も出さない
-    if (m_panelHoveredEnemy < 0 || m_panelHoveredEnemy >= (int)ctx.enemies->size()) return;
-    Enemy* enemy = (*ctx.enemies)[m_panelHoveredEnemy];
-
-    // 予告している全行動のキーワードを重複なく集約
-    std::vector<std::pair<std::wstring, std::wstring>> kws;
-    std::set<std::wstring> seen;
-    for (auto& act : enemy->GetPlannedActions())
-        for (auto& kw : EnemyIntentVisual::GetKeywords(act))
-            if (seen.insert(kw.first).second) kws.push_back(kw);
-    if (kws.empty()) return;
-
-    const float pw = 300.0f, rowH = 44.0f;
-    float ph = 12.0f + kws.size() * rowH;
-
-    // 敵パネル → 詳細窓 のさらに左に出す
-    float panelX = ctx.screenWidth - 250.0f;
-    float detailX = panelX - 200.0f;
-    float px = detailX - pw - 8.0f;
-    float py = 50.0f + RelicManager::BarTotalHeight(ctx.screenWidth)
-        + m_panelHoveredEnemy * (90.0f + 5.0f);
-    if (px < 6.0f) px = 6.0f;
-    if (py + ph > ctx.screenHeight - 6.0f) py = ctx.screenHeight - 6.0f - ph;
-
-    m_spriteRenderer->Begin();
-    DrawWindow(px, py, pw, ph);
-    m_spriteRenderer->End();
-
-    m_textRenderer->Begin();
-    float y = py + 10.0f;
-    for (auto& [name, desc] : kws)
-    {
-        m_textRenderer->DrawText(name.c_str(), px + 12.0f, y, 16.0f, D2D1::ColorF(1.0f, 0.85f, 0.4f));
-        m_textRenderer->DrawText(desc.c_str(), px + 12.0f, y + 20.0f, 12.0f, D2D1::ColorF(0.9f, 0.9f, 0.9f));
-        y += rowH;
     }
     m_textRenderer->End();
 }
@@ -2951,7 +2983,8 @@ void BattleUI::DrawUnitStatusText(float footX, float footY, float scale, bool is
         wchar_t bv[16];
         if (BuffInfo::IsDurationBased(buff.type)) swprintf_s(bv, L"%dT", buff.duration);
         else swprintf_s(bv, L"%d", buff.value);
-        m_textRenderer->DrawText(bv, vX + iconSize + 2.0f, vY + 1.0f, 11.0f, D2D1::ColorF(D2D1::ColorF::White));
+        if (!BuffInfo::HidesValue(buff.type))
+            m_textRenderer->DrawText(bv, vX + iconSize + 2.0f, vY + 1.0f, 11.0f, D2D1::ColorF(D2D1::ColorF::White));
         vX += iconSize + 20.0f;
     }
 }

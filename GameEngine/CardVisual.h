@@ -359,18 +359,23 @@ public:
             if (est > avail && est > 0.0f) nameFont *= avail / est;
             if (nameFont < 7.0f * s) nameFont = 7.0f * s;   // 下限
         }
-        tr->DrawOutlinedText(data->name.c_str(), x + 34 * s, y + 11 * s, nameFont, nameCol, ol, olT, rot, px, py);
+        {
+            TextRenderer::RoleScope heading(*tr, FontRole::Heading);   // カード名は見出しのフォント
+            tr->DrawOutlinedText(data->name.c_str(), x + 34 * s, y + 11 * s, nameFont, nameCol, ol, olT, rot, px, py);
+        }
 
         // コストは左上オーブの上に「数字だけ」
         wchar_t cost[16];
-        swprintf_s(cost, L"%d", data->cost);
+        int shownCost = player ? player->CostOf(*data) : data->cost;   // 沼の上は増える
+        swprintf_s(cost, L"%d", shownCost);
         float os = 30.0f * s;
         float ocx = x + 4.0f * s + os / 2.0f;
         float ocy = y + 4.0f * s + os / 2.0f;
         float fh = 20.0f * s;
-        float digitW = (data->cost >= 10 ? 10.0f : 5.0f) * s;
-        tr->DrawOutlinedText(cost, ocx - digitW, ocy - fh * 0.55f, fh,
-            D2D1::ColorF(1, 1, 1, alpha), ol, olT, rot, px, py);
+        D2D1_SIZE_F cs = tr->Measure(cost, fh, FontRole::Body);          // 実際の数字の大きさで中央に
+        tr->DrawOutlinedText(cost, ocx - cs.width / 2.0f, ocy - cs.height / 2.0f, fh,
+            shownCost > data->cost ? D2D1::ColorF(1.0f, 0.4f, 0.3f, alpha) : D2D1::ColorF(1, 1, 1, alpha),
+            ol, olT, rot, px, py);
 
         D2D1_COLOR_F dc = IsCardBoosted(data, player)
             ? D2D1::ColorF(0.4f, 1.0f, 0.4f, alpha)

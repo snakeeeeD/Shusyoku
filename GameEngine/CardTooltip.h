@@ -8,6 +8,7 @@
 #include "BuffInfo.h"
 #include "TerrainDataBase.h"
 #include "GameUtils.h"   // StringToBuffType
+#include "GlossaryLink.h"
 #include <vector>
 #include <string>
 #include <set>
@@ -104,6 +105,11 @@ public:
         }
         else if (t->effect == "Slide")
             out.push_back(L"移動方向に滑る");
+        else if (t->effect == "WhileOn")
+        {
+            swprintf_s(buf, L"立っている間 移動カードのコスト+%d", value);
+            out.push_back(buf);
+        }
         else
         {
             int extra = t->persistent ? 0 : RelicManager::SumValue("trapDebuff");
@@ -119,21 +125,64 @@ public:
         return out;
     }
 
+    static inline bool s_debugHide = false;   // 録画用：カード・敵・マスの説明を出さない（Debug 窓で切り替え）
+
+    // ---- 説明を残す（敵の詳細ウィンドウと同じ：前のフレームで出ていた説明の上にマウスがある間は出し続ける）----
+    static void SetMouse(float x, float y, bool click) { s_mx = x; s_my = y; s_click = click; }
+    static bool MouseInHold()    // 説明・すき間・カードのどこか（ここにある間は説明を残す）
+    {
+        return s_hasHeld && s_mx >= s_hold[0] && s_mx <= s_hold[2] && s_my >= s_hold[1] && s_my <= s_hold[3];
+    }
+    static bool MouseInPanel()   // 説明のウィンドウの上（ここのクリックは説明が使う）
+    {
+        return s_hasHeld && s_mx >= s_panel[0] && s_mx <= s_panel[2] && s_my >= s_panel[1] && s_my <= s_panel[3];
+    }
+    static void ClearHeld() { s_hasHeld = false; s_drawn = false; }
+    // フレームの最後に呼ぶ：このフレームで出ていなくても、マウスが説明の上なら出し続ける
+    static void EndFrame(SpriteRenderer* sr, TextRenderer* tr, ID3D11ShaderResourceView* white)
+    {
+        if (!s_drawn && MouseInHold())
+            Draw(sr, tr, white, &s_held, s_args[0], s_args[1], s_args[2], s_args[3],
+                (int)s_args[4], (int)s_args[5], s_args[6]);
+        else if (!s_drawn) s_hasHeld = false;
+        s_drawn = false;
+        s_click = false;
+    }
+
     // カード上端中央あたりに解説パネルを出す。シーンDrawの最後（パス外）で呼ぶ
     static void Draw(SpriteRenderer* sr, TextRenderer* tr, ID3D11ShaderResourceView* white,
         const CardData* d, float ccx, float cty, float cardW, float cardH, int sw, int sh,
         float topLimit = 46.0f)
     {
+        if (s_debugHide) return;                  // 録画用に隠す
         auto es = Entries(d);
         if (es.empty()) return;
-        const float pw = 320.0f, rowH = 42.0f;
-        float ph = 12.0f + es.size() * rowH;
+        const float pw = 320.0f, textW = pw - 24.0f;
+        std::vector<float> rowH;                                  // 行ごとの高さ（説明の折り返しに合わせる）
+        float ph = 12.0f;
+        for (auto& [n, ds] : es)
+        {
+            float h = 20.0f + tr->Measure(ds.c_str(), 12.0f, FontRole::Body, textW).height + 8.0f;
+            rowH.push_back(h); ph += h;
+        }
         float px = ccx - pw / 2.0f;
         float py = cty - ph - 12.0f;
         if (px < 6.0f) px = 6.0f;
         if (px + pw > sw - 6.0f) px = sw - 6.0f - pw;
         if (py < topLimit) py = cty + cardH + 12.0f;           // 上に入らなければカードの下へ
         if (py + ph > sh - 6.0f) py = sh - 6.0f - ph;          // 下からもはみ出すなら画面内へ
+
+        // 説明を残すための記録（カードとの間のすき間も「上にある」とみなす）
+        if (d != &s_held) s_held = *d;
+        s_hasHeld = true; s_drawn = true;
+        float args[7] = { ccx, cty, cardW, cardH, (float)sw, (float)sh, topLimit };
+        for (int i = 0; i < 7; i++) s_args[i] = args[i];
+        float cl = ccx - cardW / 2.0f, cr = ccx + cardW / 2.0f;     // カード自体も含める（浮いたカードの上でも消えない）
+        float top = (py < cty) ? py : cty, bottom = (py + ph > cty + cardH) ? py + ph : cty + cardH;
+        s_hold[0] = ((px < cl) ? px : cl) - 8.0f; s_hold[1] = top - 8.0f;
+        s_hold[2] = ((px + pw > cr) ? px + pw : cr) + 8.0f; s_hold[3] = bottom + 8.0f;
+        s_panel[0] = px; s_panel[1] = py; s_panel[2] = px + pw; s_panel[3] = py + ph;
+        bool inPanel = s_mx >= px && s_mx <= px + pw && s_my >= py && s_my <= py + ph;
 
         // 生成先カード（ホバー中カードの横に、少し大きめ）
         const CardData* gen = GeneratedCard(d);
@@ -166,11 +215,21 @@ public:
 
         tr->Begin();
         float y = py + 10.0f;
-        for (auto& [n, ds] : es)
+        for (int row = 0; row < (int)es.size(); row++)
         {
+            auto& [n, ds] = es[row];
             tr->DrawText(n.c_str(), px + 12.0f, y, 16.0f, D2D1::ColorF(1.0f, 0.85f, 0.4f));
-            tr->DrawText(ds.c_str(), px + 12.0f, y + 20.0f, 12.0f, D2D1::ColorF(0.9f, 0.9f, 0.9f));
-            y += rowH;
+            auto hits = GlossaryLink::Find(ds, n);                    // 用語は色付き
+            int hov = inPanel ? tr->HitTestSpans(ds.c_str(), px + 12.0f, y + 20.0f, textW, 12.0f,
+                GlossaryLink::Spans(hits), s_mx, s_my) : -1;
+            if (hov >= 0 && s_click && GlossaryLink::open)           // クリックで用語集のそのページへ
+            {
+                GlossaryLink::open(hits[hov].id);
+                s_click = false;
+            }
+            tr->DrawTextSpans(ds.c_str(), px + 12.0f, y + 20.0f, textW, 12.0f, D2D1::ColorF(0.9f, 0.9f, 0.9f),
+                GlossaryLink::Spans(hits, hov));
+            y += rowH[row];
         }
         if (gen) CardVisual::DrawTexts(tr, gen, nullptr, gx, gy, gs, 0.0f, 1.0f);
         if (trap)
@@ -194,4 +253,12 @@ public:
                 return CardDataBase::Get(e->cardId);
         return nullptr;
     }
+private:
+    static inline float s_mx = -1.0f, s_my = -1.0f;
+    static inline bool s_click = false;
+    static inline CardData s_held;                  // 残している説明のカード（コピー）
+    static inline bool s_hasHeld = false, s_drawn = false;
+    static inline float s_args[7] = {};             // Draw の位置の引数
+    static inline float s_hold[4] = {};             // 説明を残す範囲（左上・右下）
+    static inline float s_panel[4] = {};            // 説明のウィンドウ（左上・右下）
 };

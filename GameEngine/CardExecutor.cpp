@@ -129,7 +129,8 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     ExecuteResult result = { false, false };    
 
     // エネルギーが足りるかを先に確認
-    if (player->GetEnergy() < data.cost)
+    int payCost = player->CostOf(data);
+    if (player->GetEnergy() < payCost)
         return result;
 
     if (data.unplayable) return result;   // 使用不可カードは弾く
@@ -166,7 +167,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             }
             if (!anyInRange)
             {
-                player->UseEnergy(data.cost);
+                player->UseEnergy(payCost);
                 ApplyAllEnemyEffect(data, enemies, gridMap);
                 if (data.exhaust) deck.ExhaustCard(cardId);
                 else              deck.DiscardCard(cardId);
@@ -190,7 +191,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 return result;
             }
 
-            player->UseEnergy(data.cost);
+            player->UseEnergy(payCost);
 
             int baseVal = data.mainEffect.value;
             if (data.scaleByTrapCount)
@@ -264,7 +265,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 if (!hasTarget)
                     return result;
 
-                player->UseEnergy(data.cost);
+                player->UseEnergy(payCost);
 
                 col = playerCol;
                 row = playerRow;
@@ -316,7 +317,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                     if ((dx != 0 && dy != 0) || (dx == 0 && dy == 0))
                         return result;
 
-                    player->UseEnergy(data.cost);
+                    player->UseEnergy(payCost);
 
                     int moveCol = playerCol;
                     int moveRow = playerRow;
@@ -400,7 +401,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                     }
             if (!inShape)
                 return result;
-            player->UseEnergy(data.cost);
+            player->UseEnergy(payCost);
 
             // dash: 狙ったマスの手前まで移動（蛇の体を狙うと、頭は一直線上にいるとは限らない）
             if (data.dash && target)
@@ -621,7 +622,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                  if (path.empty())
                      return result;
 
-           player->UseEnergy(data.cost);
+           player->UseEnergy(payCost);
            gridMap->SetCellType(playerCol, playerRow, CellType::Empty);
            outNewPlayerCol = targetCol;
            outNewPlayerRow = targetRow;
@@ -731,7 +732,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             }
         }
 
-        player->UseEnergy(data.cost);
+        player->UseEnergy(payCost);
 
         switch (data.mainEffect.type)
         {
@@ -927,7 +928,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     }
     case CardType::Power:
     {
-        player->UseEnergy(data.cost);
+        player->UseEnergy(payCost);
         CardEffect::ApplyEffectToPlayer(data.mainEffect, player);
         // パワーカードは捨て札に入れない
         ApplyAllEnemyEffect(data, enemies, gridMap);
@@ -1237,6 +1238,23 @@ bool CardExecutor::DetonateTrap(Cell& cell, int col, int row,
     return true;
 }
 
+// target を (nc, nr) へ動かせるか（形全体で見る）
+static bool CanPush(Enemy* target, int nc, int nr, int playerCol, int playerRow,
+    GridMap* gridMap, std::vector<Enemy*>& enemies, Enemy*& blocker)
+{
+    blocker = nullptr;
+    for (auto& [dc, dr] : target->GetGridShape())
+    {
+        int c = nc + dc, r = nr + dr;
+        if (c < 0 || c >= gridMap->GetCols() || r < 0 || r >= gridMap->GetRows()) return false;
+        if (gridMap->GetCell(c, r).type == CellType::Wall) return false;
+        if (c == playerCol && r == playerRow) return false;
+        for (auto e : enemies)
+            if (e != target && e->OccupiesCell(c, r)) { blocker = e; return false; }
+    }
+    return true;
+}
+
 void CardExecutor::ApplyKnockback(Enemy* target, int playerCol, int playerRow,
     int distance, GridMap* gridMap, std::vector<Enemy*>& enemies)
 {
@@ -1261,19 +1279,16 @@ void CardExecutor::ApplyKnockback(Enemy* target, int playerCol, int playerRow,
         int nextCol = target->gridCol + dirC;
         int nextRow = target->gridRow + dirR;
 
-        // 壁判定
-        if (nextCol < 0 || nextCol >= gridMap->GetCols()
-            || nextRow < 0 || nextRow >= gridMap->GetRows()
-            || gridMap->GetCell(nextCol, nextRow).type == CellType::Wall)
+        // 壁・敵との衝突判定（形全体）
+        Enemy* blocker = nullptr;
+        bool canMove = CanPush(target, nextCol, nextRow, playerCol, playerRow, gridMap, enemies, blocker);
+        if (!canMove && !blocker)
         {
             int remaining = distance - moved;
             target->TakeDamage(remaining * 3);
             break;
         }
-
-        // 敵との衝突判定
-        Enemy* blocker = GetEnemyAt(nextCol, nextRow, enemies);
-        if (blocker && blocker != target)
+        if (blocker)
         {
             int remaining = distance - moved;
             target->TakeDamage(remaining * 3);
@@ -1285,12 +1300,12 @@ void CardExecutor::ApplyKnockback(Enemy* target, int playerCol, int playerRow,
         }
 
         // 移動実行
-        gridMap->SetCellType(target->gridCol, target->gridRow, CellType::Empty);
+        target->ClearFootprint(gridMap);
         target->gridCol = nextCol;
         target->gridRow = nextRow;
-        gridMap->SetCellType(nextCol, nextRow, CellType::Enemy);
-        path.push_back({ (nextCol - gridMap->GetCols() / 2.0f) * 1.1f,
-                          (nextRow - gridMap->GetRows() / 2.0f) * 1.1f });
+        target->MarkFootprint(gridMap);
+        float wx, wz; target->CenterWorld(nextCol, nextRow, gridMap, wx, wz);
+        path.push_back({ wx, wz });
         if (!path.empty())
         {
             float os = 0.35f;                 // 行き過ぎ量（マス比）
@@ -1300,8 +1315,9 @@ void CardExecutor::ApplyKnockback(Enemy* target, int playerCol, int playerRow,
             target->StartWalk(path, 0.05f);   // 速く（吹っ飛び）
             ScreenShake::Add(0.4f);           // 手応え
         }
-        auto& passedCell = gridMap->GetCell(nextCol, nextRow);
-        TriggerTrap(passedCell, target, nextCol, nextRow, gridMap, enemies);
+        for (auto& [dc, dr] : target->GetGridShape())       // 形全体で罠を踏む
+            TriggerTrap(gridMap->GetCell(nextCol + dc, nextRow + dr), target,
+                nextCol + dc, nextRow + dr, gridMap, enemies);
         moved++;
     }
 }
@@ -1359,28 +1375,20 @@ void CardExecutor::ApplyPull(Enemy* target, int playerCol, int playerRow,
         int nextCol = target->gridCol + dirC;
         int nextRow = target->gridRow + dirR;
 
-        if (nextCol < 0 || nextCol >= gridMap->GetCols()
-            || nextRow < 0 || nextRow >= gridMap->GetRows()
-            || gridMap->GetCell(nextCol, nextRow).type == CellType::Wall)
+        Enemy* blocker = nullptr;                           // 形全体で判定（プレイヤーマスにも入れない）
+        if (!CanPush(target, nextCol, nextRow, playerCol, playerRow, gridMap, enemies, blocker))
             break;
 
-        // プレイヤーマスには入れない
-        if (nextCol == playerCol && nextRow == playerRow)
-            break;
-
-        Enemy* blocker = GetEnemyAt(nextCol, nextRow, enemies);
-        if (blocker && blocker != target)
-            break;
-
-        gridMap->SetCellType(target->gridCol, target->gridRow, CellType::Empty);
+        target->ClearFootprint(gridMap);
         target->gridCol = nextCol;
         target->gridRow = nextRow;
-        gridMap->SetCellType(nextCol, nextRow, CellType::Enemy);
-        path.push_back({ (nextCol - gridMap->GetCols() / 2.0f) * 1.1f,
-                                 (nextRow - gridMap->GetRows() / 2.0f) * 1.1f });
+        target->MarkFootprint(gridMap);
+        float wx, wz; target->CenterWorld(nextCol, nextRow, gridMap, wx, wz);
+        path.push_back({ wx, wz });
 
-        auto& passedCell = gridMap->GetCell(nextCol, nextRow);
-        TriggerTrap(passedCell, target, nextCol, nextRow, gridMap, enemies);
+        for (auto& [dc, dr] : target->GetGridShape())       // 形全体で罠を踏む
+            TriggerTrap(gridMap->GetCell(nextCol + dc, nextRow + dr), target,
+                nextCol + dc, nextRow + dr, gridMap, enemies);
         moved++;
     }
     if (!path.empty())
@@ -1424,16 +1432,14 @@ CardExecutor::MovePreview CardExecutor::PreviewKnockback(
         int nextCol = preview.destCol + dirC;
         int nextRow = preview.destRow + dirR;
 
-        if (nextCol < 0 || nextCol >= gridMap->GetCols()
-            || nextRow < 0 || nextRow >= gridMap->GetRows()
-            || gridMap->GetCell(nextCol, nextRow).type == CellType::Wall)
+        Enemy* blocker = nullptr;
+        bool canMove = CanPush(target, nextCol, nextRow, playerCol, playerRow, gridMap, enemies, blocker);
+        if (!canMove && !blocker)
         {
             preview.hitsWall = true;
             break;
         }
-
-        Enemy* blocker = GetEnemyAt(nextCol, nextRow, enemies);
-        if (blocker && blocker != target)
+        if (blocker)
         {
             preview.hitsWall = true;
             preview.hasCollision = true;
@@ -1502,16 +1508,8 @@ CardExecutor::MovePreview CardExecutor::PreviewPull(
         int nextCol = preview.destCol + dirC;
         int nextRow = preview.destRow + dirR;
 
-        if (nextCol < 0 || nextCol >= gridMap->GetCols()
-            || nextRow < 0 || nextRow >= gridMap->GetRows()
-            || gridMap->GetCell(nextCol, nextRow).type == CellType::Wall)
-            break;
-
-        if (nextCol == playerCol && nextRow == playerRow)
-            break;
-
-        Enemy* blocker = GetEnemyAt(nextCol, nextRow, enemies);
-        if (blocker && blocker != target)
+        Enemy* blocker = nullptr;
+        if (!CanPush(target, nextCol, nextRow, playerCol, playerRow, gridMap, enemies, blocker))
             break;
 
         preview.destCol = nextCol;

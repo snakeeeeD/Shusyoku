@@ -40,6 +40,11 @@ void BattleScene::DrawImGui()
     ImGui::SameLine();
     ImGui::Text("Faith:%d", Faith::At(m_gridMap, m_playerCol, m_playerRow));
 
+    if (ImGui::Button("Faith +1 (up)"))     // 1つ上のマスに信仰+1（録画用：1ずつ刻んで育つ様子を撮る）
+        Faith::Engrave(m_gridMap, m_playerCol, m_playerRow - 1, 1);
+    ImGui::SameLine();
+    ImGui::Text("Up:%d", Faith::At(m_gridMap, m_playerCol, m_playerRow - 1));
+
     if (ImGui::Button("Instant Win"))
         for (auto enemy : m_enemies)
             enemy->SetHp(0);

@@ -1,4 +1,5 @@
 #include "Player.h"
+#include "CardData.h"
 #include "Renderer3D.h"
 #include "TextureManager.h"
 #include "EffectManager.h"
@@ -177,6 +178,11 @@ void Player::Heal(int amount)
 void Player::RestoreEnergy()
 {
     m_energy = m_maxEnergy;
+}
+
+int Player::CostOf(const CardData& d) const
+{
+    return d.cost + (d.type == CardType::Move ? m_buffManager.GetBuffValue(BuffType::Mire) : 0);
 }
 
 bool Player::UseEnergy(int cost)

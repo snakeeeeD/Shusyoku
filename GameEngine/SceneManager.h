@@ -32,6 +32,7 @@ struct SettingsUI
           seTrack, 
           shake,
           aimCam,
+          glossary,
           title,
           gameEnd, 
           close,
@@ -180,7 +181,9 @@ private:
     float MatBottom() const;
     float MatAlphaAt(float y) const;
     float CoreTop() const;
-    int  GetDeckCardAt(POINT p) const;                              // 座標→デッキindex
+    int  GetDeckCardAt(POINT p) const;
+    int  DeckHoverIndex();                                          // ホバー中のカード（説明の上では前のカードのまま）
+    int  m_deckTipIdx = -1;                              // 座標→デッキindex
     std::vector<int> VisibleDeckIndices() const;
 
     bool m_deckUpgradeMode = false;
@@ -285,15 +288,26 @@ private:
     int  m_confirmAction = 0;
     int  m_dragSlider = -1;               // 0=BGM,1=SE,-1=なし
     void DrawSettings();
+    // 用語集（設定から開く。Glossary::RequestOpen でどこからでも開ける）
+    bool m_glossaryOpen = false;
+    std::unique_ptr<class VideoClip> m_glossVideo;   // 選んでいる用語の動画
+    ULONGLONG m_glossVideoTick = 0;
+    int  m_glossCat = 0, m_glossSel = 0, m_glossScroll = 0;
+    void OpenGlossary(const std::string& id);
+    void DrawGlossary();
+    void HandleGlossaryInput();
+    std::vector<int> GlossaryItems() const;
+    std::vector<std::pair<URect, std::string>> GlossaryRelated(const struct GlossaryEntry& e, const URect& detail);
     void HandleSettingsInput();   // 設定パネルの操作（帯のある画面・タイトルの両方から）
     bool AnyModalOpen() const;
+    bool TooltipBlocked() const;          // カードの説明を残せない画面が開いているか
 
     SettingsUI SettingsLayout() const
     {
         SettingsUI u{};
         u.hasTitle = (m_currentType != SceneType::Title);   // タイトルでは「タイトルに戻る」を出さない
         u.gear = { (float)m_screenWidth - 58.0f, 5.0f, 48.0f, 30.0f };
-        float pw = 440.0f, ph = u.hasTitle ? 438.0f : 396.0f;   // 「タイトルに戻る」の分だけ縦に伸ばす
+        float pw = 440.0f, ph = u.hasTitle ? 480.0f : 438.0f;   // 「タイトルに戻る」の分だけ縦に伸ばす
         float px = (m_screenWidth - pw) / 2.0f, py = (m_screenHeight - ph) / 2.0f;
         u.panel = { px, py, pw, ph };
         u.disp = { px + 180.0f, py + 54.0f, 200.0f, 34.0f };
@@ -302,6 +316,7 @@ private:
         u.shake = { px + 180.0f, py + 208.0f, 120.0f, 34.0f };
         u.aimCam = { px + 180.0f, py + 250.0f, 120.0f, 34.0f };
         float by = py + 292.0f;
+        u.glossary = { px + pw / 2.0f - 90.0f, by, 180.0f, 34.0f }; by += 42.0f;   // 用語集
         if (u.hasTitle) { u.title = { px + pw / 2.0f - 90.0f, by, 180.0f, 34.0f }; by += 42.0f; }   // タイトルに戻る
         else            u.title = { -1000.0f, -1000.0f, 0.0f, 0.0f };                             // 画面外（押せない）
         u.gameEnd = { px + pw / 2.0f - 90.0f, by, 180.0f, 34.0f };

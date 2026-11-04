@@ -2,15 +2,30 @@
 #include <d3d11.h>
 #include <d2d1.h>
 #include <dwrite.h>
+#include <dwrite_3.h>
 #include <wrl/client.h>
+#include <vector>
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "dwrite.lib")
 
 using Microsoft::WRL::ComPtr;
 
+enum class FontRole { Body, Heading };   // 本文＝M PLUS 1p、見出し＝Noto Serif JP
+
+// 文の一部だけ色を変える範囲（用語のハイライトなど）
+struct TextSpan { UINT32 start = 0, length = 0; D2D1_COLOR_F color; };
+
 class TextRenderer
 {
 public:
+    // この範囲だけフォントの種類を変える（カード名など）
+    struct RoleScope
+    {
+        TextRenderer& tr; FontRole prev;
+        RoleScope(TextRenderer& t, FontRole r) : tr(t), prev(t.m_role) { t.m_role = r; }
+        ~RoleScope() { tr.m_role = prev; }
+    };
+
     TextRenderer();
     ~TextRenderer();
 
@@ -46,6 +61,20 @@ public:
         float size, D2D1_COLOR_F color,
         D2D1_COLOR_F outline = D2D1::ColorF(D2D1::ColorF::Black), float thickness = 2.0f);
 
+    // 描いた時の大きさ（論理座標）。位置を手で合わせず、これで中央に置く
+    D2D1_SIZE_F Measure(const wchar_t* text, float size, FontRole role = FontRole::Body, float maxWidth = 4000.0f);
+
+    // 左揃えで折り返し、spans の範囲だけ色を変えて描く（用語のハイライト）
+    void DrawTextSpans(const wchar_t* text, float x, float y, float width, float size,
+        D2D1_COLOR_F color, const std::vector<TextSpan>& spans);
+    // DrawTextSpans と同じ置き方で、(mx, my) にある範囲の番号を返す（無ければ -1）
+    int HitTestSpans(const wchar_t* text, float x, float y, float width, float size,
+        const std::vector<TextSpan>& spans, float mx, float my);
+
+    // 左揃えで幅 width に折り返して描く（説明文など）
+    void DrawTextBox(const wchar_t* text, float x, float y, float width, float size,
+        D2D1_COLOR_F color = D2D1::ColorF(D2D1::ColorF::White));
+
     // 縁取りの自動付与（既定ON）。付けたくない画面だけ一時的にOFFにする
     void SetAutoOutline(bool on) { m_autoOutline = on; }
 
@@ -53,11 +82,13 @@ public:
     void End();
 
 private:
-    ComPtr<IDWriteTextFormat> MakeFormat(float size, bool centerH, bool centerV);
+    ComPtr<IDWriteTextFormat> MakeFormat(float size, bool centerH, bool centerV, FontRole role);
+    bool LoadFonts();                               // Assets/Font のフォントを登録（無ければ Arial のまま）
+    static D2D1_COLOR_F Warm(D2D1_COLOR_F c);       // 真っ白は少し温かい白に
     void AutoOutline(const D2D1_COLOR_F& color, float size, D2D1_COLOR_F& outline, float& thickness) const;
     void DrawLayout(const wchar_t* text, IDWriteTextFormat* format, const D2D1_RECT_F& rect,
         ID2D1Brush* fill, ID2D1Brush* outline, float thickness,
-        float rotation, float pivotX, float pivotY);
+        float rotation, float pivotX, float pivotY, const std::vector<TextSpan>* spans = nullptr);
 
     ComPtr<ID2D1Factory>        m_d2dFactory;
     ComPtr<ID2D1RenderTarget>   m_d2dRenderTarget;
@@ -66,4 +97,6 @@ private:
     ComPtr<ID2D1SolidColorBrush> m_brush;
     ComPtr<ID2D1SolidColorBrush> m_outlineBrush;   // 縁取り用
     bool m_autoOutline = true;
+    ComPtr<IDWriteFontCollection1> m_fonts;          // 同梱フォント（読めなければ空）
+    FontRole m_role = FontRole::Body;
 };

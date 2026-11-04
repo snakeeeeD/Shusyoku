@@ -1,0 +1,192 @@
+{
+  "categories": [ "基本", "信仰", "罠と床", "バフ", "デバフ", "カード", "敵" ],
+  "hidden": [ "terrain_landmine" ],
+  "clips": {
+    "terrain_explosion": "Assets/Video/gloss_trap_explosion.mpg",
+    "terrain_expose": "Assets/Video/gloss_trap_expose.mpg",
+    "terrain_poison": "Assets/Video/gloss_trap_poison.mpg",
+    "terrain_weaken": "Assets/Video/gloss_trap_weaken.mpg",
+    "terrain_root": "Assets/Video/gloss_trap_root.mpg",
+    "terrain_fire": "Assets/Video/gloss_floor_fire.mpg",
+    "buff_Burn": "Assets/Video/gloss_burn.mpg",
+    "terrain_thorn": "Assets/Video/gloss_floor_thorn.mpg",
+    "terrain_swamp": "Assets/Video/gloss_floor_swamp.mpg",
+    "terrain_ice": "Assets/Video/gloss_floor_ice.mpg",
+    "buff_Poison": "Assets/Video/gloss_trap_poison.mpg",
+    "buff_Vulnerable": "Assets/Video/gloss_trap_expose.mpg",
+    "buff_Weak": "Assets/Video/gloss_trap_weaken.mpg",
+    "buff_Root": "Assets/Video/gloss_trap_root.mpg",
+    "buff_Mire": "Assets/Video/gloss_floor_swamp.mpg"
+  },
+  "entries": [
+    {
+      "id": "energy",
+      "category": "基本",
+      "name": "エナジー",
+      "icon": "ui_cost",
+      "desc": "カードを使うのに必要な力。左下のオーブの数字。\nターンの始めに最大まで回復する。\nカードの左上の数字が、使うのに必要なエナジー（コスト）。",
+      "related": [ "turn" ]
+    },
+    {
+      "id": "block",
+      "category": "基本",
+      "name": "ブロック",
+      "icon": "icon_block",
+      "desc": "受けるダメージを先に引き受ける盾。\nダメージはブロックから減り、足りない分だけHPが減る。\n自分のターンの始めに消える（一部の効果で持ち越せる）。",
+      "related": [ "hp" ]
+    },
+    {
+      "id": "hp",
+      "category": "基本",
+      "name": "HP",
+      "desc": "0になると負け。\n休憩やイベント、一部のカードやレリックで回復できる。",
+      "related": [ "block" ]
+    },
+    {
+      "id": "turn",
+      "category": "基本",
+      "name": "ターン",
+      "desc": "自分のターンでカードを使い、ターンエンドを押すと敵が動く。\n敵の頭上のアイコンが、次の敵の行動。",
+      "related": [ "energy", "intent" ]
+    },
+    {
+      "id": "piles",
+      "category": "基本",
+      "name": "山札・捨て札",
+      "desc": "カードは山札から引き、使うと捨て札へ行く。\n山札がなくなると、捨て札を混ぜて新しい山札にする。",
+      "related": [ "turn" ]
+    },
+    {
+      "id": "steps",
+      "category": "基本",
+      "name": "歩数",
+      "desc": "フィールドを1マス進むごとに減る。\n0になったあとは、進むほど敵が強くなる。"
+    },
+    {
+      "id": "curse",
+      "category": "基本",
+      "name": "呪い",
+      "desc": "使えない、または持っていると損をするカード。\nイベントや敵の行動で加わる。浄化のカードで取り除ける。"
+    },
+    {
+      "id": "faith",
+      "category": "信仰",
+      "name": "信仰",
+      "clip": "Assets/Video/gloss_faith.mpg",
+      "icon": "buff_cathedral",
+      "desc": "マスにたまる力。カードで「刻む」と増え、1マスに最大{FAITH_MAX}までたまる。\n信仰のあるマスを聖地、最大までたまったマスを聖域と呼ぶ。",
+      "related": [ "holy_ground", "sanctuary", "engrave" ]
+    },
+    {
+      "id": "holy_ground",
+      "category": "信仰",
+      "name": "聖地",
+      "clip": "Assets/Video/gloss_holy_ground.mpg",
+      "icon": "buff_holyground",
+      "desc": "信仰が1以上のマス。\n・自分が立つと、攻撃力が（信仰÷2）上がる\n・ターン終了時、上に敵がいると信仰の分だけダメージを与え、信仰は半分になる",
+      "related": [ "faith", "sanctuary" ]
+    },
+    {
+      "id": "sanctuary",
+      "category": "信仰",
+      "name": "聖域",
+      "clip": "Assets/Video/gloss_sanctuary.mpg",
+      "icon": "buff_sanctuary",
+      "desc": "信仰が{FAITH_MAX}までたまったマス。\n聖地の効果に加えて、立っている間は受けるダメージが半分になる。\n（攻撃力は+{SANCT_ATK}）",
+      "related": [ "faith", "holy_ground" ]
+    },
+    {
+      "id": "engrave",
+      "category": "信仰",
+      "name": "刻む",
+      "clip": "Assets/Video/gloss_engrave.mpg",
+      "icon": "buff_guardianvow",
+      "desc": "マスに信仰を足す。聖地や聖域を作る基本の行動。\n自分の足元に刻めるカードもある。",
+      "related": [ "faith", "holy_ground" ]
+    },
+    {
+      "id": "trap",
+      "category": "罠と床",
+      "name": "罠",
+      "clip": "Assets/Video/gloss_trap.mpg",
+      "icon": "trap_explosion",
+      "desc": "自分が置く仕掛け。敵が踏むと発動して消える。\n起爆のカードを使えば、踏ませずに発動させられる。\n罠の上にマウスを乗せると効果が分かる。",
+      "related": [ "floor" ]
+    },
+    {
+      "id": "floor",
+      "category": "罠と床",
+      "name": "床",
+      "clip": "Assets/Video/gloss_floor.mpg",
+      "icon": "intent_hazard",
+      "desc": "敵が置く危険なマス。自分が踏むと効果を受ける（敵は影響を受けない）。\nターンが経つと消える。マスの上にマウスを乗せると残りのターン数が分かる。",
+      "related": [ "trap" ]
+    },
+    {
+      "id": "intent",
+      "category": "敵",
+      "name": "行動予告",
+      "clip": "Assets/Video/gloss_intent.mpg",
+      "icon": "intent_attack",
+      "desc": "敵の頭上のアイコンは、次のターンの行動。\n数字はダメージ。\nアイコンにマウスを乗せると詳しい説明が出る。",
+      "related": [ "threat_area" ]
+    },
+    {
+      "id": "threat_area",
+      "category": "敵",
+      "name": "攻撃範囲",
+      "clip": "Assets/Video/gloss_threat_area.mpg",
+      "desc": "敵の攻撃が当たるマス。敵の色で塗られる。\n範囲の外へ移動すれば避けられる。\n今の位置に当たる時は、自分の頭上に赤い警告が出る。",
+      "related": [ "intent", "dash" ]
+    },
+    {
+      "id": "dash",
+      "category": "敵",
+      "name": "突進",
+      "clip": "Assets/Video/gloss_dash.mpg",
+      "desc": "まっすぐ進んで体当たりする攻撃。\n矢印の通り道に立っていると当たる。",
+      "related": [ "threat_area" ]
+    },
+    {
+      "id": "summon",
+      "category": "敵",
+      "name": "召喚",
+      "clip": "Assets/Video/gloss_summon.mpg",
+      "icon": "intent_summon",
+      "desc": "仲間の敵を呼ぶ。出てくるマスが範囲として表示される。\nそのマスに立っていると、その敵は出てこない。",
+      "related": [ "threat_area" ]
+    },
+    {
+      "id": "big_enemy",
+      "category": "敵",
+      "name": "大きい敵",
+      "clip": "Assets/Video/gloss_big_enemy.mpg",
+      "desc": "2×2など、複数のマスに立つ敵。\nどのマスを攻撃しても当たり、攻撃範囲も体の大きさの分だけ広い。"
+    },
+    {
+      "id": "immovable",
+      "category": "敵",
+      "name": "移動不可",
+      "clip": "Assets/Video/gloss_immovable.mpg",
+      "desc": "ノックバックや引き寄せで動かない敵。\n引き寄せを使うと、自分のほうが敵へ引き寄せられる。"
+    },
+    {
+      "id": "weak_point",
+      "category": "敵",
+      "name": "弱点",
+      "clip": "Assets/Video/gloss_weak_point.mpg",
+      "unlockBossLayer": 2,
+      "desc": "オロチの頭と光るウロコ。カードで攻撃すると2倍のダメージ。\n体への攻撃は半分になる。",
+      "related": [ "molt" ]
+    },
+    {
+      "id": "molt",
+      "category": "敵",
+      "name": "脱皮",
+      "clip": "Assets/Video/gloss_molt.mpg",
+      "unlockBossLayer": 2,
+      "desc": "オロチはカードの攻撃を受け続けると脱皮し、巻きつきと攻撃力が上がる。\n毒・罠・聖地のダメージでは脱皮しない。",
+      "related": [ "weak_point" ]
+    }
+  ]
+}

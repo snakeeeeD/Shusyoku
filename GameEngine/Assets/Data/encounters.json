@@ -1288,6 +1288,20 @@
      "row": 5
     }
    ]
+  },
+  {
+   "id": "rec_weaken",
+   "layer": 99,
+   "tier": 1,
+   "category": "normal",
+   "weight": 0,
+   "enemies": [
+    {
+     "id": "rec_dummy",
+     "col": 4,
+     "row": 1
+    }
+   ]
   }
  ]
 }

@@ -689,7 +689,7 @@ void FieldScene::HandleInput()
 
                 m_playerCol = col;
                 m_playerRow = row;
-                m_steps--;
+                if (m_steps > MIN_STEPS) m_steps--;   // -5より下には減らさない
                 Se::Play(Se::StepFile(true), 0.2f);   // ざっざっざ
                 if (m_steps <= 0) Hint::Request("steps");
                 

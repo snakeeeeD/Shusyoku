@@ -125,6 +125,7 @@ inline BuffType StringToBuffType(const std::string& str)
     if (str == "LastStand") return BuffType::LastStand;
     if (str == "DeepStand") return BuffType::DeepStand;
     if (str == "EmberTrail")  return BuffType::EmberTrail;
+    if (str == "Mire")        return BuffType::Mire;
 
     if (str == "GuardianVow") return BuffType::GuardianVow;
     if (str == "Cathedral")   return BuffType::Cathedral;

@@ -371,7 +371,7 @@ void BattleHighlighter::UpdateEnemyHighlight(
                 gridMap->GetCell(ec, er).gameObject.color = footCol;
         }
 
-        if (!harmful) continue;
+        if (!action || !EnemyIntentVisual::ShowsRange(*action)) continue;
 
         auto mark = [&](int c, int r, int dist)
             {
@@ -406,7 +406,7 @@ void BattleHighlighter::UpdateEnemyHighlight(
         {
             auto& cell = gridMap->GetCell(c, r);
             if (cell.type == CellType::Enemy || cell.type == CellType::Boss) continue;
-            if (c == playerCol && r == playerRow) enemy->hitsPlayer = true;
+            if (c == playerCol && r == playerRow && harmful) enemy->hitsPlayer = true;   // 生成位置は「当たる」警告を出さない
             int dist = abs(c - enemy->gridCol) + abs(r - enemy->gridRow);
             mark(c, r, dist);
         }

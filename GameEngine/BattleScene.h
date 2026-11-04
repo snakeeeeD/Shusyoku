@@ -189,6 +189,7 @@ private:
 
     Deck m_deck;
     static constexpr int HAND_SIZE = 7;
+    int m_enemyAddedToHand = 0;   // 敵のターン中に手札へ入れられたお邪魔カードの枚数（引く枚数から除く）
 
     bool m_showDrawPile;
     bool m_showDiscardPile;

@@ -3095,7 +3095,8 @@
         "value": 1,
         "duration": 1
       }
-    },    {
+    },
+    {
       "id": "ATK_pass_slash",
       "name": "駆け抜け斬り",
       "type": "Attack",

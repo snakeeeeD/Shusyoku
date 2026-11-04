@@ -110,6 +110,16 @@ bool Enemy::IsInRange(int targetCol, int targetRow, int range, RangeType rangeTy
     return false;
 }
 
+// 形の中心のワールド座標（2*2 ならマスの間に来る）
+void Enemy::CenterWorld(int col, int row, GridMap* gridMap, float& x, float& z) const
+{
+    float sc = 0, sr = 0;
+    for (auto& [dc, dr] : m_gridShape) { sc += dc; sr += dr; }
+    float n = (float)m_gridShape.size();
+    x = (col + sc / n - gridMap->GetCols() / 2.0f) * 1.1f;
+    z = (row + sr / n - gridMap->GetRows() / 2.0f) * 1.1f;
+}
+
 void Enemy::ClearFootprint(GridMap* gridMap)
 {
     for (auto& [dc, dr] : GetGridShape())
@@ -185,8 +195,10 @@ void Enemy::MoveToward(int playerCol, int playerRow, GridMap* gridMap, int steps
 
     // 実際に動いた時だけスライド（0マス移動でStartMoveすると無反応な待ちが出るため）
     if (m_movePath.size() != pathStart)
-        StartMove((gridCol - gridMap->GetCols() / 2.0f) * 1.1f,
-            (gridRow - gridMap->GetRows() / 2.0f) * 1.1f);
+    {
+        float wx, wz; CenterWorld(gridCol, gridRow, gridMap, wx, wz);
+        StartMove(wx, wz);
+    }
 }
 
 void Enemy::DropTrail(GridMap* gridMap, int col, int row)
@@ -235,8 +247,7 @@ void Enemy::MoveAway(int playerCol, int playerRow, GridMap* gridMap, int steps)
         MarkFootprint(gridMap);
         m_movePath.push_back({ gridCol, gridRow });
 
-        pts.push_back({ (gridCol - gridMap->GetCols() / 2.0f) * 1.1f,
-                        (gridRow - gridMap->GetRows() / 2.0f) * 1.1f });   // 通過マス
+        { float wx, wz; CenterWorld(gridCol, gridRow, gridMap, wx, wz); pts.push_back({ wx, wz }); }   // 通過マス
     }
 
 
@@ -255,7 +266,9 @@ bool Enemy::MoveDash(int playerCol, int playerRow, GridMap* gridMap, int steps)
     {
         int nc = gridCol + m_aimDx, nr = gridRow + m_aimDy;
         if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) break;
-        if (nc == playerCol && nr == playerRow) { hit = true; break; }      // ぶつかった＝ヒット
+        for (auto& [dc, dr] : GetGridShape())               // 体のどこかがぶつかった＝ヒット
+            if (nc + dc == playerCol && nr + dr == playerRow) hit = true;
+        if (hit) break;
         if (!CanOccupy(gridMap, nc, nr)) break;
 
         ClearFootprint(gridMap);
@@ -285,8 +298,10 @@ void Enemy::MoveAlongPlanned(GridMap* gridMap)
         m_movePath.push_back({ gridCol, gridRow });
     }
     if (m_movePath.size() != pathStart)
-        StartMove((gridCol - gridMap->GetCols() / 2.0f) * 1.1f,
-            (gridRow - gridMap->GetRows() / 2.0f) * 1.1f);
+    {
+        float wx, wz; CenterWorld(gridCol, gridRow, gridMap, wx, wz);
+        StartMove(wx, wz);
+    }
 }
 
 void Enemy::AlignToTarget(int playerCol, int playerRow, GridMap* gridMap, int steps)
@@ -308,8 +323,10 @@ void Enemy::AlignToTarget(int playerCol, int playerRow, GridMap* gridMap, int st
         m_movePath.push_back({ gridCol, gridRow });        // 通過罠判定用
     }
     if (m_movePath.size() != pathStart)
-        StartMove((gridCol - gridMap->GetCols() / 2.0f) * 1.1f,
-            (gridRow - gridMap->GetRows() / 2.0f) * 1.1f);
+    {
+        float wx, wz; CenterWorld(gridCol, gridRow, gridMap, wx, wz);
+        StartMove(wx, wz);
+    }
 }
 
 void Enemy::MoveToCenter(GridMap* gridMap, int steps)
@@ -332,8 +349,10 @@ void Enemy::MoveToCenter(GridMap* gridMap, int steps)
         m_movePath.push_back({ gridCol, gridRow });
     }
     if (m_movePath.size() != pathStart)
-        StartMove((gridCol - gridMap->GetCols() / 2.0f) * 1.1f,
-            (gridRow - gridMap->GetRows() / 2.0f) * 1.1f);
+    {
+        float wx, wz; CenterWorld(gridCol, gridRow, gridMap, wx, wz);
+        StartMove(wx, wz);
+    }
 }
 
 void Enemy::TakeDamage(int damage, DamageFeel feel)
@@ -652,6 +671,9 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
         m_missStreak = 0;   // 移動したのでリセット
     }
 
+    m_summonPlan.clear();
+    for (auto& act : m_plannedActions) PlanSummon(act);
+
     m_lungePlan.clear();
     if (!m_plannedActions.empty() && HasLunge(m_plannedActions[0]))
         m_lungePlan = LungePath(playerCol, playerRow);
@@ -889,7 +911,8 @@ bool Enemy::IsCellInTarget(int col, int row, const TargetSpec& tg) const
     if (tg.approach == ApproachType::Dash)
     {
         for (int i = 1; i <= tg.moveRange; i++)
-            if (gridCol + m_aimDx * i == col && gridRow + m_aimDy * i == row) return true;
+            for (auto& [dc, dr] : GetGridShape())           // 体の幅ぶん
+                if (gridCol + dc + m_aimDx * i == col && gridRow + dr + m_aimDy * i == row) return true;
         return false;
     }
     if (tg.anchor != AnchorType::Self)
@@ -902,8 +925,28 @@ bool Enemy::IsCellInTarget(int col, int row, const TargetSpec& tg) const
     return IsInRange(col, row, tg.range, tg.rangeType, tg.minRange);
 }
 
+// 生成位置を決める（行動を決めた時に呼ぶ）。target の範囲の空きマスからランダムに選ぶ
+void Enemy::PlanSummon(const EnemyAction& a)
+{
+    if (!m_grid) return;
+    for (auto& e : a.effects)
+    {
+        if (e.kind != EffectKind::Summon || a.target.rangeType == RangeType::None) continue;
+        std::vector<std::pair<int, int>> cells;
+        for (int r = 0; r < m_gridRows; r++)
+            for (int c = 0; c < m_gridCols; c++)
+                if (m_grid->GetCell(c, r).type == CellType::Empty && IsCellInTarget(c, r, a.target))
+                    cells.push_back({ c, r });
+        for (int i = (int)cells.size() - 1; i > 0; i--) std::swap(cells[i], cells[rand() % (i + 1)]);
+        if ((int)cells.size() > e.value) cells.resize(e.value);
+        m_summonPlan.insert(m_summonPlan.end(), cells.begin(), cells.end());
+    }
+}
+
 bool Enemy::IsThreateningCell(int col, int row, const EnemyAction& a) const
 {
+    for (auto& c : m_summonPlan)                        // 生成位置も範囲として見せる
+        if (c.first == col && c.second == row) return true;
     if (IsCellInTarget(col, row, a.target)) return true;
     for (auto& t : a.extraTargets)
         if (IsCellInTarget(col, row, t)) return true;
@@ -984,8 +1027,7 @@ std::vector<std::pair<int, int>> Enemy::PlannedMovePath(int targetCol, int targe
             {
                 int nc = c + m_aimDx, nr = r + m_aimDy;
                 if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) break;
-                if (nc == targetCol && nr == targetRow) break;
-                if (gridMap->GetCell(nc, nr).type != CellType::Empty) break;
+                if (!CanOccupy(gridMap, nc, nr)) break;             // 形全体で判定（プレイヤーのマスも含む）
                 c = nc; r = nr; path.push_back({ c, r });
             }
             return path;
