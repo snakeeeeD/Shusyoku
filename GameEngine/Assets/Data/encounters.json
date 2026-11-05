@@ -1300,6 +1300,11 @@
      "id": "rec_dummy",
      "col": 4,
      "row": 1
+    },
+    {
+     "id": "rec_dummy",
+     "col": 4,
+     "row": 0
     }
    ]
   }

@@ -32,7 +32,7 @@ BattleUI::~BattleUI()
 }
 
 static std::string s_hoverKey;
-static bool StatusAboveHead(Enemy* enemy, Player* player);   // 下の GetStatusFoot の上で定義
+static bool StatusAboveHead(Enemy* enemy, Player* player, const std::vector<Enemy*>& enemies, int depth = 0);   // 下の GetStatusFoot の上で定義
 
 bool BattleUI::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     int screenWidth, int screenHeight, IDXGISwapChain* swapChain)
@@ -391,7 +391,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 float mk = 34.0f;   
                 float mx = headX - mk / 2.0f;
                 float my = headY - mk - 14.0f;
-                if (StatusAboveHead(enemy, ctx.player))   // UIを頭上へ上げた時は、行動予告のさらに上に
+                if (StatusAboveHead(enemy, ctx.player, *ctx.enemies))   // UIを頭上へ上げた時は、行動予告のさらに上に
                     my = barY - EnemyIntentVisual::ICON_SIZE - 2.0f - mk - 4.0f;
                 float pulse = 0.75f + 0.25f * sinf(ctx.highlightTimer * 6.0f);
                 const XMFLOAT4& hue = enemy->hueColor;
@@ -1251,7 +1251,8 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         DrawEnemyInfoPanel(ctx);
     }
 
-    if (ctx.hoveredCardIndex >= 0 && ctx.hoveredCardIndex < (int)ctx.hand->GetCards().size())
+    if (ctx.selectedCardIndex < 0   // 選んでいる間は出さない（説明の窓が狙うマスを隠して押せなくなるため）
+        && ctx.hoveredCardIndex >= 0 && ctx.hoveredCardIndex < (int)ctx.hand->GetCards().size())
     {
         float cx, cy, cw, ch; GetCardRect(ctx.hoveredCardIndex, cx, cy, cw, ch);
         CardTooltip::Draw(m_spriteRenderer, m_textRenderer, m_whiteTexture,
@@ -2256,19 +2257,32 @@ static const float DETAIL_W = 220.0f;  // 詳細の窓の幅
 static const int   DETAIL_CH = 13;      // 詳細の1行の文字数（15px・幅200）
 
 // 自分のすぐ上のマスに立つ敵か（その敵のUIは足元ではなく頭の上に出す。足元だと自分のキャラやUIと重なる）
-static bool StatusAboveHead(Enemy* enemy, Player* player)
+// UIを頭の上に出す敵か：すぐ下のマスに「自分」か「UIを上げた敵」がいる（上げたUIと重なるので、上へ連鎖して上げる）
+static bool StatusAboveHead(Enemy* enemy, Player* player, const std::vector<Enemy*>& enemies, int depth)
 {
-    if (enemy->IsSnake())   // 蛇のUIは頭のマスの下に出るので、頭の真下にいる時だけ
-        return enemy->gridCol == player->gridCol && enemy->gridRow == player->gridRow - 1;
+    if (depth > 8) return false;   // 盤の行数より深くは連鎖しない（念のため）
+    auto raisedBelow = [&](int c, int r) {
+        if (c == player->gridCol && r + 1 == player->gridRow) return true;
+        for (auto other : enemies)
+        {
+            if (other == enemy) continue;
+            bool under = other->IsSnake()   // 蛇は頭の上にだけUIを上げるので、頭のマスだけ見る
+                ? (other->gridCol == c && other->gridRow == r + 1)
+                : other->OccupiesCell(c, r + 1);
+            if (under && StatusAboveHead(other, player, enemies, depth + 1)) return true;
+        }
+        return false;
+        };
+    if (enemy->IsSnake()) return raisedBelow(enemy->gridCol, enemy->gridRow);   // 蛇のUIは頭の下に出るので頭だけ
     for (auto& [c, r] : enemy->OccupiedCells())
-        if (c == player->gridCol && r == player->gridRow - 1) return true;
+        if (raisedBelow(c, r)) return true;
     return false;
 }
 
 bool BattleUI::GetStatusFoot(Enemy* enemy, const BattleUIContext& ctx, float& outX, float& outY) const
 {
     if (!GetEnemyFootPos(enemy, ctx.renderer3D, outX, outY)) return false;
-    if (StatusAboveHead(enemy, ctx.player))
+    if (StatusAboveHead(enemy, ctx.player, *ctx.enemies))
     {
         float hx, hy;   // HPバー・バフの下端を頭のすぐ上へ（行動予告はバーの上に並ぶので、さらに上）
         bool ok = enemy->IsSnake()   // 蛇は平置きなので、頭のマスの奥の縁を「頭の上」とする
@@ -2955,9 +2969,9 @@ void BattleUI::DrawUnitStatusText(float footX, float footY, float scale, bool is
 
     // HP数値
     wchar_t hp[32]; swprintf_s(hp, L"%d/%d", bar.currentHP, bar.maxHP);
-    float tw = wcslen(hp) * fontSize * 0.5f;
-    float tx = barX + (barWidth - tw) / 2.0f;
-    float ty = barY + (barHeight - fontSize) / 2.0f - 3.0f;
+    D2D1_SIZE_F hs = m_textRenderer->Measure(hp, fontSize, FontRole::Body);   // 実際の文字の大きさでバーの中央に
+    float tx = barX + (barWidth - hs.width) / 2.0f;
+    float ty = barY + (barHeight - hs.height) / 2.0f;
     m_textRenderer->DrawText(hp, tx + 1, ty + 1, fontSize, D2D1::ColorF(0, 0, 0, 1));
     m_textRenderer->DrawText(hp, tx, ty, fontSize, D2D1::ColorF(D2D1::ColorF::White));
 
@@ -2966,12 +2980,13 @@ void BattleUI::DrawUnitStatusText(float footX, float footY, float scale, bool is
     {
         float iconSize = barHeight * 2.0f;
         float iconX = barX - iconSize / 2.0f;
-        float iconY = barY + (barHeight - iconSize) / 2.0f - 2.0f;
+        float iconY = barY + (barHeight - iconSize) / 2.0f;   // 盾のアイコンと同じ位置
         wchar_t bt[16]; swprintf_s(bt, L"%d", bar.block);
         float bFont = max(7.0f, fontSize * 0.9f);
-        float btW = wcslen(bt) * bFont * 0.5f;
-        m_textRenderer->DrawText(bt, iconX + (iconSize - btW) / 2.0f + 1.0f, iconY + (iconSize - bFont) / 2.0f + 1.0f, bFont, D2D1::ColorF(0, 0, 0, 1));
-        m_textRenderer->DrawText(bt, iconX + (iconSize - btW) / 2.0f, iconY + (iconSize - bFont) / 2.0f, bFont, D2D1::ColorF(D2D1::ColorF::White));
+        D2D1_SIZE_F bs = m_textRenderer->Measure(bt, bFont, FontRole::Body);   // 盾の四角の中央に
+        float bx = iconX + (iconSize - bs.width) / 2.0f, by = iconY + (iconSize - bs.height) / 2.0f;
+        m_textRenderer->DrawText(bt, bx + 1.0f, by + 1.0f, bFont, D2D1::ColorF(0, 0, 0, 1));
+        m_textRenderer->DrawText(bt, bx, by, bFont, D2D1::ColorF(D2D1::ColorF::White));
     }
 
     // バフ/デバフ数値

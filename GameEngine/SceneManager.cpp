@@ -462,6 +462,7 @@ void SceneManager::ChangeScene(SceneType type, std::function<void()> onBlack)
 void SceneManager::DoChangeScene(SceneType type)
 {
 	Hint::Clear();
+	CardTooltip::ClearHeld();   // 暗転中に前のシーンが覚え直した説明も、ここで消す（次のシーンに残さない）
 
 	if (type == SceneType::Title) QuickPlay::End();   // タイトルへ戻る時は必ず終了（本編の状態に戻す）
 	if (QuickPlay::Active() && type == SceneType::Field)
@@ -1647,18 +1648,21 @@ std::vector<int> SceneManager::GlossaryItems() const
 std::vector<std::pair<URect, std::string>> SceneManager::GlossaryRelated(const GlossaryEntry& e, const URect& d)
 {
 	std::vector<std::pair<URect, std::string>> out;
-	float top = GlossDescTop(e, d);
-	float y = top + m_textRenderer->Measure(e.desc.c_str(), 17.0f, FontRole::Body, d.w - 24.0f).height + 40.0f;
-	float x = d.x + 12.0f;
+	float x = d.x + 12.0f, y = 0.0f;   // まず上端0で並べて、行数（全体の高さ）を出す
 	for (auto& id : e.related)
 	{
 		const GlossaryEntry* r = Glossary::Get(id);
 		if (!r || Glossary::Locked(*r)) continue;
 		float w = m_textRenderer->Measure(r->name.c_str(), 16.0f, FontRole::Body).width + 28.0f;
-		if (x + w > d.x + d.w - 12.0f) { x = d.x + 12.0f; y += 40.0f; }
+		if (x + w > d.x + d.w - 12.0f) { x = d.x + 12.0f; y += 36.0f; }
 		out.push_back({ { x, y, w, 32.0f }, id });
 		x += w + 8.0f;
 	}
+	// 置く高さ：説明文の下。ただし詳細欄の下の端からはみ出すなら、下の端に合わせて上げる
+	float below = GlossDescTop(e, d) + m_textRenderer->Measure(e.desc.c_str(), 17.0f, FontRole::Body, d.w - 24.0f).height + 40.0f;
+	float fit = d.y + d.h - (y + 32.0f) - 6.0f;
+	float y0 = (below < fit) ? below : fit;
+	for (auto& o : out) o.first.y += y0;
 	return out;
 }
 

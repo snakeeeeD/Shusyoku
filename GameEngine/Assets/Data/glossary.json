@@ -187,6 +187,24 @@
       "unlockBossLayer": 2,
       "desc": "オロチはカードの攻撃を受け続けると脱皮し、巻きつきと攻撃力が上がる。\n毒・罠・聖地のダメージでは脱皮しない。",
       "related": [ "weak_point" ]
+    },
+    {
+      "id": "knockback",
+      "category": "カード",
+      "name": "ノックバック",
+      "clip": "Assets/Video/gloss_knockback.mpg",
+      "icon": "intent_knockback",
+      "desc": "敵を、自分から見て向こう側へ数字のマスだけ吹き飛ばす。通り道の罠は敵が踏む。\n壁や盤の端にぶつかると、残りのマス数×3のダメージ。\n別の敵にぶつかると両方に同じダメージを与え、ぶつかった敵も1マス少なく吹き飛ぶ。",
+      "related": [ "pull", "trap", "immovable" ]
+    },
+    {
+      "id": "pull",
+      "category": "カード",
+      "name": "引き寄せ",
+      "clip": "Assets/Video/gloss_pull.mpg",
+      "icon": "intent_pull",
+      "desc": "敵を、自分のほうへ数字のマスだけ引き寄せる。通り道の罠は敵が踏む。\n何かにぶつかるとそこで止まる。\n移動不可の敵に使うと、自分のほうが敵へ引き寄せられる。",
+      "related": [ "knockback", "trap", "immovable" ]
     }
   ]
 }

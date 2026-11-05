@@ -3842,6 +3842,7 @@ void BattleScene::HandleInput()
     }
     
     m_hoveredCardIndex = m_battleUI->GetCardAtScreenPos(mousePos);
+    if (m_selectedCardIndex >= 0) CardTooltip::ClearHeld();   // 選んでいる間は、残っている説明も消す（窓の上のクリックを盤面に通す）
     if (m_hoveredCardIndex != m_prevHoveredCard)
     {
         if (m_hoveredCardIndex >= 0) Audio::PlaySE("Assets/Sound/se/hover.mp3");

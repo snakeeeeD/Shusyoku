@@ -314,7 +314,7 @@
       "cost": 1,
       "range": 1,
       "rangeType": "Adjacent",
-      "description": "{value}ダメージ 毒{onhit} 弱体",
+      "description": "{value}ダメージ 毒{onhit} 脱力{onhit2dur}ターン",
       "upgrade": {
         "onHitValue": 2
       },

@@ -156,7 +156,7 @@ public:
     {
         if (s_debugHide) return;                  // 録画用に隠す
         auto es = Entries(d);
-        if (es.empty()) return;
+        if (es.empty()) { s_hasHeld = false; return; }   // 説明のないカード：前のカードの説明を残さない
         const float pw = 320.0f, textW = pw - 24.0f;
         std::vector<float> rowH;                                  // 行ごとの高さ（説明の折り返しに合わせる）
         float ph = 12.0f;

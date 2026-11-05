@@ -4401,7 +4401,6 @@
       "hp": 58,
       "width": 1.2,
       "height": 1.2,
-      "immovable": true,
       "actions": [
         {
           "description": "叩きつけ、{0}ダメージ",
