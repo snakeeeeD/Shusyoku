@@ -79,13 +79,17 @@ void QuickSelectScene::HandleInput()
     int n = (int)QuickPlay::Decks().size();
 
     // マウスが乗っているカード
+    int prevHover = m_hoverCard;
     m_hoverCard = -1;
     const float cw = CardVisual::CARD_W * CARD_SCALE, ch = CardVisual::CARD_H * CARD_SCALE;
-    for (int i = 0; i < (int)m_cards.size(); i++)
-    {
-        float x, y; CardSlot(i, x, y);
-        if (mp.x >= x && mp.x <= x + cw && mp.y >= y && mp.y <= y + ch) { m_hoverCard = i; break; }
-    }
+    if (prevHover >= 0 && CardTooltip::MouseInHold())   // 拡大したカードと説明は一番手前：その上にいる間は隣に切り替えない
+        m_hoverCard = prevHover;
+    else
+        for (int i = 0; i < (int)m_cards.size(); i++)
+        {
+            float x, y; CardSlot(i, x, y);
+            if (mp.x >= x && mp.x <= x + cw && mp.y >= y && mp.y <= y + ch) { m_hoverCard = i; break; }
+        }
 
     // ボタン（ホバー音は乗ったボタンが変わった瞬間だけ）
     const int KEY_BACK = 100, KEY_START = 101;

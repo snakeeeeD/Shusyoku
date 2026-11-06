@@ -689,10 +689,11 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
 
         if (data.mainEffect.type == CardEffectType::Detonate)
         {
+            bool all = (data.rangeType == RangeType::None);   // 範囲なし＝盤面の全部
             bool any = false;
             for (int r = 0; r < gridMap->GetRows() && !any; r++)
                 for (int c = 0; c < gridMap->GetCols() && !any; c++)
-                    if (gridMap->GetCell(c, r).tileEffect.active && inRange(c, r))
+                    if (gridMap->GetCell(c, r).tileEffect.active && !gridMap->GetCell(c, r).tileEffect.enemyOwned && (all || inRange(c, r)))
                         any = true;
             if (!any) return result;   // 範囲内に罠が無ければ不発（ノーコスト）
         }
@@ -831,13 +832,14 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
         }
         case CardEffectType::Detonate:
         {
-            result.seqFull = (data.mainEffect.value > 0);   // value>0＝全開
+            result.seqFull = (data.mainEffect.value > 0);
+            bool all = (data.rangeType == RangeType::None);   // 範囲なし＝盤面の全部   // value>0＝全開
             for (int r = 0; r < gridMap->GetRows(); r++)
                 for (int c = 0; c < gridMap->GetCols(); c++)
                 {
                     Cell& cell = gridMap->GetCell(c, r);
                     if (!cell.tileEffect.active || cell.tileEffect.enemyOwned) continue;   // 敵床は集めない
-                    if (inRange(c, r))
+                    if (all || inRange(c, r))
                         result.seqDetonateCells.push_back({ c, r });
                 }
             if (!result.seqDetonateCells.empty()) result.startSeqDetonate = true;
@@ -1122,6 +1124,7 @@ void CardExecutor::TriggerTrap(Cell& cell, Enemy* enemy, int col, int row,
         if (def->aoe)
         {
             int halfDmg = cell.tileEffect.value / 2;
+            std::vector<Enemy*> hit{ enemy };   // 大きい敵は周りの複数マスにかかっても1回だけ
             for (int dr = -1; dr <= 1; dr++)
             {
                 for (int dc = -1; dc <= 1; dc++)
@@ -1132,8 +1135,11 @@ void CardExecutor::TriggerTrap(Cell& cell, Enemy* enemy, int col, int row,
                     if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows())
                         continue;
                     Enemy* nearby = GetEnemyAt(nc, nr, enemies);
-                    if (nearby && nearby != enemy)
+                    if (nearby && std::find(hit.begin(), hit.end(), nearby) == hit.end())
+                    {
                         nearby->TakeDamage(halfDmg);
+                        hit.push_back(nearby);
+                    }
                 }
             }
         }
@@ -1195,6 +1201,7 @@ bool CardExecutor::DetonateTrap(Cell& cell, int col, int row,
     EffectManager::Play(fx, wx, 0.5f, wz);
     ScreenShake::Add(0.3f);
 
+    std::vector<std::pair<Enemy*, bool>> hits;   // 範囲にかかった敵（大きい敵も1回だけ。真ん中にかかれば全開）
     for (int dr = -1; dr <= 1; dr++)
         for (int dc = -1; dc <= 1; dc++)
         {
@@ -1202,8 +1209,13 @@ bool CardExecutor::DetonateTrap(Cell& cell, int col, int row,
             if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows()) continue;
             Enemy* e = GetEnemyAt(nc, nr, enemies);
             if (!e) continue;
-
             bool center = (dc == 0 && dr == 0);
+            auto it = std::find_if(hits.begin(), hits.end(), [&](auto& h) { return h.first == e; });
+            if (it == hits.end()) hits.push_back({ e, center });
+            else it->second = it->second || center;
+        }
+    for (auto& [e, center] : hits)
+        {
             int val = cell.tileEffect.value;
             if (!center && !fullPower) val /= 2;          // 周囲は半分（強化で全開）
 

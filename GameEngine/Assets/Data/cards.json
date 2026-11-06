@@ -2366,9 +2366,9 @@
         "Trap"
       ],
       "cost": 3,
-      "range": 20,
-      "rangeType": "Diamond",
-      "description": "盤面の全ての罠を全開で起爆する",
+      "range": 0,
+      "rangeType": "None",
+      "description": "盤面の罠を全て起爆。\n罠の効果を周りの敵にも\nそのまま与える",
       "upgrade": {
         "cost": -1
       },

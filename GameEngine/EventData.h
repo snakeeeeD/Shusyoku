@@ -18,6 +18,7 @@ struct EventChoice
 struct EventDef 
 { 
 	int layer = 0;
+	int maxLayer = 0;   // layer`maxLayer ‚Ì‘w‚Åo‚éiÈ—ª‚Í layer ‚Æ“¯‚¶‚»‚Ì‘w‚¾‚¯j
 	bool random = true;
 	std::string id, title, desc; std::vector<EventChoice> choices; 
 };

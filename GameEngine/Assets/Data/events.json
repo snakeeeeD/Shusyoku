@@ -566,7 +566,9 @@
       "id": "treasure",
       "title": "財宝",
       "desc": "宝が眠っている。ただ、タダでは持ち出せなさそうだ…",
-      "random": false,
+      "random": true,
+      "layer": 2,
+      "maxLayer": 3,
       "choices": [
         {
           "label": "遺物を奪う（レリック獲得 / -14HP）",

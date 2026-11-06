@@ -32,6 +32,19 @@
 
 // ナイフ＋投擲術なら遠距離化（Diamond=範囲内の任意の敵を狙える。単体パスのままなので研磨も効く）
 // 3層ボスの鎖：柱（楔）ごとの鎖の絵と、外れた時の破片
+// 敵が (col,row) に立った時、体の下の罠を全部踏む（大きい敵は形の全マス）
+static void TriggerTrapsUnder(Enemy* e, int col, int row, GridMap* g, std::vector<Enemy*>& enemies)
+{
+    for (auto& [dc, dr] : e->GetGridShape())
+    {
+        int c = col + dc, r = row + dr;
+        if (c < 0 || r < 0 || c >= g->GetCols() || r >= g->GetRows()) continue;
+        auto& cell = g->GetCell(c, r);
+        if (cell.tileEffect.active) CardExecutor::TriggerTrap(cell, e, c, r, g, enemies);
+        if (e->GetHp() <= 0) return;
+    }
+}
+
 static constexpr float RAISE_H = 0.12f;   // 狙ったマスが浮く高さ（上げすぎると奥のマスに食い込んで見える）
 
 static const struct { const char* wedge; const char* chain; const char* fx; } BOSS_CHAINS[] = {
@@ -1790,8 +1803,16 @@ void BattleScene::Update(float deltaTime)
                     m_dashEnemy = enemy;
                     m_dashStops.clear();
                     for (auto& c : path)
-                        if (m_gridMap->GetCell(c.first, c.second).tileEffect.active)
-                            m_dashStops.push_back(c);
+                        for (auto& [dc, dr] : enemy->GetGridShape())   // 体のどこかが罠に乗るマスで止まる
+                        {
+                            int tc = c.first + dc, tr = c.second + dr;
+                            if (tc >= 0 && tr >= 0 && tc < m_gridMap->GetCols() && tr < m_gridMap->GetRows()
+                                && m_gridMap->GetCell(tc, tr).tileEffect.active)
+                            {
+                                m_dashStops.push_back(c);
+                                break;
+                            }
+                        }
                     if (m_dashStops.empty() || m_dashStops.back() != path.back())
                         m_dashStops.push_back(path.back());   // 最終マスは必ず終点
 
@@ -1812,16 +1833,13 @@ void BattleScene::Update(float deltaTime)
                 }
                 else
                 {
-                    for (auto& mp : enemy->GetMovePath())
+                    for (auto& mp : enemy->GetMovePath())   // 通ったマスごとに、体の下の罠を全部踏む
                     {
-                        auto& pcell = m_gridMap->GetCell(mp.first, mp.second);
-                        if (pcell.tileEffect.active)
-                            CardExecutor::TriggerTrap(pcell, enemy, mp.first, mp.second, m_gridMap, m_enemies);
+                        TriggerTrapsUnder(enemy, mp.first, mp.second, m_gridMap, m_enemies);
                         if (enemy->GetHp() <= 0) break;
                     }
-                    auto& cell = m_gridMap->GetCell(enemy->gridCol, enemy->gridRow);
-                    if (enemy->GetHp() > 0 && cell.tileEffect.active)
-                        CardExecutor::TriggerTrap(cell, enemy, enemy->gridCol, enemy->gridRow, m_gridMap, m_enemies);
+                    if (enemy->GetHp() > 0)
+                        TriggerTrapsUnder(enemy, enemy->gridCol, enemy->gridRow, m_gridMap, m_enemies);
                 }
 
                 m_enemyPhase = EnemyTurnPhase::WaitAction;
@@ -1884,9 +1902,7 @@ void BattleScene::Update(float deltaTime)
                 if (m_dashStopIdx < (int)m_dashStops.size())
                 {
                     auto s = m_dashStops[m_dashStopIdx];
-                    auto& cell = m_gridMap->GetCell(s.first, s.second);
-                    if (cell.tileEffect.active)
-                        CardExecutor::TriggerTrap(cell, m_dashEnemy, s.first, s.second, m_gridMap, m_enemies);
+                    TriggerTrapsUnder(m_dashEnemy, s.first, s.second, m_gridMap, m_enemies);   // 体の下の罠を全部
                     m_dashStopIdx++;
                 }
 

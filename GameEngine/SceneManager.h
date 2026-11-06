@@ -22,6 +22,7 @@
 #include "ShopScene.h"
 #include "ResultScene.h"
 #include "URect.h"
+#include "ScrollList.h"
 
 #include <functional>
 struct SettingsUI 
@@ -258,6 +259,8 @@ private:
     }
     std::string m_eventPickType;   // "removeCard"/"upgradeCard"/"transformCard"（空=非ピッカー）
     int m_eventPickChoice = -1;
+    bool m_eatRelease = false;   // 確認の窓で押したクリックの「離す」を、閉じた後の画面に渡さない
+    ScrollList m_eventPickScroll;   // イベントのカード選択の一覧（デッキが多い時にスクロール）
     void DrawEventPicker();
     void ApplyCardPick(int idx);
     void GetEventCardSlot(int i, float& x, float& y) const;

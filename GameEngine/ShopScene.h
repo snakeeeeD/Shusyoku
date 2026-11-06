@@ -5,6 +5,7 @@
 #include "TextureManager.h"
 #include "CardDataBase.h"
 #include "CardVisual.h"
+#include "ScrollList.h"
 #include "PlayerDataManager.h"
 #include "input.h"
 #include "Scenetype.h"
@@ -78,6 +79,7 @@ private:
     static constexpr int REMOVE_STEP = 25;   // 1回ごとの値上げ
 
     bool m_removeMode = false;
+    ScrollList m_removeScroll;   // 削除の一覧（デッキが多い時にスクロール）
     bool m_removedThisShop = false;          // このショップで削除済みか
     void DrawDeckRemoval();
     void GetDeckSlot(int i, float& x, float& y) const;

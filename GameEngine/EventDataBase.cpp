@@ -18,6 +18,7 @@ void EventDataBase::Load(const std::string& path)
         EventDef d;
         d.id = e["id"]; d.title = e.value("title", ""); d.desc = e.value("desc", "");
         d.layer = e.value("layer", 0);
+        d.maxLayer = e.value("maxLayer", d.layer);
         d.random = e.value("random", true);
         for (auto& c : e["choices"])
         {
@@ -50,18 +51,23 @@ const EventDef* EventDataBase::Get(const std::string& id)
     auto it = s_events.find(id); return it != s_events.end() ? &it->second : nullptr;
 }
 
+static bool InLayer(const EventDef& d, int layer)   // 0＝全層、それ以外は layer～maxLayer
+{
+    return d.layer == 0 || (d.layer <= layer && layer <= d.maxLayer);
+}
+
 std::string EventDataBase::RandomId(int layer)
 {
     std::vector<std::string> ids;
     for (auto& kv : s_events)
-        if ((kv.second.layer == 0 || kv.second.layer == layer) && kv.second.random && !s_usedIds.count(kv.first))
+        if (InLayer(kv.second, layer) && kv.second.random && !s_usedIds.count(kv.first))
             ids.push_back(kv.first);
 
     if (ids.empty())   // この層で出せるイベントが尽きた → 履歴リセット
     {
         s_usedIds.clear();
         for (auto& kv : s_events)
-            if ((kv.second.layer == 0 || kv.second.layer == layer) && kv.second.random) ids.push_back(kv.first);
+            if (InLayer(kv.second, layer) && kv.second.random) ids.push_back(kv.first);
     }
     if (ids.empty()) return "";
 

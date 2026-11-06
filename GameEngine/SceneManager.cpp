@@ -1068,8 +1068,15 @@ void SceneManager::HandleInput()
 	m_uiInput.Update();
 	if (CardConfirm::Active())   // 強化・削除の確認（一番手前。他の操作は止める）
 	{
+		if (m_uiInput.GetMouseButtonTrigger(0)) m_eatRelease = true;    // 押した→この後の「離す」は窓のもの
+		if (m_uiInput.GetMouseButtonRelease(0)) m_eatRelease = false;   // 窓の中で離し終えた
 		CardConfirm::HandleInput(m_uiInput.GetMousePos(), m_uiInput.GetMouseButtonTrigger(0), m_screenWidth, m_screenHeight);
 		m_swallowSceneClick = true;
+		return;
+	}
+	if (m_eatRelease)   // 窓を閉じたクリックの「離す」：後ろの一覧に渡さない（離した瞬間に選ぶ一覧が、下のカードを選んでしまうため）
+	{
+		if (m_uiInput.GetMouseButtonRelease(0)) m_eatRelease = false;
 		return;
 	}
 	{
@@ -1387,7 +1394,7 @@ void SceneManager::HandleInput()
 				else if (m_eventPending == EventPending::Treasure)
 				{
 					m_eventPending = EventPending::None;
-					m_eventId = "treasure";      // 財宝イベントを開き直す
+					m_eventId = "treasure_field";   // 財宝マスの中身を開く（呪いを払った後なので、デメリットなしで選ばせる）
 					m_eventResult = -1;
 					m_eventPickType.clear();
 					// m_eventOpen は true のまま
@@ -1410,7 +1417,7 @@ void SceneManager::HandleInput()
 						Telemetry::Instance().Log("event_choice", { {"event", m_eventId}, {"choice", i} });
 						ApplyOutcomes(e->choices[i]);
 						std::string pick = EventPickerType(e->choices[i]);
-						if (!pick.empty()) { m_eventPickType = pick; m_eventPickChoice = i; }
+						if (!pick.empty()) { m_eventPickType = pick; m_eventPickChoice = i; m_eventPickScroll.Reset(); }
 						else m_eventResult = i;
 						break;
 					}
@@ -1936,8 +1943,8 @@ void SceneManager::DrawSettings()
 		m_textRenderer->Begin();
 		const wchar_t* msg = (m_confirmAction == 1) ? L"ゲームを終了しますか？" : L"タイトルに戻りますか？";
 		m_textRenderer->DrawTextCentered(msg, u.cfmPanel.x + u.cfmPanel.w / 2.0f, u.cfmPanel.y + 30.0f, u.cfmPanel.w, 22, D2D1::ColorF(1, 1, 1), 50.0f);
-		m_textRenderer->DrawTextCentered(L"はい", u.cfmYes.x + u.cfmYes.w / 2.0f, u.cfmYes.y, u.cfmYes.w, 20, D2D1::ColorF(1, 0.9f, 0.9f), u.cfmYes.h);
-		m_textRenderer->DrawTextCentered(L"いいえ", u.cfmNo.x + u.cfmNo.w / 2.0f, u.cfmNo.y, u.cfmNo.w, 20, D2D1::ColorF(1, 1, 1), u.cfmNo.h);
+		m_textRenderer->DrawTextCentered(L"はい", d.cfmYes.x + d.cfmYes.w / 2.0f, d.cfmYes.y, d.cfmYes.w, 20, D2D1::ColorF(1, 0.9f, 0.9f), d.cfmYes.h);
+		m_textRenderer->DrawTextCentered(L"いいえ", d.cfmNo.x + d.cfmNo.w / 2.0f, d.cfmNo.y, d.cfmNo.w, 20, D2D1::ColorF(1, 1, 1), d.cfmNo.h);
 		m_textRenderer->End();
 	}
 
@@ -2096,19 +2103,25 @@ void SceneManager::Update(float deltaTime)
 
 	if (m_deckOpen)
 	{
-		m_deckScrollTarget -= Input::GetPendingWheel() * 0.5f;   // シーンが消費する前に読む
-		int w = Input::GetPendingWheel();
-		m_deckScrollTarget -= w * 0.5f;
+		m_deckScrollTarget -= Input::GetPendingWheel() * 0.5f;   // シーンが消費する前に読む（1回だけ）
 		Input::ClearWheel();
 		float maxS = DeckMaxScroll();
-		{
-			char b[96]; sprintf_s(b, "[DECK] wheel=%d target=%.1f scroll=%.1f maxS=%.1f\n",
-				w, m_deckScrollTarget, m_deckScroll, maxS); OutputDebugStringA(b);
-		}
 		if (m_deckScrollTarget < 0.0f)      m_deckScrollTarget = 0.0f;
 		else if (m_deckScrollTarget > maxS) m_deckScrollTarget = maxS;
 		m_deckScroll += (m_deckScrollTarget - m_deckScroll) * min(1.0f, 15.0f * deltaTime);
-		{ char b[64]; sprintf_s(b, "wheel=%d target=%.1f maxS=%.1f\n", Input::GetPendingWheel(), m_deckScrollTarget, DeckMaxScroll()); OutputDebugStringA(b); }
+	}
+
+	if (m_eventOpen && !m_eventPickType.empty() && m_eventPickType != "transformRelic")   // イベントのカード選択：ホイールでスクロール
+	{
+		URect pn = EventPickerPanel();
+		const float ch = CardVisual::CARD_H * 0.85f;
+		int rows = ((int)PlayerDataManager::GetData().deck.size() + 7) / 8;
+		m_eventPickScroll.top = 150.0f;
+		m_eventPickScroll.bottom = pn.y + pn.h - 8.0f;
+		m_eventPickScroll.contentH = rows * (ch + 16.0f) + ScrollList::FADE;
+		m_eventPickScroll.Wheel(Input::GetPendingWheel());   // シーンが消費する前に読む
+		Input::ClearWheel();
+		m_eventPickScroll.Update(deltaTime);
 	}
 
 	if (m_craftOpen || m_invOpen)
@@ -2919,7 +2932,7 @@ void SceneManager::DrawMap()
 
 void SceneManager::GetBackBtnRect(float& x, float& y, float& w, float& h) const
 {
-	w = 110.0f; h = 42.0f;
+	w = 160.0f; h = 50.0f;
 	x = m_screenWidth - w - 20.0f;      // 右下（各画面で被りにくい位置）
 	y = m_screenHeight - h - 16.0f;
 }
@@ -2939,7 +2952,7 @@ void SceneManager::DrawBackButton()
 	UiWindow::Button(m_uiSprite, white, x, y + dy, w, h, XMFLOAT4(0.35f, 0.30f, 0.30f, 0.95f));
 	m_uiSprite->End();
 	m_textRenderer->Begin();
-	m_textRenderer->DrawText(L"戻る", x + 34.0f, y + dy + 10.0f, 20.0f, D2D1::ColorF(1, 1, 1));
+	m_textRenderer->DrawTextCentered(L"戻る", x + w / 2.0f, y + dy, w, 22.0f, D2D1::ColorF(1, 1, 1), h);
 	m_textRenderer->End();
 }
 
@@ -3461,7 +3474,7 @@ void SceneManager::GetEventCardSlot(int i, float& x, float& y) const
 	int perRow = 8; float gapX = 12.0f, gapY = 16.0f;
 	float startX = (m_screenWidth - (perRow * cw + (perRow - 1) * gapX)) / 2.0f;
 	x = startX + (i % perRow) * (cw + gapX);
-	y = 150.0f + (i / perRow) * (ch + gapY);
+	y = 150.0f + (i / perRow) * (ch + gapY) - m_eventPickScroll.pos;   // スクロール分ずらす
 }
 
 URect SceneManager::EventPickerPanel() const
@@ -3470,7 +3483,8 @@ URect SceneManager::EventPickerPanel() const
 	int n = (int)PlayerDataManager::GetData().deck.size();
 	int rows = (n + 7) / 8; if (rows < 1) rows = 1;     // 1行8枚（GetEventCardSlotと同じ）
 	float gridW = 8 * cw + 7 * 12.0f;
-	return { (m_screenWidth - gridW) / 2.0f - 24.0f, 126.0f, gridW + 48.0f, rows * (ch + 16.0f) + 32.0f };
+	float h = rows * (ch + 16.0f) + 32.0f, maxH = m_screenHeight - 126.0f - 14.0f;   // 画面に収まらない分はスクロール
+	return { (m_screenWidth - gridW) / 2.0f - 24.0f, 126.0f, gridW + 48.0f, h < maxH ? h : maxH };
 }
 
 int SceneManager::EventCardAt(POINT p) const
@@ -3481,6 +3495,7 @@ int SceneManager::EventCardAt(POINT p) const
 		if (!EventPickable(m_eventPickType, deck[i])) continue;   // 強化できない／外せないカードは選べない
 		float bx, by; GetEventCardSlot(i, bx, by);
 		float x, y, w, h; CardVisual::GetRect(bx, by, 0.85f, x, y, w, h);
+		if (m_eventPickScroll.AlphaOfRect(y, h) < 0.5f) continue;   // 端で薄くなっているカードは押せない
 		if (p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h) return i;
 	}
 	return -1;
@@ -3502,6 +3517,9 @@ void SceneManager::ApplyCardPick(int idx)
 void SceneManager::DrawEventPicker()
 {
 	auto& deck = PlayerDataManager::GetData().deck;
+	auto pickAlpha = [&](float bx, float by) {   // スクロールの端で薄くする濃さ
+		float x, y, w, h; CardVisual::GetRect(bx, by, 0.85f, x, y, w, h);
+		return m_eventPickScroll.AlphaOfRect(y, h); };
 	bool anim = (m_eventPickAnimIdx >= 0);
 	int hov = anim ? -1 : EventCardAt(m_uiInput.GetMousePos());
 	ID3D11ShaderResourceView* white = TextureManager::Get("white");
@@ -3571,17 +3589,19 @@ void SceneManager::DrawEventPicker()
 		const CardData* d = CardDataBase::Get(deck[i]);
 		if (!d) continue;
 		float bx, by; GetEventCardSlot(i, bx, by);
+		float a = pickAlpha(bx, by); if (a <= 0.0f) continue;   // 見せる範囲の外
 		by -= HoverLift::Get(bx, by, i == hov, 12.0f);
 		if (i == hov)   // ホバー：色は変えず、浮かせて金の縁
 		{
 			float rx, ry, rw, rh; CardVisual::GetRect(bx, by, 0.85f, rx, ry, rw, rh);
 			UiWindow::Frame(m_uiSprite, white, rx, ry, rw, rh, XMFLOAT4(1.0f, 0.85f, 0.2f, 1.0f));
 		}
-		CardVisual::DrawBase(m_uiSprite, white, bx, by, 0.85f, 0.0f, CardVisual::GetCardColor(d->type), d, m_uiTime);
+		XMFLOAT4 col = CardVisual::GetCardColor(d->type); col.w = a;
+		CardVisual::DrawBase(m_uiSprite, white, bx, by, 0.85f, 0.0f, col, d, m_uiTime);
 		if (!EventPickable(m_eventPickType, deck[i]))   // 選べないカードは暗く
 		{
 			float rx, ry, rw, rh; CardVisual::GetRect(bx, by, 0.85f, rx, ry, rw, rh);
-			m_uiSprite->DrawSprite(white, rx, ry, rw, rh, 0.0f, XMFLOAT4(0, 0, 0, 0.55f));
+			m_uiSprite->DrawSprite(white, rx, ry, rw, rh, 0.0f, XMFLOAT4(0, 0, 0, 0.55f * a));
 		}
 	}
 	m_uiSprite->End();
@@ -3602,8 +3622,9 @@ void SceneManager::DrawEventPicker()
 		const CardData* d = CardDataBase::Get(deck[i]);
 		if (!d) continue;
 		float bx, by; GetEventCardSlot(i, bx, by);
+		float a = pickAlpha(bx, by); if (a <= 0.0f) continue;
 		by -= HoverLift::Get(bx, by, i == hov, 12.0f);
-		CardVisual::DrawTexts(m_textRenderer, d, nullptr, bx, by, 0.85f, 0.0f, 1.0f);
+		CardVisual::DrawTexts(m_textRenderer, d, nullptr, bx, by, 0.85f, 0.0f, a);
 	}
 	m_textRenderer->End();
 

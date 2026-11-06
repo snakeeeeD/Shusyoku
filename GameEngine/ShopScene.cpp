@@ -102,6 +102,16 @@ void ShopScene::Update(float deltaTime)
     m_time += deltaTime;
     if (m_removeMsgTimer > 0.0f) m_removeMsgTimer -= deltaTime;
     m_input.Update();
+    if (m_removeMode)   // 削除の一覧：ホイールでスクロール（下の案内文の上まで見せる）
+    {
+        const float ch = CardVisual::CARD_H * 0.9f;
+        int rows = ((int)PlayerDataManager::GetData().deck.size() + 7) / 8;
+        m_removeScroll.top = 130.0f;
+        m_removeScroll.bottom = m_screenHeight - 110.0f;
+        m_removeScroll.contentH = rows * (ch + 16.0f) + ScrollList::FADE;
+        m_removeScroll.Wheel(m_input.GetMouseWheelDelta());
+        m_removeScroll.Update(deltaTime);
+    }
 
     if (m_removeAnimIdx >= 0)
     {
@@ -402,6 +412,7 @@ void ShopScene::HandleInput()
             if (PlayerDataManager::GetData().gold >= RemovePrice())
             {
                 m_removeMode = true;
+                m_removeScroll.Reset();
                 Audio::PlaySE("Assets/Sound/se/click.mp3");
                 return;
             }
@@ -497,7 +508,7 @@ void ShopScene::GetDeckSlot(int i, float& x, float& y) const
     float totalW = perRow * cw + (perRow - 1) * gapX;
     float startX = (m_screenWidth - totalW) / 2.0f;
     x = startX + (i % perRow) * (cw + gapX);
-    y = 130.0f + (i / perRow) * (ch + gapY);
+    y = 130.0f + (i / perRow) * (ch + gapY) - m_removeScroll.pos;   // スクロール分ずらす
 }
 
 int ShopScene::DeckCardAt(POINT p) const
@@ -507,6 +518,7 @@ int ShopScene::DeckCardAt(POINT p) const
     {
         float bx, by; GetDeckSlot(i, bx, by);
         float x, y, w, h; CardVisual::GetRect(bx, by, 0.9f, x, y, w, h);
+        if (m_removeScroll.AlphaOfRect(y, h) < 0.5f) continue;   // 端で薄くなっているカードは押せない
         if (p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h) return i;
     }
     return -1;
@@ -515,6 +527,9 @@ int ShopScene::DeckCardAt(POINT p) const
 void ShopScene::DrawDeckRemoval()
 {
     auto& deck = PlayerDataManager::GetData().deck;
+    auto removeAlpha = [&](float bx, float by) {   // スクロールの端で薄くする濃さ
+        float x, y, w, h; CardVisual::GetRect(bx, by, 0.9f, x, y, w, h);
+        return m_removeScroll.AlphaOfRect(y, h); };
     int hov = DeckCardAt(m_input.GetMousePos());
 
     bool animOn = (m_removeAnimIdx >= 0 && m_removeAnimIdx < (int)deck.size());
@@ -540,13 +555,14 @@ void ShopScene::DrawDeckRemoval()
         const CardData* d = CardDataBase::Get(deck[i]);
         if (!d) continue;
         float bx, by; GetDeckSlot(i, bx, by);
+        float a = removeAlpha(bx, by); if (a <= 0.0f) continue;   // 見せる範囲の外
         by -= HoverLift::Get(bx, by, i == hov, 12.0f);   // 手札と同じ補間で浮く
-        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, bx, by, 0.9f, 0.0f,
-            CardVisual::GetCardColor(d->type), d, m_time);
+        XMFLOAT4 col = CardVisual::GetCardColor(d->type); col.w = a;
+        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, bx, by, 0.9f, 0.0f, col, d, m_time);
         if (!CardDataBase::CanRemove(deck[i]))   // 削除不可は暗く
         {
             float rx, ry, rw, rh; CardVisual::GetRect(bx, by, 0.9f, rx, ry, rw, rh);
-            m_spriteRenderer->DrawSprite(m_whiteTexture, rx, ry, rw, rh, 0.0f, XMFLOAT4(0, 0, 0, 0.55f));
+            m_spriteRenderer->DrawSprite(m_whiteTexture, rx, ry, rw, rh, 0.0f, XMFLOAT4(0, 0, 0, 0.55f * a));
         }
         if (i == hov && CardDataBase::CanRemove(deck[i]))   // 削除できるカードだけ赤枠
         {
@@ -570,8 +586,9 @@ void ShopScene::DrawDeckRemoval()
         const CardData* d = CardDataBase::Get(deck[i]);
         if (!d) continue;
         float bx, by; GetDeckSlot(i, bx, by);
+        float a = removeAlpha(bx, by); if (a <= 0.0f) continue;
         by -= HoverLift::Get(bx, by, i == hov, 12.0f);   // 手札と同じ補間で浮く
-        CardVisual::DrawTexts(m_textRenderer, d, nullptr, bx, by, 0.9f, 0.0f, 1.0f);
+        CardVisual::DrawTexts(m_textRenderer, d, nullptr, bx, by, 0.9f, 0.0f, a);
     }
     m_textRenderer->DrawText(L"カードをクリックで削除 / 余白で戻る", m_screenWidth / 2.0f - 170.0f, m_screenHeight - 55.0f, 20.0f, D2D1::ColorF(0.8f, 0.8f, 0.8f));
     if (m_removeMsgTimer > 0.0f)   // 削除不可のカードを押した時の案内（最後の0.3秒でフェード）
