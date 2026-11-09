@@ -269,7 +269,7 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("enemy_augmented_soldier", L"Assets/Enemy/augmented_soldier.png");
 		TextureManager::Load("enemy_nanite_swarm", L"Assets/Enemy/nanite_swarm.png");
 		TextureManager::Load("enemy_psi_watcher", L"Assets/Enemy/psi_watcher.png");
-		TextureManager::Load("enemy_grav_anomalyr", L"Assets/Enemy/grav_anomaly.png");
+		TextureManager::Load("enemy_grav_anomaly", L"Assets/Enemy/grav_anomaly.png");
 		TextureManager::Load("enemy_chem_hound", L"Assets/Enemy/chem_hound.png");
 		TextureManager::Load("enemy_glitch_phantom", L"Assets/Enemy/glitch_phantom.png");
 		TextureManager::Load("enemy_chimera", L"Assets/Enemy/chimera.png");
@@ -770,8 +770,7 @@ void SceneManager::DrawOverlay()
 	m_uiSprite->DrawSprite(TextureManager::Get("particle"),
 		db.x + db.w - 24.0f, db.y + db.h - 22.0f, 24.0f, 24.0f, 0.0f, XMFLOAT4(0.10f, 0.09f, 0.13f, 1.0f));
 
-	if (m_currentType != SceneType::Field)   // Mapボタン（フィールドは自身がマップなので非表示）：小さな正方形＋地図のアイコン
-	{
+	{   // Mapボタン：小さな正方形＋地図のアイコン（フィールドでも出す）
 		URect mbBase = BarButtonRect(0), mb = Lifted(mbBase);
 		UiWindow::Button(m_uiSprite, white, mb.x, mb.y, mb.w, mb.h, XMFLOAT4(0.22f, 0.22f, 0.3f, 1));   // ホバーは浮くだけ（色は変えない）
 		m_uiSprite->DrawSprite(TextureManager::Get("icon_map"), mb.x + (mb.w - 24.0f) / 2.0f, mb.y + 3.0f, 24.0f, 24.0f,
@@ -841,7 +840,7 @@ void SceneManager::DrawOverlay()
 	if (m_deckOpen) DrawDeckPreview();   // ← 全グリッド描画の後＝最前面
 
 	// デッキのキーワード解説（パス外で描く）
-	if (m_deckOpen && m_deckPreviewIdx < 0)
+	if (m_deckOpen && m_deckPreviewIdx < 0 && m_craftFxTimer <= 0.0f)   // 強化の演出中は出さない
 	{
 		int hk = DeckHoverIndex();
 		auto vis = VisibleDeckIndices();
@@ -1193,11 +1192,10 @@ void SceneManager::HandleInput()
 		if (click && su.gear.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); m_settingsOpen = !m_settingsOpen; return; }
 		
 
-		// Map（フィールド以外で開ける・クリックで閉じる）
+		// Map（どの画面でも開ける。フィールドでもイベント・休憩中に先の道を確認できる）
 		if (m_mapOpen) { if (click && BackBtnHit(m)) m_mapOpen = false; return; }
 		{
-			float mapX = m_screenWidth - 680.0f;
-			if (click && m_currentType != SceneType::Field && !m_deckOpen && !m_craftOpen && !m_invOpen
+			if (click && !m_deckOpen && !m_craftOpen && !m_invOpen
 				&& BarButtonRect(0).has(m))
 			{
 				Audio::PlaySE("Assets/Sound/se/click.mp3");
@@ -1206,7 +1204,19 @@ void SceneManager::HandleInput()
 		}
 
 		// Items（いつでも）
-		if (m_invOpen) { if (clickRel && BackBtnHit(m)) m_invOpen = false; return; }
+		if (m_invOpen)
+		{
+			if (clickRel && BackBtnHit(m)) { m_invOpen = false; return; }
+			float x, y, w, h; GetCraftBtnRect(x, y, w, h);              // 「合成する」（戦闘中は押せない）
+			if (clickRel && m_currentType != SceneType::Battle && m.x >= x && m.x <= x + w && m.y >= y && m.y <= y + h)
+			{
+				Audio::PlaySE("Assets/Sound/se/click.mp3");
+				m_invOpen = false; m_craftOpen = true;
+				m_craftBase.clear(); m_craftMods.clear(); m_craftEditIdx = -1; m_craftLocked = 0;
+				m_matScroll = 0.0f; m_matScrollTarget = 0.0f;
+			}
+			return;
+		}
 		{
 			if (click && !m_deckOpen && !m_craftOpen && !m_mapOpen
 				&& BarButtonRect(1).has(m))
@@ -1616,7 +1626,7 @@ void SceneManager::HandleSettingsInput()
 }
 
 // ---- 用語集 ----
-struct GlossUI { URect panel, close, cat0, list, detail; float catStep, rowH; int rows; };
+struct GlossUI { URect panel, close, back, cat0, list, detail; float catStep, rowH; int rows; };
 static GlossUI GlossLayout(int sw, int sh)
 {
 	GlossUI g;
@@ -1626,6 +1636,7 @@ static GlossUI GlossLayout(int sw, int sh)
 	g.list = { px + 186.0f, py + 64.0f, 262.0f, 510.0f }; g.rowH = 35.0f; g.rows = (int)(g.list.h / g.rowH);
 	g.detail = { px + 464.0f, py + 64.0f, 476.0f, 510.0f };
 	g.close = { px + pw / 2.0f - 70.0f, py + ph - 52.0f, 140.0f, 38.0f };
+	g.back  = { g.close.x - 150.0f, g.close.y, 140.0f, 38.0f };   // 閉じるの左
 	return g;
 }
 
@@ -1703,39 +1714,52 @@ void SceneManager::HandleGlossaryInput()
 		if (m_glossScroll < 0) m_glossScroll = 0;
 		if (m_glossScroll > maxScroll) m_glossScroll = maxScroll;
 	}
-	if (m_uiInput.GetKeyTrigger(VK_ESCAPE)) { m_glossaryOpen = false; return; }
+	auto closeGlossary = [&]() { m_glossaryOpen = false; m_glossBack.clear(); if (m_glossVideo) m_glossVideo->Close(); };   // 閉じる時は動画も止め、戻るの記録も消す
+	auto pushPage = [&]() {                                    // ページを切り替える直前に、今のページを記録
+		if (m_glossBack.size() >= 50) m_glossBack.erase(m_glossBack.begin());
+		m_glossBack.push_back({ m_glossCat, m_glossSel, m_glossScroll });
+	};
+	auto goBack = [&]() {
+		if (m_glossBack.empty()) return false;
+		GlossPage p = m_glossBack.back(); m_glossBack.pop_back();
+		m_glossCat = p.cat; m_glossSel = p.sel; m_glossScroll = p.scroll;
+		Audio::PlaySE("Assets/Sound/se/click.mp3");
+		return true;
+	};
+	if (m_uiInput.GetKeyTrigger(VK_ESCAPE)) { closeGlossary(); return; }
+	if (m_uiInput.GetKeyTrigger(VK_BACK) && goBack()) return;
 	if (!click) return;
+	if (g.back.has(m) && goBack()) return;
 
 	if (g.close.has(m) || !g.panel.has(m))
 	{
 		Audio::PlaySE("Assets/Sound/se/click.mp3");
-		m_glossaryOpen = false;
-		if (m_glossVideo) m_glossVideo->Close();
+		closeGlossary();
 		return;
 	}
 	auto& cats = Glossary::Categories();
 	for (int c = 0; c < (int)cats.size(); c++)
 	{
 		URect r = { g.cat0.x, g.cat0.y + c * g.catStep, g.cat0.w, g.cat0.h };
-		if (r.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); m_glossCat = c; m_glossSel = 0; m_glossScroll = 0; return; }
+		if (r.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); if (c != m_glossCat) pushPage(); m_glossCat = c; m_glossSel = 0; m_glossScroll = 0; return; }
 	}
 	for (int row = 0; row < g.rows; row++)
 	{
 		int i = m_glossScroll + row;
 		if (i >= (int)items.size()) break;
 		URect r = { g.list.x, g.list.y + row * g.rowH, g.list.w, g.rowH - 3.0f };
-		if (r.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); m_glossSel = i; return; }
+		if (r.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); if (i != m_glossSel) pushPage(); m_glossSel = i; return; }
 	}
 	if (m_glossSel >= 0 && m_glossSel < (int)items.size())
 	{
 		const GlossaryEntry& e = Glossary::All()[items[m_glossSel]];
 		for (auto& [r, id] : GlossaryRelated(e, g.detail))
-			if (r.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); OpenGlossary(id); return; }
+			if (r.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); pushPage(); OpenGlossary(id); return; }
 		auto hits = Glossary::FindTerms(e.desc, e.name);             // 説明文の中の用語
 		float top = GlossDescTop(e, g.detail);
 		int h = m_textRenderer->HitTestSpans(e.desc.c_str(), g.detail.x + 12.0f, top, g.detail.w - 24.0f, 17.0f,
 			GlossaryLink::Spans(hits), (float)m.x, (float)m.y);
-		if (h >= 0) { Audio::PlaySE("Assets/Sound/se/click.mp3"); OpenGlossary(hits[h].id); return; }
+		if (h >= 0) { Audio::PlaySE("Assets/Sound/se/click.mp3"); pushPage(); OpenGlossary(hits[h].id); return; }
 	}
 }
 
@@ -1802,6 +1826,9 @@ void SceneManager::DrawGlossary()
 			r.has(mp) ? XMFLOAT4(0.35f, 0.5f, 0.7f, 1) : XMFLOAT4(0.25f, 0.28f, 0.4f, 1));
 	UiWindow::Button(m_uiSprite, white, g.close.x, g.close.y, g.close.w, g.close.h,
 		g.close.has(mp) ? XMFLOAT4(0.5f, 0.35f, 0.35f, 1) : XMFLOAT4(0.35f, 0.25f, 0.25f, 1));
+	bool canBack = !m_glossBack.empty();                    // 戻る（記録がない時は暗く）
+	UiWindow::Button(m_uiSprite, white, g.back.x, g.back.y, g.back.w, g.back.h,
+		!canBack ? XMFLOAT4(0.18f, 0.18f, 0.2f, 1) : g.back.has(mp) ? XMFLOAT4(0.35f, 0.5f, 0.7f, 1) : XMFLOAT4(0.25f, 0.28f, 0.4f, 1));
 	m_uiSprite->End();
 
 	m_textRenderer->Begin();
@@ -1846,6 +1873,8 @@ void SceneManager::DrawGlossary()
 				m_textRenderer->DrawTextCentered(re->name.c_str(), r.x + r.w / 2.0f, r.y, r.w, 16.0f, W, r.h);
 	}
 	m_textRenderer->DrawTextCentered(L"閉じる", g.close.x + g.close.w / 2.0f, g.close.y, g.close.w, 20.0f, W, g.close.h);
+	m_textRenderer->DrawTextCentered(L"◀ 戻る", g.back.x + g.back.w / 2.0f, g.back.y, g.back.w, 20.0f,
+		canBack ? W : D2D1::ColorF(0.5f, 0.5f, 0.5f), g.back.h);
 	m_textRenderer->End();
 }
 
@@ -1971,7 +2000,7 @@ void SceneManager::DrawBarTips()
 		{ ss.x, ss.x + ss.w, L"歩数", L"0を超えて進むと敵が強くなる", false },
 		{ ls.x, ls.x + ls.w, L"層",   L"ダンジョンの階層(全3層)。深いほど敵が強い", false },
 		{ gs.x, gs.x + gs.w, L"ゴールド", L"ショップやイベントで消費する", false },
-		{ mb.x, mb.x + mb.w, L"マップ",   L"マップを開く",   true  },
+		{ mb.x, mb.x + mb.w, L"マップ",   L"マップを開く",   false },
 		{ ib.x, ib.x + ib.w, L"アイテム", L"アイテムを見る", false },
 		{ db.x, db.x + db.w, L"デッキ",   L"デッキを見る",   false },
 	};
@@ -2221,6 +2250,40 @@ std::vector<std::pair<std::string, int>> SceneManager::CraftInventory() const
 	return v;
 }
 
+// 合成カードの ID「CRAFT:コア|素材|素材」をコアと素材に分ける
+static bool ParseCraftId(const std::string& id, std::string& core, std::vector<std::string>& mods)
+{
+	core.clear(); mods.clear();
+	if (id.rfind("CRAFT:", 0) != 0) return false;
+	std::string rest = id.substr(6);
+	size_t p = 0;
+	while (true)
+	{
+		size_t q = rest.find('|', p);
+		std::string s = rest.substr(p, q == std::string::npos ? std::string::npos : q - p);
+		if (core.empty()) core = s; else mods.push_back(s);
+		if (q == std::string::npos) break;
+		p = q + 1;
+	}
+	return !core.empty();
+}
+
+// 枠に空きがある合成カード（デッキの番号）＝素材を足せるもの
+std::vector<int> SceneManager::CraftEditables() const
+{
+	std::vector<int> v;
+	auto& deck = PlayerDataManager::GetData().deck;
+	for (int i = 0; i < (int)deck.size(); i++)
+	{
+		std::string core; std::vector<std::string> mods;
+		if (!ParseCraftId(deck[i], core, mods)) continue;
+		const BaseDef* b = MaterialDataBase::GetBase(core);
+		int slots = (b ? b->modSlots : 2) + RelicManager::SumValue("modSlots");
+		if ((int)mods.size() < slots) v.push_back(i);
+	}
+	return v;
+}
+
 std::string SceneManager::CraftRecipeId() const
 {
 	if (m_craftBase.empty()) return "";
@@ -2303,8 +2366,9 @@ void SceneManager::DrawCraft()
 	{
 		float x, y, w, h; GetCraftSlotRect(i, x, y, w, h);
 		bool filled = (i == 0) ? !m_craftBase.empty() : (int)m_craftMods.size() >= i;
+		bool locked = (i > 0 && i - 1 < m_craftLocked);   // もう付いている素材（外せない）
 		UiWindow::Button(m_uiSprite, white, x, y, w, h,
-			filled ? XMFLOAT4(0.25f, 0.35f, 0.5f, 1.0f) : XMFLOAT4(0.15f, 0.15f, 0.2f, 1.0f));
+			locked ? XMFLOAT4(0.5f, 0.42f, 0.2f, 1.0f) : filled ? XMFLOAT4(0.25f, 0.35f, 0.5f, 1.0f) : XMFLOAT4(0.15f, 0.15f, 0.2f, 1.0f));
 	}
 	// 所持素材
 	
@@ -2316,6 +2380,14 @@ void SceneManager::DrawCraft()
 			const char* ic = CoreTypeIcon(b->type);
 			if (ic[0]) m_uiSprite->DrawSprite(TextureManager::Get(ic),
 				x + w - 24.0f, y + (h - 18.0f) / 2.0f, 18.0f, 18.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
+		}
+	}
+	{	// 素材を足せる合成カード（コアの後ろに紫で）
+		auto eds = CraftEditables();
+		for (int k = 0; k < (int)eds.size(); k++) {
+			float x, y, w, h; GetCraftBaseRect((int)bs.size() + k, x, y, w, h);
+			bool sel = (m_craftEditIdx == eds[k]);
+			UiWindow::Button(m_uiSprite, white, x, y, w, h, sel ? XMFLOAT4(0.55f, 0.35f, 0.65f, 1.0f) : XMFLOAT4(0.35f, 0.22f, 0.42f, 1.0f));
 		}
 	}
 	auto md = CraftMods();
@@ -2338,7 +2410,7 @@ void SceneManager::DrawCraft()
 		// 作成ボタン
 		{
 			float x, y, w, h; GetCraftBtnRect(x, y, w, h);
-			bool ready = !m_craftBase.empty() && (int)m_craftMods.size() >= CraftModSlots();
+			bool ready = !m_craftBase.empty() && (int)m_craftMods.size() > m_craftLocked;   // 新しい素材が1つ以上
 			bool hov = UiHover(x, y, w, h, m_uiInput.GetMousePos(), "craftmake", s_lastHoverKey);   // ホバーSE＋判定
 			float dy = -HoverLift::Get(x, y, hov, 4.0f);
 			UiWindow::Button(m_uiSprite, white, x, y + dy, w, h,
@@ -2392,6 +2464,18 @@ void SceneManager::DrawCraft()
 		swprintf_s(buf, L"%s x%d", matName(bases[i].first).c_str(), bases[i].second);
 		m_textRenderer->DrawText(buf, x + 6.0f, midY(buf, 15.0f, y, h), 15.0f, D2D1::ColorF(1, 1, 1));
 	}
+	{	// 素材を足せる合成カード：「コア名 付いている数/枠」
+		auto eds = CraftEditables();
+		for (int k = 0; k < (int)eds.size(); k++) {
+			float x, y, w, h; GetCraftBaseRect((int)bases.size() + k, x, y, w, h);
+			std::string core; std::vector<std::string> ms;
+			ParseCraftId(PlayerDataManager::GetData().deck[eds[k]], core, ms);
+			const BaseDef* b = MaterialDataBase::GetBase(core);
+			int slots = (b ? b->modSlots : 2) + RelicManager::SumValue("modSlots");
+			wchar_t buf[64]; swprintf_s(buf, L"%s %d/%d", matName(core).c_str(), (int)ms.size(), slots);
+			m_textRenderer->DrawText(buf, x + 6.0f, midY(buf, 15.0f, y, h), 15.0f, D2D1::ColorF(1, 0.9f, 1));
+		}
+	}
 	auto mods = CraftMods();
 	for (int i = 0; i < (int)mods.size(); i++) 
 	{
@@ -2419,7 +2503,7 @@ void SceneManager::DrawCraft()
 
 void SceneManager::HandleCraftClick(POINT m)
 {
-	if (BackBtnHit(m)) { m_craftOpen = false; if (m_restActive) m_restOpen = true; return; }  // 戻る
+	if (BackBtnHit(m)) { m_craftOpen = false; m_invOpen = true; m_craftEditIdx = -1; m_craftLocked = 0; return; }  // 戻る＝アイテム画面へ
 
 	// 枠クリックで解除（最初に判定）
 	int nSlots = 1 + CraftModSlots();
@@ -2428,8 +2512,8 @@ void SceneManager::HandleCraftClick(POINT m)
 		float x, y, w, h; GetCraftSlotRect(i, x, y, w, h);
 		if (m.x >= x && m.x <= x + w && m.y >= y && m.y <= y + h)
 		{
-			if (i == 0) m_craftBase.clear();
-			else if ((int)m_craftMods.size() >= i) m_craftMods.erase(m_craftMods.begin() + (i - 1));
+			if (i == 0) { if (m_craftEditIdx >= 0) { m_craftMods.clear(); m_craftEditIdx = -1; m_craftLocked = 0; } m_craftBase.clear(); }   // 足している途中なら全部やめる
+			else if (i - 1 >= m_craftLocked && (int)m_craftMods.size() >= i) m_craftMods.erase(m_craftMods.begin() + (i - 1));   // もう付いている素材は外せない
 			return;
 		}
 	}
@@ -2440,8 +2524,8 @@ void SceneManager::HandleCraftClick(POINT m)
 	}
   // 現在スロットで使っている数を数えるヘルパー
 	auto usedCount = [&](const std::string& id) {
-		int n = (m_craftBase == id) ? 1 : 0;
-		for (auto& mm : m_craftMods) if (mm == id) n++;
+		int n = (m_craftBase == id && m_craftEditIdx < 0) ? 1 : 0;   // 足す時はコアを使わない
+		for (int k = m_craftLocked; k < (int)m_craftMods.size(); k++) if (m_craftMods[k] == id) n++;   // もう付いている素材は数えない
 		return n;
 		};
 
@@ -2452,6 +2536,7 @@ void SceneManager::HandleCraftClick(POINT m)
 		if (m.x >= x && m.x <= x + w && m.y >= y && m.y <= y + h)
 		{
 			const std::string& id = bases[i].first;
+			if (m_craftEditIdx >= 0) { m_craftEditIdx = -1; m_craftLocked = 0; m_craftMods.clear(); m_craftBase.clear(); }   // 足すのをやめて新しく作る
 			int used = usedCount(id) - (m_craftBase == id ? 1 : 0);
 			if (used < PlayerDataManager::MaterialCount(id)) {
 				m_craftBase = id;
@@ -2465,6 +2550,20 @@ void SceneManager::HandleCraftClick(POINT m)
 				while ((int)m_craftMods.size() > CraftModSlots()) m_craftMods.pop_back();  // 枠が減ったら余りを外す
 			}
 			return;
+		}
+	}
+	// 合成カードクリック → 素材を足す（コアの一覧の後ろに並ぶ）
+	{
+		auto eds = CraftEditables();
+		for (int k = 0; k < (int)eds.size(); k++) {
+			float x, y, w, h; GetCraftBaseRect((int)bases.size() + k, x, y, w, h);
+			if (m.x >= x && m.x <= x + w && m.y >= y && m.y <= y + h)
+			{
+				std::string core; std::vector<std::string> ms;
+				if (ParseCraftId(PlayerDataManager::GetData().deck[eds[k]], core, ms))
+				{ m_craftEditIdx = eds[k]; m_craftBase = core; m_craftMods = ms; m_craftLocked = (int)ms.size(); }
+				return;
+			}
 		}
 	}
 	// 素材クリック → 修飾へ
@@ -2489,12 +2588,12 @@ void SceneManager::HandleCraftClick(POINT m)
 void SceneManager::DoCraft()
 {
 	if (m_craftBase.empty()) return;
-	if ((int)m_craftMods.size() < CraftModSlots()) return;   // 枠が全部埋まっていないと作れない
+	if ((int)m_craftMods.size() <= m_craftLocked) return;   // 新しい素材が1つ以上あれば作れる（枠は全部埋まっていなくていい）
 
-	// 必要数を集計して所持チェック
+	// 必要数を集計して所持チェック（足す時は、コアともう付いている素材は使わない）
 	std::map<std::string, int> need;
-	need[m_craftBase]++;
-	for (auto& mod : m_craftMods) need[mod]++;
+	if (m_craftEditIdx < 0) need[m_craftBase]++;
+	for (int k = m_craftLocked; k < (int)m_craftMods.size(); k++) need[m_craftMods[k]]++;
 	for (auto& kv : need)
 		if (PlayerDataManager::MaterialCount(kv.first) < kv.second) return;   // 足りない
 
@@ -2504,15 +2603,17 @@ void SceneManager::DoCraft()
 	for (auto& kv : need)
 		PlayerDataManager::AddMaterial(kv.first, -kv.second);
 
-	// デッキに合成カードを追加
-	PlayerDataManager::GetData().deck.push_back(rid);
+	// デッキに合成カードを追加（足した時は、そのカードを素材が増えた ID に置き換える）
+	auto& deck = PlayerDataManager::GetData().deck;
+	if (m_craftEditIdx >= 0 && m_craftEditIdx < (int)deck.size()) deck[m_craftEditIdx] = rid;
+	else deck.push_back(rid);
 	std::string mats;
 	for (auto& kv : need)
 		for (int k = 0; k < kv.second; k++) { if (!mats.empty()) mats += ","; mats += kv.first; }
 	Telemetry::Instance().Log("craft", { {"id", rid}, {"mats", mats} });
 	PlayerDataManager::Save();
 
-	m_craftBase.clear(); m_craftMods.clear();
+	m_craftBase.clear(); m_craftMods.clear(); m_craftEditIdx = -1; m_craftLocked = 0;
 
 	m_craftFxCard = rid;                          // 演出開始
 	m_craftFxTimer = CRAFT_FX_DURATION;
@@ -2644,10 +2745,28 @@ void SceneManager::DrawInventory()
 		UiWindow::Draw(m_uiSprite, white, hx - 10.0f, MatTop() - 32.0f, 150.0f, 28.0f);
 	}
 
+	{	// 合成する（戦闘中は押せない）
+		float x, y, w, h; GetCraftBtnRect(x, y, w, h);
+		bool can = (m_currentType != SceneType::Battle);
+		POINT mp = m_uiInput.GetMousePos();
+		bool hov = can && mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h;
+		UiWindow::Button(m_uiSprite, white, x, y - (hov ? 4.0f : 0.0f), w, h,
+			can ? XMFLOAT4(0.4f, 0.3f, 0.5f, 1.0f) : XMFLOAT4(0.22f, 0.22f, 0.24f, 1.0f));
+	}
 	m_uiSprite->End();
 
 	m_textRenderer->Begin();
 	m_textRenderer->DrawText(L"Items", m_screenWidth / 2.0f - 40.0f, 70.0f, 28.0f, D2D1::ColorF(1, 1, 1));
+	{
+		float x, y, w, h; GetCraftBtnRect(x, y, w, h);
+		bool can = (m_currentType != SceneType::Battle);
+		POINT mp = m_uiInput.GetMousePos();
+		bool hov = can && mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h;
+		m_textRenderer->DrawTextCentered(L"合成する", x + w / 2.0f, y - (hov ? 4.0f : 0.0f), w, 20.0f,
+			can ? D2D1::ColorF(1, 1, 1) : D2D1::ColorF(0.55f, 0.55f, 0.55f), h);
+		if (!can) m_textRenderer->DrawTextCentered(L"戦闘中は合成できない", x + w / 2.0f, y + h + 4.0f, 260.0f, 14.0f,
+			D2D1::ColorF(0.75f, 0.75f, 0.75f), 20.0f);
+	}
 	float hdrX = m_screenWidth / 2.0f - (6 * 150.0f + 5 * 8.0f) / 2.0f;
 	m_textRenderer->DrawText(L"CORE", hdrX, CoreTop() - 24.0f, 18.0f, D2D1::ColorF(1, 0.85f, 0.5f));
 	if (bases.empty())
@@ -2692,7 +2811,7 @@ void SceneManager::DrawRest()
 		XMFLOAT4(0.25f, 0.45f, 0.30f, 1.0f),   // Heal
 		XMFLOAT4(0.50f, 0.45f, 0.20f, 1.0f),   // Upgrade
 		XMFLOAT4(0.40f, 0.30f, 0.50f, 1.0f) }; // Craft
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 2; i++)
 	{
 		float x, y, w, h; GetRestBtnRect(i, x, y, w, h);
 		bool hov = mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h;
@@ -2707,7 +2826,7 @@ void SceneManager::DrawRest()
 	m_textRenderer->DrawText(L"REST", m_screenWidth / 2.0f - 45.0f,
 		m_screenHeight / 2.0f - 190.0f, 32.0f, D2D1::ColorF(1, 1, 1));
 	const wchar_t* labels[3] = { L"Heal +20", L"Upgrade a card", L"Craft" };
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 2; i++)
 	{
 		float x, y, w, h; GetRestBtnRect(i, x, y, w, h);
 		m_textRenderer->DrawText(labels[i], x + 20.0f, y + 18.0f, 22.0f, D2D1::ColorF(1, 1, 1));
@@ -2722,7 +2841,7 @@ void SceneManager::DrawRest()
 			L"手持ちカード1枚を選んで強化する",
 			L"コア＋素材を組み合わせて新しいカードを作る",
 		};
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < 2; i++)
 		{
 			float x, y, w, h; GetRestBtnRect(i, x, y, w, h);
 			if (mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h)
@@ -2743,7 +2862,7 @@ void SceneManager::DrawRest()
 
 void SceneManager::HandleRestClick(POINT m)
 {
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 2; i++)
 	{
 		float x, y, w, h; GetRestBtnRect(i, x, y, w, h);
 		if (m.x >= x && m.x <= x + w && m.y >= y && m.y <= y + h)
@@ -2763,12 +2882,6 @@ void SceneManager::HandleRestClick(POINT m)
 			{
 				m_restOpen = false;
 				m_deckOpen = true; m_deckUpgradeMode = true; m_deckScroll = 0.0f; m_deckScrollTarget = 0.0f;
-			}
-			else                 // Craft
-			{
-				m_restOpen = false;
-				m_craftOpen = true; m_craftBase.clear(); m_craftMods.clear();
-				m_matScroll = 0.0f; m_matScrollTarget = 0.0f;
 			}
 			return;
 		}
@@ -3050,8 +3163,10 @@ void SceneManager::DrawRelicBar()
 			auto it = rc.find(relics[i]);
 			int cur = (it != rc.end()) ? it->second : 0;
 			wchar_t cnt[16]; swprintf_s(cnt, L"%d/%d", cur, d->count);
-			m_textRenderer->DrawOutlinedText(cnt, x, y + h + 2.0f, 15.0f,
-				D2D1::ColorF(1.0f, 0.9f, 0.4f), D2D1::ColorF(0, 0, 0), 1.0f);   // 幅2.0→1.0
+			const float fs = 12.0f;   // 枠の中の右下に収める（枠の下に出すと、下の段のレリックや左上のバフ欄と重なる）
+			D2D1_SIZE_F sz = m_textRenderer->Measure(cnt, fs);
+			m_textRenderer->DrawOutlinedText(cnt, x + w - sz.width - 3.0f, y + h - sz.height - 1.0f, fs,
+				D2D1::ColorF(1.0f, 0.9f, 0.4f), D2D1::ColorF(0, 0, 0), 1.0f);
 		}
 	}
 
@@ -3129,7 +3244,9 @@ void SceneManager::ApplyOutcomes(const EventChoice& c)
 		}
 		else if (o.type == "relic")
 		{
-			std::string rid = o.param.empty() ? RelicManager::RandomUnowned("event") : o.param;
+			std::string rid = o.param.empty() ? RelicManager::RandomUnowned("event")     // 空＝イベント用のレリック
+				: o.param == "random" ? RelicManager::RandomDrop()                       // random＝普通のレリック（レア度ごとの確率）
+				: o.param;
 			if (rid.empty()) rid = RelicManager::RandomDrop();
 			if (!rid.empty()) { PlayerDataManager::AddRelic(rid); m_eventGains.push_back({ "relic", rid, 1 }); }
 		}
@@ -3816,7 +3933,8 @@ void SceneManager::DrawBigCard(const CardData* d, float x, float y, float scale,
 // カードの説明を残せない画面（説明より手前に出るもの）
 bool SceneManager::TooltipBlocked() const
 {
-	return m_glossaryOpen || m_settingsOpen || m_tutorialOpen || m_confirmAction != 0 || CardConfirm::Active();
+	return m_glossaryOpen || m_settingsOpen || m_tutorialOpen || m_confirmAction != 0 || CardConfirm::Active()
+		|| m_craftFxTimer > 0.0f || m_eventPickAnimIdx >= 0;   // 強化・合成・イベントのカード演出中も（演出後に閉じた画面の説明を残さない）
 }
 
 bool SceneManager::AnyModalOpen() const

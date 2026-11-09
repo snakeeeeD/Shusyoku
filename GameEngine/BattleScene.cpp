@@ -1,4 +1,5 @@
-﻿#include "BattleScene.h"
+﻿#include "CardEffect.h"
+#include "BattleScene.h"
 #include "CardTooltip.h"
 #include "TextureLoader.h"
 #include "EffectManager.h"
@@ -904,7 +905,12 @@ void BattleScene::Update(float deltaTime)
             {
                 bool alive = false;
                 for (auto e : m_enemies) if (e == t && e->GetHp() > 0) alive = true;
-                if (alive) { t->ReuseHitPart(); t->TakeDamage(m_multiHitDamage); t->StartJump(0.5f, 0.2f); anyAlive = true; }
+                if (alive)
+                {
+                    t->ReuseHitPart(); t->TakeDamage(m_multiHitDamage); t->StartJump(0.5f, 0.2f); anyAlive = true;
+                    CardEffect::ApplyOnHitEffect(m_multiHitOnHit, t->GetBuffManager());    // 命中時の効果もヒットごとに（弱体1×2回＝弱体2）
+                    CardEffect::ApplyOnHitEffect(m_multiHitOnHit2, t->GetBuffManager());
+                }
             }
             m_multiHitRemain--;
             m_multiHitTimer = MULTI_HIT_INTERVAL;
@@ -1398,6 +1404,31 @@ void BattleScene::Update(float deltaTime)
                 else ++it;
             }
         }
+        // 攻撃カードを選んでいる間は、剣を振りかぶって構える
+        {
+            bool ready = m_selectedCardIndex >= 0 && m_selectedCardIndex < (int)m_hand.GetCards().size()
+                && m_hand.GetCards()[m_selectedCardIndex]->GetData()->type == CardType::Attack;
+            m_player->SetReady(ready);
+            if (ready)   // 狙っている先（今離したら当たる敵／射程内でカーソルを乗せているマス）の方を向く
+            {
+                const CardData* d = m_hand.GetCards()[m_selectedCardIndex]->GetData();
+                int tc = -1, tr = -1;
+                if (const Enemy* t = AttackTarget())
+                {
+                    int best = 9999;   // 大きい敵は、自分に一番近いマス
+                    for (auto& [c, r] : t->OccupiedCells())
+                    {
+                        int dd = abs(c - m_playerCol) + abs(r - m_playerRow);
+                        if (dd < best) { best = dd; tc = c; tr = r; }
+                    }
+                }
+                else if (m_hoveredCell.first >= 0 && CellInCardRange(*d, m_hoveredCell.first, m_hoveredCell.second))
+                {
+                    tc = m_hoveredCell.first; tr = m_hoveredCell.second;
+                }
+                if (tc >= 0) m_player->FaceToward(tc - m_playerCol, tr - m_playerRow);
+            }
+        }
         bool selectedNeedsTarget = SelectedNeedsTarget();
         m_battleUI->UpdateCardAnimations(deltaTime, (int)m_hand.GetCards().size(), m_hoveredCardIndex, 
             m_selectedCardIndex, m_input.GetMousePos(), selectedNeedsTarget,
@@ -1450,6 +1481,18 @@ void BattleScene::Update(float deltaTime)
                 pd.materials["sword_fragment"] += 1;  m_dropResult.push_back({ "sword_fragment", 1, false }); matDrops++;
             }
 
+
+            if (m_category == EncCategory::Elite)   // エリートはコアを1つ必ず落とす（今の層までのコアからランダム）
+            {
+                std::vector<std::string> cores;
+                for (auto& kv : MaterialDataBase::AllBases())
+                    if (kv.second.layer == 0 || kv.second.layer <= pd.layer) cores.push_back(kv.first);
+                if (!cores.empty() && matDrops < 3)
+                {
+                    std::string cid = cores[rand() % cores.size()];
+                    pd.materials[cid] += 1; m_dropResult.push_back({ cid, 1, true }); matDrops++;
+                }
+            }
 
             // 素材ドロップ判定
             for (auto& eid : m_defeatedEnemyIds)
@@ -3361,7 +3404,6 @@ void BattleScene::HandleInput()
                 );
                 if (execResult.cardUsed)                                   // 実際に使えた時だけ
                     m_player->OnCardUsed(dataCopy.type, targetCol - m_playerCol, targetRow - m_playerRow);
-                if (execResult.purgeHandCurses) PurgeHandCurses();   // 浄化
                 if (execResult.startChainDetonate)
                 {
                     m_chainQueue.clear();
@@ -3496,8 +3538,7 @@ void BattleScene::HandleInput()
                         }
                     }
 
-                    for (auto& drawnId : execResult.drawnCards)
-                        m_battleUI->StartDrawCardEffect(drawnId);
+                    m_battleUI->StartEffectDraws(execResult.drawnCards);   // 使ったカードが出てから1枚ずつ引く
                     m_battleUI->StartPlayCardEffect(dataPtr, m_selectedCardIndex);
                     ProcessDeadEnemies();
                     if (execResult.multiHitRemain > 0)
@@ -3505,6 +3546,7 @@ void BattleScene::HandleInput()
                         m_multiHitTargets = execResult.multiHitTargets;
                         m_multiHitRemain = execResult.multiHitRemain;
                         m_multiHitDamage = execResult.multiHitDamage;
+                        m_multiHitOnHit = execResult.multiHitOnHit; m_multiHitOnHit2 = execResult.multiHitOnHit2;
                         m_multiHitTimer = MULTI_HIT_INTERVAL;
                     }
                     if (execResult.pendingSelection != CardEffectType::None)
@@ -3520,6 +3562,7 @@ void BattleScene::HandleInput()
                     m_aimPanKeep = (dataPtr->type == CardType::Move);   // 移動したらカメラは寄せた位置のまま
                     m_battleUI->OnCardRemoved(m_selectedCardIndex);
                     m_selectedCardIndex = -1;
+                    if (execResult.purgeHandCurses) PurgeHandCurses();   // 浄化：使ったカードのアニメを外してから（先にやると選択が-1になり、アニメの並びがずれる）
                     cardJustUsed = true;
                     OnCardPlayed(dataPtr);
 
@@ -3665,7 +3708,6 @@ void BattleScene::HandleInput()
                 );
                 if (execResult.cardUsed)                                   // 実際に使えた時だけ
                     m_player->OnCardUsed(dataCopy.type, result.col - m_playerCol, result.row - m_playerRow);
-                if (execResult.purgeHandCurses) PurgeHandCurses();   // 浄化
                 if (execResult.startChainDetonate)
                 {
                     m_chainQueue.clear();
@@ -3788,8 +3830,7 @@ void BattleScene::HandleInput()
                     
 
 
-                    for (auto& drawnId : execResult.drawnCards)
-                        m_battleUI->StartDrawCardEffect(drawnId);
+                    m_battleUI->StartEffectDraws(execResult.drawnCards);   // 使ったカードが出てから1枚ずつ引く
                     m_battleUI->StartPlayCardEffect(dataPtr, m_selectedCardIndex);
 
                     ProcessDeadEnemies();
@@ -3799,6 +3840,7 @@ void BattleScene::HandleInput()
                         m_multiHitTargets = execResult.multiHitTargets;
                         m_multiHitRemain = execResult.multiHitRemain;
                         m_multiHitDamage = execResult.multiHitDamage;
+                        m_multiHitOnHit = execResult.multiHitOnHit; m_multiHitOnHit2 = execResult.multiHitOnHit2;
                         m_multiHitTimer = MULTI_HIT_INTERVAL;
                     }
 
@@ -3817,6 +3859,7 @@ void BattleScene::HandleInput()
 
                     m_battleUI->OnCardRemoved(m_selectedCardIndex);
                     m_selectedCardIndex = -1;
+                    if (execResult.purgeHandCurses) PurgeHandCurses();   // 浄化：使ったカードのアニメを外してから（先にやると選択が-1になり、アニメの並びがずれる）
                     cardJustUsed = true;
                     OnCardPlayed(dataPtr);
                 }

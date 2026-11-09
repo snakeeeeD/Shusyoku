@@ -44,10 +44,20 @@ bool ShopScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
 int ShopScene::PriceFor(const CardData* data) const
 {
-    if (!data) return 50;
-    if (data->rarity == CardRarity::Rare)     return 150;
-    if (data->rarity == CardRarity::Uncommon) return 75;
-    return 50;
+    if (!data) return 55;
+    if (data->rarity == CardRarity::Rare)     return 165;
+    if (data->rarity == CardRarity::Uncommon) return 83;
+    return 55;
+}
+
+static int RelicPriceFor(const std::string& id)   // レリックの値段はレア度で
+{
+    const RelicDef* r = RelicManager::Get(id);
+    const std::string ra = r ? r->rarity : "common";
+    if (ra == "rare") return 250;
+    if (ra == "shop") return 200;
+    if (ra == "uncommon") return 180;
+    return 140;
 }
 
 void ShopScene::GenerateStock()
@@ -88,8 +98,13 @@ void ShopScene::GenerateStock()
     // レリック
     auto relicPool = RelicManager::ShopPool();
     pickShuffled(relicPool, RELIC_STOCK, [&](const std::string& id) {
-        m_items.push_back({ id, RELIC_PRICE, false, ShopKind::Relic });
+        m_items.push_back({ id, RelicPriceFor(id), false, ShopKind::Relic });
         });
+
+    for (auto& it : m_items) it.price = it.price * (90 + rand() % 21) / 100;   // ±10%でばらけさせる
+    std::vector<int> cards;                                                    // カード1枚だけ特価（60%オフ）
+    for (int i = 0; i < (int)m_items.size(); i++) if (m_items[i].kind == ShopKind::Card) cards.push_back(i);
+    if (!cards.empty()) { auto& it = m_items[cards[rand() % cards.size()]]; it.price = it.price * 40 / 100; it.sale = true; }
 
     int disc = RelicManager::SumValue("shopDiscount");
     if (disc != 0)
@@ -244,8 +259,6 @@ void ShopScene::Draw()
     }
     m_spriteRenderer->End();
 
-    m_spriteRenderer->End();
-
     m_textRenderer->Begin();
     m_textRenderer->DrawOutlinedText(L"SHOP", m_screenWidth / 2.0f - 30.0f, 55.0f, 26.0f,
         D2D1::ColorF(1.0f, 0.95f, 0.8f), D2D1::ColorF(0.2f, 0.08f, 0.04f), 2.5f);
@@ -306,6 +319,9 @@ void ShopScene::Draw()
 
         // 値札の文字（金額はコインの右。所持金が足りない時は赤）
         URect tag = PriceTagRect(cardX, drawY);
+        if (!m_items[i].bought && m_items[i].sale)   // 特価：値札の上に赤い札
+            m_textRenderer->DrawOutlinedTextCentered(L"SALE -60%", tag.x + tag.w / 2.0f, tag.y - 24.0f, tag.w + 30.0f, 22.0f,
+                15.0f, D2D1::ColorF(1.0f, 0.35f, 0.3f), D2D1::ColorF(0, 0, 0), 2.0f);
         if (m_items[i].bought)
             m_textRenderer->DrawTextCentered(L"SOLD", tag.x + tag.w / 2.0f, tag.y, tag.w, 18.0f,
                 D2D1::ColorF(1.0f, 0.4f, 0.4f), tag.h);

@@ -259,7 +259,7 @@
       "kind": "blockRetain",
       "value": 50,
       "rarity": "rare",
-      "desc": "ターン終了時ブロックの半分を保持"
+      "desc": "ブロックの半分が 次のターンへ持ち越される"
     },
     {
       "id": "boss_furnace",
@@ -299,7 +299,7 @@
       "kind": "blockCarry",
       "value": 15,
       "rarity": "boss",
-      "desc": "ターン終了時、ブロックは15だけ減って持ち越す\n代償：最大HP-10",
+      "desc": "ブロックが15減って 次のターンへ持ち越される\n代償：最大HP-10",
       "extra": [
         {
           "kind": "maxHp",

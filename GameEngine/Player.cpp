@@ -9,11 +9,16 @@
 #include "RelicManager.h"
 #include "Audio.h"
 
-// コマの表示時間（各8コマ）
-static const float ATK_DUR[8] = { 0.04f, 0.06f, 0.08f, 0.12f, 0.03f, 0.03f, 0.10f, 0.10f };   // 溜め長く・振り下ろし一瞬
-static const float SKL_DUR[8] = { 0.05f, 0.06f, 0.07f, 0.06f, 0.06f, 0.07f, 0.16f, 0.10f };   // 最大の光で一拍止める
-static const float HURT_DUR[8] = { 0.05f, 0.07f, 0.07f, 0.07f, 0.07f, 0.07f, 0.06f, 0.06f };   // 被弾：一瞬で反って戻る
-static const float IDLE_STEP = 0.16f;                                                           // アイドル1コマ（ループ）
+// シートは 4列 × (ANIM_FRAMES/4)行。コマの表示時間（各 ANIM_FRAMES コマ）
+static const int   ANIM_FRAMES = 16;
+static const int   SHEET_COLS = 4, SHEET_ROWS = ANIM_FRAMES / SHEET_COLS;
+static const float ATK_DUR[ANIM_FRAMES]  = { 0.030f, 0.035f, 0.040f, 0.045f, 0.050f, 0.060f, 0.070f, 0.025f,      // 溜め長く
+                                             0.020f, 0.020f, 0.025f, 0.040f, 0.060f, 0.050f, 0.045f, 0.060f };    // 振り下ろし一瞬→余韻
+static const float SKL_DUR[ANIM_FRAMES]  = { 0.035f, 0.040f, 0.045f, 0.035f, 0.030f, 0.030f, 0.035f, 0.040f,
+                                             0.050f, 0.060f, 0.070f, 0.060f, 0.045f, 0.040f, 0.035f, 0.050f };    // 最大の光で一拍止める
+static const float HURT_DUR[ANIM_FRAMES] = { 0.025f, 0.030f, 0.035f, 0.040f, 0.040f, 0.040f, 0.035f, 0.035f,
+                                             0.035f, 0.035f, 0.035f, 0.035f, 0.035f, 0.040f, 0.050f, 0.080f };    // 一瞬で反ってよろけて戻る
+static const float IDLE_STEP = 0.10f;                                                                              // アイドル1コマ（ループ1.6秒）
 
 // アニメの種類ごとの設定（Player::Anim と同じ順番。dur が nullptr ＝ループ）
 struct AnimDef { const char* suffix; const float* dur; };
@@ -26,8 +31,30 @@ static const AnimDef ANIMS[] = {
 
 static int FrameAt(const float* dur, float t)
 {
-    for (int i = 0; i < 8; i++) { if (t < dur[i]) return i; t -= dur[i]; }
+    for (int i = 0; i < ANIM_FRAMES; i++) { if (t < dur[i]) return i; t -= dur[i]; }
     return -1;   // 再生終了
+}
+
+static const int ATK_READY_END = 7;   // 構え＝0～6コマ（6コマ目で止める）
+static const int ATK_STRIKE    = 9;   // 使った瞬間はここから（ヒットストップの間このコマが見える）
+
+static float FrameStart(const float* dur, int f) { float t = 0.0f; for (int i = 0; i < f; i++) t += dur[i]; return t; }
+
+void Player::StartAttack() { m_anim = Anim::Attack; m_ready = false; m_animTime = FrameStart(ATK_DUR, ATK_STRIKE); }
+
+void Player::FaceToward(int dc, int dr)
+{
+    if (dc == 0 && dr == 0) return;
+    if (abs(dc) >= abs(dr)) SetFacing((dc > 0) ? 1 : -1, 0);
+    else                    SetFacing(0, (dr > 0) ? 1 : -1);
+}
+
+void Player::SetReady(bool on)
+{
+    if (on == m_ready) return;
+    m_ready = on;
+    if (on) { m_anim = Anim::Attack; m_animTime = 0.0f; }                                                   // 振りかぶり始め
+    else if (m_anim == Anim::Attack && m_animTime < FrameStart(ATK_DUR, ATK_STRIKE)) m_anim = Anim::Idle;   // 使わずにやめた
 }
 
 Player::Player()
@@ -51,6 +78,11 @@ void Player::Update(float deltaTime)
     if (ad.dur)
     {
         m_animTime += deltaTime;
+        if (m_ready && m_anim == Anim::Attack)                  // 構え：振りかぶった所で止めて待つ
+        {
+            float hold = FrameStart(ATK_DUR, ATK_READY_END) - 0.001f;
+            if (m_animTime > hold) m_animTime = hold;
+        }
         if (FrameAt(ad.dur, m_animTime) < 0) m_anim = Anim::Idle;
     }
 
@@ -76,7 +108,7 @@ void Player::Draw3D(Renderer3D* renderer)
 
     // 再生するアニメと今のコマ
     const AnimDef& ad = ANIMS[(int)m_anim];
-    int af = ad.dur ? FrameAt(ad.dur, m_animTime) : (int)(m_idleTime / IDLE_STEP) % 8;
+    int af = ad.dur ? FrameAt(ad.dur, m_animTime) : (int)(m_idleTime / IDLE_STEP) % ANIM_FRAMES;
 
     float x = worldX, y = worldY, z = worldZ + 0.4f;
     float w = width, h = height;
@@ -86,8 +118,8 @@ void Player::Draw3D(Renderer3D* renderer)
     if (tex && af >= 0)
     {
         w = width * 1.5f; h = height * 1.5f;                 // 正方形コマ＝立ち絵の1.5倍の範囲
-        const float cw = 1.0f / 4.0f, ch = 1.0f / 2.0f;     // 4列×2行
-        float u = (af % 4) * cw, v = (af / 4) * ch;
+        const float cw = 1.0f / SHEET_COLS, ch = 1.0f / SHEET_ROWS;   // 4列×(ANIM_FRAMES/4)行
+        float u = (af % SHEET_COLS) * cw, v = (af / SHEET_COLS) * ch;
         uv = mirror ? XMFLOAT4(u + cw, v, -cw, ch) : XMFLOAT4(u, v, cw, ch);
 
         // コマ下の余白(1/6)ぶん基点を下げて、足元を立ち絵に揃える
@@ -110,11 +142,7 @@ void Player::OnCardUsed(CardType type, int dc, int dr)
 {
     if (type == CardType::Attack)
     {
-        if (dc != 0 || dr != 0)
-        {
-            if (abs(dc) >= abs(dr)) SetFacing((dc > 0) ? 1 : -1, 0);
-            else                    SetFacing(0, (dr > 0) ? 1 : -1);
-        }
+        FaceToward(dc, dr);
         StartAttack();
     }
     else if (type == CardType::Skill || type == CardType::Power)

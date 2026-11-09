@@ -184,6 +184,7 @@ private:
     std::vector<Enemy*> m_multiHitTargets;
     int    m_multiHitRemain = 0;
     int    m_multiHitDamage = 0;
+    CardEffectData m_multiHitOnHit, m_multiHitOnHit2;   // ’ÇŒ‚‚Ìƒqƒbƒg‚²‚Æ‚É•t‚¯‚é–½’†Žž‚ÌŒø‰Ê
     float  m_multiHitTimer = 0.0f;
     static constexpr float MULTI_HIT_INTERVAL = 0.12f;
 

@@ -36,7 +36,7 @@ public:
     std::function<void(SceneType)> onChangeScene;
 
 private:
-    struct ShopItem { std::string id; int price; bool bought; ShopKind kind; };
+    struct ShopItem { std::string id; int price; bool bought; ShopKind kind; bool sale = false; };   // sale“Á‰¿
     void GenerateStock();
     void GetSlotBase(int i, float& cardX, float& baseY) const;
     int  PriceFor(const CardData* data) const;

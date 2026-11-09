@@ -120,21 +120,17 @@ std::vector<std::string> RelicManager::RandomUnownedMany(const std::string& tier
     return pool;
 }
 
-std::string RelicManager::RandomDrop()   // 通常/エリート用：common/uncommon/rare を重み付け
+std::string RelicManager::RandomDrop()   // レア度を先に確率で決めて、その中から選ぶ（common 70%・uncommon 25%・rare 5%）
 {
-    struct W { const char* t; int w; }; W tiers[] = { {"common",65},{"uncommon",27},{"rare",8} };
-    std::vector<std::pair<std::string, int>> pool;
-    for (auto& kv : s_defs)
+    struct W { const char* t; int w; }; W tiers[] = { {"common",70},{"uncommon",25},{"rare",5} };
+    int roll = rand() % 100, k = 0;
+    for (int acc = 0; k < 2; k++) { acc += tiers[k].w; if (roll < acc) break; }
+    for (int n = 0; n < 3; n++)   // そのレア度を全部持っていたら、別のレア度から
     {
-        if (Owns(kv.first)) continue;
-        int w = 0; for (auto& t : tiers) if (kv.second.rarity == t.t) w = t.w;
-        if (w > 0) pool.push_back({ kv.first, w });
+        std::string id = RandomUnowned(tiers[(k + n) % 3].t);
+        if (!id.empty()) return id;
     }
-    if (pool.empty()) return "";
-    int total = 0; for (auto& p : pool) total += p.second;
-    int roll = rand() % total, acc = 0;
-    for (auto& p : pool) { acc += p.second; if (roll < acc) return p.first; }
-    return pool.back().first;
+    return "";
 }
 
 std::vector<std::string> RelicManager::ShopPool()

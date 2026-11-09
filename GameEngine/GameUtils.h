@@ -80,6 +80,7 @@ inline CardEffectType StringToCardEffectType(const std::string& str)
     if (str == "Judgement")   return CardEffectType::Judgement;
     if (str == "Miracle")     return CardEffectType::Miracle;
     if (str == "Purify")      return CardEffectType::Purify;
+    if (str == "ClearFloors") return CardEffectType::ClearFloors;
     return CardEffectType::None;
 }
 

@@ -180,7 +180,9 @@
       "name": "毒刃",
       "type": "Attack",
       "rarity": "Common",
-      "tags": "Poison",
+      "tags": [
+        "Poison"
+      ],
       "vfx": "slash",
       "vfxColor": [
         0.7,
@@ -996,7 +998,7 @@
       "cost": 3,
       "range": 1,
       "rangeType": "Adjacent",
-      "description": "{value}ダメージ、\n弱体{onhitdur}ターン・脱力{onhit2dur}ターン",
+      "description": "{value}ダメージ、\n脱力{onhitdur}ターン・弱体{onhit2dur}ターン",
       "mainEffect": {
         "type": "Damage",
         "value": 11
@@ -1171,7 +1173,7 @@
       "cost": 2,
       "range": 0,
       "rangeType": "None",
-      "description": "ブロック{value} このターン移動不可",
+      "description": "ブロック{value} このターン踏ん張り",
       "upgrade": {
         "mainValue": 8
       },
@@ -1197,7 +1199,7 @@
       "cost": 5,
       "range": 0,
       "rangeType": "None",
-      "description": "ブロック{value} このターン移動不可",
+      "description": "ブロック{value} このターン踏ん張り",
       "upgrade": {
         "mainValue": 20
       },
@@ -1610,7 +1612,7 @@
       "cost": 2,
       "range": 0,
       "rangeType": "None",
-      "description": "ブロック{value} 自傷4",
+      "description": "ブロック{value} 自傷2",
       "selfDamage": 2,
       "upgrade": {
         "mainValue": 4
@@ -1631,7 +1633,7 @@
       "cost": 0,
       "range": 0,
       "rangeType": "None",
-      "description": "{value}ドロー 自傷3",
+      "description": "{value}ドロー 自傷2",
       "selfDamage": 2,
       "upgrade": {
         "mainValue": 1
@@ -2418,6 +2420,40 @@
       }
     },
     {
+      "id": "SKL_clear_floors",
+      "name": "地ならし",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "盤面の敵の床を全て消す。\n1つにつきブロック+{value}",
+      "upgrade": {
+        "mainValue": 1
+      },
+      "mainEffect": {
+        "type": "ClearFloors",
+        "value": 1
+      }
+    },
+    {
+      "id": "SKL_clear_floors_near",
+      "name": "足場払い",
+      "type": "Skill",
+      "rarity": "Common",
+      "cost": 0,
+      "range": 1,
+      "rangeType": "Area",
+      "description": "自分と周りの\n敵の床を消す",
+      "upgrade": {
+        "range": 1
+      },
+      "mainEffect": {
+        "type": "ClearFloors",
+        "value": 0
+      }
+    },
+    {
       "id": "ATK_resonance",
       "name": "共鳴爆破",
       "type": "Attack",
@@ -2772,7 +2808,7 @@
       "cost": 0,
       "range": 0,
       "rangeType": "None",
-      "description": "足元に信仰を{value}刻む。\nこのターン移動できない",
+      "description": "足元に信仰を{value}刻む。\nこのターン踏ん張り",
       "upgrade": {
         "mainValue": 2
       },

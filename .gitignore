@@ -382,3 +382,6 @@ tools/.pull_state.json
 # ImGuiのウィンドウ位置・サイズ（人ごとに違う）
 imgui.ini
 フィードバック.txt
+
+# 録画（ClipRecorder の書き出し先）
+Recordings/

@@ -33,6 +33,7 @@ BattleUI::~BattleUI()
 
 static std::string s_hoverKey;
 static bool StatusAboveHead(Enemy* enemy, Player* player, const std::vector<Enemy*>& enemies, int depth = 0);   // 下の GetStatusFoot の上で定義
+static bool EnemyRightBelow(Player* player, const std::vector<Enemy*>& enemies);                                 // 同上
 
 bool BattleUI::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     int screenWidth, int screenHeight, IDXGISwapChain* swapChain)
@@ -464,6 +465,17 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             {
                 float scale = 1.0f / ctx.cameraZoom;
                 URect me = UnitStatusRect(footX, footY, scale, false, ctx.player->GetBuffManager());
+                if (EnemyRightBelow(ctx.player, *ctx.enemies))   // すぐ下に敵：UIの下端を頭のすぐ上へ（敵のUIを上げる時と同じ）
+                {
+                    float pitch = XMConvertToRadians(-Renderer3D::BILLBOARD_PITCH);
+                    float hx, hy;
+                    if (WorldToScreen(ctx.player->worldX, ctx.player->worldY + ctx.player->height * cos(pitch),
+                        ctx.player->worldZ + 0.5f - ctx.player->height * sin(pitch), ctx.renderer3D, hx, hy))
+                    {
+                        float d = (hy - 6.0f) - (me.y + me.h);
+                        me.y += d; footY += d;
+                    }
+                }
                 for (auto enemy : *ctx.enemies)                // 敵のUIと重なる時だけ、近いほう（上下）へずらす
                 {
                     float ex, ey;
@@ -1781,12 +1793,23 @@ void BattleUI::StartReshuffleEffect()
     m_reshuffleFx.timer = 0.0f;
 }
 
-void BattleUI::HoldNewestDraws(int n, float t)
+void BattleUI::HoldNewestDraws(int n, float t, float step)
 {
-    int k = 0;
-    for (auto it = m_drawCardEffects.rbegin(); it != m_drawCardEffects.rend() && k < n; ++it, ++k)
-        it->delay = t;                       // 飛ぶ演出は待ってから
-    m_pendingHoldN = n; m_pendingHoldT = t;  // 手札側は次の UpdateCardAnimations で当てる
+    if (n <= 0) return;
+    // 古い順に t, t+step, …。予約が重なった時（効果のドロー＋リシャッフル）は長いほう
+    if ((int)m_pendingHolds.size() < n) m_pendingHolds.insert(m_pendingHolds.begin(), n - m_pendingHolds.size(), 0.0f);
+    int base = (int)m_pendingHolds.size() - n;
+    for (int k = 0; k < n; k++)
+        m_pendingHolds[base + k] = max(m_pendingHolds[base + k], t + k * step);
+    int j = 0;   // 飛ぶ演出も同じだけ待つ（新しい順に後ろから）
+    for (auto it = m_drawCardEffects.rbegin(); it != m_drawCardEffects.rend() && j < n; ++it, ++j)
+        it->delay = max(it->delay, t + (n - 1 - j) * step);
+}
+
+void BattleUI::StartEffectDraws(const std::vector<std::string>& ids)
+{
+    for (auto& id : ids) StartDrawCardEffect(id);
+    HoldNewestDraws((int)ids.size(), EFFECT_DRAW_DELAY, EFFECT_DRAW_STEP);
 }
 
 void BattleUI::UpdateReshuffleEffect(float deltaTime)
@@ -2038,15 +2061,20 @@ void BattleUI::UpdateCardAnimations(float deltaTime, int handSize, int hoveredIn
     while ((int)m_cardAnims.size() > handSize)
         m_cardAnims.pop_back();
 
-    if (m_pendingHoldN > 0)   // リシャッフル演出の間、そのあと引いたカード（手札の最後の n 枚）は山札で待たせる
+    if (!m_pendingHolds.empty())   // 引いたカード（手札の最後の数枚）を山札で待たせる（リシャッフル演出・効果のドロー）
     {
-        for (int i = max(0, handSize - m_pendingHoldN); i < handSize; i++)
+        int n = (int)m_pendingHolds.size();
+        for (int k = 0; k < n; k++)
         {
-            m_cardAnims[i].holdTimer = m_pendingHoldT;
-            m_cardAnims[i].currentX = 20.0f;
-            m_cardAnims[i].currentY = (float)(m_screenHeight - 60);
+            int i = handSize - n + k;
+            if (i < 0 || i >= handSize) continue;
+            if (i < prevSize && m_cardAnims[i].holdTimer <= 0.0f) continue;   // 新しく入った分か、もう待っている分だけ（満杯で捨て札へ行った分は数えない）
+            m_cardAnims[i].holdTimer = max(m_cardAnims[i].holdTimer, m_pendingHolds[k]);
+            // 自分の空き場所の真下（画面外）から上がってくる。山札（左下）から横に滑らせると、手札の上を横切って入れ替わったように見える
+            m_cardAnims[i].currentX = CardVisual::HandSlotX(i, handSize, (float)m_screenWidth);
+            m_cardAnims[i].currentY = (float)m_screenHeight + 20.0f;
         }
-        m_pendingHoldN = 0;
+        m_pendingHolds.clear();
     }
 
     float cardHideY = m_screenHeight - CardVisual::CARD_HIDE_Y_OFFSET;
@@ -2276,6 +2304,20 @@ static bool StatusAboveHead(Enemy* enemy, Player* player, const std::vector<Enem
     if (enemy->IsSnake()) return raisedBelow(enemy->gridCol, enemy->gridRow);   // 蛇のUIは頭の下に出るので頭だけ
     for (auto& [c, r] : enemy->OccupiedCells())
         if (raisedBelow(c, r)) return true;
+    return false;
+}
+
+// プレイヤーのすぐ下のマスに敵がいるか（いればプレイヤーのUIを頭の上へ。足元だと敵の頭や警告と重なる）
+static bool EnemyRightBelow(Player* player, const std::vector<Enemy*>& enemies)
+{
+    for (auto e : enemies)
+    {
+        if (!e || e->GetHp() <= 0) continue;
+        bool below = e->IsSnake()   // 蛇は平置きなので頭のマスだけ
+            ? (e->gridCol == player->gridCol && e->gridRow == player->gridRow + 1)
+            : e->OccupiesCell(player->gridCol, player->gridRow + 1);
+        if (below) return true;
+    }
     return false;
 }
 

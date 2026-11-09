@@ -23,6 +23,7 @@ public:
         std::vector<Enemy*> multiHitTargets;  // 追撃対象
         int    multiHitRemain = 0;         // 残りヒット数
         int    multiHitDamage = 0;         // 1発の確定ダメージ
+        CardEffectData multiHitOnHit, multiHitOnHit2;   // 追撃のヒットごとにも付ける命中時の効果（弱体・毒など）
         bool startChainDetonate = false;
         int  chainCol = 0, chainRow = 0;
         bool chainFull = false;

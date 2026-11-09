@@ -19,7 +19,7 @@ struct BuffInfo
         { L"攻撃UP",                  L"攻撃力を{value}上昇させる",                   {0.9f, 0.3f, 0.1f, 1.0f}, "buff_attackup" },     // AttackUp
             { L"射程UP",              L"攻撃範囲が{value}広がる",                     {0.9f, 0.7f, 0.2f, 1.0f}, "buff_rangeup" },      // RangeUp
   { L"防御UP",                        L"ブロック値を{value}上昇させる",               {0.2f, 0.5f, 0.9f, 1.0f}, "buff_defenseup" },    // DefenseUp
-            { L"バリケード",          L"ブロックが次ターンに持ち越される",            {0.3f, 0.4f, 0.8f, 1.0f}, "buff_barricade" },    // Barricade
+            { L"バリケード",          L"ブロックが減らずに 次のターンへ持ち越される",  {0.3f, 0.4f, 0.8f, 1.0f}, "buff_barricade" },    // Barricade
             { L"棘",                  L"隣接攻撃を受けた時{value}の反射ダメージ",     {0.7f, 0.5f, 0.2f, 1.0f}, "buff_thorns" },       // Thorns
             { L"モメンタム",          L"移動1マスにつきブロック+{value}",             {0.3f, 0.6f, 0.9f, 1.0f}, "buff_momentum" },     // Momentum
             { L"移動UP",              L"移動距離が{value}増加する",                   {0.2f, 0.8f, 0.2f, 1.0f}, "buff_moveup" },       // MoveUp
@@ -42,7 +42,7 @@ struct BuffInfo
             { L"狂乱",                L"与ダメージ+{pct}%／被ダメージ+{pct}%／移動で自傷{self}", {0.85f, 0.15f, 0.15f, 1.0f}, "buff_frenzy" },        // Frenzy
             { L"毒の瘴気",            L"2ターンに一度 全ての敵に毒{value}",                      {0.6f, 0.3f, 0.9f, 1.0f},    "buff_noxiousfumes" },  // NoxiousFumes
             { L"毒の脈動",            L"毒のダメージ回数+{value}",                               {0.65f, 0.4f, 0.95f, 1.0f},  "buff_toxicrhythm" },   // ToxicRhythm
-            { L"移動不可",            L"このターン移動できない",                                 {0.5f, 0.5f, 0.6f, 1.0f},    "buff_movelock" },      // MoveLock
+            { L"踏ん張り",            L"このターン移動できない。そのかわり、敵のノックバックや引き寄せで動かない", {0.5f, 0.5f, 0.6f, 1.0f},    "buff_movelock" },      // MoveLock
             { L"受け返し",            L"攻撃を完全に防ぐと 敵に{value}ダメージ",                 {0.4f, 0.7f, 1.0f, 1.0f}, 	  "buff_riposte" },       // Riposte
             { L"研磨",                L"ナイフのダメージ+{value}",                               {0.7f, 0.7f, 0.8f, 1.0f},	  "buff_knifepower" },    // KnifePower
             { L"投擲術",              L"ナイフが遠距離攻撃になる",                               {0.6f, 0.75f, 0.9f, 1.0f},   "buff_knifethrow" },    // KnifeThrow

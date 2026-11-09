@@ -15,6 +15,7 @@ public:
     bool Open(ID3D11Device* dev, const std::string& path)
     {
         Close();
+        m_path = path;   // 開けなくても覚えておく（無いファイルを毎フレーム開き直さないため）
         m_plm = plm_create_with_filename(path.c_str());
         if (!m_plm) return false;
         plm_set_audio_enabled(m_plm, 0);
@@ -30,10 +31,9 @@ public:
         if (FAILED(dev->CreateTexture2D(&d, nullptr, m_tex.GetAddressOf()))
             || FAILED(dev->CreateShaderResourceView(m_tex.Get(), nullptr, m_srv.GetAddressOf())))
         {
-            Close(); return false;
+            Close(); m_path = path; return false;
         }
         plm_set_video_decode_callback(m_plm, &VideoClip::OnFrame, this);
-        m_path = path;
         return true;
     }
 

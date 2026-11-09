@@ -59,10 +59,10 @@ private:
         if (FAILED(dev->CreateTexture2D(&d, nullptr, s_staging.GetAddressOf()))) return;
         s_w = d.Width; s_h = d.Height;
 
-        CreateDirectoryA("Assets/Video", nullptr);
+        CreateDirectoryA("Recordings", nullptr);   // 録画は素材と分ける（配る Assets に混ざらないように）
         SYSTEMTIME st; GetLocalTime(&st);
         char name[96];
-        sprintf_s(name, "Assets/Video/rec_%04d%02d%02d_%02d%02d%02d.mpg",
+        sprintf_s(name, "Recordings/rec_%04d%02d%02d_%02d%02d%02d.mpg",
             st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
         char cmd[512];
         sprintf_s(cmd, "ffmpeg -y -loglevel error -f rawvideo -pix_fmt bgra -s %ux%u -r 30 -i - "

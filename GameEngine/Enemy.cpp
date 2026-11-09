@@ -435,7 +435,7 @@ void Enemy::AddBlock(int amount)
 
 void Enemy::ResetBlock()
 {
-    m_block = 0;
+    if (!m_buffManager.HasBuff(BuffType::Barricade)) m_block = 0;   // バリケード中は持ち越す（プレイヤーと同じ）
 }
 
 // 噛みつき（首を伸ばす）の行動か
@@ -458,6 +458,7 @@ static bool ActionAlreadyMoves(const EnemyAction& act)
 void Enemy::PullPlayer(int playerCol, int playerRow, GridMap* gridMap, Player* player, int steps)
 {
     if (!player) return;
+    if (player->GetBuffManager().HasBuff(BuffType::MoveLock)) return;   // 踏ん張り中は引き寄せられない
     int pc = playerCol, pr = playerRow;
     std::vector<std::pair<float, float>> pts;
 
@@ -503,6 +504,7 @@ void Enemy::PullPlayer(int playerCol, int playerRow, GridMap* gridMap, Player* p
 void Enemy::KnockbackPlayer(int playerCol, int playerRow, GridMap* gridMap, Player* player, int steps)
 {
     if (!player) return;
+    if (player->GetBuffManager().HasBuff(BuffType::MoveLock)) return;   // 踏ん張り中は吹き飛ばない
     int pc = playerCol, pr = playerRow;
 
     // 敵から離れる主方向を1軸に固定（まっすぐ吹き飛ばす）
@@ -825,7 +827,10 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
             for (int r = 0; r < rows; r++)
                 for (int c = 0; c < cols; c++)
                 {
-                    if (!IsInRange(c, r, tg.range, tg.rangeType, tg.minRange)) continue;
+                    bool inArea = (tg.anchor != AnchorType::Self)
+                        ? IsCellInTarget(c, r, tg)                               // プレイヤー/座標が中心の攻撃は、狙った場所に置く
+                        : IsInRange(c, r, tg.range, tg.rangeType, tg.minRange);  // 敵が中心（従来どおり）
+                    if (!inArea) continue;
                     Cell& cell = gridMap->GetCell(c, r);
                     if (cell.type == CellType::Enemy || cell.type == CellType::Boss) continue; // 敵の足元は除外
                     if (cell.tileEffect.active) continue;                                       // 既存の床は上書きしない

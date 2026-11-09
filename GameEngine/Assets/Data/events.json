@@ -536,7 +536,8 @@
           "result": "遺物を手に入れた。",
           "outcomes": [
             {
-              "type": "relic"
+              "type": "relic",
+              "param": "random"
             }
           ]
         },

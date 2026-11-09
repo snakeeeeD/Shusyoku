@@ -158,6 +158,7 @@ namespace EnumNames
         { CardEffectType::Judgement,     "Judgement" },
         { CardEffectType::Miracle,       "Miracle" },
         { CardEffectType::Purify,        "Purify" },
+        { CardEffectType::ClearFloors,   "ClearFloors" },
     };
 
     // ---- カード：種類 ----

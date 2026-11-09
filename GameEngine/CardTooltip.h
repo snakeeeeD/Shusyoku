@@ -137,7 +137,7 @@ public:
     {
         return s_hasHeld && s_mx >= s_panel[0] && s_mx <= s_panel[2] && s_my >= s_panel[1] && s_my <= s_panel[3];
     }
-    static void ClearHeld() { s_hasHeld = false; s_drawn = false; }
+    static void ClearHeld() { s_hasHeld = false; s_drawn = false; s_heldSrc = nullptr; }
     // フレームの最後に呼ぶ：このフレームで出ていなくても、マウスが説明の上なら出し続ける
     static void EndFrame(SpriteRenderer* sr, TextRenderer* tr, ID3D11ShaderResourceView* white)
     {
@@ -173,7 +173,7 @@ public:
         if (py + ph > sh - 6.0f) py = sh - 6.0f - ph;          // 下からもはみ出すなら画面内へ
 
         // 説明を残すための記録（カードとの間のすき間も「上にある」とみなす）
-        if (d != &s_held) s_held = *d;
+        if (d != &s_held && (d != s_heldSrc || d->id != s_held.id)) { s_held = *d; s_heldSrc = d; }   // 別のカードになった時だけコピー
         s_hasHeld = true; s_drawn = true;
         float args[7] = { ccx, cty, cardW, cardH, (float)sw, (float)sh, topLimit };
         for (int i = 0; i < 7; i++) s_args[i] = args[i];
@@ -257,6 +257,7 @@ private:
     static inline float s_mx = -1.0f, s_my = -1.0f;
     static inline bool s_click = false;
     static inline CardData s_held;                  // 残している説明のカード（コピー）
+    static inline const CardData* s_heldSrc = nullptr;   // コピー元（同じカードなら写し直さない）
     static inline bool s_hasHeld = false, s_drawn = false;
     static inline float s_args[7] = {};             // Draw の位置の引数
     static inline float s_hold[4] = {};             // 説明を残す範囲（左上・右下）

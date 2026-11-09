@@ -38,6 +38,7 @@ enum class CardEffectType
     Judgement,   // 聖地に立つ敵すべてに、そのマスの信仰×value のダメージ
     Miracle,     // 自分のマスの信仰を全て払い、範囲の敵に 払った信仰×value のダメージ
     Purify,      // 自分のマスの信仰を value 払い、手札の呪いを全て廃棄
+    ClearFloors, // 敵の床を消す（範囲なし＝盤面の全部）。value>0 なら1つにつきブロック+value
 };
 
 // カードレアリティ
@@ -119,5 +120,6 @@ inline bool CanPickOwnCell(const CardData& d)
     auto t = d.mainEffect.type;
     return t == CardEffectType::PlaceTrap || t == CardEffectType::Detonate
         || t == CardEffectType::DetonateAt || t == CardEffectType::DetonateChain
+        || t == CardEffectType::ClearFloors
         || (t == CardEffectType::Engrave && d.range > 0);
 }

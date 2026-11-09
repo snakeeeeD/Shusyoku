@@ -112,6 +112,9 @@ public:
     void GetCraftBaseRect(int i, float& x, float& y, float& w, float& h) const;
     void GetCraftModRect(int i, float& x, float& y, float& w, float& h) const;
     std::vector<std::pair<std::string, int>> CraftBases() const;
+    int  m_craftEditIdx = -1;   // 素材を足している合成カード（デッキの番号。-1＝新しく作る）
+    int  m_craftLocked = 0;     // m_craftMods の先頭の、もう付いている素材の数（外せない）
+    std::vector<int> CraftEditables() const;   // 素材を足せる合成カード（デッキの番号）
     std::vector<std::pair<std::string, int>> CraftMods() const;
     std::string CraftRecipeId() const;
     int CraftModSlots() const;
@@ -296,6 +299,8 @@ private:
     std::unique_ptr<class VideoClip> m_glossVideo;   // 選んでいる用語の動画
     ULONGLONG m_glossVideoTick = 0;
     int  m_glossCat = 0, m_glossSel = 0, m_glossScroll = 0;
+    struct GlossPage { int cat, sel, scroll; };
+    std::vector<GlossPage> m_glossBack;   // 戻る用：前に見ていたページ（閉じたら消す）
     void OpenGlossary(const std::string& id);
     void DrawGlossary();
     void HandleGlossaryInput();

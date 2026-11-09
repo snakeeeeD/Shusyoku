@@ -57,7 +57,9 @@ public:
         m_faceDx = 0; m_faceDz = 1;   // 正面（顔が見える向き）
     }
     enum class Anim { Idle, Attack, Skill, Hurt };
-    void StartAttack() { m_anim = Anim::Attack; m_animTime = 0.0f; }   // 攻撃モーション
+    void StartAttack();          // 攻撃：振り下ろしのコマから再生（ダメージと同時に剣が当たって見える）
+    void SetReady(bool on);      // 攻撃カードを選んでいる間：振りかぶって構えたまま待つ
+    void FaceToward(int dc, int dr);   // (dc,dr) の方を向く（上下左右のうち近いほう）
     void StartSkill() { m_anim = Anim::Skill;  m_animTime = 0.0f; }   // スキル／パワーのモーション
     void StartHurt() { m_anim = Anim::Hurt;   m_animTime = 0.0f; }   // 被弾
     void OnCardUsed(CardType type, int dc, int dr);   // カードが実際に使われた時の動き（dc,dr＝対象への差分）
@@ -81,4 +83,5 @@ private:
     Anim  m_anim = Anim::Idle;      // 再生中のアニメ
     float m_animTime = 0.0f;        // 攻撃／スキルの経過時間
     float m_idleTime = 0.0f;        // アイドルの経過時間（ループ）
+    bool  m_ready = false;          // 構え中（攻撃カードを選んでいる）
 };

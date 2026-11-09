@@ -145,6 +145,7 @@ public:
 	void MarkWeakHit(int c, int r) { m_hitWeak = (c == m_weakCell.first && r == m_weakCell.second); }   // 光るウロコに当たったか
 	bool ConsumeShed() { bool b = m_shedPending; m_shedPending = false; return b; }   // 脱皮した瞬間か（演出用）
 	static constexpr int SHED_DAMAGE = 120;   // これだけカードで殴られると脱皮
+	void ClearHitMark() { m_hitPart = HitPart::None; m_hitWeak = false; }   // 部位の印を消す（罠・起爆は部位に関係なし・脱皮にも数えない）
 	void MarkHitCell(int c, int r) { m_hitCell = { c, r }; }      // カードが当たったマス
 	const std::pair<int, int>& HitCell() const { return m_hitCell; }
 	int ShedCount() const { return m_coilBonus / 2; }             // 脱皮した回数

@@ -1780,7 +1780,7 @@
       "height": 1.0,
       "actions": [
         {
-          "description": "吸血、{0}ダメージ、{1}回復",
+          "description": "吸血、{0}ダメージ、命中時回復",
           "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Area",
@@ -3185,7 +3185,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 8
+              "value": 10
             },
             {
               "kind": "Buff",
@@ -3225,15 +3225,18 @@
           }
         },
         {
-          "description": "接近",
+          "description": "掴みかかり、{0}ダメージ",
+          "areaVfx": "atk_slash",
           "target": {
-            "rangeType": "None",
-            "range": 1
+            "rangeType": "Area",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 2
           },
           "effects": [
             {
-              "kind": "MoveToward",
-              "value": 1
+              "kind": "Damage",
+              "value": 7
             }
           ],
           "select": {
@@ -3261,7 +3264,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 7
+              "value": 8
             },
             {
               "kind": "Debuff",
@@ -3272,6 +3275,24 @@
           ],
           "select": {
             "chance": 55
+          }
+        },
+        {
+          "description": "プラズマ爆撃、{0}ダメージ",
+          "areaVfx": "atk_magic",
+          "target": {
+            "rangeType": "Square",
+            "range": 1,
+            "anchor": "player"
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 10
+            }
+          ],
+          "select": {
+            "chance": 45
           }
         },
         {
@@ -3287,7 +3308,9 @@
             }
           ],
           "select": {
-            "chance": 45
+            "chance": 100,
+            "condition": "near",
+            "conditionValue": 1
           }
         }
       ]
@@ -3300,16 +3323,17 @@
       "height": 1.0,
       "actions": [
         {
-          "description": "胞子噴射、{0}ダメージ、床設置、毒{2}付与",
+          "description": "胞子砲、{0}ダメージ、床設置、毒{2}付与",
           "areaVfx": "atk_poison",
           "target": {
-            "rangeType": "Area",
-            "range": 2
+            "rangeType": "Square",
+            "range": 1,
+            "anchor": "player"
           },
           "effects": [
             {
               "kind": "Damage",
-              "value": 5
+              "value": 8
             },
             {
               "kind": "Hazard",
@@ -3328,12 +3352,17 @@
           }
         },
         {
-          "description": "毒撒き、毒{0}付与",
+          "description": "毒撒き、{0}ダメージ、毒{1}付与",
+          "areaVfx": "atk_poison",
           "target": {
-            "rangeType": "Area",
-            "range": 1
+            "rangeType": "Grid",
+            "range": 3
           },
           "effects": [
+            {
+              "kind": "Damage",
+              "value": 4
+            },
             {
               "kind": "Debuff",
               "buff": "Poison",
@@ -3358,13 +3387,15 @@
           "description": "シールドバッシュ、{0}ダメージ、{1}ブロック、ノックバック",
           "areaVfx": "atk_smash",
           "target": {
-            "rangeType": "Adjacent",
-            "range": 1
+            "rangeType": "Area",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 1
           },
           "effects": [
             {
               "kind": "Damage",
-              "value": 9
+              "value": 10
             },
             {
               "kind": "Block",
@@ -3391,7 +3422,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 6
+              "value": 7
             },
             {
               "kind": "AddCard",
@@ -3405,15 +3436,22 @@
           }
         },
         {
-          "description": "接近",
+          "description": "照準掃射、{0}ダメージ",
+          "areaVfx": "atk_smash",
           "target": {
-            "rangeType": "None",
-            "range": 1
+            "rangeType": "Row",
+            "anchor": "player"
           },
+          "extraTargets": [
+            {
+              "rangeType": "Column",
+              "anchor": "player"
+            }
+          ],
           "effects": [
             {
-              "kind": "MoveToward",
-              "value": 1
+              "kind": "Damage",
+              "value": 9
             }
           ],
           "select": {
@@ -3434,7 +3472,9 @@
           "areaVfx": "atk_poison",
           "target": {
             "rangeType": "Area",
-            "range": 2
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 2
           },
           "effects": [
             {
@@ -3457,7 +3497,9 @@
           "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Area",
-            "range": 1
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 1
           },
           "effects": [
             {
@@ -3515,7 +3557,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 5
+              "value": 6
             },
             {
               "kind": "Debuff",
@@ -3529,15 +3571,16 @@
           }
         },
         {
-          "description": "後退",
+          "description": "精神波、{0}ダメージ",
+          "areaVfx": "atk_magic",
           "target": {
-            "rangeType": "None",
-            "range": 1
+            "rangeType": "Row",
+            "anchor": "player"
           },
           "effects": [
             {
-              "kind": "MoveAway",
-              "value": 2
+              "kind": "Damage",
+              "value": 11
             }
           ],
           "select": {
@@ -3548,7 +3591,7 @@
     },
     {
       "id": "grav_anomaly",
-      "texture": "enemy_grav_anomalyr",
+      "texture": "enemy_grav_anomaly",
       "hp": 70,
       "width": 1.0,
       "height": 1.0,
@@ -3571,7 +3614,7 @@
             }
           ],
           "select": {
-            "chance": 55
+            "chance": 40
           }
         },
         {
@@ -3589,7 +3632,25 @@
             }
           ],
           "select": {
-            "chance": 45
+            "chance": 30
+          }
+        },
+        {
+          "description": "重力井戸、{0}ダメージ",
+          "areaVfx": "atk_magic",
+          "target": {
+            "rangeType": "Square",
+            "range": 1,
+            "anchor": "player"
+          },
+          "effects": [
+            {
+              "kind": "Damage",
+              "value": 12
+            }
+          ],
+          "select": {
+            "chance": 30
           }
         }
       ]
@@ -3646,15 +3707,18 @@
           }
         },
         {
-          "description": "接近",
+          "description": "噛みつき、{0}ダメージ",
+          "areaVfx": "atk_slash",
           "target": {
-            "rangeType": "None",
-            "range": 1
+            "rangeType": "Area",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 2
           },
           "effects": [
             {
-              "kind": "MoveToward",
-              "value": 1
+              "kind": "Damage",
+              "value": 5
             }
           ],
           "select": {
@@ -3674,8 +3738,10 @@
           "description": "グリッチ斬、{0}ダメージ×3、脱力{1}付与",
           "areaVfx": "atk_slash",
           "target": {
-            "rangeType": "Adjacent",
-            "range": 1
+            "rangeType": "Area",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 2
           },
           "effects": [
             {
@@ -3713,15 +3779,18 @@
           }
         },
         {
-          "description": "後退",
+          "description": "ブリンク斬り、{0}ダメージ",
+          "areaVfx": "atk_slash",
           "target": {
-            "rangeType": "None",
-            "range": 1
+            "rangeType": "Area",
+            "range": 1,
+            "approach": "Dash",
+            "moveRange": 4
           },
           "effects": [
             {
-              "kind": "MoveAway",
-              "value": 2
+              "kind": "Damage",
+              "value": 10
             }
           ],
           "select": {
@@ -3741,8 +3810,10 @@
           "description": "乱撃、{0}ダメージ×3、攻撃力↑付与",
           "areaVfx": "atk_slash",
           "target": {
-            "rangeType": "Adjacent",
-            "range": 1
+            "rangeType": "Area",
+            "range": 1,
+            "approach": "Toward",
+            "moveRange": 1
           },
           "effects": [
             {
@@ -3821,7 +3892,7 @@
           "description": "データ侵蝕、{0}ダメージ、脱力{1}付与、捨て札にノイズ",
           "areaVfx": "atk_magic",
           "target": {
-            "rangeType": "Area",
+            "rangeType": "Grid",
             "range": 3
           },
           "effects": [
@@ -4390,33 +4461,6 @@
           "select": {
             "condition": "awake",
             "chance": 35
-          }
-        }
-      ]
-    },
-    {
-      "id": "rec_dummy",
-      "drops": [],
-      "texture": "enemy_zako",
-      "hp": 58,
-      "width": 1.2,
-      "height": 1.2,
-      "actions": [
-        {
-          "description": "叩きつけ、{0}ダメージ",
-          "areaVfx": "atk_smash",
-          "target": {
-            "rangeType": "Area",
-            "range": 1
-          },
-          "effects": [
-            {
-              "kind": "Damage",
-              "value": 8
-            }
-          ],
-          "select": {
-            "chance": 100
           }
         }
       ]

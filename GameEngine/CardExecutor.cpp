@@ -229,6 +229,8 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 result.multiHitTargets = targets;
                 result.multiHitRemain = hits - 1;
                 result.multiHitDamage = dmg;
+                result.multiHitOnHit = data.onHitEffect;     // 追撃でもヒットごとに付ける
+                result.multiHitOnHit2 = data.onHitEffect2;
             }
         }                            
         else
@@ -516,6 +518,8 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 result.multiHitTargets = { target };   // ← 1要素のリスト
                 result.multiHitRemain = totalHits - 1;
                 result.multiHitDamage = dmg;
+                result.multiHitOnHit = data.onHitEffect;     // 追撃でもヒットごとに付ける
+                result.multiHitOnHit2 = data.onHitEffect2;
             }
             // Thorns反射
             if (target->GetBuffManager().HasBuff(BuffType::Thorns))
@@ -698,6 +702,16 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             if (!any) return result;   // 範囲内に罠が無ければ不発（ノーコスト）
         }
 
+        if (data.mainEffect.type == CardEffectType::ClearFloors)   // 範囲に敵の床が無ければ不発（ノーコスト）
+        {
+            bool all = (data.rangeType == RangeType::None), any = false;
+            for (int r = 0; r < gridMap->GetRows() && !any; r++)
+                for (int c = 0; c < gridMap->GetCols() && !any; c++)
+                    if (gridMap->GetCell(c, r).tileEffect.active && gridMap->GetCell(c, r).tileEffect.enemyOwned
+                        && (all || inRange(c, r))) any = true;
+            if (!any) return result;
+        }
+
         if (data.mainEffect.type == CardEffectType::DetonateAt)
         {
             if (!inRange(targetCol, targetRow))
@@ -832,8 +846,8 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
         }
         case CardEffectType::Detonate:
         {
-            result.seqFull = (data.mainEffect.value > 0);
-            bool all = (data.rangeType == RangeType::None);   // 範囲なし＝盤面の全部   // value>0＝全開
+            result.seqFull = (data.mainEffect.value > 0);     // value>0＝全開
+            bool all = (data.rangeType == RangeType::None);   // 範囲なし＝盤面の全部
             for (int r = 0; r < gridMap->GetRows(); r++)
                 for (int c = 0; c < gridMap->GetCols(); c++)
                 {
@@ -852,7 +866,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 for (int c = 0; c < gridMap->GetCols(); c++)
                 {
                     Cell& cell = gridMap->GetCell(c, r);
-                    if (cell.tileEffect.active)
+                    if (cell.tileEffect.active && !cell.tileEffect.enemyOwned)   // 自分の罠だけ（敵の床は「地ならし」で消す）
                     {
                         cell.tileEffect = TileEffect();   // 削除（起爆せず消す）
                         recalled++;
@@ -864,6 +878,22 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 std::string id = deck.DrawCard();
                 if (!id.empty()) { hand.AddCard(id); result.drawnCards.push_back(id); }
             }
+            break;
+        }
+        case CardEffectType::ClearFloors:   // 敵の床を消す（範囲なし＝盤面の全部）
+        {
+            bool all = (data.rangeType == RangeType::None);
+            int cleared = 0;
+            for (int r = 0; r < gridMap->GetRows(); r++)
+                for (int c = 0; c < gridMap->GetCols(); c++)
+                {
+                    Cell& cell = gridMap->GetCell(c, r);
+                    if (!cell.tileEffect.active || !cell.tileEffect.enemyOwned || !(all || inRange(c, r))) continue;
+                    cell.tileEffect = TileEffect();
+                    cleared++;
+                }
+            if (cleared > 0 && data.mainEffect.value > 0)   // 1つにつきブロック
+                player->AddBlock(player->GetBuffManager().GetFinalBlock(cleared * data.mainEffect.value));
             break;
         }
         case CardEffectType::DetonateAt:
@@ -1119,6 +1149,7 @@ void CardExecutor::TriggerTrap(Cell& cell, Enemy* enemy, int col, int row,
 
     if (def->effect == "Damage")
     {
+        enemy->ClearHitMark();   // 罠は部位に関係なし・脱皮にも数えない
         enemy->TakeDamage(cell.tileEffect.value + RelicManager::SumValue("trapDamage"));
 
         if (def->aoe)
@@ -1135,6 +1166,7 @@ void CardExecutor::TriggerTrap(Cell& cell, Enemy* enemy, int col, int row,
                     if (nc < 0 || nc >= gridMap->GetCols() || nr < 0 || nr >= gridMap->GetRows())
                         continue;
                     Enemy* nearby = GetEnemyAt(nc, nr, enemies);
+                    if (nearby) nearby->ClearHitMark();   // 探した時に付いた部位の印は使わない
                     if (nearby && std::find(hit.begin(), hit.end(), nearby) == hit.end())
                     {
                         nearby->TakeDamage(halfDmg);
@@ -1219,6 +1251,7 @@ bool CardExecutor::DetonateTrap(Cell& cell, int col, int row,
             int val = cell.tileEffect.value;
             if (!center && !fullPower) val /= 2;          // 周囲は半分（強化で全開）
 
+            e->ClearHitMark();   // 起爆は部位に関係なし・脱皮にも数えない（探した時の印を消す）
             if (def->effect == "Damage")
                 e->TakeDamage(val + RelicManager::SumValue("trapDamage"));                
             else if (def->effect == "ApplyDebuff")
@@ -1318,19 +1351,19 @@ void CardExecutor::ApplyKnockback(Enemy* target, int playerCol, int playerRow,
         target->MarkFootprint(gridMap);
         float wx, wz; target->CenterWorld(nextCol, nextRow, gridMap, wx, wz);
         path.push_back({ wx, wz });
-        if (!path.empty())
-        {
-            float os = 0.35f;                 // 行き過ぎ量（マス比）
-            auto fin = path.back();
-            path.push_back({ fin.first + dirC * os * 1.1f, fin.second + dirR * os * 1.1f }); // 行き過ぎ
-            path.push_back(fin);                                                             // 戻って着地
-            target->StartWalk(path, 0.05f);   // 速く（吹っ飛び）
-            ScreenShake::Add(0.4f);           // 手応え
-        }
         for (auto& [dc, dr] : target->GetGridShape())       // 形全体で罠を踏む
             TriggerTrap(gridMap->GetCell(nextCol + dc, nextRow + dr), target,
                 nextCol + dc, nextRow + dr, gridMap, enemies);
         moved++;
+    }
+    if (!path.empty())   // 通ったマスを一気に滑って、最後だけ行き過ぎて戻る（途中のマスで跳ねない）
+    {
+        float os = 0.35f;                 // 行き過ぎ量（マス比）
+        auto fin = path.back();
+        path.push_back({ fin.first + dirC * os * 1.1f, fin.second + dirR * os * 1.1f }); // 行き過ぎ
+        path.push_back(fin);                                                             // 戻って着地
+        target->StartWalk(path, 0.05f);   // 速く（吹っ飛び）
+        ScreenShake::Add(0.4f);           // 手応え
     }
 }
 
@@ -1381,7 +1414,6 @@ void CardExecutor::ApplyPull(Enemy* target, int playerCol, int playerRow,
 
     int moved = 0;
     std::vector<std::pair<float, float>> path;   // 通過するワールド座標（アニメ用）
-    for (int i = 0; i < distance; i++)
     for (int i = 0; i < distance; i++)
     {
         int nextCol = target->gridCol + dirC;

@@ -98,6 +98,18 @@ public:
 private:
     static void Ensure() { if (!s_loaded) Load(); }
 
+    // 用語集用の罠・床の説明（数値は入れない。実際の強さはカードやマスのホバーで見る）
+    static std::wstring TrapSummary(const TerrainDef* t)
+    {
+        std::wstring s;
+        if (t->effect == "Damage")       s = t->aoe ? L"踏むと爆発してダメージ。周りのマスにも少しダメージ" : L"踏むとダメージ";
+        else if (t->effect == "Slide")   s = L"踏むと移動の向きに滑る";
+        else if (t->effect == "WhileOn") s = L"上にいる間 移動カードのコストが上がる";
+        else                             s = L"踏むと" + BuffInfo::Get(StringToBuffType(t->buffType)).name + L"が付く";
+        s += t->persistent ? L"\n踏んでも消えない" : L"\n踏むと消える";
+        return s;
+    }
+
     static std::wstring Fill(std::wstring s)
     {
         auto rep = [&](const std::wstring& key, const std::wstring& val) {
@@ -195,7 +207,7 @@ private:
                     g.id = "terrain_" + def->id;
                     g.category = L"罠と床";
                     g.name = def->name;
-                    for (auto& l : CardTooltip::TrapLines(def, def->value)) g.desc += (g.desc.empty() ? L"" : L"\n") + l;
+                    g.desc = TrapSummary(def);   // 用語集は数値なし（ホバーとカードの説明は TrapLines で数値あり）
                     g.desc = (def->persistent ? L"床：" : L"罠：") + g.desc;
                     g.icon = def->texture;
                     g.related.push_back(def->persistent ? "floor" : "trap");

@@ -144,7 +144,8 @@ public:
     void UpdateDrawCardEffects(float deltaTime);
     void StartDrawCardEffect(const std::string& cardId);
     void StartReshuffleEffect();
-    void HoldNewestDraws(int n, float t);   // 最後に引いた n 枚を t 秒待たせる（リシャッフル演出の後に出す）
+    void HoldNewestDraws(int n, float t, float step = 0.0f);   // 最後に引いた n 枚を待たせる（1枚目は t 秒、以降 step 秒ずつ遅らせる）
+    void StartEffectDraws(const std::vector<std::string>& ids); // カードの効果で引いた分：使ったカードが出てから1枚ずつ引く
     void UpdateReshuffleEffect(float deltaTime);
     void DrawReshuffleEffect();
     void StartDiscardEffects();
@@ -236,8 +237,9 @@ private:
 
     struct ReshuffleFx { bool active = false; float timer = 0.0f; };
     ReshuffleFx m_reshuffleFx;
-    int   m_pendingHoldN = 0;      // 手札側の待機の予約（次の UpdateCardAnimations で最後の n 枚に当てる）
-    float m_pendingHoldT = 0.0f;
+    std::vector<float> m_pendingHolds;                   // 手札側の待機の予約（次の UpdateCardAnimations で最後の数枚に当てる。古い順）
+    static constexpr float EFFECT_DRAW_DELAY = 0.40f;   // 効果のドロー：使ったカードが中央から離れてから引き始める（中央で止まるのは PLAY_EFFECT_DUR*0.72≒0.32秒）
+    static constexpr float EFFECT_DRAW_STEP  = 0.12f;   // 1枚ごとの間隔
 
     static constexpr float CARD_HOVER_W = 110.0f;
     static constexpr float CARD_HOVER_H = 140.0f;
