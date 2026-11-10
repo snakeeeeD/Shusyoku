@@ -555,6 +555,20 @@
         "type": "Engrave",
         "value": 1
       }
+    },
+    {
+      "id": "echo_shard",
+      "name": "共鳴の欠片",
+      "tag": "響",
+      "layer": 2,
+      "desc": "付いている効果の数字をすべて+1（全コア）",
+      "cost": 1,
+      "buyPrice": 180,
+      "sellPrice": 20,
+      "all": {
+        "slot": "amplifyAll",
+        "value": 1
+      }
     }
   ]
 }

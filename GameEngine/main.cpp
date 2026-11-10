@@ -6,6 +6,7 @@
 #include "Settings.h"
 #include "RenderConfig.h"
 #include "ClipRecorder.h"
+#include "Cursor.h"
 #ifdef _DEBUG
 #include "External/imgui/imgui.h"
 #include "External/imgui/backends/imgui_impl_win32.h"
@@ -50,6 +51,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 
     if (!InitWindow(hInstance, nCmdShow))
         return 0;
+    Cursor::Load();
 
     if (!InitD3D())
     {
@@ -78,12 +80,20 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
             prev = now;
             if (deltaTime > 0.1f) deltaTime = 0.1f;   // ブレークポイントで飛ばないよう上限
 
+            Cursor::Begin();                // このフレームのカーソルは「通常」から
             if (g_game)
             {
                 g_game->HandleInput();
                 g_game->Update(deltaTime);
             }
-            Render();
+            Render();                       // 描画中に決まるホバーもあるので、反映は描画の後
+            {
+                bool imguiMouse = false;
+#ifdef _DEBUG
+                imguiMouse = ImGui::GetIO().WantCaptureMouse;
+#endif
+                if (!imguiMouse) Cursor::Apply(g_hWnd);
+            }
         }
     }
 
@@ -98,6 +108,14 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    // カーソルの見た目はゲーム側で決める（デバッグ時、ImGuiの窓の上ではImGuiに任せる）
+    if (message == WM_SETCURSOR && LOWORD(lParam) == HTCLIENT)
+    {
+#ifdef _DEBUG
+        if (!(ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureMouse))
+#endif
+        { SetCursor(Cursor::Handle()); return TRUE; }
+    }
 #ifdef _DEBUG
     if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
         return true;

@@ -1137,6 +1137,11 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 auto detail = CardTooltip::TrapLines(def, hCell.tileEffect.value);
                 if (hCell.tileEffect.hazardTurns > 0)
                     detail.back() = L"残り" + std::to_wstring(hCell.tileEffect.hazardTurns) + L"ターン";
+                if (!hCell.tileEffect.enemyOwned && def->growPct > 0)   // 自分の罠：育ち・導火線
+                {
+                    detail.push_back(L"育ち " + std::to_wstring(hCell.tileEffect.grown) + L"/3（ターンごと）");
+                    detail.push_back(L"導火線 " + std::to_wstring(hCell.tileEffect.fuse) + L"/3（敵が隣にいる間進む）");
+                }
 
                 float tipX = (float)ctx.mousePos.x + 15.0f;
                 float tipY = (float)ctx.mousePos.y - 50.0f;

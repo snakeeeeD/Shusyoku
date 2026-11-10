@@ -99,7 +99,13 @@ void Player::Update(float deltaTime)
 void Player::Draw3D(Renderer3D* renderer)
 {
     if (!isActive) return;
+    SpriteFrame f = GetSprite();
+    renderer->DrawBillboard(f.tex, f.x, f.y, f.z, f.w, f.h, f.rot, GetDrawColor(), f.uv);
+}
 
+// 今の向き・アニメのコマの絵と置き場所。scale は残像などで大きくする時（足元の位置は合わせたまま）
+Player::SpriteFrame Player::GetSprite(float scale) const
+{
     // 向き → シート名の頭
     const char* dir; bool mirror = false;
     if (m_faceDx != 0) { dir = "player_side";  mirror = (m_faceDx < 0); }
@@ -111,13 +117,13 @@ void Player::Draw3D(Renderer3D* renderer)
     int af = ad.dur ? FrameAt(ad.dur, m_animTime) : (int)(m_idleTime / IDLE_STEP) % ANIM_FRAMES;
 
     float x = worldX, y = worldY, z = worldZ + 0.4f;
-    float w = width, h = height;
+    float w = width * scale, h = height * scale;
     XMFLOAT4 uv = mirror ? XMFLOAT4(1, 0, -1, 1) : XMFLOAT4(0, 0, 1, 1);
 
     auto tex = TextureManager::Get(std::string(dir) + ad.suffix);
     if (tex && af >= 0)
     {
-        w = width * 1.5f; h = height * 1.5f;                 // 正方形コマ＝立ち絵の1.5倍の範囲
+        w = width * 1.5f * scale; h = height * 1.5f * scale;                 // 正方形コマ＝立ち絵の1.5倍の範囲
         const float cw = 1.0f / SHEET_COLS, ch = 1.0f / SHEET_ROWS;   // 4列×(ANIM_FRAMES/4)行
         float u = (af % SHEET_COLS) * cw, v = (af / SHEET_COLS) * ch;
         uv = mirror ? XMFLOAT4(u + cw, v, -cw, ch) : XMFLOAT4(u, v, cw, ch);
@@ -134,7 +140,7 @@ void Player::Draw3D(Renderer3D* renderer)
         tex = TextureManager::Get(dir);                  // シートが無ければ立ち絵
         if (!tex) tex = TextureManager::Get("player");
     }
-    renderer->DrawBillboard(tex, x, y, z, w, h, m_BillboardRotation, GetDrawColor(), uv);
+    return { tex, x, y, z, w, h, m_BillboardRotation, uv };
 }
 
 // カードが実際に使われた時：攻撃は対象の方を向いて振る、スキル／パワーは力を溜める

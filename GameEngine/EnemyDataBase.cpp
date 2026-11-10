@@ -56,6 +56,7 @@ static SelectRule ParseSelect(const json& j)
     s.condition = j.value("condition", "");
     s.conditionValue = j.value("conditionValue", 0);
     s.chance = j.value("chance", 100);
+    s.maxUses = j.value("maxUses", 0);
     return s;
 }
 

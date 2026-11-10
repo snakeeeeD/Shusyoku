@@ -69,6 +69,11 @@ public:
         int distance, GridMap* gridMap, std::vector<Enemy*>& enemies,
         int aimCol, int aimRow);
 
+    // 罠のダメージの上乗せ（レリック「罠の達人」＋プレイヤーの罠術バフ）。戦闘のプレイヤーは BattleScene が設定
+    static void SetBattlePlayer(const Player* p) { s_battlePlayer = p; }
+    static int  TrapDamageBonus();
+    static inline const Player* s_battlePlayer = nullptr;
+
     static void TriggerTrap(Cell& cell, Enemy* enemy, int col, int row,
         GridMap* gridMap, std::vector<Enemy*>& enemies);
 

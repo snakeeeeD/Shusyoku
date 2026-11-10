@@ -71,6 +71,7 @@ void PlayerDataManager::Save()
 	j["tutorialField"] = m_data.tutorialField; 
 	j["tutorialBattle"] = m_data.tutorialBattle;
 	j["tutorialCraft"] = m_data.tutorialCraft;
+	j["tutorialCamera"] = m_data.tutorialCamera;
 	j["tutorialCardSelect"] = m_data.tutorialCardSelect;
 	j["tutorialShop"] = m_data.tutorialShop;
 	j["tutorialRest"] = m_data.tutorialRest;
@@ -135,6 +136,7 @@ void PlayerDataManager::Load()
 		m_data.tutorialField = j.value("tutorialField", false);
 		m_data.tutorialBattle = j.value("tutorialBattle", false);
 		m_data.tutorialCraft = j.value("tutorialCraft", false);
+		m_data.tutorialCamera = j.value("tutorialCamera", false);
 		m_data.tutorialCardSelect = j.value("tutorialCardSelect", false);
 		m_data.tutorialShop = j.value("tutorialShop", false);
 		m_data.tutorialRest = j.value("tutorialRest", false);
@@ -210,6 +212,7 @@ void PlayerDataManager::StartNewGame()
 
 	m_data.tutorialField = false;
 	m_data.tutorialBattle = false;
+	m_data.tutorialCamera = false;   // 最初の戦闘の説明と同じく、ランごとに出し直す
 	s_runOver = false;
 
 	m_data.gold = 100;          // 開始所持金

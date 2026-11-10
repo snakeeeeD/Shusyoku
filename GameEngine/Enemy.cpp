@@ -568,13 +568,17 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
     else m_idleTurns = 0;
     m_lastDecideCol = gridCol; m_lastDecideRow = gridRow;
 
+    if (m_actionUses.size() != data->actions.size()) m_actionUses.assign(data->actions.size(), 0);
+    auto usedUp = [&](const EnemyAction& a) {   // 1戦で使える回数を使い切ったか（maxUses=0は無制限）
+        return a.select.maxUses > 0 && m_actionUses[&a - &data->actions[0]] >= a.select.maxUses; };
+
     // 順番モード：行動を定義順に1つずつ回す
     if (data->sequential)
     {
         // 条件付き行動が満たされていれば最優先
         const EnemyAction* picked = nullptr;
         for (auto& a : data->actions)
-            if (!a.select.condition.empty() && ConditionMet(a, playerCol, playerRow, turn))
+            if (!a.select.condition.empty() && !usedUp(a) && ConditionMet(a, playerCol, playerRow, turn))
             {
                 picked = &a; break;
             }
@@ -584,13 +588,14 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
             // 無条件行動だけを定義順に回す
             std::vector<const EnemyAction*> seq;
             for (auto& a : data->actions)
-                if (a.select.condition.empty()) seq.push_back(&a);
+                if (a.select.condition.empty() && !usedUp(a)) seq.push_back(&a);
             if (!seq.empty()) { picked = seq[m_seqIndex % (int)seq.size()]; m_seqIndex++; }
             else picked = &data->actions[0];
         }
 
         m_plannedActions.clear();
         m_plannedActions.push_back(*picked);
+        m_actionUses[picked - &data->actions[0]]++;
         if (m_dmgScale != 1.0f)
             for (auto& e : m_plannedActions.back().effects)
                 if (e.kind == EffectKind::Damage)
@@ -622,6 +627,7 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
     int totalC = 0, totalU = 0;
     for (auto& a : data->actions)
     {
+        if (usedUp(a)) continue;   // 使い切った行動は選ばない
         if (!ConditionMet(a, playerCol, playerRow, turn)) continue;
         if (a.select.condition.empty()) { uncond.push_back(&a); totalU += a.select.chance; }
         else { cond.push_back(&a);   totalC += a.select.chance; }
@@ -647,6 +653,7 @@ void Enemy::DecideNextAction(int playerCol, int playerRow, int turn)
             for (auto* a : pool) { cum += a->select.chance; if (roll < cum) { picked = a; break; } }
         }
         m_plannedActions.push_back(*picked);
+        m_actionUses[picked - &data->actions[0]]++;
         if (m_dmgScale != 1.0f)
             for (auto& e : m_plannedActions.back().effects)
                 if (e.kind == EffectKind::Damage)

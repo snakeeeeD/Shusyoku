@@ -67,4 +67,5 @@ enum class BuffType
     Molt,           // 脱皮まで：カードの攻撃であと value ダメージ（オロチ）
     Mire,           // 沼：移動距離-value（沼の上にいる間）
     Immovable,      // 移動不可：押し出し・引き寄せで動かない（表示用・永続）
+    TrapPower,      // 罠術：罠のダメージ+value（罠職人の心得）
 };

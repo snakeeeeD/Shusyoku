@@ -33,4 +33,6 @@ public:
 private:
     static void LoadHardcodedData();
     static std::unordered_map<std::string, CardData> m_data;
+    static int  s_craftDiscount;     // 合成カードのコストを計算した時の「合成カードのコスト-」の合計
+    static void SyncCraftCosts();    // 割引が変わっていたら、覚えている合成カードのコストだけ計算し直す
 };

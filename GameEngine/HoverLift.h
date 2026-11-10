@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <unordered_map>
 #include <cmath>
+#include "Cursor.h"
 
 // ホバーで浮く動きを、手札のカードと同じ「目標へ指数的に近づく」補間で滑らかにする
 // 状態は「浮かせる前の画面位置」をキーにここで持つので、呼ぶ側は状態を持たなくていい
@@ -19,6 +20,7 @@ namespace HoverLift
     // 浮く量（0〜lift）を返す。x, y は浮かせる前の位置（＝キー）
     inline float Get(float x, float y, bool hovered, float lift)
     {
+        if (hovered) Cursor::Request(CursorKind::Hover);   // 浮く＝押せる物なので指差し
         long long key = ((long long)lroundf(x) << 32) ^ (long long)(unsigned)lroundf(y);
         State& s = g_states[key];
         if (s.frame == g_frame) return s.v;          // 同じフレームに2回目（文字の描画パスなど）は同じ値

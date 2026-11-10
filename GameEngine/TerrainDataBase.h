@@ -20,6 +20,7 @@ struct TerrainDef {
     float animSpeed = 0.0f;
     bool aoe = false;
     std::string vfx;
+    int growPct = 0;   // 自分の罠：ターンごとに今の数字の何%育つか（最低1。0=育たない）
 };
 
 class TerrainDataBase

@@ -95,6 +95,8 @@ public:
     void ShowTutorial(const std::vector<TutorialPage>& pages);
     void DrawTutorial();
     void DrawHint();
+    bool CamDemoActive() const;   // 今の戦闘でカメラ操作のデモ中か（ヒントを止めて隠す）
+    void DrawGuideBox(const wchar_t* text, float a, const char* icon, const wchar_t* note);   // 説明の窓（ヒント・カメラのデモで共通）
     void DrawFrame(float x, float y, float w, float h, const DirectX::XMFLOAT4& c);   // 金枠（チュートリアル・ヒント共通）
     std::vector<TutorialPage> m_pendingTutorial;
     float m_tutorialDelay = 0.0f;
@@ -201,6 +203,11 @@ private:
     bool m_invOpen = false;
     void DrawInventory();
     void DrawItemTooltip(const std::string& id, POINT mp);
+    // アイテムのマス（インベントリ・合成で共通）：左にアイコン → 名前（入りきらなければ縮める）→ 右上の角に個数バッジ
+    float DrawItemIcons(const std::vector<const char*>& icons, float x, float y, float h, float size, float a);   // 戻り値＝名前の左端
+    void  DrawItemBadge(float x, float y, float w, float a);
+    void  DrawItemBadgeText(int count, float x, float y, float w, float a);
+    void  DrawItemName(const wchar_t* s, float left, float right, float y, float h, D2D1_COLOR_F c, bool matFade);
     std::string HoveredItem(POINT mp) const;
 
     bool m_mapOpen = false;
@@ -305,7 +312,9 @@ private:
     void DrawGlossary();
     void HandleGlossaryInput();
     std::vector<int> GlossaryItems() const;
-    std::vector<std::pair<URect, std::string>> GlossaryRelated(const struct GlossaryEntry& e, const URect& detail);
+    // 用語集の説明欄の並び（動画・説明文の上端・関連ボタン）。描画とクリック判定で共有
+    struct GlossDetail { URect video{}; float descTop = 0.0f; std::vector<std::pair<URect, std::string>> related; };
+    GlossDetail GlossDetailLayout(const struct GlossaryEntry& e, const URect& detail);
     void HandleSettingsInput();   // 設定パネルの操作（帯のある画面・タイトルの両方から）
     bool AnyModalOpen() const;
     bool TooltipBlocked() const;          // カードの説明を残せない画面が開いているか

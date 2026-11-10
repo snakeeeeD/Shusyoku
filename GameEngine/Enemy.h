@@ -215,6 +215,7 @@ private:
 	void DropTrail(GridMap* gridMap, int col, int row);   // EmberTrail中は通ったマスに炎
 
 	int  m_allyCount = 0;
+	std::vector<int> m_actionUses;   // 行動ごとの使用回数（select.maxUses の判定用）
 	bool m_justSummoned = false;
 	std::vector<std::pair<std::string, int>> m_pendingSummons;
 

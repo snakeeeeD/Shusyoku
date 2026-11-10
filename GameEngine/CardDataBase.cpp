@@ -247,8 +247,22 @@ bool CardDataBase::ParseCardText(const std::string& jsonText, CardData& base, Ca
     catch (const json::exception&) { return false; }
 }
 
+int CardDataBase::s_craftDiscount = 0;
+
+// レリックの「合成カードのコスト-」が前と変わっていたら、覚えている合成カードのコストだけ計算し直す
+//（データは作り直さず cost だけ上書き＝手札などが持っているポインタはそのまま使える）
+void CardDataBase::SyncCraftCosts()
+{
+    int now = RelicManager::SumValue("craftCostDown");
+    if (now == s_craftDiscount) return;
+    s_craftDiscount = now;
+    for (auto& [id, c] : m_data)
+        if (id.rfind("CRAFT:", 0) == 0) c.cost = BuildCrafted(id).cost;
+}
+
 const CardData* CardDataBase::Get(const std::string& id)
 {
+    SyncCraftCosts();   // レリックで割引が変わっていたら、合成カードのコストを合わせる
     auto it = m_data.find(id);
     if (it != m_data.end()) return &it->second;
 
@@ -274,18 +288,14 @@ static void applyEntry(CardData& c, const MaterialDef& m, const std::string& bas
         c.mainEffect.hasEffect = true; c.mainEffect.type = et;
         c.mainEffect.value = e->value; c.mainEffect.duration = e->duration; c.mainEffect.buffType = e->buffType;
     }
-    else if (e->slot == "sub")
+    else if (e->slot == "sub")   // 同じ種類なら加算 → 空いている枠へ（2枠まで）→ 両方埋まっていたら1つ目に加算
     {
-        if (c.subEffect.hasEffect && c.subEffect.type == et && c.subEffect.buffType == e->buffType)
-        {
-            c.subEffect.value += e->value; c.subEffect.duration += e->duration;
-        }   // 同種は加算
-        else if (!c.subEffect.hasEffect)
-        {
-            c.subEffect.hasEffect = true; c.subEffect.type = et;
-            c.subEffect.value = e->value; c.subEffect.duration = e->duration; c.subEffect.buffType = e->buffType;
-        }
-        else c.subEffect.value += e->value;   // sub枠は1つ→別種でも値だけ加算
+        for (CardEffectData* s : { &c.subEffect, &c.subEffect2 })
+            if (s->hasEffect && s->type == et && s->buffType == e->buffType)
+            { s->value += e->value; s->duration += e->duration; return; }
+        CardEffectData* s = !c.subEffect.hasEffect ? &c.subEffect : (!c.subEffect2.hasEffect ? &c.subEffect2 : nullptr);
+        if (!s) { c.subEffect.value += e->value; return; }
+        s->hasEffect = true; s->type = et; s->value = e->value; s->duration = e->duration; s->buffType = e->buffType;
     }
     else if (e->slot == "onHit")
     {
@@ -364,6 +374,11 @@ CardData CardDataBase::BuildCraftedFrom(const std::string& id, const BaseDef& ba
         if (!tags.empty()) tags += L"・";
         tags += ToWString(m->tag);
     }
+    // 「付いている効果すべて+」は最後にまとめて（選ぶ順番に関係なく、全部の素材の効果に効く）
+    for (const MaterialDef* m : mats)
+        if (const MatEntry* e = m ? m->entryFor(base->type) : nullptr; e && e->slot == "amplifyAll")
+            for (CardEffectData* fx : { &c.mainEffect, &c.subEffect, &c.subEffect2, &c.onHitEffect, &c.onHitEffect2 })
+                if (fx->hasEffect && fx->value > 0) fx->value += e->value;
     if (!tags.empty()) nm += L"【" + tags + L"】";
     c.cost -= RelicManager::SumValue("craftCostDown");
     if (c.cost < 0) c.cost = 0;
@@ -406,6 +421,7 @@ CardData CardDataBase::BuildCraftedFrom(const std::string& id, const BaseDef& ba
     if (c.exhaust)        c.description += L" / 消耗";
     if (c.selfDamage > 0) c.description += L" / 自傷" + std::to_wstring(c.selfDamage);
     if (c.subEffect.hasEffect)   c.description += L" / " + fxText(c.subEffect);
+    if (c.subEffect2.hasEffect)  c.description += L" / " + fxText(c.subEffect2);
     if (c.onHitEffect.hasEffect) c.description += L" / 命中時" + fxText(c.onHitEffect);
     return c;
 }

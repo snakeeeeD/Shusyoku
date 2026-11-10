@@ -22,6 +22,8 @@
 #include <vector>
 #include <utility>
 #include <functional>
+#include <unordered_map>
+#include <map>
 
 enum class EnemyTurnPhase 
 {
@@ -33,8 +35,6 @@ enum class EnemyTurnPhase
     NextEnemy, 
     EndTurn 
 };
-
-enum class TrapFire { Detonate, Trigger };
 
 class BattleScene : public Scene
 {
@@ -110,21 +110,13 @@ public:
 
     void OnCardPlayed(const CardData* d);
 
-    struct TrapQueue {
-        std::vector<std::pair<int, int>> cells;
-        float  timer = 0.0f;
-        TrapFire mode = TrapFire::Detonate;
-        bool   full = false;      // Detonate用
-        Enemy* enemy = nullptr;   // Trigger用
-        bool Active() const { return !cells.empty(); }
-    };
-    TrapQueue m_trapQueue;
-
     std::vector<std::pair<int, int>> m_coilTrapQueue;
     float  m_coilTrapTimer = 0.0f;
     Enemy* m_coilTrapEnemy = nullptr;
 
     bool IsRelicSpent(const std::string& id) const;   // 一度きりレリックが使用済みか
+    bool CamDemoCaption(const wchar_t*& text, const char*& icon, float& alpha) const;
+    bool CamDemoActive() const { return m_camDemoStep >= 0; }   // カメラ操作のデモ中か   // カメラ操作のデモ中なら説明を返す
     void OnTutorialClosed();   // 初戦チュートリアルを閉じた時（保留していたレリックを発動）
 
 private:
@@ -245,6 +237,19 @@ private:
     POINT m_dragStartPos;
     float m_cameraOffsetX;
     float m_cameraOffsetZ;
+
+    // カメラ操作の自動デモ（初回の2ターン目に1回）
+    int   m_camDemoStep = -1;        // 表示中の手順（-1=していない）
+    float m_camDemoTime = 0.0f;      // 今の手順の経過時間
+    bool  m_camDemoHoming = false;   // デモの後、初期の位置へ戻している途中
+
+    // バフが付いた／増えた時のエフェクト（毎フレーム前の値と比べる＝どこで付いても拾える）
+    std::unordered_map<const void*, std::map<int, int>> m_buffSnap;   // 持ち主 → バフ種類ごとの値（種類が増えても直さなくていいよう map）
+    void UpdateBuffGainFx();
+
+    void UpdateTrapsAtTurnStart();   // 自分の罠が育つ／敵が隣にいる間だけ導火線が進み、たまったら自分で起爆
+    void  UpdateCamDemo(float dt);
+    void  EndCamDemo();
 
     // 狙いズーム：マスを選ぶカードを選んだ時、狙えるマスが手札に隠れるなら少し引く
     static constexpr float AIM_ZOOM_OUT = 0.3f;    // 引く量（ズームに掛ける割合）

@@ -1,6 +1,7 @@
 #include "EncounterDataBase.h"
 #include <nlohmann/json.hpp>
 #include <fstream>
+#include <algorithm>
 #include <random>
 #include <windows.h>
 
@@ -120,21 +121,27 @@ const EncounterData* EncounterDataBase::GetById(const std::string& id)
 }
 
 const EncounterData* EncounterDataBase::GetEncounterAvoiding(int layer, EncCategory cat, int tier,
-    unsigned seed, const std::string& avoidId)
+    unsigned seed, const std::string& avoidId, const std::vector<std::string>& usedIds)
 {
-    std::vector<EncounterData*> cand;
-    for (int tt = tier; tt >= 1 && cand.empty(); tt--)
+    auto used = [&](const EncounterData& e) { return std::find(usedIds.begin(), usedIds.end(), e.id) != usedIds.end(); };
+    auto sameLead = [&](const EncounterData& e) { return !e.enemies.empty() && e.enemies.front().id == avoidId; };
+    // 条件に合うものを「今の段 → 下の段」の順で探す
+    auto collect = [&](auto ok) {
+        std::vector<EncounterData*> v;
+        for (int tt = tier; tt >= 1 && v.empty(); tt--)
+            for (auto& enc : m_data)
+                if (enc.layer == layer && enc.category == cat && enc.tier == tt && ok(enc)) v.push_back(&enc);
+        return v;
+    };
+    // 優先：まだ戦っていない＆直前と違う敵 → まだ戦っていない → 直前と違う敵 → 全部
+    std::vector<EncounterData*> pool = collect([&](const EncounterData& e) { return !used(e) && !sameLead(e); });
+    if (pool.empty()) pool = collect([&](const EncounterData& e) { return !used(e); });
+    if (pool.empty()) pool = collect([&](const EncounterData& e) { return !sameLead(e); });
+    if (pool.empty()) pool = collect([](const EncounterData&) { return true; });
+    if (pool.empty())
         for (auto& enc : m_data)
-            if (enc.layer == layer && enc.category == cat && enc.tier == tt) cand.push_back(&enc);
-    if (cand.empty())
-        for (auto& enc : m_data)
-            if (enc.layer == 1 && enc.category == cat) cand.push_back(&enc);
-    if (cand.empty()) return nullptr;
-
-    std::vector<EncounterData*> pool;
-    for (auto* e : cand)
-        if (e->enemies.empty() || e->enemies.front().id != avoidId) pool.push_back(e);  // 同じ敵を除外
-    if (pool.empty()) pool = cand;
+            if (enc.layer == 1 && enc.category == cat) pool.push_back(&enc);
+    if (pool.empty()) return nullptr;
 
     unsigned int h = seed;
     h ^= h >> 16; h *= 0x7feb352du; h ^= h >> 15; h *= 0x846ca68bu; h ^= h >> 16;

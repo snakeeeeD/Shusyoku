@@ -605,6 +605,8 @@ namespace
                 }
                 ImGui::SameLine();
                 if (InputIntKey("chance", sl, "chance", 100, 80)) s.dirty = true;
+                ImGui::SameLine();
+                if (InputIntKey("maxUses", sl, "maxUses", 0, 80)) s.dirty = true;   // 1戦で使える回数（0=無制限）
 
                 // ---- 範囲 ----
                 ImGui::SeparatorText("target");

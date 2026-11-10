@@ -1,5 +1,6 @@
 ﻿#include "FieldScene.h"
 #include "Se.h"
+#include "Cursor.h"
 #include "FieldMapConfig.h"
 #include "EventDataBase.h"
 #include "EncounterDataBase.h"
@@ -572,6 +573,7 @@ void FieldScene::Draw()
             bool hovMove = m_hoverEnabled && CanMove(col, row)
                 && mp.x >= pos.x && mp.x <= pos.x + CELL_SIZE
                 && mp.y >= pos.y && mp.y <= pos.y + CELL_SIZE;
+            if (hovMove) Cursor::Request(CursorKind::Hover);
             float ny = hovMove ? pos.y - 8.0f : pos.y;
 
             // 移動可能マス：ゆっくり脈動（サイズ＋明るさを同位相で）
@@ -785,12 +787,20 @@ void FieldScene::AvoidConsecutive(int idx)
         const EncounterData* e = EncounterDataBase::GetById(encId);
         return (e && !e->enemies.empty()) ? e->enemies.front().id : std::string();
         };
+    // この層ですでに戦った組み合わせ（訪問済みの戦闘・エリートのマス）。層が変わるとマップごと作り直されるので自然に空になる
+    std::vector<std::string> used;
+    for (int i = 0; i < (int)m_nodes.size(); i++)
+        if (i != idx && m_nodes[i].visited && !m_nodes[i].enemyId.empty()
+            && (m_nodes[i].type == FieldNodeType::Battle || m_nodes[i].type == FieldNodeType::Elite))
+            used.push_back(m_nodes[i].enemyId);
+    bool fought = std::find(used.begin(), used.end(), m_currentEnemyId) != used.end();
+
     std::string curLead = leadOf(m_currentEnemyId);
-    if (!curLead.empty() && curLead == last)   // 直前と同じ敵 → 選び直す
+    if (fought || (!curLead.empty() && curLead == last))   // 戦ったことのある組み合わせ／直前と同じ敵 → 選び直す
     {
         const EncounterData* enc = EncounterDataBase::GetEncounterAvoiding(
             pd.layer, m_currentBattleCategory,
-            m_currentBattleTier, (unsigned)idx * 2654435761u + 101u, last);
+            m_currentBattleTier, (unsigned)idx * 2654435761u + 101u, last, used);
         if (enc) { m_currentEnemyId = enc->id; m_nodes[idx].enemyId = enc->id; curLead = leadOf(enc->id); }
     }
     last = curLead;   // PlayerDataに記録（次戦まで保持）

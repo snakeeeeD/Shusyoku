@@ -12,6 +12,8 @@ public:
     Player();
     void Update(float deltaTime) override;
     void Draw3D(class Renderer3D* renderer) override;
+    struct SpriteFrame { ID3D11ShaderResourceView* tex; float x, y, z, w, h, rot; XMFLOAT4 uv; };
+    SpriteFrame GetSprite(float scale = 1.0f) const;   // 今の向き・アニメのコマ（本体・残像・オーラで共通）
 
     // ゲッター
     int GetHp() const override { return m_hp; }

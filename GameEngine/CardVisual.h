@@ -417,7 +417,7 @@ public:
             out.push_back({ BuffInfo::Get(bt).name, BuffInfo::GetDescription(bt, e.value) });
             };
         add(d->mainEffect); add(d->onHitEffect); add(d->onHitEffect2);
-        add(d->onDiscardEffect); add(d->subEffect); add(d->allEnemyEffect);
+        add(d->onDiscardEffect); add(d->subEffect); add(d->subEffect2); add(d->allEnemyEffect);
         return out;
     }
 };

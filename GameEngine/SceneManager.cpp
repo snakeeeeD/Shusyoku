@@ -141,6 +141,8 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 		TextureManager::Load("magic", L"Assets/Particles/magic.png");
 		TextureManager::Load("smoke", L"Assets/Particles/smoke.png");
 		TextureManager::Load("star", L"Assets/Particles/star.png");
+		TextureManager::Load("arrow_up", L"Assets/Particles/arrow_up.png");
+		TextureManager::Load("buff_trappower", L"Assets/UI/relic_trap_master.png");   // 罠術バフ（仮：罠の達人のアイコン）   // バフの上向き矢印（tools/particles/make_arrow_up.py）
 		TextureManager::Load("cross", L"Assets/Particles/cross.png");   // 回復の十字
 		TextureManager::Load("skull", L"Assets/Particles/skull.png");
 		TextureManager::Load("crosshair", L"Assets/Particles/crosshair.png");
@@ -325,6 +327,9 @@ bool SceneManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, int 
 			TextureManager::Load("icon_gold", L"Assets/UI/icon_gold.png");
 			TextureManager::Load("icon_map", L"Assets/UI/icon_map.png");
 			TextureManager::Load("icon_layer", L"Assets/UI/icon_layer.png");
+			TextureManager::Load("mouse_rdrag", L"Assets/UI/Cursor/mouse_rdrag.png");     // カメラ操作のデモ
+			TextureManager::Load("mouse_wheel", L"Assets/UI/Cursor/mouse_wheel.png");
+			TextureManager::Load("mouse_mclick", L"Assets/UI/Cursor/mouse_mclick.png");
 			RelicManager::LoadIcons();
 
 			TextureManager::Load("node_battle", L"Assets/UI/node_battle.png");
@@ -686,7 +691,12 @@ void SceneManager::Draw()
 	if (m_craftFxTimer > 0.0f) DrawCraftFx();  
 	if (HasTopBar() && !fading) { DrawRelicBar(); DrawBarTips(); }
 	if (BossRelicPickOpen() && !fading) DrawBossRelicPick();
-	if (!TutorialActive() && !fading) DrawHint();
+	if (!TutorialActive() && !fading && !CamDemoActive()) DrawHint();
+	if (auto b = dynamic_cast<BattleScene*>(m_currentScene))   // カメラ操作のデモの説明
+	{
+		const wchar_t* t; const char* ic; float a;
+		if (!fading && b->CamDemoCaption(t, ic, a)) DrawGuideBox(t, a, ic, L"クリックで飛ばす");
+	}
 	if (m_settingsOpen) DrawSettings();
 	if (m_glossaryOpen) DrawGlossary();
 
@@ -1022,12 +1032,12 @@ void SceneManager::DrawImGui()
 			{
 				// チェックON=チュートリアルを表示する（＝各フラグを未表示に戻す）
 				bool showTut = !(pd.tutorialField && pd.tutorialBattle && pd.tutorialCardSelect
-					&& pd.tutorialShop && pd.tutorialRest && pd.tutorialCraft);
+					&& pd.tutorialShop && pd.tutorialRest && pd.tutorialCraft && pd.tutorialCamera);
 				if (ImGui::Checkbox("Show Tutorials", &showTut))
 				{
 					bool seen = !showTut;   // 表示する→フラグfalse / 出さない→true
 					pd.tutorialField = pd.tutorialBattle = pd.tutorialCardSelect =
-						pd.tutorialShop = pd.tutorialRest = pd.tutorialCraft = seen;
+						pd.tutorialShop = pd.tutorialRest = pd.tutorialCraft = pd.tutorialCamera = seen;
 					if (showTut) pd.seenHints.clear();   // ON：ヒントを未読に戻す
 					else Hint::MarkAllSeen();            // OFF：ヒントも全部既読に（録画などで出したくない時）
 					PlayerDataManager::Save();
@@ -1544,27 +1554,55 @@ void SceneManager::DrawFrame(float x, float y, float w, float h, const XMFLOAT4&
 	UiWindow::Frame(m_uiSprite, TextureManager::Get("white"), x, y, w, h, c);
 }
 
+bool SceneManager::CamDemoActive() const
+{
+	auto b = dynamic_cast<BattleScene*>(m_currentScene);
+	return b && b->CamDemoActive();
+}
+
 void SceneManager::DrawHint()
 {
 	const HintDef* h = Hint::Current();
 	if (!h) return;
 	float a = Hint::Alpha();
-	ID3D11ShaderResourceView* white = TextureManager::Get("white");
+	if (h->hw > 0.0f)   // 指している場所を金枠で脈動
+	{
+		m_uiSprite->Begin();
+		DrawFrame(h->hx, h->hy, h->hw, h->hh,
+			XMFLOAT4(1.0f, 0.85f, 0.2f, a * (0.6f + 0.4f * sinf(m_uiTime * 6.0f))));
+		m_uiSprite->End();
+	}
+	DrawGuideBox(h->text, a, nullptr, nullptr);
+}
 
-	float w = 520.0f, tw = w - 34.0f;   // 文の幅（左の金帯と余白を除く）。長い文はこの幅で折り返す
-	float bh = 26.0f + m_textRenderer->Measure(h->text, 18.0f, FontRole::Body, tw).height;
+// 説明の窓（ヒント・カメラのデモで共通）：画面上寄りの中央、左の金帯が目印。icon は文の左、note は右下に小さく
+void SceneManager::DrawGuideBox(const wchar_t* text, float a, const char* icon, const wchar_t* note)
+{
+	ID3D11ShaderResourceView* white = TextureManager::Get("white");
+	const float ICON = 56.0f, NOTE_H = 18.0f;
+	float w = 520.0f;
+	float tx = 22.0f + (icon ? ICON + 12.0f : 0.0f);   // 文の左端（アイコンがあればその右）
+	float tw = w - tx - 12.0f;                         // 文の幅。長い文はこの幅で折り返す
+	float th = m_textRenderer->Measure(text, 18.0f, FontRole::Body, tw).height;
+	float body = 26.0f + th;                           // 注記を除いた高さ
+	if (icon && body < ICON + 20.0f) body = ICON + 20.0f;
+	float bh = body + (note ? NOTE_H : 0.0f);
 	float x = (m_screenWidth - w) / 2.0f, y = 110.0f;
 
 	m_uiSprite->Begin();
 	UiWindow::Draw(m_uiSprite, white, x, y, w, bh, XMFLOAT4(1, 1, 1, a));
 	m_uiSprite->DrawSprite(white, x + 8, y + 8, 4, bh - 16, 0.0f, XMFLOAT4(1.0f, 0.85f, 0.2f, a));   // 左の金帯＝ヒントの目印
-	if (h->hw > 0.0f)   // 指している場所を金枠で脈動
-		DrawFrame(h->hx, h->hy, h->hw, h->hh,
-			XMFLOAT4(1.0f, 0.85f, 0.2f, a * (0.6f + 0.4f * sinf(m_uiTime * 6.0f))));
+	if (icon)
+		m_uiSprite->DrawSprite(TextureManager::Get(icon), x + 22.0f, y + (body - ICON) / 2.0f, ICON, ICON, 0.0f, XMFLOAT4(1, 1, 1, a));
 	m_uiSprite->End();
 
 	m_textRenderer->Begin();
-	m_textRenderer->DrawTextBox(h->text, x + 22.0f, y + 13.0f, tw, 18.0f, D2D1::ColorF(1, 1, 1, a));
+	m_textRenderer->DrawTextBox(text, x + tx, y + (body - th) / 2.0f, tw, 18.0f, D2D1::ColorF(1, 1, 1, a));
+	if (note)
+	{
+		float nw = m_textRenderer->Measure(note, 12.0f).width;
+		m_textRenderer->DrawText(note, x + w - 16.0f - nw, y + bh - NOTE_H - 6.0f, 12.0f, D2D1::ColorF(0.75f, 0.72f, 0.65f, a));
+	}
 	m_textRenderer->End();
 }
 
@@ -1640,16 +1678,6 @@ static GlossUI GlossLayout(int sw, int sh)
 	return g;
 }
 
-// 動画の枠（説明欄の名前の下）
-static URect GlossVideoRect(const URect& d) { return { d.x + 14.0f, d.y + 54.0f, 448.0f, 252.0f }; }
-
-// 説明文の上端（動画・アイコンの有無で変わる。描画・クリック・関連ボタンで共有）
-static float GlossDescTop(const GlossaryEntry& e, const URect& d)
-{
-	if (!e.clip.empty()) return GlossVideoRect(d).y + GlossVideoRect(d).h + 12.0f;
-	return d.y + (e.icon.empty() ? 52.0f : 96.0f);
-}
-
 // 今のカテゴリの用語（Glossary::All() の添字）
 std::vector<int> SceneManager::GlossaryItems() const
 {
@@ -1662,11 +1690,13 @@ std::vector<int> SceneManager::GlossaryItems() const
 	return v;
 }
 
-// 関連する用語のボタン（説明文の下に並べる）。描画とクリック判定で共有
-std::vector<std::pair<URect, std::string>> SceneManager::GlossaryRelated(const GlossaryEntry& e, const URect& d)
+// 説明欄の並び（動画・説明文の上端・関連ボタン）。描画とクリック判定で共有
+// 説明文が長くて関連ボタンまで入らない時は、動画を16:9のまま小さくして場所を空ける
+SceneManager::GlossDetail SceneManager::GlossDetailLayout(const GlossaryEntry& e, const URect& d)
 {
-	std::vector<std::pair<URect, std::string>> out;
-	float x = d.x + 12.0f, y = 0.0f;   // まず上端0で並べて、行数（全体の高さ）を出す
+	GlossDetail L;
+	auto& out = L.related;
+	float x = d.x + 12.0f, y = 0.0f;   // 関連ボタン：まず上端0で並べて、行数（全体の高さ）を出す
 	for (auto& id : e.related)
 	{
 		const GlossaryEntry* r = Glossary::Get(id);
@@ -1676,12 +1706,24 @@ std::vector<std::pair<URect, std::string>> SceneManager::GlossaryRelated(const G
 		out.push_back({ { x, y, w, 32.0f }, id });
 		x += w + 8.0f;
 	}
-	// 置く高さ：説明文の下。ただし詳細欄の下の端からはみ出すなら、下の端に合わせて上げる
-	float below = GlossDescTop(e, d) + m_textRenderer->Measure(e.desc.c_str(), 17.0f, FontRole::Body, d.w - 24.0f).height + 40.0f;
-	float fit = d.y + d.h - (y + 32.0f) - 6.0f;
+	float relH  = out.empty() ? 0.0f : y + 32.0f + 40.0f;   // ボタン＋「関連」の文字ぶん
+	float descH = m_textRenderer->Measure(e.desc.c_str(), 17.0f, FontRole::Body, d.w - 24.0f).height;
+	float bottom = d.y + d.h - 6.0f;
+	if (!e.clip.empty())
+	{
+		float room = bottom - relH - descH - 12.0f - (d.y + 54.0f);   // 動画に使える高さ
+		float vh = (std::max)(150.0f, (std::min)(252.0f, room));
+		float vw = vh * 16.0f / 9.0f;
+		L.video   = { d.x + 14.0f + (448.0f - vw) / 2.0f, d.y + 54.0f, vw, vh };   // 元の幅の中で中央
+		L.descTop = L.video.y + vh + 12.0f;
+	}
+	else L.descTop = d.y + (e.icon.empty() ? 52.0f : 96.0f);
+	// 関連ボタンを置く高さ：説明文の下。動画が最小でも入らない時は、下の端に合わせて上げる（保険）
+	float below = L.descTop + descH + 40.0f;
+	float fit = bottom - (y + 32.0f);
 	float y0 = (below < fit) ? below : fit;
 	for (auto& o : out) o.first.y += y0;
-	return out;
+	return L;
 }
 
 // id のページを開く（空なら先頭）
@@ -1753,10 +1795,11 @@ void SceneManager::HandleGlossaryInput()
 	if (m_glossSel >= 0 && m_glossSel < (int)items.size())
 	{
 		const GlossaryEntry& e = Glossary::All()[items[m_glossSel]];
-		for (auto& [r, id] : GlossaryRelated(e, g.detail))
+		GlossDetail L = GlossDetailLayout(e, g.detail);
+		for (auto& [r, id] : L.related)
 			if (r.has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); pushPage(); OpenGlossary(id); return; }
 		auto hits = Glossary::FindTerms(e.desc, e.name);             // 説明文の中の用語
-		float top = GlossDescTop(e, g.detail);
+		float top = L.descTop;
 		int h = m_textRenderer->HitTestSpans(e.desc.c_str(), g.detail.x + 12.0f, top, g.detail.w - 24.0f, 17.0f,
 			GlossaryLink::Spans(hits), (float)m.x, (float)m.y);
 		if (h >= 0) { Audio::PlaySE("Assets/Sound/se/click.mp3"); pushPage(); OpenGlossary(hits[h].id); return; }
@@ -1773,8 +1816,9 @@ void SceneManager::DrawGlossary()
 	auto items = GlossaryItems();
 	if (m_glossSel >= (int)items.size()) m_glossSel = 0;
 	const GlossaryEntry* sel = items.empty() ? nullptr : &all[items[m_glossSel]];
-	std::vector<std::pair<URect, std::string>> related;
-	if (sel) related = GlossaryRelated(*sel, g.detail);
+	GlossDetail lay;
+	if (sel) lay = GlossDetailLayout(*sel, g.detail);
+	auto& related = lay.related;
 
 	m_uiSprite->Begin();
 	m_uiSprite->DrawSprite(white, 0, 0, (float)m_screenWidth, (float)m_screenHeight, 0.0f, XMFLOAT4(0, 0, 0, 0.6f)); // 暗幕
@@ -1814,7 +1858,7 @@ void SceneManager::DrawGlossary()
 		ULONGLONG now = GetTickCount64();
 		m_glossVideo->Update(g_pImmediateContext, (now - m_glossVideoTick) / 1000.0);
 		m_glossVideoTick = now;
-		URect v = GlossVideoRect(g.detail);
+		URect v = lay.video;
 		m_uiSprite->DrawSprite(white, v.x - 2.0f, v.y - 2.0f, v.w + 4.0f, v.h + 4.0f, 0.0f, XMFLOAT4(0.8f, 0.66f, 0.32f, 1));   // 金の縁
 		if (auto srv = m_glossVideo->SRV())
 			m_uiSprite->DrawSprite(srv, v.x, v.y, v.w, v.h, 0.0f, XMFLOAT4(1, 1, 1, 1));
@@ -1859,7 +1903,7 @@ void SceneManager::DrawGlossary()
 			TextRenderer::RoleScope heading(*m_textRenderer, FontRole::Heading);
 			m_textRenderer->DrawText(sel->name.c_str(), tx, g.detail.y + 18.0f, 26.0f, GOLD);
 		}
-		float top = GlossDescTop(*sel, g.detail);
+		float top = lay.descTop;
 		auto hits = Glossary::FindTerms(sel->desc, sel->name);       // 用語は色付き、マウスが乗ると明るく
 		int hov = m_textRenderer->HitTestSpans(sel->desc.c_str(), g.detail.x + 12.0f, top, g.detail.w - 24.0f, 17.0f,
 			GlossaryLink::Spans(hits), (float)mp.x, (float)mp.y);
@@ -2077,7 +2121,7 @@ void SceneManager::Update(float deltaTime)
 
 	m_uiTime += deltaTime;
 
-	if (!m_tutorialOpen) Hint::Update(deltaTime);   // ページ型の説明中は止める
+	if (!m_tutorialOpen && !CamDemoActive()) Hint::Update(deltaTime);   // ページ型の説明中・カメラのデモ中は止める
 
 	if (m_eventOpen)   // イベント中の揺れと表示HP（戦闘中は BattleScene が自前で回す）  ← ここに追加
 	{
@@ -2147,7 +2191,10 @@ void SceneManager::Update(float deltaTime)
 		int rows = ((int)PlayerDataManager::GetData().deck.size() + 7) / 8;
 		m_eventPickScroll.top = 150.0f;
 		m_eventPickScroll.bottom = pn.y + pn.h - 8.0f;
-		m_eventPickScroll.contentH = rows * (ch + 16.0f) + ScrollList::FADE;
+		float listH = rows * (ch + 16.0f);
+		m_eventPickScroll.contentH = (listH <= m_eventPickScroll.bottom - m_eventPickScroll.top)
+			? listH                          // 全部収まる時はスクロールさせない（最後の段が薄くならない）
+			: listH + ScrollList::FADE;      // 収まらない時だけ、最後の段の下に薄くなる分の余白
 		m_eventPickScroll.Wheel(Input::GetPendingWheel());   // シーンが消費する前に読む
 		Input::ClearWheel();
 		m_eventPickScroll.Update(deltaTime);
@@ -2345,6 +2392,52 @@ static std::vector<const char*> MatFitIcons(const std::string& id)
 	return v;
 }
 
+// ===== アイテムのマス（インベントリ・合成で共通） =====
+static constexpr float ITEM_BADGE_W = 30.0f, ITEM_BADGE_H = 18.0f;
+static void ItemBadgePos(float x, float y, float w, float& bx, float& by)   // マスの右上の角（上の行との隙間8pxに収まる高さ）
+{
+	bx = x + w - ITEM_BADGE_W + 6.0f; by = y - ITEM_BADGE_H / 2.0f + 2.0f;
+}
+static float ItemNameLeft(float x, int n, float size)   // アイコン n 個（少し重ねて詰める）の右
+{
+	return x + 8.0f + (n ? size + (n - 1) * (size - 2.0f) + 6.0f : 0.0f);
+}
+
+float SceneManager::DrawItemIcons(const std::vector<const char*>& icons, float x, float y, float h, float size, float a)
+{
+	for (int k = 0; k < (int)icons.size(); k++)
+		if (icons[k] && icons[k][0])
+			m_uiSprite->DrawSprite(TextureManager::Get(icons[k]),
+				x + 8.0f + k * (size - 2.0f), y + (h - size) / 2.0f, size, size, 0.0f, XMFLOAT4(1, 1, 1, a));
+	return ItemNameLeft(x, (int)icons.size(), size);
+}
+
+void SceneManager::DrawItemBadge(float x, float y, float w, float a)
+{
+	ID3D11ShaderResourceView* white = TextureManager::Get("white");
+	float bx, by; ItemBadgePos(x, y, w, bx, by);
+	m_uiSprite->DrawSprite(white, bx, by, ITEM_BADGE_W, ITEM_BADGE_H, 0.0f, XMFLOAT4(0.10f, 0.08f, 0.06f, a));
+	UiWindow::Frame(m_uiSprite, white, bx, by, ITEM_BADGE_W, ITEM_BADGE_H, XMFLOAT4(0.85f, 0.65f, 0.25f, a));
+}
+
+void SceneManager::DrawItemBadgeText(int count, float x, float y, float w, float a)
+{
+	float bx, by; ItemBadgePos(x, y, w, bx, by);
+	wchar_t c[16]; swprintf_s(c, L"×%d", count);
+	m_textRenderer->DrawTextCentered(c, bx + ITEM_BADGE_W / 2.0f, by, ITEM_BADGE_W, 12.0f, D2D1::ColorF(1.0f, 0.85f, 0.4f, a), ITEM_BADGE_H);
+}
+
+// 名前：入りきらない時だけ縮める（最小11px）。縦は中央。matFade＝合成画面の素材欄のスクロールの端で薄くする
+void SceneManager::DrawItemName(const wchar_t* s, float left, float right, float y, float h, D2D1_COLOR_F c, bool matFade)
+{
+	float sz = 15.0f, tw = m_textRenderer->Measure(s, sz).width, room = right - left;
+	if (tw > room && tw > 0.0f) sz = (std::max)(11.0f, sz * room / tw);
+	float ty = y + (h - m_textRenderer->Measure(s, sz).height) / 2.0f;
+	float aT = matFade ? MatAlphaAt(ty) : 1.0f, aB = matFade ? MatAlphaAt(ty + sz) : 1.0f;
+	if (aT <= 0.0f && aB <= 0.0f) return;
+	m_textRenderer->DrawTextGradientV(s, left, ty, sz, c, aT, aB);
+}
+
 void SceneManager::DrawCraft()
 {
 	ID3D11ShaderResourceView* white = TextureManager::Get("white");
@@ -2376,11 +2469,8 @@ void SceneManager::DrawCraft()
 	for (int i = 0; i < (int)bs.size(); i++) {
 		float x, y, w, h; GetCraftBaseRect(i, x, y, w, h);
 		UiWindow::Button(m_uiSprite, white, x, y, w, h, XMFLOAT4(0.4f, 0.3f, 0.2f, 1.0f));
-		if (auto b = MaterialDataBase::GetBase(bs[i].first)) {
-			const char* ic = CoreTypeIcon(b->type);
-			if (ic[0]) m_uiSprite->DrawSprite(TextureManager::Get(ic),
-				x + w - 24.0f, y + (h - 18.0f) / 2.0f, 18.0f, 18.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
-		}
+		if (auto b = MaterialDataBase::GetBase(bs[i].first)) DrawItemIcons({ CoreTypeIcon(b->type) }, x, y, h, 22.0f, 1.0f);
+		DrawItemBadge(x, y, w, 1.0f);
 	}
 	{	// 素材を足せる合成カード（コアの後ろに紫で）
 		auto eds = CraftEditables();
@@ -2401,10 +2491,8 @@ void SceneManager::DrawCraft()
 		XMFLOAT4 bc = compat ? XMFLOAT4(0.2f, 0.3f, 0.3f, 1.0f) : XMFLOAT4(0.12f, 0.12f, 0.14f, 1.0f);
 		bc.w *= a;
 		UiWindow::Button(m_uiSprite, white, x, y, w, h, bc);
-		auto icons = MatFitIcons(md[i].first);
-		for (int k = 0; k < (int)icons.size(); k++)
-			m_uiSprite->DrawSprite(TextureManager::Get(icons[k]),
-				x + w - 22.0f - k * 20.0f, y + (h - 18.0f) / 2.0f, 18.0f, 18.0f, 0.0f, XMFLOAT4(1, 1, 1, a));
+		DrawItemIcons(MatFitIcons(md[i].first), x, y, h, 16.0f, a);
+		float ba = MatAlphaAt(y + 2.0f); if (ba > 0.0f) DrawItemBadge(x, y, w, ba);   // バッジの高さで薄くする
 	}
 	
 		// 作成ボタン
@@ -2460,9 +2548,8 @@ void SceneManager::DrawCraft()
 	for (int i = 0; i < (int)bases.size(); i++)
 	{
 		float x, y, w, h; GetCraftBaseRect(i, x, y, w, h);
-		wchar_t buf[64];
-		swprintf_s(buf, L"%s x%d", matName(bases[i].first).c_str(), bases[i].second);
-		m_textRenderer->DrawText(buf, x + 6.0f, midY(buf, 15.0f, y, h), 15.0f, D2D1::ColorF(1, 1, 1));
+		DrawItemName(matName(bases[i].first).c_str(), ItemNameLeft(x, 1, 22.0f), x + w - 8.0f, y, h, D2D1::ColorF(1, 1, 1), false);
+		DrawItemBadgeText(bases[i].second, x, y, w, 1.0f);
 	}
 	{	// 素材を足せる合成カード：「コア名 付いている数/枠」
 		auto eds = CraftEditables();
@@ -2473,18 +2560,16 @@ void SceneManager::DrawCraft()
 			const BaseDef* b = MaterialDataBase::GetBase(core);
 			int slots = (b ? b->modSlots : 2) + RelicManager::SumValue("modSlots");
 			wchar_t buf[64]; swprintf_s(buf, L"%s %d/%d", matName(core).c_str(), (int)ms.size(), slots);
-			m_textRenderer->DrawText(buf, x + 6.0f, midY(buf, 15.0f, y, h), 15.0f, D2D1::ColorF(1, 0.9f, 1));
+			DrawItemName(buf, x + 8.0f, x + w - 8.0f, y, h, D2D1::ColorF(1, 0.9f, 1), false);
 		}
 	}
 	auto mods = CraftMods();
 	for (int i = 0; i < (int)mods.size(); i++) 
 	{
 		float x, y, w, h; GetCraftModRect(i, x, y, w, h);
-		wchar_t buf[64]; swprintf_s(buf, L"%s x%d", matName(mods[i].first).c_str(), mods[i].second);
-		float ty = midY(buf, 15.0f, y, h);
-		float aT = MatAlphaAt(ty), aB = MatAlphaAt(ty + 15.0f);
-		if (aT <= 0.0f && aB <= 0.0f) continue;
-		m_textRenderer->DrawTextGradientV(buf, x + 6.0f, ty, 15.0f, D2D1::ColorF(1, 1, 1), aT, aB);
+		float nx = ItemNameLeft(x, (int)MatFitIcons(mods[i].first).size(), 16.0f);
+		DrawItemName(matName(mods[i].first).c_str(), nx, x + w - 8.0f, y, h, D2D1::ColorF(1, 1, 1), true);
+		float ba = MatAlphaAt(y + 2.0f); if (ba > 0.0f) DrawItemBadgeText(mods[i].second, x, y, w, ba);
 	}
 	{
 		float x, y, w, h; GetCraftBtnRect(x, y, w, h);
@@ -2495,6 +2580,19 @@ void SceneManager::DrawCraft()
 	if (prev)
 		CardVisual::DrawTexts(m_textRenderer, prev, nullptr,
 			m_screenWidth / 2.0f - CardVisual::CARD_W / 2.0f, 210.0f, 1.2f, 0.0f, 1.0f);
+	// プレビューの右に、コストを変えているレリック（例：錬成の触媒：コスト-1）
+	if (prev)
+	{
+		float nx = m_screenWidth / 2.0f - CardVisual::CARD_W / 2.0f + CardVisual::CARD_W * 1.2f + 16.0f, ny = 214.0f;
+		for (auto& rid2 : PlayerDataManager::GetData().relics)
+			if (auto r = RelicManager::Get(rid2))
+				if (int v = r->ValueOf("craftCostDown"))
+				{
+					std::wstring s = ToWString(r->name) + (v > 0 ? L"：コスト-" : L"：コスト+") + std::to_wstring(v > 0 ? v : -v);
+					m_textRenderer->DrawText(s.c_str(), nx, ny, 13.0f, v > 0 ? D2D1::ColorF(0.6f, 0.95f, 0.6f) : D2D1::ColorF(1.0f, 0.6f, 0.5f));
+					ny += 18.0f;
+				}
+	}
 	m_textRenderer->End();
 
 	std::string hid = HoveredItem(m_uiInput.GetMousePos());
@@ -2646,15 +2744,15 @@ float SceneManager::MatMaxScroll() const
 
 float SceneManager::MatTop() const
 {
-	int coreCols = 6;
+	int coreCols = m_craftOpen ? 6 : 4;   // インベントリはコアの並び(GetCraftBaseRect=4列)に合わせる
 	int coreRows = ((int)CraftBases().size() + coreCols - 1) / coreCols;
 	if (coreRows < 1) coreRows = 1;
-	return CoreTop() + coreRows * (38.0f + 8.0f) + 34.0f;
+	return CoreTop() + coreRows * (38.0f + 8.0f) + (m_craftOpen ? 34.0f : 56.0f);   // インベントリは見出し・説明の分だけ広く
 }
 
 float SceneManager::MatBottom() const
 {
-	return m_screenHeight - 100.0f;   // Makeボタンの上に余白を確保
+	return m_screenHeight - (m_craftOpen ? 100.0f : 122.0f);   // Makeボタンの上に余白を確保（インベントリは窓の下に合成ボタン）
 }
 
 float SceneManager::MatAlphaAt(float y) const
@@ -2671,7 +2769,7 @@ float SceneManager::MatAlphaAt(float y) const
 
 float SceneManager::CoreTop() const
 {
-	return m_craftOpen ? 380.0f : 150.0f;   // クラフトはプレビューの下／インベントリは上寄せ
+	return m_craftOpen ? 380.0f : 210.0f + RelicManager::BarExtraHeight(m_screenWidth);   // クラフトはプレビューの下／インベントリは見出しと窓の分だけ下げる
 }
 
 std::vector<std::pair<std::string, int>> SceneManager::CraftBases() const
@@ -2715,81 +2813,96 @@ void SceneManager::DrawItemTooltip(const std::string& id, POINT mp)
 void SceneManager::DrawInventory()
 {
 	ID3D11ShaderResourceView* white = TextureManager::Get("white");
-	m_uiSprite->Begin();
-	m_uiSprite->DrawSprite(white, 0, 0, (float)m_screenWidth, (float)m_screenHeight, 0.0f, XMFLOAT4(0.05f, 0.05f, 0.08f, 0.85f));
+	POINT mp = m_uiInput.GetMousePos();
+	std::string hid = HoveredItem(mp);
 	auto bases = CraftBases();
+	auto mods = CraftMods();
+
+	const float gridW = 6 * 150.0f + 5 * 8.0f;                         // 素材の6列が一番広い
+	const float px = m_screenWidth / 2.0f - gridW / 2.0f - 24.0f, pw = gridW + 48.0f;
+	const float py = CoreTop() - 66.0f, ph = MatBottom() + 10.0f - py;
+	const float bnW = 360.0f, bnH = 64.0f, bnY = py - bnH + 8.0f;     // 見出しの布は窓の上の縁に少し重ねる
+	const XMFLOAT4 gold(1.0f, 0.85f, 0.2f, 1.0f);
+
+	// マスを1つ描く（ホバーで浮いて金の縁）。戻り値＝浮いた分
+	auto tile = [&](float x, float y, float w, float h, XMFLOAT4 col, bool hov) {
+		float lift = hov ? 3.0f : 0.0f;
+		UiWindow::Button(m_uiSprite, white, x, y - lift, w, h, col);
+		if (hov) UiWindow::Frame(m_uiSprite, white, x, y - lift, w, h, gold);
+		return lift;
+	};
+
+	float bx, by, bw, bh; GetCraftBtnRect(bx, by, bw, bh);
+	bool canCraft = (m_currentType != SceneType::Battle);
+	bool btnHov = canCraft && mp.x >= bx && mp.x <= bx + bw && mp.y >= by && mp.y <= by + bh;
+
+	m_uiSprite->Begin();
+	m_uiSprite->DrawSprite(white, 0, BAR_H, (float)m_screenWidth, (float)m_screenHeight - BAR_H, 0.0f,
+		XMFLOAT4(0.05f, 0.03f, 0.09f, 0.96f));                            // マップが透けない濃さ（イベントのカード選択と同じ）
+	UiWindow::Draw(m_uiSprite, white, px, py, pw, ph);
+	m_uiSprite->DrawSprite(TextureManager::Get("ui_banner"), m_screenWidth / 2.0f - bnW / 2.0f, bnY, bnW, bnH, 0.0f, XMFLOAT4(1, 1, 1, 1));
+	m_uiSprite->DrawSprite(white, px + 24.0f, CoreTop() - 24.0f, pw - 48.0f, 1.5f, 0.0f, XMFLOAT4(1.0f, 0.85f, 0.5f, 0.35f));   // 区切り線
+	m_uiSprite->DrawSprite(white, px + 24.0f, MatTop() - 10.0f, pw - 48.0f, 1.5f, 0.0f, XMFLOAT4(0.6f, 0.9f, 0.9f, 0.35f));
+
+	std::vector<float> baseLift(bases.size(), 0.0f), modLift(mods.size(), 0.0f);
 	for (int i = 0; i < (int)bases.size(); i++) {
 		float x, y, w, h; GetCraftBaseRect(i, x, y, w, h);
-		m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(0.4f, 0.3f, 0.2f, 0.85f));
+		baseLift[i] = tile(x, y, w, h, XMFLOAT4(0.45f, 0.33f, 0.2f, 1.0f), hid == bases[i].first);
 		if (auto b = MaterialDataBase::GetBase(bases[i].first)) {
 			const char* ic = CoreTypeIcon(b->type);
-			if (ic[0]) m_uiSprite->DrawSprite(TextureManager::Get(ic),
-				x + w - 24.0f, y + (h - 18.0f) / 2.0f, 18.0f, 18.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
+			if (ic[0]) DrawItemIcons({ ic }, x, y - baseLift[i], h, 22.0f, 1.0f);
 		}
+		DrawItemBadge(x, y - baseLift[i], w, 1.0f);
 	}
-	auto mods = CraftMods();
 	for (int i = 0; i < (int)mods.size(); i++) {
 		float x, y, w, h; GetCraftModRect(i, x, y, w, h);
-		if (y + h <= MatTop() || y >= MatBottom()) continue;   // 上に完全に出た/下端以降の行だけ除外（箱は帯の下に潜る）
-		m_uiSprite->DrawSprite(white, x, y, w, h, 0.0f, XMFLOAT4(0.2f, 0.3f, 0.3f, 0.85f));
-		auto icons = MatFitIcons(mods[i].first);
-		for (int k = 0; k < (int)icons.size(); k++)
-			m_uiSprite->DrawSprite(TextureManager::Get(icons[k]),
-				x + w - 22.0f - k * 20.0f, y + (h - 18.0f) / 2.0f, 18.0f, 18.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
+		if (y + h <= MatTop() || y >= MatBottom()) continue;   // 上に完全に出た/下端以降の行だけ除外
+		modLift[i] = tile(x, y, w, h, XMFLOAT4(0.2f, 0.33f, 0.36f, 1.0f), hid == mods[i].first);
+		DrawItemIcons(MatFitIcons(mods[i].first), x, y - modLift[i], h, 16.0f, 1.0f);
+		if (y + h <= MatBottom()) DrawItemBadge(x, y - modLift[i], w, 1.0f);   // 文字と同じく、帯に潜る行は出さない
 	}
 
-	// 見出しの下地ウィンドウ
-	{
-		float hx = m_screenWidth / 2.0f - (6 * 150.0f + 5 * 8.0f) / 2.0f;
-		UiWindow::Draw(m_uiSprite, white, hx - 10.0f, CoreTop() - 30.0f, 120.0f, 28.0f);
-		UiWindow::Draw(m_uiSprite, white, hx - 10.0f, MatTop() - 32.0f, 150.0f, 28.0f);
-	}
-
-	{	// 合成する（戦闘中は押せない）
-		float x, y, w, h; GetCraftBtnRect(x, y, w, h);
-		bool can = (m_currentType != SceneType::Battle);
-		POINT mp = m_uiInput.GetMousePos();
-		bool hov = can && mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h;
-		UiWindow::Button(m_uiSprite, white, x, y - (hov ? 4.0f : 0.0f), w, h,
-			can ? XMFLOAT4(0.4f, 0.3f, 0.5f, 1.0f) : XMFLOAT4(0.22f, 0.22f, 0.24f, 1.0f));
-	}
+	// 合成する（戦闘中は押せない）
+	UiWindow::Button(m_uiSprite, white, bx, by - (btnHov ? 4.0f : 0.0f), bw, bh,
+		canCraft ? XMFLOAT4(0.4f, 0.3f, 0.5f, 1.0f) : XMFLOAT4(0.22f, 0.22f, 0.24f, 1.0f));
 	m_uiSprite->End();
 
 	m_textRenderer->Begin();
-	m_textRenderer->DrawText(L"Items", m_screenWidth / 2.0f - 40.0f, 70.0f, 28.0f, D2D1::ColorF(1, 1, 1));
 	{
-		float x, y, w, h; GetCraftBtnRect(x, y, w, h);
-		bool can = (m_currentType != SceneType::Battle);
-		POINT mp = m_uiInput.GetMousePos();
-		bool hov = can && mp.x >= x && mp.x <= x + w && mp.y >= y && mp.y <= y + h;
-		m_textRenderer->DrawTextCentered(L"合成する", x + w / 2.0f, y - (hov ? 4.0f : 0.0f), w, 20.0f,
-			can ? D2D1::ColorF(1, 1, 1) : D2D1::ColorF(0.55f, 0.55f, 0.55f), h);
-		if (!can) m_textRenderer->DrawTextCentered(L"戦闘中は合成できない", x + w / 2.0f, y + h + 4.0f, 260.0f, 14.0f,
-			D2D1::ColorF(0.75f, 0.75f, 0.75f), 20.0f);
+		TextRenderer::RoleScope heading(*m_textRenderer, FontRole::Heading);
+		m_textRenderer->DrawOutlinedTextCentered(L"アイテム", m_screenWidth / 2.0f, bnY, bnW, bnH, 26.0f,
+			D2D1::ColorF(1.0f, 0.95f, 0.8f), D2D1::ColorF(0.25f, 0.04f, 0.06f), 3.0f);
 	}
-	float hdrX = m_screenWidth / 2.0f - (6 * 150.0f + 5 * 8.0f) / 2.0f;
-	m_textRenderer->DrawText(L"CORE", hdrX, CoreTop() - 24.0f, 18.0f, D2D1::ColorF(1, 0.85f, 0.5f));
+	m_textRenderer->DrawText(L"コア", px + 28.0f, CoreTop() - 50.0f, 18.0f, D2D1::ColorF(1, 0.85f, 0.5f));
+	m_textRenderer->DrawText(L"カードの土台。合成に1つ使う", px + 76.0f, CoreTop() - 47.0f, 13.0f, D2D1::ColorF(0.7f, 0.68f, 0.62f));
+	m_textRenderer->DrawText(L"素材", px + 28.0f, MatTop() - 36.0f, 18.0f, D2D1::ColorF(0.6f, 0.9f, 0.9f));
+	m_textRenderer->DrawText(L"コアに足して効果を加える", px + 76.0f, MatTop() - 33.0f, 13.0f, D2D1::ColorF(0.62f, 0.7f, 0.7f));
 	if (bases.empty())
-		m_textRenderer->DrawText(L"(none)", hdrX + 70.0f, 356.0f, 16.0f, D2D1::ColorF(0.6f, 0.6f, 0.6f));
-	m_textRenderer->DrawText(L"MATERIAL", hdrX, MatTop() - 26.0f, 18.0f, D2D1::ColorF(0.6f, 0.9f, 0.9f));
-
+		m_textRenderer->DrawTextCentered(L"まだ持っていない", m_screenWidth / 2.0f, CoreTop() - 8.0f, 300.0f, 15.0f,
+			D2D1::ColorF(0.55f, 0.55f, 0.55f), 22.0f);
 	if (mods.empty())
-		m_textRenderer->DrawText(L"(none)", hdrX + 100.0f, CoreTop() - 24.0f, 16.0f, D2D1::ColorF(0.6f, 0.6f, 0.6f));
-	for (int i = 0; i < (int)bases.size(); i++) {
-		float x, y, w, h; GetCraftBaseRect(i, x, y, w, h);
-		wchar_t b[64]; swprintf_s(b, L"%s x%d", GetItemInfo(bases[i].first).name.c_str(), bases[i].second);
-		m_textRenderer->DrawText(b, x + 6.0f, y + 8.0f, 15.0f, D2D1::ColorF(1, 1, 1));
+		m_textRenderer->DrawTextCentered(L"まだ持っていない", m_screenWidth / 2.0f, MatTop() + 8.0f, 300.0f, 15.0f,
+			D2D1::ColorF(0.55f, 0.55f, 0.55f), 22.0f);
+	for (int i = 0; i < (int)bases.size(); i++) {   // 名前（アイコンの右）と個数（右上のバッジ）
+		float x, y, w, h; GetCraftBaseRect(i, x, y, w, h); y -= baseLift[i];
+		DrawItemName(GetItemInfo(bases[i].first).name.c_str(), ItemNameLeft(x, 1, 22.0f), x + w - 8.0f, y, h, D2D1::ColorF(1, 1, 1), false);
+		DrawItemBadgeText(bases[i].second, x, y, w, 1.0f);
 	}
 	for (int i = 0; i < (int)mods.size(); i++) {
 		float x, y, w, h; GetCraftModRect(i, x, y, w, h);
 		if (y + h <= MatTop() || y + h > MatBottom()) continue;   // 帯に潜る行は文字を描かない（D2D文字は帯で隠せないため）
-		wchar_t b[64]; swprintf_s(b, L"%s x%d", GetItemInfo(mods[i].first).name.c_str(), mods[i].second);
-		m_textRenderer->DrawText(b, x + 6.0f, y + 8.0f, 15.0f, D2D1::ColorF(1, 1, 1));
+		y -= modLift[i];
+		float nx = ItemNameLeft(x, (int)MatFitIcons(mods[i].first).size(), 16.0f);
+		DrawItemName(GetItemInfo(mods[i].first).name.c_str(), nx, x + w - 8.0f, y, h, D2D1::ColorF(1, 1, 1), false);
+		DrawItemBadgeText(mods[i].second, x, y, w, 1.0f);
 	}
+	m_textRenderer->DrawTextCentered(L"合成する", bx + bw / 2.0f, by - (btnHov ? 4.0f : 0.0f), bw, 20.0f,
+		canCraft ? D2D1::ColorF(1, 1, 1) : D2D1::ColorF(0.55f, 0.55f, 0.55f), bh);
+	m_textRenderer->DrawTextCentered(canCraft ? L"コア＋素材でカードを合成できる" : L"戦闘中は合成できない",
+		bx + bw / 2.0f, by + bh + 4.0f, 320.0f, 14.0f, D2D1::ColorF(0.75f, 0.75f, 0.75f), 20.0f);
 	m_textRenderer->End();
 
-	std::string hid = HoveredItem(m_uiInput.GetMousePos());
-	if (!hid.empty()) DrawItemTooltip(hid, m_uiInput.GetMousePos());
+	if (!hid.empty()) DrawItemTooltip(hid, mp);
 }
 
 void SceneManager::GetRestBtnRect(int i, float& x, float& y, float& w, float& h) const

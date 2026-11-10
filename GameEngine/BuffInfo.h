@@ -61,6 +61,7 @@ struct BuffInfo
             { L"脱皮",                L"カードの攻撃であと{value}ダメージ受けると脱皮し、巻きつきと攻撃力が上がる。毒・罠・聖地では脱皮しない", {0.5f, 1.0f, 0.4f, 1.0f}, "buff_molt" },   // Molt
             { L"沼",                  L"移動カードのコスト+{value}（沼の上にいる間）",  {0.5f, 0.5f, 0.3f, 1.0f},	"buff_mire" },         // Mire
             { L"移動不可",            L"押し出しや引き寄せで動かない。引き寄せると自分のほうが寄っていく", {0.75f, 0.7f, 0.6f, 1.0f}, "buff_immovable" }, // Immovable
+            { L"罠術",                L"罠のダメージ+{value}",                                   {1.0f, 0.55f, 0.15f, 1.0f},  "buff_trappower" },   // TrapPower
         };
         return infos[static_cast<int>(type)];
     }

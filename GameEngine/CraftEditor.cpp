@@ -36,9 +36,10 @@ namespace
 
     const SlotInfo SLOTS[] = {
         { "amplifyMain", true,  false, false, u8"メイン効果の値 +value" },
+        { "amplifyAll",  true,  false, false, u8"付いている効果すべての値 +value（最後にまとめてかかる）" },
         { "hits",        true,  false, false, u8"連撃数 +value" },
         { "main",        true,  true,  true,  u8"メイン効果を type/value で置き換える" },
-        { "sub",         true,  true,  true,  u8"サブ効果（空きなら追加、同じ種類なら加算）" },
+        { "sub",         true,  true,  true,  u8"サブ効果（2枠まで。同じ種類なら加算）" },
         { "onHit",       true,  true,  true,  u8"命中時の効果（2枠まで。同じ種類なら加算）" },
         { "pierce",      false, false, false, u8"貫通にする" },
         { "dash",        true,  false, false, u8"移動攻撃にする（近接なら十字に）・射程 +value" },

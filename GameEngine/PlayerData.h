@@ -17,6 +17,7 @@ struct PlayerData
 
     bool tutorialField = false;
     bool tutorialBattle = false;
+    bool tutorialCamera = false;   // カメラ操作のデモを見た（ランごとに戻す）
 
     int gold = 0;
     std::map<std::string, int> materials;   // 素材ID → 個数

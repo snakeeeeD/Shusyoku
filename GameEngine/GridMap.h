@@ -26,6 +26,8 @@ struct TileEffect {
 	bool active = false;
 	int hazardTurns = 0;
 	bool enemyOwned = false;
+	int grown = 0;   // 自分の罠：育った回数（上限3）
+	int fuse = 0;    // 自分の罠：導火線（敵が隣にいる間進む。3で自分で起爆）
 };
 
 struct Cell

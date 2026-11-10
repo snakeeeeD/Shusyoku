@@ -123,6 +123,7 @@ namespace EnumNames
         { BuffType::DrawPerTurn,  "DrawPerTurn" },
         { BuffType::GuardianVow,  "GuardianVow" },
         { BuffType::Cathedral,    "Cathedral" },
+        { BuffType::TrapPower,    "TrapPower" },
     };
 
     // ---- カード：効果の種類 ----
@@ -194,7 +195,7 @@ namespace EnumNames
 
     // ---- 合成：素材の効果の付き方（CardDataBase.cpp の applyEntry と一致させる）----
     inline constexpr const char* CraftSlots[] = {
-        "amplifyMain", "hits", "main", "sub", "onHit", "pierce", "dash", "range", "exhaust", "reckless", "none", "onArrival",
+        "amplifyMain", "amplifyAll", "hits", "main", "sub", "onHit", "pierce", "dash", "range", "exhaust", "reckless", "none", "onArrival",
     };
 
     // ---- 合成：素材の効果を書く場所（土台の種類ごと。all はどの種類にも効く）----

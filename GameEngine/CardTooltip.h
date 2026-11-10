@@ -76,7 +76,7 @@ public:
             std::wstring n, ds; if (TypeInfo(e.type, n, ds)) push(n, ds);
             };
         fromEffect(d->mainEffect); fromEffect(d->onHitEffect); fromEffect(d->onHitEffect2);
-        fromEffect(d->onDiscardEffect); fromEffect(d->subEffect); fromEffect(d->allEnemyEffect);
+        fromEffect(d->onDiscardEffect); fromEffect(d->subEffect); fromEffect(d->subEffect2); fromEffect(d->allEnemyEffect);
         if (d->exhaust)       push(L"廃棄", L"使うと除外され、この戦闘中は戻らない");
         if (d->dash)          push(L"移動", L"使用時に移動もできる");
         if (d->pierce)        push(L"貫通", L"敵を貫通して攻撃できる");
@@ -247,7 +247,7 @@ public:
         if (!d) return nullptr;
         if (!d->endTurnAddCard.empty()) return CardDataBase::Get(d->endTurnAddCard);   // 呪い・増殖などが加えるカード
         const CardEffectData* es[] = { &d->mainEffect, &d->onHitEffect, &d->onHitEffect2,
-                                       &d->onDiscardEffect, &d->subEffect, &d->allEnemyEffect };
+                                       &d->onDiscardEffect, &d->subEffect, &d->subEffect2, &d->allEnemyEffect };
         for (auto* e : es)
             if (e->type == CardEffectType::CreateCard && !e->cardId.empty())
                 return CardDataBase::Get(e->cardId);

@@ -48,6 +48,7 @@ struct SelectRule
     std::string condition;                    // "" / near / far / hpBelow / turnAbove / turnMultiple / turnExact
     int conditionValue = 0;
     int chance = 100;
+    int maxUses = 0;   // 1í‚Åg‚¦‚é‰ñ”i0=–³§ŒÀj
 };
 
 struct EnemyAction

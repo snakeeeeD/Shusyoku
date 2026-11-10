@@ -2395,7 +2395,7 @@
             {
               "kind": "Debuff",
               "buff": "Poison",
-              "value": 6,
+              "value": 3,
               "duration": 3
             }
           ],
@@ -3169,7 +3169,7 @@
     {
       "id": "mutant_stalker",
       "texture": "enemy_mutant_stalker",
-      "hp": 55,
+      "hp": 90,
       "width": 1.0,
       "height": 1.0,
       "actions": [
@@ -3185,7 +3185,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 10
+              "value": 14
             },
             {
               "kind": "Buff",
@@ -3236,7 +3236,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 7
+              "value": 10
             }
           ],
           "select": {
@@ -3248,7 +3248,7 @@
     {
       "id": "plasma_wraith",
       "texture": "enemy_plasma_wraith",
-      "hp": 45,
+      "hp": 70,
       "width": 1.0,
       "height": 1.0,
       "actions": [
@@ -3264,7 +3264,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 8
+              "value": 11
             },
             {
               "kind": "Debuff",
@@ -3288,7 +3288,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 10
+              "value": 14
             }
           ],
           "select": {
@@ -3318,7 +3318,7 @@
     {
       "id": "toxic_bloom",
       "texture": "enemy_toxic_bloom",
-      "hp": 60,
+      "hp": 95,
       "width": 1.0,
       "height": 1.0,
       "actions": [
@@ -3333,7 +3333,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 8
+              "value": 11
             },
             {
               "kind": "Hazard",
@@ -3361,7 +3361,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 4
+              "value": 6
             },
             {
               "kind": "Debuff",
@@ -3379,7 +3379,7 @@
     {
       "id": "augmented_soldier",
       "texture": "enemy_augmented_soldier",
-      "hp": 90,
+      "hp": 145,
       "width": 1.0,
       "height": 1.0,
       "actions": [
@@ -3395,7 +3395,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 10
+              "value": 14
             },
             {
               "kind": "Block",
@@ -3422,7 +3422,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 7
+              "value": 10
             },
             {
               "kind": "AddCard",
@@ -3451,7 +3451,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 9
+              "value": 13
             }
           ],
           "select": {
@@ -3463,7 +3463,7 @@
     {
       "id": "nanite_swarm",
       "texture": "enemy_nanite_swarm",
-      "hp": 45,
+      "hp": 60,
       "width": 1.0,
       "height": 1.0,
       "actions": [
@@ -3479,7 +3479,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 7
+              "value": 9
             },
             {
               "kind": "Debuff",
@@ -3504,7 +3504,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 6
+              "value": 8
             },
             {
               "kind": "AddCard",
@@ -3541,7 +3541,7 @@
     {
       "id": "psi_watcher",
       "texture": "enemy_psi_watcher",
-      "hp": 40,
+      "hp": 65,
       "width": 1.0,
       "height": 1.0,
       "actions": [
@@ -3557,7 +3557,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 6
+              "value": 8
             },
             {
               "kind": "Debuff",
@@ -3580,7 +3580,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 11
+              "value": 15
             }
           ],
           "select": {
@@ -3592,7 +3592,7 @@
     {
       "id": "grav_anomaly",
       "texture": "enemy_grav_anomaly",
-      "hp": 70,
+      "hp": 110,
       "width": 1.0,
       "height": 1.0,
       "actions": [
@@ -3606,7 +3606,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 7
+              "value": 10
             },
             {
               "kind": "PullPlayer",
@@ -3646,7 +3646,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 12
+              "value": 17
             }
           ],
           "select": {
@@ -3658,7 +3658,7 @@
     {
       "id": "chem_hound",
       "texture": "enemy_chem_hound",
-      "hp": 55,
+      "hp": 90,
       "width": 1.0,
       "height": 1.0,
       "actions": [
@@ -3674,7 +3674,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 8
+              "value": 11
             },
             {
               "kind": "Debuff",
@@ -3718,7 +3718,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 5
+              "value": 7
             }
           ],
           "select": {
@@ -3730,7 +3730,7 @@
     {
       "id": "glitch_phantom",
       "texture": "enemy_glitch_phantom",
-      "hp": 55,
+      "hp": 90,
       "width": 1.0,
       "height": 1.0,
       "actions": [
@@ -3746,7 +3746,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 3,
+              "value": 4,
               "hits": 3
             },
             {
@@ -3790,7 +3790,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 10
+              "value": 14
             }
           ],
           "select": {
@@ -3802,7 +3802,7 @@
     {
       "id": "elite_chimera",
       "texture": "enemy_chimera",
-      "hp": 175,
+      "hp": 280,
       "width": 1.0,
       "height": 1.0,
       "actions": [
@@ -3818,7 +3818,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 8,
+              "value": 11,
               "hits": 3
             },
             {
@@ -3843,7 +3843,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 16
+              "value": 22
             },
             {
               "kind": "Debuff",
@@ -3868,7 +3868,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 22
+              "value": 28
             },
             {
               "kind": "KnockbackPlayer",
@@ -3884,7 +3884,7 @@
     {
       "id": "elite_corrupted_core",
       "texture": "enemy_corrupted_core",
-      "hp": 160,
+      "hp": 255,
       "width": 1.0,
       "height": 1.0,
       "actions": [
@@ -3898,7 +3898,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 16
+              "value": 22
             },
             {
               "kind": "Debuff",
@@ -3931,7 +3931,8 @@
             }
           ],
           "select": {
-            "chance": 30
+            "chance": 30,
+            "maxUses": 2
           }
         },
         {
@@ -3957,7 +3958,7 @@
     {
       "id": "elite_void_weaver",
       "texture": "enemy_void_weaver",
-      "hp": 165,
+      "hp": 265,
       "width": 1.0,
       "height": 1.0,
       "actions": [
@@ -3973,7 +3974,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 8
+              "value": 11
             },
             {
               "kind": "Debuff",
@@ -4000,7 +4001,7 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 9
+              "value": 13
             },
             {
               "kind": "Debuff",

@@ -143,6 +143,58 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
         ~SlotGuard() { h.ReserveSlot(false); }
     } slotGuard(hand);
 
+    // サブ効果（ドロー・回復など）。subEffect と subEffect2 で共通、パワーでも使う
+    auto applySub = [&](const CardEffectData& sub)
+    {
+        if (!sub.hasEffect) return;
+        switch (sub.type)
+        {
+        case CardEffectType::Draw:
+            for (int i = 0; i < sub.value; i++)
+            {
+                std::string id = deck.DrawCard();
+                if (!id.empty())
+                {
+                    hand.AddCard(id);
+                    result.drawnCards.push_back(id);
+                }
+            }
+            break;
+        case CardEffectType::Heal:
+            player->Heal(sub.value);
+            break;
+        case CardEffectType::AddEnergy:
+            player->AddEnergy(sub.value);
+            break;
+        case CardEffectType::ApplyBuff:
+            CardEffect::ApplyEffectToPlayer(sub, player);
+            break;
+        case CardEffectType::Block:
+        {
+            int gainedS = player->GetBuffManager().GetFinalBlock(sub.value);
+            player->AddBlock(gainedS);
+            if (gainedS > 0) EffectManager::Play("block_gain", player->worldX, player->worldY + 0.4f, player->worldZ);
+            break;
+        }
+        case CardEffectType::CreateCard:
+            for (int i = 0; i < sub.value; i++)
+            {
+                hand.AddCard(sub.cardId);
+                result.drawnCards.push_back(sub.cardId);
+            }
+            break;
+        case CardEffectType::Engrave:   // 自分のマス（移動カードなら移動前のマス）に刻む
+            Faith::Engrave(gridMap, playerCol, playerRow, sub.value);
+            break;
+        case CardEffectType::Discard:
+            pendingDiscard += sub.value;
+            break;
+        default:
+            break;
+        }
+    };
+
+
     switch (data.type)
     {
     case CardType::Attack:
@@ -794,6 +846,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
         case CardEffectType::PlaceTrap:
         {
             auto& cell = gridMap->GetCell(targetCol, targetRow);
+            cell.tileEffect = TileEffect();   // 置き直しは育ち・導火線も0から
             cell.tileEffect.active = true;
             cell.tileEffect.id = data.mainEffect.trapType;
             cell.tileEffect.value = data.mainEffect.value;
@@ -817,6 +870,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                     if (!RangeShape::Contains(playerCol, playerRow, c, r, data.rangeType, data.range)) continue;
                     Cell& cell = gridMap->GetCell(c, r);
                     if (cell.type != CellType::Empty || cell.tileEffect.active) continue;
+                    cell.tileEffect = TileEffect();
                     cell.tileEffect.active = true;
                     cell.tileEffect.id = data.mainEffect.trapType;
                     cell.tileEffect.value = data.mainEffect.value;
@@ -962,10 +1016,14 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     {
         player->UseEnergy(payCost);
         CardEffect::ApplyEffectToPlayer(data.mainEffect, player);
+        applySub(data.subEffect);    // パワーでもサブ効果（合成の素材など）を発動する
+        applySub(data.subEffect2);
         // パワーカードは捨て札に入れない
         ApplyAllEnemyEffect(data, enemies, gridMap);
         hand.RemoveCard(cardIndex);
-        return { true, true };
+        result.success = true; result.cardUsed = true;
+        result.pendingDiscard = pendingDiscard;   // 引いたカード・捨てる枚数もシーンへ渡す
+        return result;
     }
     }
 
@@ -978,54 +1036,8 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     }
 
     // サブ効果の処理
-    if (data.subEffect.hasEffect)
-    {
-        switch (data.subEffect.type)
-        {
-        case CardEffectType::Draw:
-            for (int i = 0; i < data.subEffect.value; i++)
-            {
-                std::string id = deck.DrawCard();
-                if (!id.empty())
-                {
-                    hand.AddCard(id);
-                    result.drawnCards.push_back(id);
-                }
-            }
-            break;
-        case CardEffectType::Heal:
-            player->Heal(data.subEffect.value);
-            break;
-        case CardEffectType::AddEnergy:
-            player->AddEnergy(data.subEffect.value);
-            break;
-        case CardEffectType::ApplyBuff:
-            CardEffect::ApplyEffectToPlayer(data.subEffect, player);
-            break;
-        case CardEffectType::Block:
-        {
-            int gainedS = player->GetBuffManager().GetFinalBlock(data.subEffect.value);
-            player->AddBlock(gainedS);
-            if (gainedS > 0) EffectManager::Play("block_gain", player->worldX, player->worldY + 0.4f, player->worldZ);
-            break;
-        }
-        case CardEffectType::CreateCard:
-            for (int i = 0; i < data.subEffect.value; i++)
-            {
-                hand.AddCard(data.subEffect.cardId);
-                result.drawnCards.push_back(data.subEffect.cardId);
-            }
-            break;
-        case CardEffectType::Engrave:   // 自分のマス（移動カードなら移動前のマス）に刻む
-            Faith::Engrave(gridMap, playerCol, playerRow, data.subEffect.value);
-            break;
-        case CardEffectType::Discard:
-            pendingDiscard += data.subEffect.value;
-            break;
-        default:
-            break;
-        }
-    }
+    applySub(data.subEffect);
+    applySub(data.subEffect2);
 
     ApplyAllEnemyEffect(data, enemies, gridMap);
 
@@ -1131,6 +1143,13 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     return result;
 }
 
+int CardExecutor::TrapDamageBonus()
+{
+    int b = RelicManager::SumValue("trapDamage");
+    if (s_battlePlayer) b += s_battlePlayer->GetBuffManager().GetBuffValue(BuffType::TrapPower);
+    return b;
+}
+
 void CardExecutor::TriggerTrap(Cell& cell, Enemy* enemy, int col, int row,
     GridMap* gridMap, std::vector<Enemy*>& enemies)
 {
@@ -1150,7 +1169,7 @@ void CardExecutor::TriggerTrap(Cell& cell, Enemy* enemy, int col, int row,
     if (def->effect == "Damage")
     {
         enemy->ClearHitMark();   // 罠は部位に関係なし・脱皮にも数えない
-        enemy->TakeDamage(cell.tileEffect.value + RelicManager::SumValue("trapDamage"));
+        enemy->TakeDamage(cell.tileEffect.value + TrapDamageBonus());
 
         if (def->aoe)
         {
@@ -1253,7 +1272,7 @@ bool CardExecutor::DetonateTrap(Cell& cell, int col, int row,
 
             e->ClearHitMark();   // 起爆は部位に関係なし・脱皮にも数えない（探した時の印を消す）
             if (def->effect == "Damage")
-                e->TakeDamage(val + RelicManager::SumValue("trapDamage"));                
+                e->TakeDamage(val + TrapDamageBonus());                
             else if (def->effect == "ApplyDebuff")
             {
                 Buff b; b.type = StringToBuffType(def->buffType);

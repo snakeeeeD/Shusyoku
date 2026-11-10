@@ -15,6 +15,7 @@
 #include "DamageFeedback.h"
 #include "RangeShape.h"
 #include "UiNotice.h"
+#include "Cursor.h"
 #include "Audio.h"
 #include "Hint.h"
 #include "Telemetry.h"
@@ -81,6 +82,7 @@ BattleScene::BattleScene()
 BattleScene::~BattleScene()
 {
     EnemyIntentVisual::SetPlayerBuffs(nullptr);
+    CardExecutor::SetBattlePlayer(nullptr);
     EnemyIntentVisual::SetHidden(false);   // 目隠しを戦闘の外に持ち越さない
     delete m_battleUI;
     delete m_gridMap;
@@ -203,6 +205,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
 
     m_player = new Player();
+    CardExecutor::SetBattlePlayer(m_player);   // 罠のダメージに罠術バフを足すため
     m_player->gridCol = m_playerCol;
     m_player->gridRow = m_playerRow;
     m_player->PlaceAt((m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f,
@@ -249,6 +252,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
                     PlayerDataManager::GetData().relicCounters[id] = 0;
 
             TurnBanner::Show(TurnBannerType::Player);
+            UpdateTrapsAtTurnStart();   // 罠が育つ・導火線
             m_player->RestoreEnergy();
             m_player->AddEnergy(RelicManager::SumValue("turnEnergy"));   // レリック
             {
@@ -1044,6 +1048,7 @@ void BattleScene::Update(float deltaTime)
     ScreenShake::Update(deltaTime);
     TurnBanner::Update(deltaTime);
     EffectManager::Update(deltaTime);
+    UpdateBuffGainFx();   // バフが付いた／増えたらエフェクト
 
     // オロチの脱皮：ターンは使わず、その瞬間に演出だけ出す
     for (auto enemy : m_enemies)
@@ -1089,9 +1094,11 @@ void BattleScene::Update(float deltaTime)
     }
 
     // カメラズーム（マウスホイール）
+    bool camDemo = (m_camDemoStep >= 0);   // カメラ操作のデモ中は手で動かせない
     int wheelDelta = m_input.GetMouseWheelDelta();
-    if (wheelDelta != 0)
+    if (wheelDelta != 0 && !camDemo)
     {
+        m_camDemoHoming = false;   // 自分で触ったらデモ後の戻りはやめる
         m_cameraZoom -= wheelDelta > 0 ? ZOOM_SPEED : -ZOOM_SPEED;
         m_cameraZoom = max(ZOOM_MIN, min(ZOOM_MAX, m_cameraZoom));
     }
@@ -1120,7 +1127,7 @@ void BattleScene::Update(float deltaTime)
     }
 
     // カメラパン（右クリックドラッグ）
-    if (m_input.GetMouseButtonPress(1))
+    if (!camDemo && m_input.GetMouseButtonPress(1))
     {
         POINT mousePos = m_input.GetMousePos();
         if (!m_isDraggingCamera)
@@ -1135,7 +1142,10 @@ void BattleScene::Update(float deltaTime)
             float dy = (float)(mousePos.y - m_dragStartPos.y);
 
             if (abs(dx) > 1.0f || abs(dy) > 1.0f)
+            {
                 m_rightClickDragged = true;
+                m_camDemoHoming = false;   // 自分で触ったらデモ後の戻りはやめる
+            }
 
             m_cameraOffsetX += dx * 0.02f * m_cameraZoom;
             m_cameraOffsetZ -= dy * 0.02f * m_cameraZoom;
@@ -1164,8 +1174,9 @@ void BattleScene::Update(float deltaTime)
     }
 
     // カメラリセット（ミドルクリック）
-    if (m_input.GetMouseButtonTrigger(2))
+    if (!camDemo && m_input.GetMouseButtonTrigger(2))
     {
+        m_camDemoHoming = false;
         m_cameraZoom = ZOOM_MAX;
         m_cameraOffsetX = m_player->worldX;
         m_cameraOffsetZ = m_player->worldZ - 0.7f;
@@ -1177,6 +1188,7 @@ void BattleScene::Update(float deltaTime)
     // ・選択が終わったら：移動カードで移動した → そのまま／キャンセルなど → 寄せる前の位置へ戻す
     bool userPanning = m_isDraggingCamera && m_rightClickDragged;
     if (userPanning) { m_aimPanned = false; m_aimReturning = false; }
+    if (userPanning) Cursor::Request(CursorKind::Camera);   // 右ドラッグ中＝カメラ操作のカーソル
 
     bool carryCursor = false;                 // このフレーム、カーソルをゴーストと一緒に動かすか
     std::pair<int, int> carryCell = { -1, -1 };
@@ -1252,6 +1264,8 @@ void BattleScene::Update(float deltaTime)
             m_aimReturning = false;
         }
     }
+
+    UpdateCamDemo(deltaTime);   // カメラ操作の自動デモ（初回の2ターン目）
 
     // カメラ更新（ズーム or パンが変わったら毎フレーム適用）
     {
@@ -1347,7 +1361,8 @@ void BattleScene::Update(float deltaTime)
                     Hint::Request("snakeWeak");
                     Hint::Request("molt");
                 }
-            if (m_turnManager.GetTurnCount() >= 2) { Hint::Request("focus"); Hint::Request("camera"); }
+            if (m_turnManager.GetTurnCount() >= 2 && m_camDemoStep < 0 && PlayerDataManager::GetData().tutorialCamera)   // カメラのデモを見た後に（デモの後ろに重ねない）
+            { Hint::Request("focus"); Hint::Request("camera"); }
         }
         else Hint::Resolve("endTurn");
 
@@ -2007,6 +2022,23 @@ void BattleScene::Update(float deltaTime)
 
 void BattleScene::Draw()
 {
+    // マウスカーソル：手札のカード／今離したら使えるマスの上なら指差し（ボタン類は UiHover・HoverLift 側で出る）
+    if (m_battleResult == BattleResult::None && m_turnManager.IsPlayerTurn())
+    {
+        bool hov = false;
+        int sel = m_selectedCardIndex;
+        if (sel >= 0 && sel < (int)m_hand.GetCards().size())
+        {
+            CardData d = *m_hand.GetCards()[sel]->GetData();
+            ApplyKnifeThrow(d, m_player);
+            if (d.type == CardType::Move)
+                hov = !m_movePath.empty() && m_movePath.back() == m_hoveredCell;   // 経路の先＝離せばそこへ行ける
+            else if (SelectedNeedsTarget())
+                hov = m_hoveredCell.first >= 0 && CellInCardRange(d, m_hoveredCell.first, m_hoveredCell.second);
+        }
+        else hov = (m_hoveredCardIndex >= 0);   // 何も持っていない時は手札のカード
+        if (hov) Cursor::Request(CursorKind::Hover);
+    }
 
     bool blurScene = (m_awakenCinematic > 0.0f);
     if (blurScene) m_renderer3D->BeginOffscreen();
@@ -2369,6 +2401,11 @@ void BattleScene::Draw()
                 const TerrainDef* def = TerrainDataBase::Get(cell.tileEffect.id);
                 XMFLOAT4 terrainColor = def ? def->color : XMFLOAT4(1, 1, 1, 0.5f);
                 float sz = (0.8f + 0.064f * t) * pulseScale;
+                if (!cell.tileEffect.enemyOwned)   // 育った罠は少し大きく・明るく
+                {
+                    sz *= 1.0f + 0.05f * cell.tileEffect.grown;
+                    bright += 0.12f * cell.tileEffect.grown;
+                }
 
                 // 設置者を示す下地（自分=水色 / 敵=赤）。罠の少し下・少し大きめでフチのように出す
                 XMFLOAT4 ownerCol = cell.tileEffect.enemyOwned
@@ -2384,6 +2421,17 @@ void BattleScene::Draw()
                     m_renderer3D->DrawTile(m_whiteTexture, x, z, sz,
                         XMFLOAT4(terrainColor.x * bright, terrainColor.y * bright, terrainColor.z * bright, terrainColor.w),
                         cell.gameObject.worldY + 0.04f);
+
+                // 導火線：手前の縁に点を3つ。たまった数だけ赤橙に灯す（敵が隣にいる間だけ進む）
+                if (!cell.tileEffect.enemyOwned && cell.tileEffect.fuse > 0)
+                    for (int k = 0; k < 3; k++)
+                    {
+                        bool lit = k < cell.tileEffect.fuse;
+                        float fl = lit ? 0.75f + 0.25f * sinf(m_highlightTimer * 10.0f) : 1.0f;
+                        m_renderer3D->DrawTile(m_whiteTexture, x + (k - 1) * 0.16f, z + sz * 0.42f, 0.1f,
+                            lit ? XMFLOAT4(1.0f * fl, 0.45f * fl, 0.1f, 1.0f) : XMFLOAT4(0.15f, 0.12f, 0.1f, 0.9f),
+                            cell.gameObject.worldY + 0.05f);
+                    }
             }
         }
     }
@@ -2551,7 +2599,6 @@ void BattleScene::Draw()
     bool hasDeep = m_player->GetBuffManager().HasBuff(BuffType::DeepStand);   // 1/4パワー
     float pulse = 0.5f + 0.5f * sinf(m_highlightTimer * 10.0f);               // 0..1 脈動
 
-    auto ptex = TextureManager::Get("player");
     m_renderer3D->SetDepthEnabled(false);
 
     // 1/2以下：プレイヤーが赤く脈動（膨らむ赤オーラ）
@@ -2559,24 +2606,24 @@ void BattleScene::Draw()
     {
         float sc = 1.0f + 0.15f * pulse;
         float a = 0.20f + 0.30f * pulse;
-        m_renderer3D->DrawBillboard(ptex,
-            m_player->worldX, m_player->worldY, m_player->worldZ,
-            sc, sc, 0.0f, XMFLOAT4(1.0f, 0.2f, 0.15f, a));
+        Player::SpriteFrame f = m_player->GetSprite(sc);   // 本体と同じ向き・コマ
+        m_renderer3D->DrawBillboard(f.tex, f.x, f.y, f.z, f.w, f.h, f.rot,
+            XMFLOAT4(1.0f, 0.2f, 0.15f, a), f.uv);
     }
 
     // 1/4以下：赤い残像（1/2パワーがあれば残像自体が膨張脈動）
     if (hp * 4 <= mhp && hasDeep)
     {
         float sc = 1.0f + (hasLast ? 0.25f * pulse : 0.0f);   // 1/2パワーで膨らむ脈動
+        Player::SpriteFrame f = m_player->GetSprite(sc);   // 本体と同じ向き・コマ（残像の3枚で共通）
         for (int i = 1; i <= 3; i++)
         {
             float ph = m_highlightTimer * 14.0f + i * 1.2f;
             float ox = sinf(ph) * 0.10f * i;
             float oz = -0.09f * i;
             float a = 0.30f - (i - 1) * 0.08f;
-            m_renderer3D->DrawBillboard(ptex,
-                m_player->worldX + ox, m_player->worldY, m_player->worldZ + oz,
-                sc, sc, 0.0f, XMFLOAT4(1.0f, 0.25f, 0.15f, a));   // ← サイズscで脈動
+            m_renderer3D->DrawBillboard(f.tex, f.x + ox, f.y, f.z + oz, f.w, f.h, f.rot,
+                XMFLOAT4(1.0f, 0.25f, 0.15f, a), f.uv);   // ← サイズscで脈動
         }
     }
 
@@ -2863,6 +2910,11 @@ void BattleScene::Draw()
 
 void BattleScene::HandleInput()
 {
+    if (m_camDemoStep >= 0)   // カメラのデモ中は操作を止める（左クリックで飛ばす）
+    {
+        if (m_input.GetMouseButtonTrigger(0)) EndCamDemo();
+        return;
+    }
     // 勝敗後はターンに関係なくクリックで進める
     if (m_battleResult == BattleResult::Win)
     {
@@ -3413,11 +3465,9 @@ void BattleScene::HandleInput()
                 }
                 if (execResult.startSeqDetonate)
                 {
-                    m_trapQueue.cells = execResult.seqDetonateCells;
-                    m_trapQueue.mode = TrapFire::Detonate;
-                    m_trapQueue.full = execResult.seqFull;
-                    m_trapQueue.enemy = nullptr;
-                    m_trapQueue.timer = 0.0f;
+                    m_detonateQueue = execResult.seqDetonateCells;   // 1個ずつ起爆（Update で処理）
+                    m_detonateFull = execResult.seqFull;
+                    m_detonateTimer = 0.0f;
                 }
 
                 if (execResult.placeDecoy)
@@ -3480,8 +3530,15 @@ void BattleScene::HandleInput()
                             if (def && def->effect == "Slide" && !RelicManager::HasKind("floorImmune"))
                             {
                                 isSlide = true;
-                                int dx = m_playerCol - oldCol;
-                                int dy = m_playerRow - oldRow;
+                                // 向きは「最後の1歩」で決める（回り込んだ時に全体のずれで決めると斜め扱い→ランダムになる）
+                                int fromCol = oldCol, fromRow = oldRow;
+                                if (usePath && usePath->size() >= 2)
+                                {
+                                    fromCol = (*usePath)[usePath->size() - 2].first;
+                                    fromRow = (*usePath)[usePath->size() - 2].second;
+                                }
+                                int dx = m_playerCol - fromCol;
+                                int dy = m_playerRow - fromRow;
                                 if (dx != 0 && dy != 0)
                                 {
                                     if (rand() % 2 == 0)
@@ -3501,6 +3558,9 @@ void BattleScene::HandleInput()
 
                         if (isSlide && (slideDx != 0 || slideDy != 0))
                         {
+                            bool walked = (usePath && !usePath->empty());
+                            std::vector<std::pair<float, float>> slidePts;   // すべった先のマス（歩きの続きにつなぐ）
+                            if (!walked) slidePts.push_back({ px, pz });     // 経路なしの移動は、まず着地点へ
                             while (true)
                             {
                                 int nextCol = m_playerCol + slideDx;
@@ -3520,9 +3580,9 @@ void BattleScene::HandleInput()
                                 m_gridMap->SetCellType(m_playerCol, m_playerRow, CellType::Player);
                                 m_player->gridCol = m_playerCol;
                                 m_player->gridRow = m_playerRow;
-                                float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                                float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
-                                m_player->StartMove(px, pz);
+                                float sx = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                                float sz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+                                slidePts.push_back({ sx, sz });
 
                                 auto& slideCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
                                 if (slideCell.tileEffect.active)
@@ -3535,6 +3595,8 @@ void BattleScene::HandleInput()
                                 }
                                 break;
                             }
+                            if (slidePts.size() > (walked ? 0u : 1u))         // 1マスでもすべった時だけ
+                                m_player->AppendWalk(slidePts, 0.08f);        // 歩き終わってから、同じ速さでスーッと続ける
                         }
                     }
 
@@ -4176,6 +4238,164 @@ int BattleScene::FocusEnemy() const
             for (auto& cell : m_enemies[i]->OccupiedCells())
                 if (cell == m_hoveredCell) return i;
     return m_selectedEnemyRange;
+}
+
+// カメラ操作の自動デモ（初回の2ターン目に1回）。手順を増やす時は表に1行、動きは CamGoal に足す
+enum class CamGoal { Figure8, ZoomIn, Home };
+static constexpr float CAM8_W = 2.6f;   // 八の字の横の振れ幅（約2マス半）
+static constexpr float CAM8_H = 1.4f;   // 八の字の縦の振れ幅（盤面の中央から離れすぎない）
+static const struct { const wchar_t* text; const char* icon; float dur; CamGoal goal; } CAM_DEMO[] = {
+    { L"右ドラッグ：カメラを動かす",         "mouse_rdrag",  3.6f, CamGoal::Figure8 },
+    { L"ホイール：ズーム",                   "mouse_wheel",  2.0f, CamGoal::ZoomIn },
+    { L"ホイールクリック：自分の位置に戻る", "mouse_mclick", 1.8f, CamGoal::Home   },
+};
+static constexpr int CAM_DEMO_N = (int)(sizeof(CAM_DEMO) / sizeof(CAM_DEMO[0]));
+
+void BattleScene::UpdateCamDemo(float dt)
+{
+    if (m_camDemoHoming)   // デモの後：初期の位置（戦闘開始時＝ホイールクリックと同じ）へ滑らかに戻す
+    {
+        float gx = m_player->worldX, gz = m_player->worldZ - 0.7f;
+        float k = 1.0f - expf(-dt * 5.0f);
+        m_cameraOffsetX += (gx - m_cameraOffsetX) * k;
+        m_cameraOffsetZ += (gz - m_cameraOffsetZ) * k;
+        m_cameraZoom    += (ZOOM_MAX - m_cameraZoom) * k;
+        if (fabsf(gx - m_cameraOffsetX) < 0.01f && fabsf(gz - m_cameraOffsetZ) < 0.01f && fabsf(ZOOM_MAX - m_cameraZoom) < 0.005f)
+        {
+            m_cameraOffsetX = gx; m_cameraOffsetZ = gz; m_cameraZoom = ZOOM_MAX;
+            m_camDemoHoming = false;
+        }
+        return;
+    }
+    if (m_camDemoStep < 0)   // 始める条件：2ターン目以降の自分の番、ターン表示が消えて、カードを持っていない
+    {
+        auto& pd = PlayerDataManager::GetData();
+        if (pd.tutorialCamera || m_battleResult != BattleResult::None || !m_turnManager.IsPlayerTurn()
+            || m_turnManager.GetTurnCount() < 2 || TurnBanner::IsActive() || m_selectedCardIndex >= 0) return;
+        pd.tutorialCamera = true;
+        pd.seenHints.insert("camera");   // 同じことをヒントでもう一度言わない
+        PlayerDataManager::Save();
+        m_camDemoStep = 0; m_camDemoTime = 0.0f;
+        m_isDraggingCamera = false;
+    }
+    Cursor::Request(CursorKind::Camera);
+    m_camDemoTime += dt;
+    if (m_camDemoTime >= CAM_DEMO[m_camDemoStep].dur)
+    {
+        m_camDemoTime = 0.0f;
+        if (++m_camDemoStep >= CAM_DEMO_N) { EndCamDemo(); return; }
+    }
+    // 目標へなめらかに寄せる（狙いカメラと同じ指数補間）
+    float gx = m_player->worldX, gz = m_player->worldZ - 0.7f, gzoom = ZOOM_MAX;   // Home＝ホイールクリックと同じ位置
+    // 盤面の中央（ホイールクリックの位置と同じく、少し奥に寄せた所）
+    float cx = ((m_gridMap->GetCols() - 1) / 2.0f - m_gridMap->GetCols() / 2.0f) * 1.1f;
+    float cz = ((m_gridMap->GetRows() - 1) / 2.0f - m_gridMap->GetRows() / 2.0f) * 1.1f - 0.7f;
+    switch (CAM_DEMO[m_camDemoStep].goal)
+    {
+    case CamGoal::Figure8:   // 中央を軸に八の字を1周（中央から始まり中央で終わる）
+    {
+        float t = m_camDemoTime / CAM_DEMO[m_camDemoStep].dur * 6.2831853f;
+        gx = cx + CAM8_W * sinf(t);
+        gz = cz + CAM8_H * sinf(2.0f * t);
+        break;
+    }
+    case CamGoal::ZoomIn: gx = cx; gz = cz; gzoom = ZOOM_MIN; break;
+    case CamGoal::Home:   break;
+    }
+    float k = 1.0f - expf(-dt * 5.0f);
+    m_cameraOffsetX += (gx - m_cameraOffsetX) * k;
+    m_cameraOffsetZ += (gz - m_cameraOffsetZ) * k;
+    m_cameraZoom    += (gzoom - m_cameraZoom) * k;
+}
+
+void BattleScene::EndCamDemo()   // 最後まで見た／クリックで飛ばした → 初期の位置へ滑らかに戻す
+{
+    m_camDemoStep = -1;
+    m_camDemoHoming = true;
+}
+
+bool BattleScene::CamDemoCaption(const wchar_t*& text, const char*& icon, float& alpha) const
+{
+    if (m_camDemoStep < 0) return false;
+    text = CAM_DEMO[m_camDemoStep].text; icon = CAM_DEMO[m_camDemoStep].icon;
+    alpha = (std::min)(1.0f, m_camDemoTime / 0.2f);   // 手順ごとにふわっと
+    return true;
+}
+
+// 自分の罠：自分のターンの始め（＝敵のターンが終わった所）に育つ（上限3回）。
+// 周り1マスに敵がいる間だけ導火線が進み、3たまったら自分で起爆する（周りは半分）。敵がいない罠はそのまま残る（回収できる）
+static constexpr int TRAP_GROW_MAX = 3, TRAP_FUSE = 3;
+void BattleScene::UpdateTrapsAtTurnStart()
+{
+    for (int r = 0; r < m_gridMap->GetRows(); r++)
+        for (int c = 0; c < m_gridMap->GetCols(); c++)
+        {
+            auto& t = m_gridMap->GetCell(c, r).tileEffect;
+            if (!t.active || t.enemyOwned || t.persistent) continue;   // 自分の罠だけ（床・ハザードは除く）
+            const TerrainDef* def = TerrainDataBase::Get(t.id);
+            if (!def || def->growPct <= 0) continue;
+            if (t.grown < TRAP_GROW_MAX) { t.value += (std::max)(1, (t.value * def->growPct + 50) / 100); t.grown++; }
+            bool nearEnemy = false;   // 周り1マスに敵
+            for (int dr = -1; dr <= 1 && !nearEnemy; dr++)
+                for (int dc = -1; dc <= 1 && !nearEnemy; dc++)
+                {
+                    int nc = c + dc, nr = r + dr;
+                    if (nc < 0 || nc >= m_gridMap->GetCols() || nr < 0 || nr >= m_gridMap->GetRows()) continue;
+                    int ei = EnemyIndexAt(nc, nr);   // 大きい敵・蛇の体も含む
+                    nearEnemy = (ei >= 0 && m_enemies[ei]->GetHp() > 0);
+                }
+            if (nearEnemy && ++t.fuse >= TRAP_FUSE
+                && std::find(m_detonateQueue.begin(), m_detonateQueue.end(), std::make_pair(c, r)) == m_detonateQueue.end())
+                m_detonateQueue.push_back({ c, r });   // 起爆カードと同じ順番待ちで1個ずつ
+        }
+    if (!m_detonateQueue.empty()) { m_detonateFull = false; m_detonateTimer = 0.3f; }   // 周りは半分。少し間をおいて
+}
+
+// バフが付いた／増えた時のエフェクト。ここに無いバフ（デバフ・表示用）は出さない。増やす時は1行
+static const struct { BuffType type; const char* fx; } BUFF_GAIN_FX[] = {
+    // 攻撃が上がる
+    { BuffType::AttackUp, "buff_attack" },   { BuffType::AttackUpTurn, "buff_attack" }, { BuffType::AttackGrowth, "buff_attack" },
+    { BuffType::Frenzy, "buff_attack" },     { BuffType::LastStand, "buff_attack" },    { BuffType::DeepStand, "buff_attack" },
+    { BuffType::KnifePower, "buff_attack" }, { BuffType::HolyGround, "buff_attack" },   { BuffType::Charge, "buff_attack" },
+    { BuffType::TrapPower, "buff_attack" },
+    // 守りが上がる
+    { BuffType::DefenseUp, "buff_defense" }, { BuffType::Barricade, "buff_defense" },   { BuffType::Thorns, "buff_defense" },
+    { BuffType::Momentum, "buff_defense" },  { BuffType::Riposte, "buff_defense" },     { BuffType::CardBlock, "buff_defense" },
+    { BuffType::Sanctuary, "buff_defense" }, { BuffType::GuardianVow, "buff_defense" }, { BuffType::Invincible, "buff_defense" },
+    // そのほかの強化
+    { BuffType::RangeUp, "buff_up" },      { BuffType::MoveUp, "buff_up" },       { BuffType::HitAndRun, "buff_up" },
+    { BuffType::Reposition, "buff_up" },   { BuffType::NoxiousFumes, "buff_up" }, { BuffType::ToxicRhythm, "buff_up" },
+    { BuffType::KnifeThrow, "buff_up" },   { BuffType::KnifeGen, "buff_up" },     { BuffType::EmberTrail, "buff_up" },
+    { BuffType::DrawPerTurn, "buff_up" },  { BuffType::Cathedral, "buff_up" },
+};
+
+// 毎フレーム、前のフレームのバフの値と比べて、付いた／増えたものにエフェクト（どこで付いても拾える）
+void BattleScene::UpdateBuffGainFx()
+{
+    std::unordered_map<const void*, std::map<int, int>> next;
+    auto check = [&](const void* key, const BuffManager& bm, float x, float y, float z) {
+        std::map<int, int> cur;
+        for (auto& b : bm.GetBuffs()) cur[(int)b.type] += (b.value > 0) ? b.value : 1;   // 値の無いバフも「付いた」で拾う
+        auto val = [](const std::map<int, int>& m, BuffType t) { auto f = m.find((int)t); return f == m.end() ? 0 : f->second; };
+        auto it = m_buffSnap.find(key);
+        if (it != m_buffSnap.end())   // 初めて見た時（戦闘開始・召喚直後）は出さない
+        {
+            std::vector<const char*> played;   // 同じフレームに同じエフェクトは1回
+            for (auto& e : BUFF_GAIN_FX)
+                if (val(cur, e.type) > val(it->second, e.type)
+                    && std::find(played.begin(), played.end(), e.fx) == played.end())
+                {
+                    EffectManager::Play(e.fx, x, y, z);
+                    played.push_back(e.fx);
+                }
+        }
+        next[key] = std::move(cur);
+    };
+    check(m_player, m_player->GetBuffManager(), m_player->worldX, m_player->worldY + 0.5f, m_player->worldZ);
+    for (auto e : m_enemies)
+        if (e && e->GetHp() > 0)
+            check(e, e->GetBuffManager(), e->worldX, e->worldY + e->height * 0.5f, e->worldZ);
+    m_buffSnap.swap(next);   // いなくなった敵の分は自然に消える
 }
 
 bool BattleScene::SelectedNeedsTarget() const
