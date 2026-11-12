@@ -11,6 +11,7 @@ public:
 
     // テクスチャ読み込み
     static bool Load(const std::string& name, const wchar_t* filepath);
+    static int  LoadList(const std::string& jsonPath);   // 画像の一覧（JSON）をまとめて読む。読めた数を返す
 
     // テクスチャ取得
     static ID3D11ShaderResourceView* Get(const std::string& name);

@@ -47,7 +47,6 @@ static void TriggerTrapsUnder(Enemy* e, int col, int row, GridMap* g, std::vecto
     }
 }
 
-static constexpr float RAISE_H = 0.12f;   // 狙ったマスが浮く高さ（上げすぎると奥のマスに食い込んで見える）
 
 static const struct { const char* wedge; const char* chain; const char* fx; } BOSS_CHAINS[] = {
     { "wedge_sword",  "boss_chain_sword",  "chain_break_sword"  },
@@ -56,7 +55,7 @@ static const struct { const char* wedge; const char* chain; const char* fx; } BO
     { "wedge_hex",    "boss_chain_hex",    "chain_break_hex"    },
 };
 
-static void ApplyKnifeThrow(CardData& d, const Player* p)
+void BattleScene::ApplyKnifeThrow(CardData& d, const Player* p)
 {
     if (p->GetBuffManager().HasBuff(BuffType::KnifeThrow)
         && std::find(d.tags.begin(), d.tags.end(), "Knife") != d.tags.end())
@@ -111,11 +110,6 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     m_showExhaustPile = false;
 
     m_hoveredCell = { -1, -1 };
-    m_rightClickDragged = false;
-
-    m_cameraZoom = ZOOM_MAX;
-    m_isDraggingCamera = false;
-    m_dragStartPos = { 0, 0 };
 
 #ifdef _DEBUG
     m_debugRank = 1;
@@ -211,8 +205,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     m_player->PlaceAt((m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f,
         (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f);   // 正面を向いて立つ
 
-    m_cameraOffsetX = m_player->worldX;
-    m_cameraOffsetZ = m_player->worldZ - 0.7f;
+    m_camera.Home(m_player->worldX, m_player->worldZ);
 
     // PlayerDataManagerからHPを引き継ぐ
     m_player->SetMaxHp(playerData.maxHp);   // 最大HPをPlayerDataから同期
@@ -261,16 +254,16 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
                 int keep = block * min(100, RelicManager::SumValue("blockRetain")) / 100;   // 割合（鋼の意志）
                 if (RelicManager::HasKind("blockCarry"))                                    // 一定量だけ減る（不落の城壁）
                     keep = max(keep, block - RelicManager::SumValue("blockCarry"));
+                if (m_player->GetBuffManager().HasBuff(BuffType::HalfCarry)) keep = max(keep, block / 2);   // 残心は半分
                 if (m_player->GetBuffManager().HasBuff(BuffType::Barricade)) keep = block;  // 土手・要塞は全部
                 m_player->SetBlock(keep);
             }
             m_player->GetBuffManager().OnTurnEnd();
 
-            // 攻撃力成長（2ターンに1回）
-            if ((m_turnCount % 2) == 0)
+            // 攻撃力成長：闘気（戦士の誓い）は毎ターン、巨人の篭手（turnBuffAtk）は2ターンに1回
             {
-                int grow = m_player->GetBuffManager().GetBuffValue(BuffType::AttackGrowth)
-                    + RelicManager::SumValue("turnBuffAtk");
+                int grow = m_player->GetBuffManager().GetBuffValue(BuffType::AttackGrowth);
+                if ((m_turnCount % 2) == 0) grow += RelicManager::SumValue("turnBuffAtk");
                 if (grow > 0)
                 {
                     Buff gb; gb.type = BuffType::AttackUp; gb.value = grow; gb.duration = -1;
@@ -389,6 +382,21 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
                 m_player->AddBlock(gv);
                 EffectManager::Play("block_gain", m_player->worldX, m_player->worldY + 0.4f, m_player->worldZ);
             }
+
+            // 不退転：ターン終了時、隣（上下左右）の敵全員に、残っているブロックの value% のダメージ。
+            // 隣にしか効かない＝前に出て受け止める軸の核（遠くでブロックを積んで待つだけでは削れない）
+            if (int sf = m_player->GetBuffManager().GetBuffValue(BuffType::StandFirm); sf > 0)
+                if (int dmg = m_player->GetBlock() * sf / 100; dmg > 0)
+                    for (auto enemy : m_enemies)
+                    {
+                        if (!enemy || enemy->GetHp() <= 0 || enemy->IsDying()) continue;
+                        bool adj = false;   // 大きい敵・大蛇の体は、占めているマスのどれかが隣なら
+                        for (auto& c : enemy->OccupiedCells())
+                            if (abs(c.first - m_playerCol) + abs(c.second - m_playerRow) == 1) { adj = true; break; }
+                        if (!adj) continue;
+                        enemy->TakeDamage(dmg);
+                        EffectManager::Play("hit", enemy->worldX, enemy->worldY + 0.6f, enemy->worldZ);
+                    }
 
             // 聖地：プレイヤーのターン終了時、聖地に立つ敵は信仰と同じダメージ。聖域でなければそのマスの信仰は半分に
             for (auto enemy : m_enemies)
@@ -518,8 +526,8 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     HitStop::Clear();   // 前の戦闘の停止を持ち越さない
 
     // 猛毒の小瓶：少し経ってから全敵に毒（Updateで発火）
-    m_startPoisonAmount = RelicManager::SumValue("startPoison");
-    m_startPoisonTimer = 0.6f;
+    if (int sp = RelicManager::SumValue("startPoison"); sp > 0)
+        m_startPoison.Start({ sp }, 0.6f);   // 少し遅らせて全敵へ毒
 
     for (auto enemy : m_enemies)
     {
@@ -874,18 +882,8 @@ void BattleScene::Update(float deltaTime)
         EffectManager::Update(deltaTime);
         FloatingTextManager::Update(deltaTime);
         // 演出中：ボス付近にズームイン（揺れも乗せる。通常のカメラ更新はこの下でreturnされて通らない）
-        if (m_awakenBoss)
-        {
-            float shakeX, shakeZ;
-            ScreenShake::GetOffset(shakeX, shakeZ);
-
-            float camZ = 0.4f;                        // ズーム（小さいほど寄る）
-            float tx = m_awakenBoss->worldX + shakeX;
-            float tz = m_awakenBoss->worldZ - 1.5f + shakeZ;
-            XMFLOAT3 tgt(tx, -2.0f, tz);
-            XMFLOAT3 pos(tx, tgt.y + 17.0f * camZ, tz + 6.0f * camZ);
-            m_renderer3D->SetCamera(pos, tgt, XMFLOAT3(0.0f, 1.0f, 0.0f));
-        }
+        if (m_awakenBoss)   // ズーム0.4（小さいほど寄る）
+            BattleCamera::ApplyAt(m_renderer3D, m_awakenBoss->worldX, m_awakenBoss->worldZ - 1.5f, 0.4f);
         return;
     }
     if (m_freeLook) return;
@@ -898,149 +896,13 @@ void BattleScene::Update(float deltaTime)
     if (HitStop::IsActive()) { HitStop::Update(deltaTime); return; }   // ヒットストップ中はゲームを止める
 
     FloatingTextManager::Update(deltaTime);
-    // マルチヒットの追撃を間隔をあけて処理
-    if (m_multiHitRemain > 0 && !m_multiHitTargets.empty())
-    {
-        m_multiHitTimer -= deltaTime;
-        if (m_multiHitTimer <= 0.0f)
-        {
-            bool anyAlive = false;
-            for (auto t : m_multiHitTargets)
-            {
-                bool alive = false;
-                for (auto e : m_enemies) if (e == t && e->GetHp() > 0) alive = true;
-                if (alive)
-                {
-                    t->ReuseHitPart(); t->TakeDamage(m_multiHitDamage); t->StartJump(0.5f, 0.2f); anyAlive = true;
-                    CardEffect::ApplyOnHitEffect(m_multiHitOnHit, t->GetBuffManager());    // 命中時の効果もヒットごとに（弱体1×2回＝弱体2）
-                    CardEffect::ApplyOnHitEffect(m_multiHitOnHit2, t->GetBuffManager());
-                }
-            }
-            m_multiHitRemain--;
-            m_multiHitTimer = MULTI_HIT_INTERVAL;
-            if (!anyAlive || m_multiHitRemain <= 0)
-            {
-                m_multiHitRemain = 0;
-                m_multiHitTargets.clear();
-            }
-        }
-    }
-
-    // 敵の連続攻撃：1発ずつプレイヤーに適用
-    if (m_eMultiRemain > 0)
-    {
-        m_eMultiTimer -= deltaTime;
-        if (m_eMultiTimer <= 0.0f)
-        {
-            int hpBefore = m_player->GetHp();
-            m_player->TakeDamage(m_eMultiDamage);   // 1発（数字はTakeDamage内で出る）
-            if (m_eMultiEnemy && m_eMultiEnemy->GetHp() > 0)
-            {
-                int th = m_player->GetBuffManager().GetBuffValue(BuffType::Thorns);
-                if (th > 0) m_eMultiEnemy->TakeDamage(th);
-                bool fullyBlocked = (m_player->GetHp() == hpBefore);
-                int rip = m_player->GetBuffManager().GetBuffValue(BuffType::Riposte);
-                if (fullyBlocked && rip > 0) m_eMultiEnemy->TakeDamage(rip);
-            }
-            m_eMultiRemain--;
-            m_eMultiTimer = MULTI_HIT_INTERVAL;
-            if (m_eMultiRemain <= 0) m_eMultiEnemy = nullptr;
-        }
-        if (m_eMultiRemain <= 0)
-        {
-            if (m_eMultiEnemy)                      // 多段の最後 → ここで状態異常
-            {
-                for (auto& b : m_eMultiEnemy->PendingPlayerBuffs())
-                    m_player->GetBuffManager().AddBuff(b);
-                m_eMultiEnemy->PendingPlayerBuffs().clear();
-            }
-            m_eMultiEnemy = nullptr;
-        }
-    }
-
-    // とぐろの経路罠：1つずつ段階発火
-    if (!m_coilTrapQueue.empty() && m_coilTrapEnemy)
-    {
-        m_coilTrapTimer -= deltaTime;
-        if (m_coilTrapTimer <= 0.0f)
-        {
-            auto cr = m_coilTrapQueue.front();
-            m_coilTrapQueue.erase(m_coilTrapQueue.begin());
-            auto& cell = m_gridMap->GetCell(cr.first, cr.second);
-            if (cell.tileEffect.active && m_coilTrapEnemy->GetHp() > 0)
-                CardExecutor::TriggerTrap(cell, m_coilTrapEnemy, cr.first, cr.second, m_gridMap, m_enemies);
-            m_coilTrapTimer = 0.15f;
-            if (m_coilTrapQueue.empty()) m_coilTrapEnemy = nullptr;
-        }
-    }
-
-
-    if (m_startPoisonAmount > 0)
-    {
-        m_startPoisonTimer -= deltaTime;
-        if (m_startPoisonTimer <= 0.0f)
-        {
-            for (auto enemy : m_enemies)
-            {
-                if (enemy->GetHp() <= 0) continue;
-                Buff b; b.type = BuffType::Poison;
-                b.value = m_startPoisonAmount + RelicManager::SumValue("poisonAdd");
-                b.duration = b.value;
-                b.name = BuffInfo::Get(BuffType::Poison).name; b.description = L"";
-                enemy->GetBuffManager().AddBuff(b);
-                float wx = (enemy->gridCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                float wz = (enemy->gridRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
-                EffectManager::Play("poison_apply", wx, 0.5f, wz);
-            }
-            m_startPoisonAmount = 0;   // 一度だけ
-        }
-    }
-
-    if (!m_chainQueue.empty())
-    {
-        m_chainTimer -= deltaTime;
-        if (m_chainTimer <= 0.0f)
-        {
-            auto wave = m_chainQueue;          // 今の波
-            m_chainQueue.clear();
-            for (auto& [c, r] : wave)
-            {
-                auto& cell = m_gridMap->GetCell(c, r);
-                if (!cell.tileEffect.active || cell.tileEffect.enemyOwned) continue;   // 敵床は除外
-                CardExecutor::DetonateTrap(cell, c, r, m_gridMap, m_enemies, m_chainFull, false);
-                for (int dr = -1; dr <= 1; dr++)
-                    for (int dc = -1; dc <= 1; dc++)
-                    {
-                        if (dc == 0 && dr == 0) continue;
-                        int nc = c + dc, nr = r + dr;
-                        if (nc < 0 || nc >= m_gridMap->GetCols() || nr < 0 || nr >= m_gridMap->GetRows()) continue;
-                        auto& ncell = m_gridMap->GetCell(nc, nr);
-                        if (ncell.tileEffect.active && !ncell.tileEffect.enemyOwned)   // 敵床に連鎖しない
-                            m_chainQueue.push_back({ nc, nr });
-                    }
-            }
-            ScreenShake::Add(0.3f);
-            ProcessDeadEnemies();
-            m_chainTimer = 0.12f;   // 波の間隔（大きいほどゆっくり連鎖）
-        }
-    }
-    if (!m_detonateQueue.empty())
-    {
-        m_detonateTimer -= deltaTime;
-        if (m_detonateTimer <= 0.0f)
-        {
-            auto [c, r] = m_detonateQueue.front();
-            m_detonateQueue.erase(m_detonateQueue.begin());
-            auto& cell = m_gridMap->GetCell(c, r);
-            if (cell.tileEffect.active)
-            {
-                CardExecutor::DetonateTrap(cell, c, r, m_gridMap, m_enemies, m_detonateFull, false);
-                ScreenShake::Add(0.2f);
-                ProcessDeadEnemies();
-            }
-            m_detonateTimer = 0.08f;   // 1個ずつの間隔（大きいほどゆっくり）
-        }
-    }
+    // 時間を置いて1つずつ進める処理（どれも同じ形：1件処理して、返した秒数だけ待つ。中身は Step〜）
+    m_playerHits.Update(deltaTime,  [&](PlayerHit& h) { return StepPlayerHit(h); });
+    m_enemyHits.Update(deltaTime,   [&](EnemyHit& h)  { return StepEnemyHit(h); });
+    m_coilTraps.Update(deltaTime,   [&](CoilTrap& c)  { return StepCoilTrap(c); });
+    m_startPoison.Update(deltaTime, [&](int& amount)  { return StepStartPoison(amount); });
+    m_chain.Update(deltaTime,       [&](ChainWave& w) { return StepChainWave(w); });
+    m_detonate.Update(deltaTime,    [&](TrapFire& f)  { return StepDetonate(f); });
 
     UiNotice::Update(deltaTime);
     if (UiNotice::ConsumeTriggered())
@@ -1093,16 +955,6 @@ void BattleScene::Update(float deltaTime)
         enemy->FaceToward(m_player->worldX);
     }
 
-    // カメラズーム（マウスホイール）
-    bool camDemo = (m_camDemoStep >= 0);   // カメラ操作のデモ中は手で動かせない
-    int wheelDelta = m_input.GetMouseWheelDelta();
-    if (wheelDelta != 0 && !camDemo)
-    {
-        m_camDemoHoming = false;   // 自分で触ったらデモ後の戻りはやめる
-        m_cameraZoom -= wheelDelta > 0 ? ZOOM_SPEED : -ZOOM_SPEED;
-        m_cameraZoom = max(ZOOM_MIN, min(ZOOM_MAX, m_cameraZoom));
-    }
-
     // 右クリック（ボタン1）：経路キャンセル → カード選択キャンセル の二段階
     if (m_input.GetMouseButtonTrigger(1)
         && m_selectedCardIndex >= 0
@@ -1126,97 +978,45 @@ void BattleScene::Update(float deltaTime)
         }
     }
 
-    // カメラパン（右クリックドラッグ）
-    if (!camDemo && m_input.GetMouseButtonPress(1))
+    // カメラの手での操作（ホイール・右ドラッグ・ホイールクリック）。操作のデモ中は動かせない
+    if (!m_camera.DemoActive()
+        && m_camera.HandleInput(m_input, m_gridMap->GetCols(), m_gridMap->GetRows(), m_player->worldX, m_player->worldZ))
     {
-        POINT mousePos = m_input.GetMousePos();
-        if (!m_isDraggingCamera)
-        {
-            m_isDraggingCamera = true;
-            m_dragStartPos = mousePos;
-            m_rightClickDragged = false;
-        }
-        else
-        {
-            float dx = (float)(mousePos.x - m_dragStartPos.x);
-            float dy = (float)(mousePos.y - m_dragStartPos.y);
-
-            if (abs(dx) > 1.0f || abs(dy) > 1.0f)
-            {
-                m_rightClickDragged = true;
-                m_camDemoHoming = false;   // 自分で触ったらデモ後の戻りはやめる
-            }
-
-            m_cameraOffsetX += dx * 0.02f * m_cameraZoom;
-            m_cameraOffsetZ -= dy * 0.02f * m_cameraZoom;
-            
-            // クランプはオフセット加算の後
-            float gridHalfW = (m_gridMap->GetCols() / 2.0f) * 1.1f;
-            float gridHalfH = (m_gridMap->GetRows() / 2.0f) * 1.1f;
-            float zoomFactor = (m_cameraZoom > 1.0f) ? 1.0f / m_cameraZoom : 1.0f;  // ズームアウト時に制限が狭くなる
-            m_cameraOffsetX = max((-gridHalfW + 2.0f) * zoomFactor, min((gridHalfW - 3.0f) * zoomFactor, m_cameraOffsetX));
-            m_cameraOffsetZ = max((-gridHalfH - 1.0f) * zoomFactor, min((gridHalfH - 2.0f) * zoomFactor, m_cameraOffsetZ));
-
-            m_dragStartPos = mousePos;
-        }
-    }
-    else
-    {
-        if (m_isDraggingCamera && !m_rightClickDragged)
-        {
-            // ドラッグせずに離した＝単押し→カード選択解除（Moveカードは除く）
-            if (m_selectedCardIndex >= 0
-                && m_selectedCardIndex < (int)m_hand.GetCards().size()
-                && m_hand.GetCards()[m_selectedCardIndex]->GetData()->type != CardType::Move)
-                m_selectedCardIndex = -1;
-        }
-        m_isDraggingCamera = false;
-    }
-
-    // カメラリセット（ミドルクリック）
-    if (!camDemo && m_input.GetMouseButtonTrigger(2))
-    {
-        m_camDemoHoming = false;
-        m_cameraZoom = ZOOM_MAX;
-        m_cameraOffsetX = m_player->worldX;
-        m_cameraOffsetZ = m_player->worldZ - 0.7f;
+        // ドラッグせずに離した＝単押し→カード選択解除（Moveカードは除く）
+        if (m_selectedCardIndex >= 0
+            && m_selectedCardIndex < (int)m_hand.GetCards().size()
+            && m_hand.GetCards()[m_selectedCardIndex]->GetData()->type != CardType::Move)
+            m_selectedCardIndex = -1;
     }
 
     // ===== 狙いカメラ =====
     // ・マスを選ぶカードを選んでいる間、狙えるマスが手札に隠れていたら、隠れなくなるまで奥へ寄せる
     // ・移動カードで経路を引いている間は、移動予定のマス（ゴースト）を画面の中央へ寄せる（カーソルも一緒に動かす）
     // ・選択が終わったら：移動カードで移動した → そのまま／キャンセルなど → 寄せる前の位置へ戻す
-    bool userPanning = m_isDraggingCamera && m_rightClickDragged;
-    if (userPanning) { m_aimPanned = false; m_aimReturning = false; }
-    if (userPanning) Cursor::Request(CursorKind::Camera);   // 右ドラッグ中＝カメラ操作のカーソル
+    // シーンは「どこへ寄せたいか」を決めるだけ。寄せ方・戻し方は BattleCamera
+    if (m_camera.UserPanning())
+    {
+        m_camera.AimCancel();
+        Cursor::Request(CursorKind::Camera);   // 右ドラッグ中＝カメラ操作のカーソル
+    }
 
     bool carryCursor = false;                 // このフレーム、カーソルをゴーストと一緒に動かすか
     std::pair<int, int> carryCell = { -1, -1 };
     float carryBX = 0.0f, carryBY = 0.0f;     // カメラを動かす前のゴーストの画面位置
 
-    m_camAutoMoving = false;
+    m_camera.BeginAimFrame();
     if (SelectedNeedsTarget() && Settings::Get().aimCamera)
     {
-        if (!m_isDraggingCamera)
+        if (!m_camera.Dragging())
         {
             const CardData* sd = m_hand.GetCards()[m_selectedCardIndex]->GetData();
-            float dX = 0.0f, dZ = 0.0f;
-            float speed = 8.0f;
+            bool moved;
             if (sd->type == CardType::Move && !m_movePath.empty())
             {
                 // 移動予定のマス（ゴースト）を中央へ。カメラの注視点を少し奥に置くと中央に映る（初期カメラと同じ -0.7）
                 std::pair<int, int> tip = m_movePath.back();
                 float goalX = (tip.first - m_gridMap->GetCols() / 2.0f) * 1.1f;
                 float goalZ = (tip.second - m_gridMap->GetRows() / 2.0f) * 1.1f - 0.7f;
-                dX = goalX - m_cameraOffsetX;
-                dZ = goalZ - m_cameraOffsetZ;
-
-                // 遊び：少し離れただけでは動かず、一定以上離れたら中央まで寄る（途中で止めると端で止まって中途半端になる）
-                float dist = sqrtf(dX * dX + dZ * dZ);
-                if (!m_ghostFollowing && dist > AIM_FOLLOW_START) m_ghostFollowing = true;
-                if (m_ghostFollowing && dist < 0.05f)             m_ghostFollowing = false;
-                if (!m_ghostFollowing) { dX = 0.0f; dZ = 0.0f; }
-                speed = AIM_FOLLOW_SPEED;
 
                 // カーソルは「カーソルの下のマス」と一緒に動かす（ゴーストではない）
                 if (m_hoveredCell.first >= 0)
@@ -1224,66 +1024,21 @@ void BattleScene::Update(float deltaTime)
                     carryCell = m_hoveredCell;
                     carryCursor = CellToScreen(carryCell.first, carryCell.second, carryBX, carryBY);
                 }
+                moved = m_camera.AimFollow(goalX, goalZ, deltaTime);
             }
             else
-                dZ = HiddenTargetsPanZ(*sd);   // 経路がまだ無い：手札に隠れるマスを出す
-
-            if (fabsf(dX) > 0.01f || fabsf(dZ) > 0.01f)
-            {
-                if (!m_aimPanned)
-                {
-                    if (!m_aimReturning) { m_aimPanStartX = m_cameraOffsetX; m_aimPanStartZ = m_cameraOffsetZ; }
-                    m_aimPanned = true;
-                }
-                m_aimReturning = false;
-                float k = min(1.0f, speed * deltaTime);   // ← 8.0f を speed に
-                m_cameraOffsetX += dX * k;
-                m_cameraOffsetZ += dZ * k;
-                m_camAutoMoving = true;
-            }
-            else carryCursor = false;
+                moved = m_camera.AimPan(0.0f, HiddenTargetsPanZ(*sd), 8.0f, deltaTime);   // 経路がまだ無い：手札に隠れるマスを出す
+            if (!moved) carryCursor = false;
         }
     }
-    else if (m_aimPanned)
+    else m_camera.AimEnd();
+
+    MaybeStartCamDemo();   // カメラ操作の自動デモ（初回の2ターン目）
+    m_camera.Update(deltaTime, m_gridMap->GetCols(), m_gridMap->GetRows(), m_player->worldX, m_player->worldZ);
+
+    // カメラ更新
     {
-        m_aimReturning = !m_aimPanKeep;
-        m_aimPanned = false;
-        m_aimPanKeep = false;
-        m_ghostFollowing = false;
-    }
-
-    if (m_aimReturning)
-    {
-        float k = min(1.0f, 8.0f * deltaTime);
-        m_cameraOffsetX += (m_aimPanStartX - m_cameraOffsetX) * k;
-        m_cameraOffsetZ += (m_aimPanStartZ - m_cameraOffsetZ) * k;
-        if (fabsf(m_aimPanStartX - m_cameraOffsetX) < 0.01f && fabsf(m_aimPanStartZ - m_cameraOffsetZ) < 0.01f)
-        {
-            m_cameraOffsetX = m_aimPanStartX;
-            m_cameraOffsetZ = m_aimPanStartZ;
-            m_aimReturning = false;
-        }
-    }
-
-    UpdateCamDemo(deltaTime);   // カメラ操作の自動デモ（初回の2ターン目）
-
-    // カメラ更新（ズーム or パンが変わったら毎フレーム適用）
-    {
-        float shakeX, shakeZ;
-        ScreenShake::GetOffset(shakeX, shakeZ);
-
-        XMFLOAT3 target(
-            m_cameraOffsetX + shakeX,
-            -2.0f,
-            m_cameraOffsetZ + shakeZ
-        );
-        float zoom = m_cameraZoom;
-        XMFLOAT3 zoomedPos(
-            m_cameraOffsetX + shakeX,
-            target.y + 17.0f * zoom,
-            m_cameraOffsetZ + shakeZ + 6.0f * zoom
-        );
-        m_renderer3D->SetCamera(zoomedPos, target, XMFLOAT3(0.0f, 1.0f, 0.0f));
+        m_camera.Apply(m_renderer3D);
 
         // ゴーストを中央へ寄せている間は、カーソルの下のマスがずれた分だけカーソルもずらす（指している場所を変えない）
         if (carryCursor)
@@ -1361,7 +1116,7 @@ void BattleScene::Update(float deltaTime)
                     Hint::Request("snakeWeak");
                     Hint::Request("molt");
                 }
-            if (m_turnManager.GetTurnCount() >= 2 && m_camDemoStep < 0 && PlayerDataManager::GetData().tutorialCamera)   // カメラのデモを見た後に（デモの後ろに重ねない）
+            if (m_turnManager.GetTurnCount() >= 2 && !m_camera.DemoActive() && PlayerDataManager::GetData().tutorialCamera)   // カメラのデモを見た後に（デモの後ろに重ねない）
             { Hint::Request("focus"); Hint::Request("camera"); }
         }
         else Hint::Resolve("endTurn");
@@ -1805,27 +1560,29 @@ void BattleScene::Update(float deltaTime)
                 m_playerCol = m_player->gridCol;
                 m_playerRow = m_player->gridRow;
                 bool fullyBlocked = false;
+                bool multiHit = false;   // この攻撃が多段か（多段は Update の順番待ちで1発ずつ）
                 if (damage > 0)
                 {
                     if (enemy->GetLastHitCount() > 1)
                     {
                         // 多段：1発ずつ時間差で適用（状態異常は最後の1発の後）
-                        m_eMultiRemain = enemy->GetLastHitCount();
-                        m_eMultiDamage = enemy->GetLastHitDamage();
-                        m_eMultiTimer = 0.0f;
-                        m_eMultiEnemy = enemy;
+                        std::vector<EnemyHit> hits(enemy->GetLastHitCount(), EnemyHit{ enemy, enemy->GetLastHitDamage(), false });
+                        hits.back().last = true;
+                        m_enemyHits.Start(std::move(hits));
+                        multiHit = true;
                     }
                     else
                     {
-                        int hpBefore = m_player->GetHp();
+                        int hpBefore = m_player->GetHp(), blockBefore = m_player->GetBlock();
                         m_player->TakeDamage(damage);
                         fullyBlocked = (m_player->GetHp() == hpBefore);
+                        int blocked = blockBefore - m_player->GetBlock();   // ブロックで防いだ量
                         int th = m_player->GetBuffManager().GetBuffValue(BuffType::Thorns);
                         if (th > 0 && enemy->GetHp() > 0) enemy->TakeDamage(th);
                         int rip = m_player->GetBuffManager().GetBuffValue(BuffType::Riposte);
-                        if (fullyBlocked && rip > 0 && enemy->GetHp() > 0)
+                        if (blocked > 0 && rip > 0 && enemy->GetHp() > 0)   // 受け返し：防いだダメージの rip% を返す
                         {
-                            enemy->TakeDamage(rip);
+                            enemy->TakeDamage(blocked * rip / 100);
                             float wx = (enemy->gridCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
                             float wz = (enemy->gridRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
                             EffectManager::Play("hit", wx, 0.6f, wz);
@@ -1834,8 +1591,8 @@ void BattleScene::Update(float deltaTime)
                     }
                 }
 
-                // 状態異常はダメージの後に付与（多段は最後の1発の後＝Update側で）
-                if (m_eMultiRemain <= 0)
+                // 状態異常はダメージの後に付与（多段は最後の1発の後＝StepEnemyHit で）
+                if (!multiHit)
                 {
                     if (!fullyBlocked)
                         for (auto& b : enemy->PendingPlayerBuffs())
@@ -1886,8 +1643,8 @@ void BattleScene::Update(float deltaTime)
                     // とぐろ：経路の罠を段階発火キューへ（実際の発火はUpdateのシーケンサ）
                     for (auto& mp : enemy->GetMovePath())
                         if (m_gridMap->GetCell(mp.first, mp.second).tileEffect.active)
-                            m_coilTrapQueue.push_back(mp);
-                    if (!m_coilTrapQueue.empty()) { m_coilTrapEnemy = enemy; m_coilTrapTimer = 0.0f; }
+                            m_coilTraps.Push({ mp.first, mp.second, enemy });
+                    if (!m_coilTraps.Empty()) m_coilTraps.Delay(0.0f);   // すぐ1つ目
                 }
                 else
                 {
@@ -1914,7 +1671,7 @@ void BattleScene::Update(float deltaTime)
                 for (auto enemy : m_enemies)
                     if (enemy->IsMoving() || enemy->IsLunging() || enemy->IsJumping()) anyMoving = true;
 
-                if (m_enemyActionDelay <= 0 && !anyMoving && m_coilTrapQueue.empty())
+                if (m_enemyActionDelay <= 0 && !anyMoving && m_coilTraps.Empty())
                 {
                     Enemy* enemy = (m_currentEnemyIdx < (int)m_enemies.size())
                         ? m_enemies[m_currentEnemyIdx] : nullptr;
@@ -2020,1990 +1777,9 @@ void BattleScene::Update(float deltaTime)
     }
 }
 
-void BattleScene::Draw()
-{
-    // マウスカーソル：手札のカード／今離したら使えるマスの上なら指差し（ボタン類は UiHover・HoverLift 側で出る）
-    if (m_battleResult == BattleResult::None && m_turnManager.IsPlayerTurn())
-    {
-        bool hov = false;
-        int sel = m_selectedCardIndex;
-        if (sel >= 0 && sel < (int)m_hand.GetCards().size())
-        {
-            CardData d = *m_hand.GetCards()[sel]->GetData();
-            ApplyKnifeThrow(d, m_player);
-            if (d.type == CardType::Move)
-                hov = !m_movePath.empty() && m_movePath.back() == m_hoveredCell;   // 経路の先＝離せばそこへ行ける
-            else if (SelectedNeedsTarget())
-                hov = m_hoveredCell.first >= 0 && CellInCardRange(d, m_hoveredCell.first, m_hoveredCell.second);
-        }
-        else hov = (m_hoveredCardIndex >= 0);   // 何も持っていない時は手札のカード
-        if (hov) Cursor::Request(CursorKind::Hover);
-    }
+// Draw（描画）は BattleSceneDraw.cpp
 
-    bool blurScene = (m_awakenCinematic > 0.0f);
-    if (blurScene) m_renderer3D->BeginOffscreen();
-    // 背景
-    m_spriteRenderer->Begin();
-    m_spriteRenderer->DrawSprite(
-        TextureManager::Get("battle_bg"),
-        0.0f, 0.0f,
-        (float)m_screenWidth, (float)m_screenHeight,
-        0.0f, XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f));
-    m_spriteRenderer->End();
-
-    // 3D描画
-    m_renderer3D->Begin();
-
-    // 選択中のマスを浮かせる（滑らかに）
-    {
-        std::set<std::pair<int, int>> raised;
-        if (m_selectedCardIndex >= 0 && m_selectedCardIndex < (int)m_hand.GetCards().size())
-        {
-            CardData dThrow = *m_hand.GetCards()[m_selectedCardIndex]->GetData();
-            ApplyKnifeThrow(dThrow, m_player);
-            const CardData* d = &dThrow;
-            // 敵1体・アタックは、ホバーしていなくても敵マスを狙い先にする（ホバー時と同じ浮き演出）
-            std::pair<int, int> hov = m_hoveredCell;
-            // 攻撃は「今離したら当たる敵」の占有マスを浮かせる（使用時と同じ判定）
-            if (const Enemy* t = AttackTarget())
-            {
-                if (!CellInCardRange(*d, hov.first, hov.second))
-                    hov = { t->gridCol, t->gridRow };   // 射程内マス以外は狙う敵へ
-                for (auto& c : t->OccupiedCells()) raised.insert(c);
-            }
-            if (d->type == CardType::Move)
-            {
-                for (auto& p : m_movePath) raised.insert(p);
-            }
-            else if (d->rangeType == RangeType::Cone)
-            {
-                int range = d->range;
-                if (m_player->GetBuffManager().HasBuff(BuffType::Reposition))
-                    range += m_player->GetBuffManager().GetBuffValue(BuffType::Reposition);
-
-                int aimDx = 0, aimDy = 0;
-                if (hov.first >= 0)
-                    RangeShape::CardinalAim(m_playerCol, m_playerRow,
-                        hov.first, hov.second, aimDx, aimDy);
-                if (aimDx == 0 && aimDy == 0) aimDy = -1;   // 初期は上向き
-
-                for (auto& c : BattleHighlighter::GetCandidates(
-                    m_playerCol, m_playerRow, d->rangeType, range, aimDx, aimDy))
-                    raised.insert(c);
-            }
-            else if (d->mainEffect.type == CardEffectType::Detonate)
-            {
-                for (auto& cc : BattleHighlighter::GetCandidates(
-                    m_playerCol, m_playerRow, d->rangeType, d->range))
-                {
-                    if (cc.first < 0 || cc.first >= m_gridMap->GetCols() ||
-                        cc.second < 0 || cc.second >= m_gridMap->GetRows()) continue;
-                    auto& hc = m_gridMap->GetCell(cc.first, cc.second);
-                    if (hc.tileEffect.active && !hc.tileEffect.enemyOwned)   // 敵床は光らせない
-                        raised.insert(cc);
-                }
-            }
-            else if (d->mainEffect.type == CardEffectType::DetonateAt)
-            {
-                // 置いてある罠（範囲内）をハイライト
-                for (auto& cc : BattleHighlighter::GetCandidates(
-                    m_playerCol, m_playerRow, d->rangeType, d->range))
-                {
-                    if (cc.first < 0 || cc.first >= m_gridMap->GetCols() ||
-                        cc.second < 0 || cc.second >= m_gridMap->GetRows()) continue;
-                    auto& hc = m_gridMap->GetCell(cc.first, cc.second);
-                    if (hc.tileEffect.active && !hc.tileEffect.enemyOwned)   // 敵床は光らせない
-                        raised.insert(cc);
-                }
-
-                // 3x3プレビュー
-                if (m_hoveredCell.first >= 0 &&
-                    CellInCardRange(*d, m_hoveredCell.first, m_hoveredCell.second) &&
-                    m_gridMap->GetCell(m_hoveredCell.first, m_hoveredCell.second).tileEffect.active)
-                {
-                    for (int dr = -1; dr <= 1; dr++)
-                        for (int dc = -1; dc <= 1; dc++)
-                            raised.insert({ m_hoveredCell.first + dc, m_hoveredCell.second + dr });
-                }
-            }
-            else if (d->mainEffect.type == CardEffectType::DetonateChain)
-            {
-                // 置いてある罠（範囲内）をハイライト
-                for (auto& cc : BattleHighlighter::GetCandidates(
-                    m_playerCol, m_playerRow, d->rangeType, d->range))
-                {
-                    if (cc.first < 0 || cc.first >= m_gridMap->GetCols() ||
-                        cc.second < 0 || cc.second >= m_gridMap->GetRows()) continue;
-                    auto& hc = m_gridMap->GetCell(cc.first, cc.second);
-                    if (hc.tileEffect.active && !hc.tileEffect.enemyOwned)   // 敵床は光らせない
-                        raised.insert(cc);
-                }
-
-                // 連鎖の起点プレビュー（既存のまま）
-                if (m_hoveredCell.first >= 0 &&
-                    CellInCardRange(*d, m_hoveredCell.first, m_hoveredCell.second) &&
-                    m_gridMap->GetCell(m_hoveredCell.first, m_hoveredCell.second).tileEffect.active)
-                {
-                    raised.insert({ m_hoveredCell.first, m_hoveredCell.second });
-                }
-            }
-            else if (d->mainEffect.type == CardEffectType::PlaceTrapArea)
-            {
-                for (auto& cc : BattleHighlighter::GetCandidates(
-                    m_playerCol, m_playerRow, d->rangeType, d->range))
-                    raised.insert(cc);
-            }
-            else if ((d->type == CardType::Skill || d->type == CardType::Power)
-                && !PicksCell(*d)
-                && d->mainEffect.type != CardEffectType::Detonate)
-            {
-                raised.insert({ m_playerCol, m_playerRow });
-                m_gridMap->GetCell(m_playerCol, m_playerRow).gameObject.color
-                    = HighlightPalette::ForCard(d->type);   // 危険色よりスキル色を優先
-            }
-            else if (hov.first >= 0)
-            {
-                if (CellInCardRange(*d, hov.first, hov.second))   // 射程の判定は使用時と同じ（足元も上がる）
-                    raised.insert({ hov.first, hov.second });
-            }
-            // 起爆系：足元の罠も、ほかの罠と同じように上げる
-            if (d->mainEffect.type == CardEffectType::Detonate
-                || d->mainEffect.type == CardEffectType::DetonateAt
-                || d->mainEffect.type == CardEffectType::DetonateChain)
-            {
-                auto& own = m_gridMap->GetCell(m_playerCol, m_playerRow);
-                if (own.tileEffect.active && !own.tileEffect.enemyOwned)
-                    raised.insert({ m_playerCol, m_playerRow });
-            }
-
-            // 全敵効果カード：全敵マスも範囲としてハイライト
-            if (d->allEnemyEffect.hasEffect)
-                for (auto en : m_enemies)
-                    if (en && en->GetHp() > 0)
-                        for (auto& [dc, dr] : en->GetGridShape())
-                            raised.insert({ en->gridCol + dc, en->gridRow + dr });
-        }
-
-
-        for (int row = 0; row < m_gridMap->GetRows(); row++)
-            for (int col = 0; col < m_gridMap->GetCols(); col++)
-            {
-                auto& cell = m_gridMap->GetCell(col, row);
-                float target = raised.count({ col, row }) ? RAISE_H : 0.0f;
-                cell.gameObject.worldY += (target - cell.gameObject.worldY) * 0.2f;   // 補間
-            }
-    }
-
-    // 背景テーマ（層＋ボスで地面/装飾/サイズを決定）
-    struct Theme { const char* ground; const char* tex[3]; float w[3]; float h[3];
-                   const char* cellTex; int cellVariants; XMFLOAT4 cellCol; };   // マスの絵（variants>1 なら _0.._n-1）と空マスの色
-    int themeLayer = PlayerDataManager::GetData().layer;
-    Theme th;
-    if (m_category == EncCategory::Boss && m_battleEnemyId == "l3boss")
-    {
-        if (m_bossAwakened)
-            th = { "ground_void_awake", { "deco_rift","deco_debris","deco_throne" }, { 2.6f,2.4f,3.4f }, { 3.2f,2.2f,4.2f },
-                   "cell_stone", 4, { 0.60f, 0.42f, 0.52f, 0.92f } };
-        else
-            th = { "ground_void",       { "deco_rift","deco_debris","deco_throne" }, { 2.6f,2.4f,3.4f }, { 3.2f,2.2f,4.2f },
-                   "cell_stone", 4, { 0.52f, 0.48f, 0.62f, 0.92f } };
-    }
-    else if (m_category == EncCategory::Boss && m_battleEnemyId == "l2boss")
-        th = { "ground_snakepit", { "deco_darkspike","deco_bones","deco_egg" }, { 2.6f,2.4f,2.6f }, { 3.8f,3.4f,2.1f },
-               "cell_stone", 4, { 0.50f, 0.56f, 0.44f, 0.92f } };
-    else if (m_category == EncCategory::Boss)
-        th = { "ground_scorched", { "deco_deadtree","deco_ember","deco_darkrock" }, { 2.8f,2.6f,2.6f }, { 3.8f,2.1f,2.1f },   // dragon(1層)
-               "cell_stone", 4, { 0.55f, 0.47f, 0.43f, 0.92f } };
-    else if (themeLayer <= 1)
-        th = { "ground_grass",    { "deco_tree","deco_bush","deco_rock" },          { 3.0f,2.4f,2.6f }, { 3.8f,1.8f,2.1f },
-               "cell_stone", 4, { 0.80f, 0.76f, 0.66f, 0.92f } };
-    else if (themeLayer == 2)
-        th = { "ground_cave",     { "deco_stalagmite","deco_crystal","deco_caverock" }, { 2.0f,2.4f,2.6f }, { 3.8f,3.4f,2.1f },
-               "cell_stone", 4, { 0.60f, 0.66f, 0.78f, 0.92f } };
-    else
-        th = { "ground_future",   { "deco_pillar","deco_terminal","deco_techblock" }, { 1.9f,2.6f,2.6f }, { 3.8f,3.0f,2.2f },
-               "cell_panel", 1, { 0.62f, 0.70f, 0.78f, 0.92f } };
-
-    // === 接地用の地面（見下ろし草地をタイル状に敷く） ===
-    {
-        const float TILE = 6.0f;   // 1枚のワールドサイズ（テクスチャ1回分）
-        const int   N = 6;         // 中心から±N枚（(2N+1)^2枚）
-        for (int gz = -N; gz <= N; gz++)
-            for (int gx = -N; gx <= N; gx++)
-                m_renderer3D->DrawTile(TextureManager::Get(th.ground),
-                    gx * TILE, gz * TILE, TILE * 1.02f, XMFLOAT4(1, 1, 1, 1), -0.06f);
-    }
-
-    // 背景装飾（透明quadがdepthを書いて四角化するのを防ぐため depth-write OFF）
-    m_renderer3D->SetDepthWrite(false);
-    for (auto& dc : m_decos)
-    {
-        const char* tex = th.tex[dc.type];
-        float w = th.w[dc.type] * dc.scale;
-        float h = th.h[dc.type] * dc.scale;
-        if (dc.type == 0) { w = 3.0f; h = 3.8f; }        // 木
-        else if (dc.type == 1) { w = 2.4f; h = 1.8f; }   // 茂み
-        else { w = 2.6f; h = 2.1f; }                     // 岩
-        w *= dc.scale; h *= dc.scale;
-        // 光を浴びて斜めに伸びる影（本体シルエットをシアー投影。足元固定・頭が倒れる）
-        float lenX = -h * 0.45f, lenZ = -h * 0.7f;  // 斜めの向き×長さ
-        float dl = sqrtf(lenX * lenX + lenZ * lenZ);
-        float tuck = -0.1f;                          // 固定の食い込み量（全種共通・ワールド単位）
-        float bx = dc.x ;
-        float bz = dc.z - (lenZ / dl) * tuck;
-        m_renderer3D->DrawShadow(TextureManager::Get(tex),
-            bx, bz, w, lenX, lenZ, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.30f));
-
-        // 本体
-        m_renderer3D->DrawBillboard(TextureManager::Get(tex),
-            dc.x, -0.10f, dc.z, w, h, 0.0f, XMFLOAT4(1, 1, 1, 1));  // y=中心ではなく足元(地面)
-    }
-    // マスの地面は深度を書かない：手前のマスが浮いても、奥に立つ敵やプレイヤーを隠さない（めり込み防止）。
-    // 奥の行から順に描くので、マス同士の重なりは描く順で正しくなる（depth-write は装飾から OFF のまま）
-
-    // 明るくするのは「何も表示していない空マス」だけ（範囲・ハイライトは素の色のまま）
-    {
-        int cols = m_gridMap->GetCols(), rows = m_gridMap->GetRows();
-        std::vector<char> shown(cols * rows, 0);
-        for (auto& mk : m_highlighter.GetThreatMarks())
-            if (mk.col >= 0 && mk.col < cols && mk.row >= 0 && mk.row < rows)
-                shown[mk.row * cols + mk.col] = 1;
-        for (auto& p : m_highlighter.GetPlayerHighlightCells())
-            if (p.first >= 0 && p.first < cols && p.second >= 0 && p.second < rows)
-                shown[p.second * cols + p.first] = 1;
-
-        for (int row = 0; row < rows; row++)
-            for (int col = 0; col < cols; col++)
-            {
-                float x = (col - cols / 2.0f) * 1.1f;
-                float z = (row - rows / 2.0f) * 1.1f;
-                auto& cell = m_gridMap->GetCell(col, row);
-                float t = cell.gameObject.worldY / 0.10f;
-                float size = 1.0f + 0.02f * t;
-
-                XMFLOAT4 cc = cell.gameObject.color;
-                if (cell.type == CellType::Empty && !shown[row * cols + col])
-                    cc = th.cellCol;                                    // 空マスは層の地面に合った色
-                const char* ctex = th.cellTex;                          // 石板は数種をマスごとに使い分け（模様の繰り返しを消す）
-                char vname[24];
-                if (th.cellVariants > 1) { sprintf_s(vname, "%s_%d", th.cellTex, (col * 7 + row * 3) % th.cellVariants); ctex = vname; }
-                if (cell.gameObject.worldY > 0.01f)   // 浮いたマス：元の位置に暗い台を残して、厚み（側面）に見せる
-                    m_renderer3D->DrawTile(m_whiteTexture, x, z, size,
-                        XMFLOAT4(cc.x * 0.4f, cc.y * 0.4f, cc.z * 0.4f, 1.0f), 0.005f);
-                m_renderer3D->DrawTile(TextureManager::Get(ctex), x, z, size, cc, cell.gameObject.worldY);
-            }
-    }
-    // 地面に貼る印（信仰・敵の範囲・自分の範囲・罠）も深度を書かない。浮いたマスの印が奥の敵を隠さないように
-
-    // 信仰のマス（敵の範囲より先に・低く描く＝重なっても範囲の模様が上に見える）
-    // 金色の下地＋紋章（外周10区切りのうち信仰の数だけ光る。聖域は全部）
-    for (int row = 0; row < m_gridMap->GetRows(); row++)
-        for (int col = 0; col < m_gridMap->GetCols(); col++)
-        {
-            int f = m_gridMap->GetCell(col, row).faith;
-            if (f <= 0) continue;
-            float x = (col - m_gridMap->GetCols() / 2.0f) * 1.1f;
-            float z = (row - m_gridMap->GetRows() / 2.0f) * 1.1f;
-            float wy = m_gridMap->GetCell(col, row).gameObject.worldY;
-            float pulse = Faith::IsSanctuary(f) ? 0.5f + 0.5f * sinf(m_highlightTimer * 2.0f) : 0.0f;
-            m_renderer3D->DrawTile(m_whiteTexture, x, z, 0.96f,
-                XMFLOAT4(1.0f, 0.82f, 0.3f, 0.10f + 0.025f * f + 0.10f * pulse), wy + 0.008f);   // 下地（範囲の下）
-        }
-
-    // 敵の攻撃範囲：所有敵の色でハザード模様を薄く塗る
-    ID3D11ShaderResourceView* rangeTex = TextureManager::Get("ui_hazard");
-    for (auto& mk : m_highlighter.GetThreatMarks())
-    {
-        float x = (mk.col - m_gridMap->GetCols() / 2.0f) * 1.1f;
-        float z = (mk.row - m_gridMap->GetRows() / 2.0f) * 1.1f;
-        float wy = m_gridMap->GetCell(mk.col, mk.row).gameObject.worldY + 0.02f;
-        m_renderer3D->DrawTile(rangeTex, x, z, 0.94f, mk.color, wy);
-    }
-
-    // 敵ごとの色で範囲の外周線（内側の線ほど短く。重なる辺はずらして両方見せる）
-    {
-        m_renderer3D->SetDepthEnabled(false);
-        const float HALF = 0.5f, T = 0.07f;
-        const float BASE = HALF - T * 0.5f;    // 一番外側の線の内寄せ量
-        const float LEN = 1.0f - T;            // 一番外側の線の長さ
-        std::map<int, int> edgeStack;          // 同じ辺に既に何本引いたか
-        for (auto& e : m_highlighter.GetThreatEdges())
-        {
-            int key = (e.col * 64 + e.row) * 4 + e.dir;
-            int k = edgeStack[key]++;           // この辺での重なり順（0,1,2...）
-            float inset = BASE - k * T;         // 重なるごとに内側へ
-            float len = LEN - 2.0f * T * k;     // 内側ほど短く（角が入れ子になる）
-            if (len < T) len = T;               // 短くなりすぎ防止
-            float cx = (e.col - m_gridMap->GetCols() / 2.0f) * 1.1f;
-            float cz = (e.row - m_gridMap->GetRows() / 2.0f) * 1.1f;
-            if (e.dir == 0)      m_renderer3D->DrawTileEx(m_whiteTexture, cx, cz - inset, len, T, 0.0f, e.color);
-            else if (e.dir == 1) m_renderer3D->DrawTileEx(m_whiteTexture, cx, cz + inset, len, T, 0.0f, e.color);
-            else if (e.dir == 2) m_renderer3D->DrawTileEx(m_whiteTexture, cx - inset, cz, T, len, 0.0f, e.color);
-            else                 m_renderer3D->DrawTileEx(m_whiteTexture, cx + inset, cz, T, len, 0.0f, e.color);
-        }
-        m_renderer3D->SetDepthEnabled(true);
-    }
-
-    // 信仰の紋章：敵の範囲の上に加算合成で重ねる（範囲の模様を隠さず、上から光って見える）
-    m_renderer3D->SetAdditive(true);
-    m_renderer3D->SetDepthWrite(false);
-    for (int row = 0; row < m_gridMap->GetRows(); row++)
-        for (int col = 0; col < m_gridMap->GetCols(); col++)
-        {
-            int f = m_gridMap->GetCell(col, row).faith;
-            if (f <= 0) continue;
-            float x = (col - m_gridMap->GetCols() / 2.0f) * 1.1f;
-            float z = (row - m_gridMap->GetRows() / 2.0f) * 1.1f;
-            float wy = m_gridMap->GetCell(col, row).gameObject.worldY;
-            float pulse = Faith::IsSanctuary(f) ? 0.5f + 0.5f * sinf(m_highlightTimer * 2.0f) : 0.0f;
-            // オーラ：ゆっくり呼吸する（マスの位置でタイミングをずらし、光の波が盤面を伝わるように）
-            float breath = 0.5f + 0.5f * sinf(m_highlightTimer * 1.6f - (col + row) * 0.6f);
-            m_renderer3D->DrawTile(TextureManager::Get("faith_aura"), x, z, 1.18f + 0.12f * breath,
-                XMFLOAT4(1.0f, 0.78f, 0.35f, (0.18f + 0.05f * f) * (0.6f + 0.4f * breath) + 0.15f * pulse), wy + 0.024f);
-            char tex[16]; sprintf_s(tex, "faith_%d", f);
-            m_renderer3D->DrawTile(TextureManager::Get(tex), x, z, 0.92f,
-                XMFLOAT4(1.0f, 0.8f, 0.35f, 0.9f + 0.1f * pulse), wy + 0.025f);
-        }
-    // （深度は書かないまま：プレイヤーの攻撃範囲マーカー・罠も地面の印）
-    m_renderer3D->SetAdditive(false);
-
-    // プレイヤーの攻撃範囲マーカー（水色ブラケット＋クロスヘア）
-    for (auto& pc : m_highlighter.GetReachCells())
-    {
-        float x = (pc.first - m_gridMap->GetCols() / 2.0f) * 1.1f;
-        float z = (pc.second - m_gridMap->GetRows() / 2.0f) * 1.1f;
-        float wy = m_gridMap->GetCell(pc.first, pc.second).gameObject.worldY + 0.03f;
-        m_renderer3D->DrawTile(TextureManager::Get("ui_reach"), x, z, 0.98f, XMFLOAT4(1, 1, 1, 1), wy);
-    }
-
-    // 罠の表示
-    for (int row = 0; row < m_gridMap->GetRows(); row++)
-    {
-        for (int col = 0; col < m_gridMap->GetCols(); col++)
-        {
-            auto& cell = m_gridMap->GetCell(col, row);
-            if (cell.tileEffect.active)
-            {
-                float x = (col - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                float z = (row - m_gridMap->GetRows() / 2.0f) * 1.1f;
-
-                float t = cell.gameObject.worldY / 0.10f;
-
-                // ハイライト中（起爆カード選択で浮いている）の罠を脈動させる
-                float pulseScale = 1.0f, bright = 1.0f;
-                if (cell.gameObject.worldY > 0.05f)
-                {
-                    float s = 0.5f + 0.5f * sinf(m_highlightTimer * 8.0f);   // 0..1
-                    pulseScale = 1.0f + 0.18f * s;                           // サイズ 1.0..1.18
-                    bright = 1.0f + 0.5f * s;                           // 明るさ 1.0..1.5
-                }
-
-                const TerrainDef* def = TerrainDataBase::Get(cell.tileEffect.id);
-                XMFLOAT4 terrainColor = def ? def->color : XMFLOAT4(1, 1, 1, 0.5f);
-                float sz = (0.8f + 0.064f * t) * pulseScale;
-                if (!cell.tileEffect.enemyOwned)   // 育った罠は少し大きく・明るく
-                {
-                    sz *= 1.0f + 0.05f * cell.tileEffect.grown;
-                    bright += 0.12f * cell.tileEffect.grown;
-                }
-
-                // 設置者を示す下地（自分=水色 / 敵=赤）。罠の少し下・少し大きめでフチのように出す
-                XMFLOAT4 ownerCol = cell.tileEffect.enemyOwned
-                    ? XMFLOAT4(1.0f, 0.30f, 0.20f, 0.55f)    // 敵＝赤
-                    : XMFLOAT4(0.30f, 0.75f, 1.0f, 0.55f);   // 自分＝水色
-                m_renderer3D->DrawTile(m_whiteTexture, x, z, sz * 1.14f, ownerCol,
-                    cell.gameObject.worldY + 0.035f);
-
-                if (def && !def->texture.empty())
-                    m_renderer3D->DrawTileEx(TextureManager::Get(def->texture), x, z, sz, sz, XM_PI,   // カメラが逆向きなので回す
-                        XMFLOAT4(bright, bright, bright, 1.0f), cell.gameObject.worldY + 0.04f);
-                else
-                    m_renderer3D->DrawTile(m_whiteTexture, x, z, sz,
-                        XMFLOAT4(terrainColor.x * bright, terrainColor.y * bright, terrainColor.z * bright, terrainColor.w),
-                        cell.gameObject.worldY + 0.04f);
-
-                // 導火線：手前の縁に点を3つ。たまった数だけ赤橙に灯す（敵が隣にいる間だけ進む）
-                if (!cell.tileEffect.enemyOwned && cell.tileEffect.fuse > 0)
-                    for (int k = 0; k < 3; k++)
-                    {
-                        bool lit = k < cell.tileEffect.fuse;
-                        float fl = lit ? 0.75f + 0.25f * sinf(m_highlightTimer * 10.0f) : 1.0f;
-                        m_renderer3D->DrawTile(m_whiteTexture, x + (k - 1) * 0.16f, z + sz * 0.42f, 0.1f,
-                            lit ? XMFLOAT4(1.0f * fl, 0.45f * fl, 0.1f, 1.0f) : XMFLOAT4(0.15f, 0.12f, 0.1f, 0.9f),
-                            cell.gameObject.worldY + 0.05f);
-                    }
-            }
-        }
-    }
-
-    m_renderer3D->SetDepthWrite(false);
-    for (auto enemy : m_enemies)
-    {
-        if (!enemy->IsSnake()) continue;
-        std::vector<std::pair<int, int>> chain = enemy->VisualChain();    // 尾(0)…頭(last)。歩きに合わせて伸び縮みする
-        int n = (int)chain.size();
-        auto WX = [&](int c) { return (c - m_gridMap->GetCols() / 2.0f) * 1.1f; };
-        auto WZ = [&](int r) { return (r - m_gridMap->GetRows() / 2.0f) * 1.1f; };
-        auto dirRot = [](int dx, int dy)->float {  
-            if (dy > 0) return 0.0f;      // 北
-            if (dx > 0) return 1.5708f;  // 東
-            if (dy < 0) return 3.1416f;   // 南
-            return       4.7124f;         // 西
-            };
-        for (int i = 0; i < n; i++)
-        {
-            float x = WX(chain[i].first), z = WZ(chain[i].second);
-            if (i == n - 1) { x = enemy->worldX; z = enemy->worldZ; }     // 頭は歩きの位置に描く
-            int bdx = 0, bdy = 0, fdx = 0, fdy = 0;
-            if (i > 0) { bdx = chain[i].first - chain[i - 1].first; bdy = chain[i].second - chain[i - 1].second; }
-            if (i < n - 1) { fdx = chain[i + 1].first - chain[i].first; fdy = chain[i + 1].second - chain[i].second; }
-            if (i == 0) { bdx = fdx; bdy = fdy; }
-
-            const char* tex; float rot; float size = 1.12f;
-            if (i == n - 1)   // 頭
-            {
-                tex = "snake_head"; rot = dirRot(-bdx, -bdy);
-                size = 1.7f;                                  // 大きめ
-                float off = (size - 1.12f) * 0.5f;            // 首を体の接合面に合わせ、頭は前方へ
-                x += bdx * off;                                // 進行方向へずらす
-                z += bdy * off;
-            }
-            else if (bdx == fdx && bdy == fdy) { tex = "snake_body"; rot = (bdx != 0) ? 1.5708f : 0.0f; } // 直線
-            else   // 角
-            {
-                tex = "snake_corner";
-                auto has = [&](int x, int y) { return (-bdx == x && -bdy == y) || (fdx == x && fdy == y); };
-                rot = (has(-1, 0) && has(0, 1)) ? 3.1416f 
-                    : (has(0, -1) && has(-1, 0)) ? 1.5708f 
-                    : (has(1, 0) && has(0, -1)) ? 0.0f  
-                    : 4.7124f; 
-            }
-            float cyLift = m_gridMap->GetCell(chain[i].first, chain[i].second).gameObject.worldY + 0.12f;
-
-            // 頭が脅威中：頭と同じ回転・位置で後ろにグローを敷く（立て看板グローの平置き版）
-            if (i == n - 1 && enemy->hitsPlayer && !m_turnManager.IsEnemyTurn())
-            {
-                float thPulse = 0.5f + 0.5f * sinf(m_highlightTimer * 6.0f);
-                float gsc = size * (1.18f + 0.12f * thPulse);   // 少し大きく
-                float rr = 0.05f + 0.02f * thPulse;            // 円状のにじみ半径
-                float ga = (0.55f + 0.35f * thPulse) / 8.0f * 2.2f;
-                XMFLOAT4 gcol(enemy->hueColor.x * 1.3f, enemy->hueColor.y * 1.3f,
-                    enemy->hueColor.z * 1.3f, ga);
-                auto htex = TextureManager::Get("snake_head");
-                for (int k = 0; k < 8; k++)                     // 8枚を円状にズラして重ねる
-                {
-                    float ang = (float)k / 8.0f * 6.2831853f;
-                    m_renderer3D->DrawTileEx(htex,
-                        x + cosf(ang) * rr, z + sinf(ang) * rr, gsc, gsc, rot,
-                        gcol, cyLift - 0.01f);                  // 頭より少し下＝後ろ
-                }
-            }
-
-            m_renderer3D->SetWhiteMix(min(0.6f, 0.2f * enemy->ShedCount()));   // 脱皮するほど白く（1回20%、最大60%）
-            m_renderer3D->DrawTileEx(TextureManager::Get(tex), x, z, size, size, rot,
-                XMFLOAT4(1, 1, 1, 1), cyLift);
-            m_renderer3D->SetWhiteMix(0.0f);
-        }
-
-        // 光るウロコ：殴ると2倍になる場所（脈動する緑の光）
-        if (enemy->GetWeakCell().first >= 0)
-        {
-            auto [wc, wr] = enemy->GetWeakCell();
-            float pulse = 0.65f + 0.35f * sinf(m_highlightTimer * 6.0f);
-            m_renderer3D->SetAdditive(true);
-            m_renderer3D->DrawTile(TextureManager::Get("faith_aura"), WX(wc), WZ(wr), 1.25f,
-                XMFLOAT4(0.4f, 1.0f, 0.3f, pulse), m_gridMap->GetCell(wc, wr).gameObject.worldY + 0.15f);
-            m_renderer3D->SetAdditive(false);
-        }
-    }
-    m_renderer3D->SetDepthWrite(true);
-
-    if (m_decoyCol >= 0)
-    {
-        float x = (m_decoyCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
-        float z = (m_decoyRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
-        m_renderer3D->DrawBillboard(TextureManager::Get("kakashi"), x, 0.05f, z , 0.8f, 0.8f, 0.0f, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-    }
-
-    // 敵は乗っているマスの高さに合わせる（占有マスの最大の浮きに追従）
-    for (auto enemy : m_enemies)
-    {
-        auto safeY = [&](int c, int r) -> float {
-            if (c < 0 || c >= m_gridMap->GetCols() || r < 0 || r >= m_gridMap->GetRows()) return 0.0f;
-            return m_gridMap->GetCell(c, r).gameObject.worldY;
-            };
-        float maxY = safeY(enemy->gridCol, enemy->gridRow);
-        if (enemy->IsSnake())
-            for (auto& b : enemy->GetBodyCells())
-                maxY = max(maxY, safeY(b.first, b.second));
-        else
-            for (auto& [dc, dr] : enemy->GetGridShape())
-                maxY = max(maxY, safeY(enemy->gridCol + dc, enemy->gridRow + dr));
-        enemy->worldY = 0.05f + maxY;
-    }
-
-    // 移動不可マスの×マーク（深度テストOFF、敵より先に描画）
-    auto& blockedCells = m_highlighter.GetOutOfRangeCells();
-    if (!blockedCells.empty())
-    {
-        m_renderer3D->SetDepthEnabled(false);
-        for (auto& [col, row] : blockedCells)
-        {
-            float cx = (col - m_gridMap->GetCols() / 2.0f) * 1.1f;
-            float cz = (row - m_gridMap->GetRows() / 2.0f) * 1.1f;
-
-            m_renderer3D->DrawTileEx(m_whiteTexture, cx, cz,
-                0.7f, 0.06f, XM_PIDIV4,
-                XMFLOAT4(0.8f, 0.2f, 0.2f, 0.7f));
-            m_renderer3D->DrawTileEx(m_whiteTexture, cx, cz,
-                0.7f, 0.06f, -XM_PIDIV4,
-                XMFLOAT4(0.8f, 0.2f, 0.2f, 0.7f));
-        }
-        m_renderer3D->SetDepthEnabled(true);
-    }
-
-    // 注目中の敵を識別色のコーナーマークで囲む
-    {
-        int target = FocusEnemy();
-        if (target >= 0 && target < (int)m_enemies.size())
-        {
-            Enemy* e = m_enemies[target];
-            m_renderer3D->SetDepthEnabled(false);
-            XMFLOAT4 line(e->hueColor.x, e->hueColor.y, e->hueColor.z, 1.0f);
-            const float H = 0.5f, L = 0.18f, T = 0.05f;   // 半径・角の長さ・太さ
-
-            for (auto& [c, r] : e->OccupiedCells())
-            {
-                float cx = (c - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                float cz = (r - m_gridMap->GetRows() / 2.0f) * 1.1f;
-                for (int sx = -1; sx <= 1; sx += 2)
-                    for (int sz = -1; sz <= 1; sz += 2)
-                    {
-                        m_renderer3D->DrawTileEx(m_whiteTexture,
-                            cx + sx * (H - L / 2), cz + sz * H, L, T, 0.0f, line);
-                        m_renderer3D->DrawTileEx(m_whiteTexture,
-                            cx + sx * H, cz + sz * (H - L / 2), T, L, 0.0f, line);
-                    }
-            }
-            m_renderer3D->SetDepthEnabled(true);
-        }
-    }
-
-    m_player->worldY = m_gridMap->GetCell(m_playerCol, m_playerRow).gameObject.worldY;
-    // 背水：赤い残像（低HP＋火事場/決死 の間）
-    bool berserk = (m_player->GetHp() * 2 <= m_player->GetMaxHp())
-        && (m_player->GetBuffManager().HasBuff(BuffType::LastStand)
-            || m_player->GetBuffManager().HasBuff(BuffType::DeepStand));
-    int hp = m_player->GetHp(), mhp = m_player->GetMaxHp();
-    bool hasLast = m_player->GetBuffManager().HasBuff(BuffType::LastStand);   // 1/2パワー
-    bool hasDeep = m_player->GetBuffManager().HasBuff(BuffType::DeepStand);   // 1/4パワー
-    float pulse = 0.5f + 0.5f * sinf(m_highlightTimer * 10.0f);               // 0..1 脈動
-
-    m_renderer3D->SetDepthEnabled(false);
-
-    // 1/2以下：プレイヤーが赤く脈動（膨らむ赤オーラ）
-    if (hp * 2 <= mhp && hasLast)
-    {
-        float sc = 1.0f + 0.15f * pulse;
-        float a = 0.20f + 0.30f * pulse;
-        Player::SpriteFrame f = m_player->GetSprite(sc);   // 本体と同じ向き・コマ
-        m_renderer3D->DrawBillboard(f.tex, f.x, f.y, f.z, f.w, f.h, f.rot,
-            XMFLOAT4(1.0f, 0.2f, 0.15f, a), f.uv);
-    }
-
-    // 1/4以下：赤い残像（1/2パワーがあれば残像自体が膨張脈動）
-    if (hp * 4 <= mhp && hasDeep)
-    {
-        float sc = 1.0f + (hasLast ? 0.25f * pulse : 0.0f);   // 1/2パワーで膨らむ脈動
-        Player::SpriteFrame f = m_player->GetSprite(sc);   // 本体と同じ向き・コマ（残像の3枚で共通）
-        for (int i = 1; i <= 3; i++)
-        {
-            float ph = m_highlightTimer * 14.0f + i * 1.2f;
-            float ox = sinf(ph) * 0.10f * i;
-            float oz = -0.09f * i;
-            float a = 0.30f - (i - 1) * 0.08f;
-            m_renderer3D->DrawBillboard(f.tex, f.x + ox, f.y, f.z + oz, f.w, f.h, f.rot,
-                XMFLOAT4(1.0f, 0.25f, 0.15f, a), f.uv);   // ← サイズscで脈動
-        }
-    }
-
-    // 脅威範囲にプレイヤーが入っている敵を、脈動グロー（疑似ぼかし）で強調（自ターン中のみ）
-    // 深度テストを切った区間で、プレイヤー・敵より先に描く（拡大した縁が床にもぐって途切れないように）
-    if (!m_turnManager.IsEnemyTurn())
-    {
-        float thPulse = 0.5f + 0.5f * sinf(m_highlightTimer * 6.0f);   // 0..1
-        const int N = 8;                                               // 重ね枚数＝滑らかさ
-        for (auto enemy : m_enemies)
-        {
-            if (!enemy->hitsPlayer || enemy->GetHp() <= 0) continue;
-            if (enemy->IsSnake()) continue;   // 蛇は頭タイル側で回転付きグローを出す
-            auto tex = TextureManager::Get(enemy->GetTextureName());
-            float sc = 1.18f + 0.12f * thPulse;
-            float r = 0.05f + 0.02f * thPulse;                        // ぼかし半径
-            float a = (0.55f + 0.35f * thPulse) / N * 2.2f;           // 重ね用に薄める
-            float cy = enemy->worldY - enemy->height * (sc - 1.0f) * 0.5f;
-            for (int k = 0; k < N; k++)                                // 円状にズラして重ねる
-            {
-                float ang = (float)k / N * 6.2831853f;
-                float ox = cosf(ang) * r, oy = sinf(ang) * r;
-                m_renderer3D->DrawBillboard(tex,
-                    enemy->worldX + ox, cy + oy, enemy->worldZ + 0.10f,
-                    enemy->width* sc, enemy->height* sc, 0.0f,
-                    XMFLOAT4(enemy->hueColor.x * 1.3f,
-                        enemy->hueColor.y * 1.3f,
-                        enemy->hueColor.z * 1.3f, a),
-                    enemy->FacingUV());                 // ← 本体と同じ向きで光らせる
-            }
-        }
-    }
-
-
-    m_renderer3D->SetDepthEnabled(true);
-
-    // プレイヤーと敵：透明な四角が互いを隠さないよう、深度書き込みOFF＋奥→手前で描く
-    // （プレイヤーだけ深度を書くと、透明な部分が奥の敵の足元を隠して埋まって見える）
-    m_renderer3D->SetDepthWrite(false);
-    std::vector<Enemy*> drawOrder(m_enemies.begin(), m_enemies.end());
-    std::sort(drawOrder.begin(), drawOrder.end(),
-        [](Enemy* a, Enemy* b) { return a->worldZ < b->worldZ; });   // 奥(小Z)を先に、手前(大Z)を後に
-
-    bool playerDrawn = false;
-    for (auto enemy : drawOrder)
-    {
-        if (!playerDrawn && enemy->worldZ > m_player->worldZ)   // プレイヤーより手前の敵の前に、プレイヤーを描く
-        {
-            m_player->Draw3D(m_renderer3D);
-            playerDrawn = true;
-        }
-        enemy->Draw3D(m_renderer3D);
-    }
-    if (!playerDrawn) m_player->Draw3D(m_renderer3D);
-
-    // 聖地に立っている敵：手前に立ちのぼる光（敵の絵にかぶせて「焼かれる」と一目で分かるように）
-    m_renderer3D->SetDepthEnabled(false);
-    m_renderer3D->SetAdditive(true);
-    for (auto enemy : drawOrder)
-    {
-        if (!enemy || enemy->GetHp() <= 0) continue;
-        int best = 0;
-        for (auto& c : enemy->OccupiedCells())
-            if (int f = Faith::At(m_gridMap, c.first, c.second); f > best) best = f;
-        if (best <= 0) continue;
-        float flick = 0.85f + 0.15f * sinf(m_highlightTimer * 3.0f + enemy->worldX);   // 敵ごとに少しずらして明滅
-        float h = 1.2f + enemy->height * 0.6f;
-        m_renderer3D->DrawBillboard(TextureManager::Get("faith_pillar"),
-            enemy->worldX, h * 0.5f, enemy->worldZ, enemy->width * 0.9f, h, 0.0f,
-            XMFLOAT4(1.0f, 0.82f, 0.4f, (0.25f + 0.05f * best) * flick));
-    }
-    m_renderer3D->SetAdditive(false);
-    m_renderer3D->SetDepthEnabled(true);
-    m_renderer3D->SetDepthWrite(true);
-
-    m_renderer3D->SetDepthEnabled(false);
-
-    m_renderer3D->SetDepthEnabled(false);
-    EffectManager::Draw(m_renderer3D, TextureManager::Get("particle"));
-    // 必中攻撃の対象にクロスヘア（デコイ優先）。対象の実座標に合わせて画面端でもズレないように
-    bool showCross = false;
-    for (auto enemy : m_enemies)
-    {
-        const EnemyAction* act = enemy->GetNextAction();
-        if (act && act->target.unavoidable && !EnemyIntentVisual::Hidden()) { showCross = true; break; }
-    }
-    if (showCross)
-    {
-        float cx, cy, cz;
-        if (m_decoyCol >= 0)
-        {
-            cx = (m_decoyCol - m_gridMap->GetCols() / 2.0f) * 1.1f;   // デコイはマス固定
-            cz = (m_decoyRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
-            cy = 0.4f;
-        }
-        else
-        {
-            cx = m_player->worldX;              // プレイヤーは実際の描画位置に合わせる
-            cz = m_player->worldZ;
-            cy = m_player->worldY + 0.35f;
-        }
-
-        m_renderer3D->SetDepthEnabled(false);
-        float pulse = 0.85f + 0.15f * sinf(m_highlightTimer * 6.0f);
-        m_renderer3D->DrawBillboard(TextureManager::Get("crosshair"),
-            cx, cy, cz, 0.9f * pulse, 0.9f * pulse, 0.0f, XMFLOAT4(1.0f, 0.3f, 0.2f, 0.95f));
-        m_renderer3D->SetDepthEnabled(true);
-    }
-    m_renderer3D->SetDepthEnabled(true);
-
-    // 移動経路の終点に半透明プレイヤー
-    if (m_pathBuilding && !m_movePath.empty())
-    {
-        int gc = m_movePath.back().first;
-        int gr = m_movePath.back().second;
-        float gx = (gc - m_gridMap->GetCols() / 2.0f) * 1.1f;
-        float gz = (gr - m_gridMap->GetRows() / 2.0f) * 1.1f;
-        float gy = m_player->worldY + m_gridMap->GetCell(gc, gr).gameObject.worldY;   // ← マスの浮きぶん
-        m_renderer3D->DrawBillboard(
-            TextureManager::Get("player"),
-            gx, gy, gz,
-            m_player->width, m_player->height, 0.0f,
-            XMFLOAT4(0.5f, 0.7f, 1.0f, 0.3f));
-    }
-
-    // 対象マス（上がっているマス）の四隅にL字枠
-    {
-        XMMATRIX vp = m_renderer3D->GetViewMatrix() * m_renderer3D->GetProjectionMatrix();
-        auto toScreen = [&](float wx, float wy, float wz, float& ox, float& oy) -> bool {
-            XMVECTOR w = XMVectorSet(wx, wy, wz, 1.0f);
-            XMVECTOR c = XMVector4Transform(w, vp);
-            XMFLOAT4 cl; XMStoreFloat4(&cl, c);
-            if (cl.w <= 0.0f) return false;
-            ox = (cl.x / cl.w + 1.0f) * 0.5f * m_screenWidth;
-            oy = (1.0f - cl.y / cl.w) * 0.5f * m_screenHeight;
-            return true;
-            };
-        auto drawLine = [&](float ax, float ay, float bx, float by, float th, const XMFLOAT4& c) {
-            float mx = (ax + bx) * 0.5f, my = (ay + by) * 0.5f;
-            float dx = bx - ax, dy = by - ay;
-            float len = sqrtf(dx * dx + dy * dy);
-            float ang = atan2f(dy, dx);
-            m_spriteRenderer->DrawSprite(m_whiteTexture, mx - len * 0.5f, my - th * 0.5f, len, th, ang, c);
-            };
-
-        m_spriteRenderer->Begin();
-        const float h = 0.5f;       // セル半径（枠の位置、要調整）
-        const float t = 0.32f;      // 角の長さ比
-        const XMFLOAT4 col(1.0f, 0.9f, 0.3f, 0.95f);
-        for (int row = 0; row < m_gridMap->GetRows(); row++)
-            for (int cc = 0; cc < m_gridMap->GetCols(); cc++)
-            {
-                auto& cell = m_gridMap->GetCell(cc, row);
-                if (cell.gameObject.worldY < 0.05f) continue;   // 上がってるマスだけ
-                float wx = (cc - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                float wz = (row - m_gridMap->GetRows() / 2.0f) * 1.1f;
-                float wy = cell.gameObject.worldY + 0.02f;
-                float sx[4], sy[4];
-                bool ok = toScreen(wx - h, wy, wz - h, sx[0], sy[0])
-                    && toScreen(wx + h, wy, wz - h, sx[1], sy[1])
-                    && toScreen(wx + h, wy, wz + h, sx[2], sy[2])
-                    && toScreen(wx - h, wy, wz + h, sx[3], sy[3]);
-                if (!ok) continue;
-                for (int k = 0; k < 4; k++)
-                {
-                    int n = (k + 1) % 4, p = (k + 3) % 4;
-                    drawLine(sx[k], sy[k], sx[k] + (sx[n] - sx[k]) * t, sy[k] + (sy[n] - sy[k]) * t, 3.0f, col);
-                    drawLine(sx[k], sy[k], sx[k] + (sx[p] - sx[k]) * t, sy[k] + (sy[p] - sy[k]) * t, 3.0f, col);
-                }
-            }
-        m_spriteRenderer->End();
-    }
-
-    m_renderer3D->End();
-
-    // 2D UI描画
-    BattleUIContext ctx;
-    ctx.player = m_player;
-    ctx.enemies = &m_enemies;
-    ctx.hand = &m_hand;
-    ctx.deck = &m_deck;
-    ctx.turnManager = &m_turnManager;
-    ctx.renderer3D = m_renderer3D;
-    ctx.gridMap = m_gridMap;
-    ctx.playerCol = m_playerCol;
-    ctx.playerRow = m_playerRow;
-    ctx.selectedCardIndex = m_selectedCardIndex;
-    ctx.hoveredCardIndex = m_hoveredCardIndex;
-    ctx.hoveredCell = m_uiBlocked ? std::pair<int, int>(-1, -1) : m_hoveredCell;   // 窓の後ろでマスの説明を出さない
-    ctx.highlightTimer = m_highlightTimer;
-    ctx.battleResult = m_battleResult;
-    ctx.drops = &m_dropResult;
-    ctx.showDrawPile = m_showDrawPile;
-    ctx.cardSelecting = m_cardSelecting;
-    ctx.showDiscardPile = m_showDiscardPile;
-    ctx.showExhaustPile = m_showExhaustPile;
-    ctx.screenWidth = m_screenWidth;
-    ctx.screenHeight = m_screenHeight;
-    ctx.cameraZoom = m_cameraZoom;
-    ctx.isPlayerTurn = m_turnManager.IsPlayerTurn();
-    ctx.showMoveArrows = (!m_turnManager.IsPlayerTurn() || m_arrowRevealTimer <= 0.0f)
-        && !EnemyIntentVisual::Hidden();   // 目隠し中は移動予定も見せない
-    ctx.mousePos = m_uiBlocked ? POINT{ -10000, -10000 } : m_input.GetMousePos();   // 窓の後ろのボタンにホバーさせない
-    ctx.outOfRangeCells = &m_highlighter.GetOutOfRangeCells();
-    ctx.travelPath = &m_movePath;
-    ctx.selectedEnemy = FocusEnemy();
-    ctx.discardSelectCount = m_discardSelectCount;
-    ctx.discardSelected = &m_discardSelected;
-    ctx.discardViewMode = m_discardViewMode;
-    ctx.rewardRelic = &m_rewardRelic;
-
-    if (m_awakenCinematic > 0.0f)
-    {
-        // 中心＝ボスの画面位置（ブラー前に計算：カメラは同じ）
-        float cx = m_screenWidth * 0.5f, cy = m_screenHeight * 0.5f;
-        if (m_awakenBoss)
-        {
-            XMFLOAT4 clip;
-            XMStoreFloat4(&clip, XMVector4Transform(
-                XMVectorSet(m_awakenBoss->worldX, 0.0f, m_awakenBoss->worldZ, 1.0f),
-                m_renderer3D->GetViewMatrix() * m_renderer3D->GetProjectionMatrix()));
-            if (clip.w > 0.0f)
-            {
-                cx = (clip.x / clip.w + 1.0f) * 0.5f * m_screenWidth;
-                cy = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;
-            }
-        }
-        float maxR = 0.0f;
-        maxR = max(maxR, hypotf(cx, cy));
-        maxR = max(maxR, hypotf(m_screenWidth - cx, cy));
-        maxR = max(maxR, hypotf(cx, m_screenHeight - cy));
-        maxR = max(maxR, hypotf(m_screenWidth - cx, m_screenHeight - cy));
-        maxR *= 1.1f;
-        float ph = m_awakenCinematic;
-
-        // 集中線をオフスクリーン（ブラー前）に描く → ブラー対象に
-        auto white = TextureManager::Get("white");
-        const int LINES = 84;
-        m_spriteRenderer->Begin();
-        for (int i = 0; i < LINES; i++)
-        {
-            float ang = (float)i / LINES * 6.2831853f + sinf(ph * 30.0f + i * 12.9898f) * 0.02f;
-            float Ri = maxR * (0.34f + 0.06f * sinf(i * 7.13f));
-            float Ro = maxR * 1.4f;
-            float len = Ro - Ri;
-            float mx = cx + cosf(ang) * (Ri + Ro) * 0.5f;
-            float my = cy + sinf(ang) * (Ri + Ro) * 0.5f;
-            float th = 2.0f + 5.0f * (0.5f + 0.5f * sinf(i * 3.7f));
-            m_spriteRenderer->DrawSprite(white, mx - len * 0.5f, my - th * 0.5f, len, th,
-                ang, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.5f));
-        }
-        m_spriteRenderer->End();
-
-        // ブラー合成（シーン＋集中線をまとめてぼかす）
-        m_renderer3D->EndOffscreenBlur(2.0f);
-
-        // ボスだけシャープ再描画
-        if (m_awakenBoss)
-        {
-            m_renderer3D->Begin();
-            m_renderer3D->SetDepthEnabled(false);
-            m_awakenBoss->Draw3D(m_renderer3D);
-            m_renderer3D->SetDepthEnabled(true);
-            m_renderer3D->End();
-        }
-
-        // 円はシャープ（ブラー後）
-        m_spriteRenderer->Begin();
-        auto ring = TextureManager::Get("ui_hitring");
-        for (float a : m_awakenRings)
-        {
-            float t = a / 1.1f;
-            float R = t * maxR;
-            float alpha = (1.0f - t) * 0.85f;
-            m_spriteRenderer->DrawSprite(ring, cx - R, cy - R, R * 2.0f, R * 2.0f,
-                0.0f, XMFLOAT4(1.0f, 0.35f, 0.2f, alpha));
-        }
-        m_spriteRenderer->End();
-    }
-
-    m_battleUI->Draw(ctx);
-    m_battleUI->DrawAddedCardsTop(ctx);
-}
-
-void BattleScene::HandleInput()
-{
-    if (m_camDemoStep >= 0)   // カメラのデモ中は操作を止める（左クリックで飛ばす）
-    {
-        if (m_input.GetMouseButtonTrigger(0)) EndCamDemo();
-        return;
-    }
-    // 勝敗後はターンに関係なくクリックで進める
-    if (m_battleResult == BattleResult::Win)
-    {
-        if (m_input.GetMouseButtonTrigger(0) && onChangeScene)
-        {
-            if (m_category == EncCategory::Boss)
-            {
-                auto& pd = PlayerDataManager::GetData();
-                if (pd.layer < 3)
-                {
-                    pd.layer++;                       // 次の層へ
-                    pd.fieldNodeTypes.clear();        // マップを作り直させる
-                    pd.fieldNodeEnemyIds.clear();
-                    pd.fieldNodeVisited.clear();
-                    PlayerDataManager::Save();
-                    onChangeScene(SceneType::Field);
-                }
-                else
-                {
-                    PlayerDataManager::DeleteSave();   // クリア＝セーブ削除
-                    onChangeScene(SceneType::Result);
-                }
-            }
-            else onChangeScene(SceneType::CardSelect);
-        }
-        return;
-    }
-    if (m_battleResult == BattleResult::Lose)
-    {
-        if (m_input.GetMouseButtonTrigger(0) && onChangeScene)
-        {
-            PlayerDataManager::DeleteSave();   // ゲームオーバー＝セーブ削除
-            onChangeScene(SceneType::Result);
-        }
-        return;
-    }
-
-    if (!m_turnManager.IsPlayerTurn()) return; // プレイヤーターン以外は無視
-    // 時間差ドロー中／リシャッフル演出中は操作不可
-    if (m_drawSeqRemaining > 0 || m_reshuffleFxTimer > 0.0f) return;
-
-    // 捨てるカードの選択中は他の操作を受け付けない
-    if (m_discardSelectCount > 0)
-    {
-        m_highlighter.ClearPlayerHighlight(m_gridMap);      // グリッドの範囲表示を出さない
-
-        POINT mp = m_input.GetMousePos();
-        bool click = m_input.GetMouseButtonTrigger(0);
-
-        if (click && m_battleUI->IsOnDiscardView(mp))       // 閲覧モード切替
-        {
-            m_discardViewMode = !m_discardViewMode;
-            return;
-        }
-
-        if (m_discardViewMode)
-        {
-            if (click)
-            {
-                bool onPileBtn = (mp.y >= m_screenHeight - 60 && mp.y <= m_screenHeight - 20)
-                    && ((mp.x >= 20 && mp.x <= 70) || (mp.x >= 80 && mp.x <= 130)
-                        || (mp.x >= 140 && mp.x <= 190));
-
-                if (onPileBtn)
-                {
-                    if (mp.x >= 20 && mp.x <= 70)   m_showDrawPile = !m_showDrawPile;
-                    if (mp.x >= 80 && mp.x <= 130)  m_showDiscardPile = !m_showDiscardPile;
-                    if (mp.x >= 140 && mp.x <= 190) m_showExhaustPile = !m_showExhaustPile;
-                }
-                else if (m_showDrawPile || m_showDiscardPile || m_showExhaustPile)
-                {
-                    // ビューアの外をクリックで閉じる
-                    float bgX = m_screenWidth / 2.0f - 300.0f, bgY = 50.0f;
-                    if (mp.x < bgX || mp.x > bgX + 600.0f || mp.y < bgY || mp.y > bgY + 580.0f)
-                    {
-                        m_showDrawPile = false;
-                        m_showDiscardPile = false;
-                        m_showExhaustPile = false;
-                    }
-                }
-            }
-            m_hoveredCardIndex = -1;
-            return;
-        }
-
-        // 「捨てる」「盤面を見る」の上では説明を消す（説明の窓がボタンに重なって押せなくなるため）
-        bool onBtn = m_battleUI->IsOnDiscardConfirm(mp) || m_battleUI->IsOnDiscardView(mp);
-        if (onBtn) CardTooltip::ClearHeld();
-        m_hoveredCardIndex = onBtn ? -1 : m_battleUI->GetCardAtScreenPos(mp);
-        if (m_hoveredCardIndex < 0 && !onBtn && CardTooltip::MouseInHold())   // 説明へ移る間はカードを浮かせたまま
-            m_hoveredCardIndex = m_prevHoveredCard;
-
-        if (m_hoveredCardIndex != m_prevHoveredCard)
-        {
-            if (m_hoveredCardIndex >= 0) Audio::PlaySE("Assets/Sound/se/hover.mp3");
-            m_prevHoveredCard = m_hoveredCardIndex;
-        }
-
-        if (click)
-        {
-            // 確定
-            if (m_battleUI->IsOnDiscardConfirm(mp)
-                && (int)m_discardSelected.size() == m_discardSelectCount)
-            {
-                std::sort(m_discardSelected.rbegin(), m_discardSelected.rend());
-                std::vector<CardEffectData> effects;
-                float playDelay = 0.0f;
-                for (int idx : m_discardSelected)
-                {
-                    const CardData* dd = CardDataBase::Get(m_hand.GetCards()[idx]->GetId());
-                    if (dd && dd->onDiscardEffect.hasEffect)
-                    {
-                        effects.push_back(dd->onDiscardEffect);
-                        m_battleUI->StartPlayCardEffectFromHand(dd, idx, playDelay, false); // 中央へ移動＝使用演出
-                        playDelay += 0.15f;                                                 // 複数枚は少しずらす
-                    }
-                    else
-                    {
-                        m_battleUI->StartDiscardEffectAt(idx);   // 効果なしは普通の捨てアニメ
-                    }
-                    m_hand.DiscardAt(idx);
-                    m_battleUI->OnCardRemoved(idx);
-                }
-                m_discardSelected.clear();
-                m_discardSelectCount = 0;
-                m_hoveredCardIndex = -1;
-                for (auto& e : effects) ApplyDiscardEffect(e);   // 捨て終わってから発動
-                return;
-                m_discardSelected.clear();
-                m_discardSelectCount = 0;
-                m_hoveredCardIndex = -1;
-                for (auto& e : effects) ApplyDiscardEffect(e);   // ← 捨て終わってから発動
-                return;
-            }
-
-            // 手札クリックで選択トグル
-            int idx = m_hoveredCardIndex;
-            if (idx >= 0 && idx < (int)m_hand.GetCards().size())
-            {
-                auto it = std::find(m_discardSelected.begin(), m_discardSelected.end(), idx);
-                if (it != m_discardSelected.end())
-                {
-                    m_discardSelected.erase(it);                  // 選択済み → 解除
-                }
-                else
-                {
-                    if ((int)m_discardSelected.size() >= m_discardSelectCount)
-                        m_discardSelected.erase(m_discardSelected.begin());   // 上限なら一番古いのを外す
-                    m_discardSelected.push_back(idx);
-                }
-            }
-        }
-        return;
-    }
-
-    const float cardHideY = m_screenHeight - CardVisual::CARD_HIDE_Y_OFFSET;
-    const float cardHoverY = m_screenHeight - CardVisual::CARD_H - CardVisual::CARD_HOVER_Y_OFFSET;
-
-    const auto& cards = m_hand.GetCards();
-
-    // 山札・捨て札ボタン判定
-    float drawPileX = 20.0f;
-    float drawPileY = m_screenHeight - 60.0f;
-    float discardX = 80.0f;
-    float discardY = m_screenHeight - 60.0f;
-
-    if (m_input.GetMouseButtonTrigger(0) && m_selectedCardIndex < 0
-        && m_input.GetMousePos().x < m_screenWidth - 250.0f      // パネル上は無視
-        && m_input.GetMousePos().y < m_screenHeight - 150.0f)     // 手札エリアも無視
-    {
-        auto rc = m_gridMap->GetClickedCell3D(m_input.GetMousePos(),
-            m_renderer3D->GetViewMatrix(), m_renderer3D->GetProjectionMatrix(),
-            m_screenWidth, m_screenHeight);
-        int found = -1;
-        if (rc.cell)
-            for (int i = 0; i < (int)m_enemies.size(); i++)
-                for (auto& [dc, dr] : m_enemies[i]->GetGridShape())
-                    if (m_enemies[i]->gridCol + dc == rc.col && m_enemies[i]->gridRow + dr == rc.row)
-                        found = i;
-        m_selectedEnemyRange = (found >= 0 && found != m_selectedEnemyRange) ? found : -1;
-    }
-
-    // カード選択中はマウスのマスにハイライト
-    if (m_selectedCardIndex >= 0)
-    {
-        POINT mousePos = m_input.GetMousePos();
-        POINT gridMousePos = mousePos;
-        if (gridMousePos.y > m_screenHeight + 200)
-            gridMousePos.y = m_screenHeight + 200;
-        auto result = m_gridMap->GetClickedCell3D(
-            gridMousePos,
-            m_renderer3D->GetViewMatrix(),
-            m_renderer3D->GetProjectionMatrix(),
-            m_screenWidth,
-            m_screenHeight
-        );
-
-        if (result.cell)
-            m_hoveredCell = { result.col, result.row };
-        else
-            m_hoveredCell = { -1, -1 };   // マス外に出たら自動ホバー（敵）に戻す
-    }
-    else
-    {
-        POINT mousePos = m_input.GetMousePos();
-        auto result = m_gridMap->GetClickedCell3D(
-            mousePos,
-            m_renderer3D->GetViewMatrix(),
-            m_renderer3D->GetProjectionMatrix(),
-            m_screenWidth,
-            m_screenHeight
-        );
-
-        if (result.cell)
-            m_hoveredCell = { result.col, result.row };
-        else
-            m_hoveredCell = { -1, -1 };
-
-        m_highlighter.ClearPlayerHighlight(m_gridMap);
-    }
-
-    // 狙っているマスがいつから同じか
-    if (m_hoveredCell != m_aimCell)
-    {
-        m_aimCell = m_hoveredCell;
-        m_aimSince = GetTickCount64();
-    }
-
-    // カメラが自動で動いて、マウスの下のマスが変わっただけ（マウスは止まっている）なら、経路は変えない
-    POINT mpNow = m_input.GetMousePos();
-    bool mouseMoved = (mpNow.x != m_prevPathMouse.x || mpNow.y != m_prevPathMouse.y);
-    m_prevPathMouse = mpNow;
-    bool cameraDriven = m_camAutoMoving && !mouseMoved;
-
-    // === 移動カード：手動経路構築 ===
-    bool selectedIsMove = false;
-    int moveRangeSel = 0;
-    if (m_selectedCardIndex >= 0 && m_selectedCardIndex < (int)cards.size())
-    {
-        const CardData* sd = cards[m_selectedCardIndex]->GetData();
-        if (sd && sd->type == CardType::Move)
-        {
-            selectedIsMove = true;
-            moveRangeSel = m_player->GetMoveRange(sd->range);
-        }
-    }
-
-    if (selectedIsMove)
-    {
-        if (!m_pathBuilding) m_movePath.clear();   // 選択直後にリセット
-        m_pathBuilding = true;
-
-        // 右クリックキャンセル中：カーソルを別マスに動かすまで経路を出さない
-        if (m_moveReleaseSuppress
-            && m_hoveredCell.first == m_suppressCell.first
-            && m_hoveredCell.second == m_suppressCell.second)
-        {
-            m_movePath.clear();
-        }
-        else if (m_hoveredCell.first >= 0 && !cameraDriven)
-        {
-            m_moveReleaseSuppress = false;   // カーソルが動いたら再開
-            int hc = m_hoveredCell.first, hr = m_hoveredCell.second;
-
-            int tipCol = m_movePath.empty() ? m_playerCol : m_movePath.back().first;
-            int tipRow = m_movePath.empty() ? m_playerRow : m_movePath.back().second;
-
-            int idx = -1;
-            for (int i = 0; i < (int)m_movePath.size(); i++)
-                if (m_movePath[i].first == hc && m_movePath[i].second == hr) { idx = i; break; }
-
-            bool onTip = (hc == tipCol && hr == tipRow);
-            bool onPlayer = (hc == m_playerCol && hr == m_playerRow);
-            bool isRetract = onPlayer || (idx >= 0 && idx < (int)m_movePath.size() - 1);
-
-            if (onTip)
-            {
-                // 先端の上：何もしない
-                m_backtrackFrames = 0;
-            }
-            else if (isRetract)
-            {
-                // 戻す：数フレーム安定してから（縦の一瞬のブレで誤爆させない）
-                if (hc == m_backtrackCell.first && hr == m_backtrackCell.second)
-                    m_backtrackFrames++;
-                else { m_backtrackCell = { hc, hr }; m_backtrackFrames = 1; }
-
-                if (m_backtrackFrames >= 4)
-                {
-                    if (onPlayer) m_movePath.clear();
-                    else m_movePath.resize(idx + 1);
-                }
-            }
-            else
-            {
-                m_backtrackFrames = 0;
-                int distTip = abs(hc - tipCol) + abs(hr - tipRow);
-
-                if (distTip == 1)
-                {
-                    int budget = moveRangeSel - (int)m_movePath.size();
-                    if (budget > 0 && m_gridMap->GetCell(hc, hr).type == CellType::Empty)
-                    {
-                        // 余裕あり：そのまま1マス追加
-                        m_movePath.push_back({ hc, hr });
-                    }
-                    else if (m_gridMap->GetCell(hc, hr).type == CellType::Empty)
-                    {
-                        // 最大到達中：後ろから1マスずつ戻して、届く接頭辞を探す
-                        const int dirs[4][2] = { {0,1},{0,-1},{1,0},{-1,0} };
-                        for (int keep = (int)m_movePath.size() - 1; keep >= 0; keep--)
-                        {
-                            int b = moveRangeSel - keep;
-                            int ptc = (keep == 0) ? m_playerCol : m_movePath[keep - 1].first;
-                            int ptr = (keep == 0) ? m_playerRow : m_movePath[keep - 1].second;
-
-                            std::set<std::pair<int, int>> blocked;
-                            for (int i = 0; i < keep; i++) blocked.insert(m_movePath[i]);
-                            blocked.insert({ m_playerCol, m_playerRow });
-                            blocked.erase({ ptc, ptr });
-
-                            std::queue<std::pair<int, int>> q;
-                            std::map<std::pair<int, int>, std::pair<int, int>> par;
-                            std::map<std::pair<int, int>, int> dist;
-                            auto start = std::make_pair(ptc, ptr);
-                            q.push(start); dist[start] = 0; par[start] = { -1, -1 };
-
-                            bool found = false;
-                            while (!q.empty())
-                            {
-                                auto [cc, rr] = q.front(); q.pop();
-                                if (cc == hc && rr == hr) { found = true; break; }
-                                if (dist[{cc, rr}] >= b) continue;
-                                for (int d = 0; d < 4; d++)
-                                {
-                                    int nc = cc + dirs[d][0], nr = rr + dirs[d][1];
-                                    if (nc < 0 || nc >= m_gridMap->GetCols() || nr < 0 || nr >= m_gridMap->GetRows()) continue;
-                                    auto np = std::make_pair(nc, nr);
-                                    if (dist.count(np)) continue;
-                                    if (blocked.count(np)) continue;
-                                    if (m_gridMap->GetCell(nc, nr).type != CellType::Empty) continue;
-                                    dist[np] = dist[{cc, rr}] + 1;
-                                    par[np] = { cc, rr };
-                                    q.push(np);
-                                }
-                            }
-
-                            if (found)
-                            {
-                                std::vector<std::pair<int, int>> conn;
-                                auto cur = std::make_pair(hc, hr);
-                                while (cur != start) { conn.push_back(cur); cur = par[cur]; }
-                                std::reverse(conn.begin(), conn.end());
-
-                                m_movePath.resize(keep);
-                                for (auto& c : conn) m_movePath.push_back(c);
-                                break;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    // 離れたマス：プレイヤーから自動最短経路（手動経路を破棄）
-                    m_movePath.clear();
-
-                    std::queue<std::pair<int, int>> q;
-                    std::map<std::pair<int, int>, std::pair<int, int>> par;
-                    std::map<std::pair<int, int>, int> dist;
-                    auto start = std::make_pair(m_playerCol, m_playerRow);
-                    q.push(start); dist[start] = 0; par[start] = { -1, -1 };
-
-                    const int dirs[4][2] = { {0,1},{0,-1},{1,0},{-1,0} };
-                    bool found = false;
-
-                    while (!q.empty())
-                    {
-                        auto [cc, rr] = q.front(); q.pop();
-                        if (cc == hc && rr == hr) { found = true; break; }
-                        if (dist[{cc, rr}] >= moveRangeSel) continue;
-
-                        for (int d = 0; d < 4; d++)
-                        {
-                            int nc = cc + dirs[d][0], nr = rr + dirs[d][1];
-                            if (nc < 0 || nc >= m_gridMap->GetCols() || nr < 0 || nr >= m_gridMap->GetRows()) continue;
-                            auto np = std::make_pair(nc, nr);
-                            if (dist.count(np)) continue;
-                            if (m_gridMap->GetCell(nc, nr).type != CellType::Empty) continue;
-                            dist[np] = dist[{cc, rr}] + 1;
-                            par[np] = { cc, rr };
-                            q.push(np);
-                        }
-                    }
-
-                    if (found)
-                    {
-                        auto cur = std::make_pair(hc, hr);
-                        while (cur != start) { m_movePath.push_back(cur); cur = par[cur]; }
-                        std::reverse(m_movePath.begin(), m_movePath.end());
-                    }
-                }
-            }
-        }
-    }
-    else
-    {
-        m_pathBuilding = false;
-        m_movePath.clear();
-    }
-
-    bool isOnCard = false;
-    bool cardJustUsed = false;
-
-    // 全カード: グリッドエリア上で左ボタンを離したら使用
-    if (m_input.GetMouseButtonRelease(0) && m_selectedCardIndex >= 0 && m_selectedCardIndex < (int)cards.size())
-    {
-        POINT releasePos = m_input.GetMousePos();
-        if (releasePos.y < m_screenHeight - 190)
-        {
-            const Card* card = cards[m_selectedCardIndex];
-            CardData dataCopy = *card->GetData();
-            ApplyKnifeThrow(dataCopy, m_player);
-            CardType ct = dataCopy.type;
-
-            const std::vector<std::pair<int, int>>* usePath = nullptr;
-            bool moveCanceled = false;
-            if (ct == CardType::Move)
-            {
-                if (m_player->GetBuffManager().HasBuff(BuffType::MoveLock))
-                    moveCanceled = true;                        // 踏ん張り中は移動不可
-                else if (m_moveReleaseSuppress)
-                    moveCanceled = true;
-                else if (m_pathBuilding && !m_movePath.empty())
-                {
-                    // 指すマスが変わった直後に離した＝通り過ぎる途中 → 使わずに選択したまま（もう一度押せば使える）
-                    if (GetTickCount64() - m_aimSince >= AIM_SETTLE_MS) usePath = &m_movePath;
-                    else moveCanceled = true;
-                }
-                else if (m_pathBuilding && m_movePath.empty())
-                    moveCanceled = true;
-            }
-
-            int targetCol = m_playerCol;
-            int targetRow = m_playerRow;
-            bool canTry = !moveCanceled;
-
-            auto cellInRng = [&](int ec, int er) { return CellInCardRange(dataCopy, ec, er); };
-            auto enemyCells = [](Enemy* e) { return e->OccupiedCells(); };
-
-            // 射程内の敵を数える。1体だけなら自動ターゲット
-            Enemy* soleEnemy = nullptr; int inRangeCount = 0;
-            if (ct == CardType::Attack)
-                for (auto e : m_enemies)
-                {
-                    if (!e || e->GetHp() <= 0) continue;
-                    bool inR = false;
-                    for (auto& [ec, er] : enemyCells(e)) if (cellInRng(ec, er)) { inR = true; break; }
-                    if (inR) { inRangeCount++; soleEnemy = e; }
-                }
-            bool autoAttack = (ct == CardType::Attack && inRangeCount == 1 && soleEnemy);
-
-            bool needCell = PicksCell(*cards[m_selectedCardIndex]->GetData());
-            if ((ct == CardType::Attack || ct == CardType::Move || needCell)
-                && !usePath && !moveCanceled)
-            {
-                auto result = m_gridMap->GetClickedCell3D(
-                    releasePos, m_renderer3D->GetViewMatrix(), m_renderer3D->GetProjectionMatrix(),
-                    m_screenWidth, m_screenHeight);
-                bool cellInRange = (result.cell && cellInRng(result.col, result.row));
-                // 射程内の敵が1体だけなら、空きマスで離してもその敵を狙う（予測 AttackTargetEnemy と同じ判定）
-                bool hoverEmpty = !result.cell || EnemyIndexAt(result.col, result.row) < 0;
-                bool forceAuto = autoAttack && hoverEmpty && !AimsFreely(dataCopy);
-                if (result.cell && !forceAuto && (cellInRange || !autoAttack))
-                {
-                    // 離したマスに止まっていた時間が短い＝通り過ぎる途中で離した → 使わずに選択したまま（もう一度押せば使える）
-                    bool settled = (result.col == m_aimCell.first && result.row == m_aimCell.second)
-                        && (GetTickCount64() - m_aimSince >= AIM_SETTLE_MS);
-                    if (settled)
-                    {
-                        targetCol = result.col;
-                        targetRow = result.row;
-                    }
-                    else canTry = false;
-                }
-                else if (autoAttack)
-                {
-                    // 頭優先：頭(gridCol/Row)が射程内ならそこ、無ければ射程内マスの最寄り
-                    int tc = soleEnemy->gridCol, tr = soleEnemy->gridRow;
-                    if (!cellInRng(tc, tr))
-                    {
-                        int best = 1 << 30;
-                        for (auto& [ec, er] : enemyCells(soleEnemy))
-                        {
-                            if (!cellInRng(ec, er)) continue;
-                            int d = abs(ec - m_playerCol) + abs(er - m_playerRow);
-                            if (d < best) { best = d; tc = ec; tr = er; }
-                        }
-                    }
-                    targetCol = tc; targetRow = tr;
-                }
-                else
-                {
-                    if (!dataCopy.allEnemyEffect.hasEffect)
-                        canTry = false;
-                }
-            }
-
-            if (canTry)
-            {
-                std::string cardId = card->GetId();
-                int newPlayerCol = m_playerCol;
-                int newPlayerRow = m_playerRow;
-
-                float playCardX = CardVisual::HandSlotX(
-                    m_selectedCardIndex, (int)cards.size(), (float)m_screenWidth);
-                float playCardY = m_screenHeight - 30.0f;
-
-                const CardData* dataPtr = card->GetData();
-
-                int faBonus = (!m_firstAttackDone && dataPtr->type == CardType::Attack)
-                    ? RelicManager::SumValue("firstAttack") : 0;
-                if (faBonus > 0) 
-                {
-                    Buff fb; fb.type = BuffType::AttackUp; 
-                    fb.value = faBonus; 
-                    fb.duration = 1; fb.name = L"";
-                    fb.description = L"";
-                    m_player->GetBuffManager().AddBuff(fb); 
-                }
-
-                auto execResult = m_cardExecutor.Execute(
-                    dataCopy, cardId,
-                    targetCol, targetRow,
-                    m_player, m_enemies, m_gridMap,
-                    m_playerCol, m_playerRow,
-                    m_hand, m_selectedCardIndex, m_deck,
-                    newPlayerCol, newPlayerRow,
-                    usePath
-                );
-                if (execResult.cardUsed)                                   // 実際に使えた時だけ
-                    m_player->OnCardUsed(dataCopy.type, targetCol - m_playerCol, targetRow - m_playerRow);
-                if (execResult.startChainDetonate)
-                {
-                    m_chainQueue.clear();
-                    m_chainQueue.push_back({ execResult.chainCol, execResult.chainRow });
-                    m_chainTimer = 0.0f;
-                    m_chainFull = execResult.chainFull;
-                }
-                if (execResult.startSeqDetonate)
-                {
-                    m_detonateQueue = execResult.seqDetonateCells;   // 1個ずつ起爆（Update で処理）
-                    m_detonateFull = execResult.seqFull;
-                    m_detonateTimer = 0.0f;
-                }
-
-                if (execResult.placeDecoy)
-                {
-                    m_decoyCol = execResult.decoyCol;
-                    m_decoyRow = execResult.decoyRow;
-                }
-
-                if (faBonus > 0)
-                {
-                    Buff fb; fb.type = BuffType::AttackUp; fb.value = -faBonus; fb.duration = 1; fb.name = L""; fb.description = L""; m_player->GetBuffManager().AddBuff(fb);
-                    if (m_player->GetBuffManager().GetBuffValue(BuffType::AttackUp) == 0)
-                        m_player->GetBuffManager().RemoveBuff(BuffType::AttackUp);   // 0残り掃除
-                    if (execResult.cardUsed) m_firstAttackDone = true;
-                }
-
-                if (execResult.cardUsed)
-                {
-                    Audio::PlaySE("Assets/Sound/se/card.mp3");
-
-                    // カードを使うたびブロック（刃の守り）
-                    if (int cb = m_player->GetBuffManager().GetBuffValue(BuffType::CardBlock))
-                    {
-                        m_player->AddBlock(cb);
-                        EffectManager::Play("block_gain", m_player->worldX, m_player->worldY + 0.4f, m_player->worldZ);
-                    }
-
-                    if (newPlayerCol != m_playerCol || newPlayerRow != m_playerRow)
-                    {
-                        int oldCol = m_playerCol;
-                        int oldRow = m_playerRow;
-                        m_playerCol = newPlayerCol;
-                        m_playerRow = newPlayerRow;
-                        m_player->gridCol = m_playerCol;
-                        m_player->gridRow = m_playerRow;
-                        OnPlayerMoved(oldCol, oldRow, execResult.moveDist);   // レリック：移動時
-                        float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                        float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
-                        if (usePath && !usePath->empty())
-                        {
-                            std::vector<std::pair<float, float>> pts;
-                            for (auto& p : *usePath)
-                                pts.push_back({ (p.first - m_gridMap->GetCols() / 2.0f) * 1.1f,
-                                                (p.second - m_gridMap->GetRows() / 2.0f) * 1.1f });
-                            m_player->StartWalk(pts, 0.08f);
-                        }
-                        else
-                        {
-                            m_player->StartMove(px, pz);
-                        }
-
-                        auto& movedCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
-
-                        // 氷チェック（TriggerTerrainでdurationが消える前に）
-                        bool isSlide = false;
-                        int slideDx = 0, slideDy = 0;
-                        if (movedCell.tileEffect.active)
-                        {
-                            const TerrainDef* def = TerrainDataBase::Get(movedCell.tileEffect.id);
-                            if (def && def->effect == "Slide" && !RelicManager::HasKind("floorImmune"))
-                            {
-                                isSlide = true;
-                                // 向きは「最後の1歩」で決める（回り込んだ時に全体のずれで決めると斜め扱い→ランダムになる）
-                                int fromCol = oldCol, fromRow = oldRow;
-                                if (usePath && usePath->size() >= 2)
-                                {
-                                    fromCol = (*usePath)[usePath->size() - 2].first;
-                                    fromRow = (*usePath)[usePath->size() - 2].second;
-                                }
-                                int dx = m_playerCol - fromCol;
-                                int dy = m_playerRow - fromRow;
-                                if (dx != 0 && dy != 0)
-                                {
-                                    if (rand() % 2 == 0)
-                                        slideDx = dx > 0 ? 1 : -1;
-                                    else
-                                        slideDy = dy > 0 ? 1 : -1;
-                                }
-                                else
-                                {
-                                    slideDx = (dx > 0) ? 1 : (dx < 0) ? -1 : 0;
-                                    slideDy = (dy > 0) ? 1 : (dy < 0) ? -1 : 0;
-                                }
-                            }
-                        }
-
-                        CardExecutor::TriggerTerrain(movedCell, m_player);
-
-                        if (isSlide && (slideDx != 0 || slideDy != 0))
-                        {
-                            bool walked = (usePath && !usePath->empty());
-                            std::vector<std::pair<float, float>> slidePts;   // すべった先のマス（歩きの続きにつなぐ）
-                            if (!walked) slidePts.push_back({ px, pz });     // 経路なしの移動は、まず着地点へ
-                            while (true)
-                            {
-                                int nextCol = m_playerCol + slideDx;
-                                int nextRow = m_playerRow + slideDy;
-
-                                if (nextCol < 0 || nextCol >= m_gridMap->GetCols() ||
-                                    nextRow < 0 || nextRow >= m_gridMap->GetRows())
-                                    break;
-
-                                auto& nextCell = m_gridMap->GetCell(nextCol, nextRow);
-                                if (nextCell.type != CellType::Empty)
-                                    break;
-
-                                m_gridMap->SetCellType(m_playerCol, m_playerRow, CellType::Empty);
-                                m_playerCol = nextCol;
-                                m_playerRow = nextRow;
-                                m_gridMap->SetCellType(m_playerCol, m_playerRow, CellType::Player);
-                                m_player->gridCol = m_playerCol;
-                                m_player->gridRow = m_playerRow;
-                                float sx = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                                float sz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
-                                slidePts.push_back({ sx, sz });
-
-                                auto& slideCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
-                                if (slideCell.tileEffect.active)
-                                {
-                                    const TerrainDef* slideDef = TerrainDataBase::Get(slideCell.tileEffect.id);
-                                    if (slideDef && slideDef->effect == "Slide")
-                                        continue;
-
-                                    CardExecutor::TriggerTerrain(slideCell, m_player);
-                                }
-                                break;
-                            }
-                            if (slidePts.size() > (walked ? 0u : 1u))         // 1マスでもすべった時だけ
-                                m_player->AppendWalk(slidePts, 0.08f);        // 歩き終わってから、同じ速さでスーッと続ける
-                        }
-                    }
-
-                    m_battleUI->StartEffectDraws(execResult.drawnCards);   // 使ったカードが出てから1枚ずつ引く
-                    m_battleUI->StartPlayCardEffect(dataPtr, m_selectedCardIndex);
-                    ProcessDeadEnemies();
-                    if (execResult.multiHitRemain > 0)
-                    {
-                        m_multiHitTargets = execResult.multiHitTargets;
-                        m_multiHitRemain = execResult.multiHitRemain;
-                        m_multiHitDamage = execResult.multiHitDamage;
-                        m_multiHitOnHit = execResult.multiHitOnHit; m_multiHitOnHit2 = execResult.multiHitOnHit2;
-                        m_multiHitTimer = MULTI_HIT_INTERVAL;
-                    }
-                    if (execResult.pendingSelection != CardEffectType::None)
-                    {
-                        m_cardSelecting = true;
-                        m_selectingType = execResult.pendingSelection;
-                        if (m_selectingType == CardEffectType::Search)
-                            m_showDrawPile = true;
-                        else if (m_selectingType == CardEffectType::Salvage)
-                            m_showDiscardPile = true;
-                    }
-
-                    m_aimPanKeep = (dataPtr->type == CardType::Move);   // 移動したらカメラは寄せた位置のまま
-                    m_battleUI->OnCardRemoved(m_selectedCardIndex);
-                    m_selectedCardIndex = -1;
-                    if (execResult.purgeHandCurses) PurgeHandCurses();   // 浄化：使ったカードのアニメを外してから（先にやると選択が-1になり、アニメの並びがずれる）
-                    cardJustUsed = true;
-                    OnCardPlayed(dataPtr);
-
-                    if (execResult.pendingDiscard > 0)
-                        OpenDiscardSelect(execResult.pendingDiscard);
-                }
-            }
-        }
-    }
-
-    if (m_input.GetMouseButtonRelease(0))
-    {
-        m_pathBuilding = false;
-        m_movePath.clear();
-        m_moveReleaseSuppress = false;
-    }
-
-    if (m_input.GetMouseButtonTrigger(0))
-    {
-        POINT mousePos = m_input.GetMousePos();
-
-        // カードエリアにマウスがあるかチェック
-        isOnCard = (m_battleUI->GetCardAtScreenPos(mousePos) >= 0);
-
-        POINT gridMousePos2 = mousePos;
-        if (gridMousePos2.y > m_screenHeight - 200)
-            gridMousePos2.y = m_screenHeight - 200;
-        auto result = m_gridMap->GetClickedCell3D(
-            gridMousePos2,
-            m_renderer3D->GetViewMatrix(),
-            m_renderer3D->GetProjectionMatrix(),
-            m_screenWidth,
-            m_screenHeight
-        );
-
-        // 山札ボタン
-        if (mousePos.x >= drawPileX && mousePos.x <= drawPileX + 50.0f
-            && mousePos.y >= drawPileY && mousePos.y <= drawPileY + 40.0f)
-        {
-            m_showDrawPile = !m_showDrawPile;
-            Audio::PlaySE("Assets/Sound/se/click.mp3");
-            m_showDiscardPile = false;
-        }
-
-        // 捨て札ボタン
-        else if (mousePos.x >= discardX && mousePos.x <= discardX + 50.0f
-            && mousePos.y >= discardY && mousePos.y <= discardY + 40.0f)
-        {
-            m_showDiscardPile = !m_showDiscardPile;
-            Audio::PlaySE("Assets/Sound/se/click.mp3");
-            m_showDrawPile = false;
-        }
-
-        // 廃棄札ボタン
-        else if (m_deck.GetExhaustPileCount() > 0
-            && mousePos.x >= 140.0f && mousePos.x <= 190.0f
-            && mousePos.y >= discardY && mousePos.y <= discardY + 40.0f)
-        {
-            m_showExhaustPile = !m_showExhaustPile;
-            Audio::PlaySE("Assets/Sound/se/click.mp3");
-            m_showDrawPile = false;
-            m_showDiscardPile = false;
-        }
-
-        // 一覧から選ぶ（山札から探す・捨て札から回収）
-        else if (m_cardSelecting && (m_showDrawPile || m_showDiscardPile))
-        {
-            auto displayPile = BattleUI::PileForView(&m_deck, m_showDrawPile, m_showDiscardPile);
-            int i = m_battleUI->PileCardAt(mousePos, (int)displayPile.size());   // 描画と同じ矩形で判定
-            if (i >= 0)
-            {
-                std::string selectedId = displayPile[i];
-                std::string result;
-                if (m_selectingType == CardEffectType::Search)
-                    result = m_deck.DrawSpecificCard(selectedId);
-                else if (m_selectingType == CardEffectType::Salvage)
-                    result = m_deck.SalvageCard(selectedId);
-
-                if (!result.empty())
-                {
-                    m_hand.AddCard(result);
-                    m_battleUI->StartDrawCardEffect(result);
-                }
-            }
-            if (i >= 0 || !m_battleUI->PileViewerRect().has(mousePos))   // 選んだ／枠の外＝取りやめ
-            {
-                m_cardSelecting = false;
-                m_selectingType = CardEffectType::None;
-                m_showDrawPile = false;
-                m_showDiscardPile = false;
-            }
-        }
-        // 見るだけの一覧：枠の外で閉じる
-        else if (m_showDrawPile || m_showDiscardPile || m_showExhaustPile)
-        {
-            if (!m_battleUI->PileViewerRect().has(mousePos))
-            {
-                m_showDrawPile = false;
-                m_showDiscardPile = false;
-                m_showExhaustPile = false;
-            }
-        }
-
-    
-        if (result.cell && !isOnCard)
-        {
-            if (m_selectedCardIndex >= 0
-                && m_selectedCardIndex < (int)m_hand.GetCards().size()
-                && m_hand.GetCards()[m_selectedCardIndex]->GetData()->type != CardType::Move)
-            {
-                const Card* card = m_hand.GetCards()[m_selectedCardIndex];
-                std::string cardId = card->GetId();
-                CardData dataCopy = *card->GetData();
-                ApplyKnifeThrow(dataCopy, m_player);
-
-                int newPlayerCol = m_playerCol;
-                int newPlayerRow = m_playerRow;
-
-                float playCardX = CardVisual::HandSlotX(
-                    m_selectedCardIndex, (int)cards.size(), (float)m_screenWidth);
-                float playCardY = m_screenHeight - 30.0f;
-
-                const CardData* dataPtr = card->GetData();
-
-                int faBonus = (!m_firstAttackDone && dataPtr->type == CardType::Attack)
-                    ? RelicManager::SumValue("firstAttack") : 0;
-                if (faBonus > 0)
-                {
-                    Buff fb; fb.type = BuffType::AttackUp;
-                    fb.value = faBonus;
-                    fb.duration = 1; fb.name = L"";
-                    fb.description = L"";
-                    m_player->GetBuffManager().AddBuff(fb);
-                }
-
-                auto execResult = m_cardExecutor.Execute(
-                    dataCopy, cardId,
-                    result.col, result.row,
-                    m_player, m_enemies, m_gridMap,
-                    m_playerCol, m_playerRow,
-                    m_hand, m_selectedCardIndex, m_deck,
-                    newPlayerCol, newPlayerRow
-                );
-                if (execResult.cardUsed)                                   // 実際に使えた時だけ
-                    m_player->OnCardUsed(dataCopy.type, result.col - m_playerCol, result.row - m_playerRow);
-                if (execResult.startChainDetonate)
-                {
-                    m_chainQueue.clear();
-                    m_chainQueue.push_back({ execResult.chainCol, execResult.chainRow });
-                    m_chainTimer = 0.0f;
-                    m_chainFull = execResult.chainFull;
-                }
-                if (execResult.startSeqDetonate)
-                {
-                    m_detonateQueue = execResult.seqDetonateCells;
-                    m_detonateFull = execResult.seqFull;
-                    m_detonateTimer = 0.0f;   // すぐ1個目
-                }
-                if (execResult.placeDecoy)        
-                {
-                    m_decoyCol = execResult.decoyCol;
-                    m_decoyRow = execResult.decoyRow;
-                }
-
-                if (faBonus > 0)
-                {
-                    Buff fb; fb.type = BuffType::AttackUp; fb.value = -faBonus; fb.duration = 1; fb.name = L""; fb.description = L""; m_player->GetBuffManager().AddBuff(fb);
-                    if (m_player->GetBuffManager().GetBuffValue(BuffType::AttackUp) == 0)
-                        m_player->GetBuffManager().RemoveBuff(BuffType::AttackUp);   // 0残り掃除
-                    if (execResult.cardUsed) m_firstAttackDone = true;
-                }
-
-                if (execResult.cardUsed)
-                {
-                    Audio::PlaySE("Assets/Sound/se/card.mp3");
-
-                    // カードを使うたびブロック（刃の守り）
-                    if (int cb = m_player->GetBuffManager().GetBuffValue(BuffType::CardBlock))
-                    {
-                        m_player->AddBlock(cb);
-                        EffectManager::Play("block_gain", m_player->worldX, m_player->worldY + 0.4f, m_player->worldZ);
-                    }
-
-                    // プレイヤー座標を更新
-                        if (newPlayerCol != m_playerCol || newPlayerRow != m_playerRow)
-                        {
-                            int oldCol = m_playerCol;
-                            int oldRow = m_playerRow;
-                            m_playerCol = newPlayerCol;
-                            m_playerRow = newPlayerRow;
-                            m_player->gridCol = m_playerCol;
-                            m_player->gridRow = m_playerRow;
-                            OnPlayerMoved(oldCol, oldRow, execResult.moveDist);   // レリック：移動時
-                            float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                            float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
-                            m_player->StartMove(px, pz);
-
-                            auto& movedCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
-
-                            bool isSlide = false;
-                            int slideDx = 0, slideDy = 0;
-                            if (movedCell.tileEffect.active)
-                            {
-                                const TerrainDef* def = TerrainDataBase::Get(movedCell.tileEffect.id);
-                                if (def && def->effect == "Slide" && !RelicManager::HasKind("floorImmune"))
-                                {
-                                    isSlide = true;
-                                    int dx = m_playerCol - oldCol;
-                                    int dy = m_playerRow - oldRow;
-                                    if (dx != 0 && dy != 0)
-                                    {
-                                        if (rand() % 2 == 0)
-                                            slideDx = dx > 0 ? 1 : -1;
-                                        else
-                                            slideDy = dy > 0 ? 1 : -1;
-                                    }
-                                    else
-                                    {
-                                        slideDx = (dx > 0) ? 1 : (dx < 0) ? -1 : 0;
-                                        slideDy = (dy > 0) ? 1 : (dy < 0) ? -1 : 0;
-                                    }
-                                }
-                            }
-
-                            CardExecutor::TriggerTerrain(movedCell, m_player);
-
-                            if (isSlide && (slideDx != 0 || slideDy != 0))
-                            {
-                                while (true)
-                                {
-                                    int nextCol = m_playerCol + slideDx;
-                                    int nextRow = m_playerRow + slideDy;
-
-                                    if (nextCol < 0 || nextCol >= m_gridMap->GetCols() ||
-                                        nextRow < 0 || nextRow >= m_gridMap->GetRows())
-                                        break;
-
-                                    auto& nextCell = m_gridMap->GetCell(nextCol, nextRow);
-                                    if (nextCell.type != CellType::Empty)
-                                        break;
-
-                                    m_gridMap->SetCellType(m_playerCol, m_playerRow, CellType::Empty);
-                                    m_playerCol = nextCol;
-                                    m_playerRow = nextRow;
-                                    m_gridMap->SetCellType(m_playerCol, m_playerRow, CellType::Player);
-                                    m_player->gridCol = m_playerCol;
-                                    m_player->gridRow = m_playerRow;
-                                    float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                                    float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
-                                    m_player->StartMove(px, pz);
-
-                                    auto& slideCell = m_gridMap->GetCell(m_playerCol, m_playerRow);
-                                    if (slideCell.tileEffect.active)
-                                    {
-                                        const TerrainDef* slideDef = TerrainDataBase::Get(slideCell.tileEffect.id);
-                                        if (slideDef && slideDef->effect == "Slide")
-                                            continue;
-
-                                        CardExecutor::TriggerTerrain(slideCell, m_player);
-                                    }
-                                    break;
-                                }
-                            }
-                        }
-                    
-
-
-                    m_battleUI->StartEffectDraws(execResult.drawnCards);   // 使ったカードが出てから1枚ずつ引く
-                    m_battleUI->StartPlayCardEffect(dataPtr, m_selectedCardIndex);
-
-                    ProcessDeadEnemies();
-
-                    if (execResult.multiHitRemain > 0)
-                    {
-                        m_multiHitTargets = execResult.multiHitTargets;
-                        m_multiHitRemain = execResult.multiHitRemain;
-                        m_multiHitDamage = execResult.multiHitDamage;
-                        m_multiHitOnHit = execResult.multiHitOnHit; m_multiHitOnHit2 = execResult.multiHitOnHit2;
-                        m_multiHitTimer = MULTI_HIT_INTERVAL;
-                    }
-
-                    if (execResult.pendingSelection != CardEffectType::None)
-                    {
-                        m_cardSelecting = true;
-                        m_selectingType = execResult.pendingSelection;
-                        if (m_selectingType == CardEffectType::Search)
-                            m_showDrawPile = true;
-                        else if (m_selectingType == CardEffectType::Salvage)
-                            m_showDiscardPile = true;
-                    }
-
-                    if (execResult.pendingDiscard > 0)
-                        OpenDiscardSelect(execResult.pendingDiscard);
-
-                    m_battleUI->OnCardRemoved(m_selectedCardIndex);
-                    m_selectedCardIndex = -1;
-                    if (execResult.purgeHandCurses) PurgeHandCurses();   // 浄化：使ったカードのアニメを外してから（先にやると選択が-1になり、アニメの並びがずれる）
-                    cardJustUsed = true;
-                    OnCardPlayed(dataPtr);
-                }
-            }
-        }
-            else if (m_selectedCardIndex >= 0 && !isOnCard
-                && m_hand.GetCards()[m_selectedCardIndex]->GetData()->type != CardType::Move)
-                {
-                    m_selectedCardIndex = -1;
-        }
-    }
-
-    POINT mousePos = m_input.GetMousePos();
-    
-    int cardUnder = m_battleUI->GetCardAtScreenPos(mousePos);
-    if (cardUnder >= 0 && m_input.GetMouseButtonTrigger(0))
-    {
-        if (m_selectedCardIndex == cardUnder)
-        {
-            m_selectedCardIndex = -1;                       // 同じカード再クリック→解除
-        }
-        else
-        {
-            int cost = m_player->CostOf(*m_hand.GetCards()[cardUnder]->GetData());
-            if (m_player->GetEnergy() < cost)
-            {
-                // エナジー不足：アウトライン付き浮遊テキストで通知し、自動で選択解除
-                float px = (m_playerCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                float pz = (m_playerRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
-                FloatingTextManager::Spawn(px, 1.3f, pz, L"エナジーがたりない",
-                    XMFLOAT4(1.0f, 0.45f, 0.2f, 1.0f), 30.0f);
-                m_selectedCardIndex = -1;
-            }
-            else
-            {
-                m_selectedCardIndex = cardUnder;
-            }
-        }
-    }
-    
-    m_hoveredCardIndex = m_battleUI->GetCardAtScreenPos(mousePos);
-    if (m_selectedCardIndex >= 0) CardTooltip::ClearHeld();   // 選んでいる間は、残っている説明も消す（窓の上のクリックを盤面に通す）
-    if (m_hoveredCardIndex != m_prevHoveredCard)
-    {
-        if (m_hoveredCardIndex >= 0) Audio::PlaySE("Assets/Sound/se/hover.mp3");
-        m_prevHoveredCard = m_hoveredCardIndex;
-    }
-
-        // ターンエンドボタン（右下）
-        if (m_battleResult == BattleResult::None)
-        {
-            float btnW = 180.0f;
-            float btnH = 56.0f;
-            float btnX = m_screenWidth - btnW - 20.0f;
-            float btnY = m_screenHeight - btnH - 20.0f;
-
-            if (m_input.GetMouseButtonTrigger(0))
-            {
-                POINT mp = m_input.GetMousePos();
-                if (mp.x >= btnX && mp.x <= btnX + btnW
-                    && mp.y >= btnY && mp.y <= btnY + btnH)
-                {
-                    Audio::PlaySE("Assets/Sound/se/click.mp3");
-                    m_selectedCardIndex = -1;   // 選択解除してからターン終了
-                    m_cardSelecting = false;    // ドロー/捨札選択も解除
-                    m_turnManager.EndTurn();
-                }
-            }
-        }
-
-        // 敵パネルクリック → 範囲選択＋その敵へカメラ
-        if (m_input.GetMouseButtonTrigger(0))
-        {
-            int i = BattleUI::EnemyEntryAt(m_input.GetMousePos(), m_enemies, m_screenWidth);
-            if (i >= 0)
-            {
-                m_selectedEnemyRange = (m_selectedEnemyRange == i) ? -1 : i;
-                m_cameraOffsetX = m_enemies[i]->worldX;
-                m_cameraOffsetZ = m_enemies[i]->worldZ;
-            }
-        }
-}
+// HandleInput（入力）は BattleSceneInput.cpp
 
 void BattleScene::ProcessDeadEnemies()
 {
@@ -4240,86 +2016,148 @@ int BattleScene::FocusEnemy() const
     return m_selectedEnemyRange;
 }
 
-// カメラ操作の自動デモ（初回の2ターン目に1回）。手順を増やす時は表に1行、動きは CamGoal に足す
-enum class CamGoal { Figure8, ZoomIn, Home };
-static constexpr float CAM8_W = 2.6f;   // 八の字の横の振れ幅（約2マス半）
-static constexpr float CAM8_H = 1.4f;   // 八の字の縦の振れ幅（盤面の中央から離れすぎない）
-static const struct { const wchar_t* text; const char* icon; float dur; CamGoal goal; } CAM_DEMO[] = {
-    { L"右ドラッグ：カメラを動かす",         "mouse_rdrag",  3.6f, CamGoal::Figure8 },
-    { L"ホイール：ズーム",                   "mouse_wheel",  2.0f, CamGoal::ZoomIn },
-    { L"ホイールクリック：自分の位置に戻る", "mouse_mclick", 1.8f, CamGoal::Home   },
-};
-static constexpr int CAM_DEMO_N = (int)(sizeof(CAM_DEMO) / sizeof(CAM_DEMO[0]));
-
-void BattleScene::UpdateCamDemo(float dt)
+// カメラ操作の自動デモ（初回の2ターン目に1回）を始めるか。手順・動きは BattleCamera
+void BattleScene::MaybeStartCamDemo()
 {
-    if (m_camDemoHoming)   // デモの後：初期の位置（戦闘開始時＝ホイールクリックと同じ）へ滑らかに戻す
-    {
-        float gx = m_player->worldX, gz = m_player->worldZ - 0.7f;
-        float k = 1.0f - expf(-dt * 5.0f);
-        m_cameraOffsetX += (gx - m_cameraOffsetX) * k;
-        m_cameraOffsetZ += (gz - m_cameraOffsetZ) * k;
-        m_cameraZoom    += (ZOOM_MAX - m_cameraZoom) * k;
-        if (fabsf(gx - m_cameraOffsetX) < 0.01f && fabsf(gz - m_cameraOffsetZ) < 0.01f && fabsf(ZOOM_MAX - m_cameraZoom) < 0.005f)
-        {
-            m_cameraOffsetX = gx; m_cameraOffsetZ = gz; m_cameraZoom = ZOOM_MAX;
-            m_camDemoHoming = false;
-        }
-        return;
-    }
-    if (m_camDemoStep < 0)   // 始める条件：2ターン目以降の自分の番、ターン表示が消えて、カードを持っていない
-    {
-        auto& pd = PlayerDataManager::GetData();
-        if (pd.tutorialCamera || m_battleResult != BattleResult::None || !m_turnManager.IsPlayerTurn()
-            || m_turnManager.GetTurnCount() < 2 || TurnBanner::IsActive() || m_selectedCardIndex >= 0) return;
-        pd.tutorialCamera = true;
-        pd.seenHints.insert("camera");   // 同じことをヒントでもう一度言わない
-        PlayerDataManager::Save();
-        m_camDemoStep = 0; m_camDemoTime = 0.0f;
-        m_isDraggingCamera = false;
-    }
-    Cursor::Request(CursorKind::Camera);
-    m_camDemoTime += dt;
-    if (m_camDemoTime >= CAM_DEMO[m_camDemoStep].dur)
-    {
-        m_camDemoTime = 0.0f;
-        if (++m_camDemoStep >= CAM_DEMO_N) { EndCamDemo(); return; }
-    }
-    // 目標へなめらかに寄せる（狙いカメラと同じ指数補間）
-    float gx = m_player->worldX, gz = m_player->worldZ - 0.7f, gzoom = ZOOM_MAX;   // Home＝ホイールクリックと同じ位置
-    // 盤面の中央（ホイールクリックの位置と同じく、少し奥に寄せた所）
-    float cx = ((m_gridMap->GetCols() - 1) / 2.0f - m_gridMap->GetCols() / 2.0f) * 1.1f;
-    float cz = ((m_gridMap->GetRows() - 1) / 2.0f - m_gridMap->GetRows() / 2.0f) * 1.1f - 0.7f;
-    switch (CAM_DEMO[m_camDemoStep].goal)
-    {
-    case CamGoal::Figure8:   // 中央を軸に八の字を1周（中央から始まり中央で終わる）
-    {
-        float t = m_camDemoTime / CAM_DEMO[m_camDemoStep].dur * 6.2831853f;
-        gx = cx + CAM8_W * sinf(t);
-        gz = cz + CAM8_H * sinf(2.0f * t);
-        break;
-    }
-    case CamGoal::ZoomIn: gx = cx; gz = cz; gzoom = ZOOM_MIN; break;
-    case CamGoal::Home:   break;
-    }
-    float k = 1.0f - expf(-dt * 5.0f);
-    m_cameraOffsetX += (gx - m_cameraOffsetX) * k;
-    m_cameraOffsetZ += (gz - m_cameraOffsetZ) * k;
-    m_cameraZoom    += (gzoom - m_cameraZoom) * k;
-}
-
-void BattleScene::EndCamDemo()   // 最後まで見た／クリックで飛ばした → 初期の位置へ滑らかに戻す
-{
-    m_camDemoStep = -1;
-    m_camDemoHoming = true;
+    if (m_camera.DemoActive() || m_camera.Homing()) return;
+    // 始める条件：2ターン目以降の自分の番、ターン表示が消えて、カードを持っていない
+    auto& pd = PlayerDataManager::GetData();
+    if (pd.tutorialCamera || m_battleResult != BattleResult::None || !m_turnManager.IsPlayerTurn()
+        || m_turnManager.GetTurnCount() < 2 || TurnBanner::IsActive() || m_selectedCardIndex >= 0) return;
+    pd.tutorialCamera = true;
+    pd.seenHints.insert("camera");   // 同じことをヒントでもう一度言わない
+    PlayerDataManager::Save();
+    m_camera.StartDemo();
 }
 
 bool BattleScene::CamDemoCaption(const wchar_t*& text, const char*& icon, float& alpha) const
 {
-    if (m_camDemoStep < 0) return false;
-    text = CAM_DEMO[m_camDemoStep].text; icon = CAM_DEMO[m_camDemoStep].icon;
-    alpha = (std::min)(1.0f, m_camDemoTime / 0.2f);   // 手順ごとにふわっと
-    return true;
+    return m_camera.DemoCaption(text, icon, alpha);
+}
+
+// ===== 時間を置いて1つずつ進める処理（TimedQueue の1件分）。戻り値＝次までの秒数（負なら残りを捨てて終わり） =====
+
+// カードを使った後の順番待ちを始める（カードを使う経路が2つあるので共通に）
+void BattleScene::StartCardSequences(const CardExecutor::ExecuteResult& r)
+{
+    if (r.startChainDetonate)
+        m_chain.Start({ ChainWave{ { { r.chainCol, r.chainRow } }, r.chainFull } });
+    if (r.startSeqDetonate)
+    {
+        std::vector<TrapFire> fires;
+        for (auto& [c, rr] : r.seqDetonateCells) fires.push_back({ c, rr, r.seqFull });
+        m_detonate.Start(std::move(fires));   // すぐ1個目
+    }
+    if (r.cardUsed && r.multiHitRemain > 0)
+        m_playerHits.Start(std::vector<PlayerHit>(r.multiHitRemain,
+            PlayerHit{ r.multiHitTargets, r.multiHitDamage, r.multiHitOnHit, r.multiHitOnHit2 }), MULTI_HIT_INTERVAL);
+}
+
+// 自分の連撃の追撃1発
+float BattleScene::StepPlayerHit(PlayerHit& h)
+{
+    bool anyAlive = false;
+    for (auto t : h.targets)
+    {
+        bool alive = false;
+        for (auto e : m_enemies) if (e == t && e->GetHp() > 0) alive = true;   // もう消えた敵には触らない
+        if (!alive) continue;
+        t->ReuseHitPart(); t->TakeDamage(h.damage); t->StartJump(0.5f, 0.2f); anyAlive = true;
+        CardEffect::ApplyOnHitEffect(h.onHit, t->GetBuffManager());    // 命中時の効果もヒットごとに（弱体1×2回＝弱体2）
+        CardEffect::ApplyOnHitEffect(h.onHit2, t->GetBuffManager());
+    }
+    return anyAlive ? MULTI_HIT_INTERVAL : -1.0f;   // 全員倒れたら残りは打たない
+}
+
+// 敵の多段攻撃の1発
+float BattleScene::StepEnemyHit(EnemyHit& h)
+{
+    int hpBefore = m_player->GetHp(), blockBefore = m_player->GetBlock();
+    m_player->TakeDamage(h.damage);   // 1発（数字はTakeDamage内で出る）
+    bool fullyBlocked = (m_player->GetHp() == hpBefore);
+    int blocked = blockBefore - m_player->GetBlock();   // ブロックで防いだ量
+    if (h.enemy && h.enemy->GetHp() > 0)
+    {
+        int th = m_player->GetBuffManager().GetBuffValue(BuffType::Thorns);
+        if (th > 0) h.enemy->TakeDamage(th);
+        int rip = m_player->GetBuffManager().GetBuffValue(BuffType::Riposte);
+        if (blocked > 0 && rip > 0) h.enemy->TakeDamage(blocked * rip / 100);   // 受け返し：防いだダメージの rip% を返す
+    }
+    // 最後の1発の後に状態異常（単発と同じく、完全に防いだら付かない。ブロックは前の発から減るので＝1発でも通ったら付く）
+    if (h.last && h.enemy)
+    {
+        if (!fullyBlocked)
+            for (auto& b : h.enemy->PendingPlayerBuffs())
+                m_player->GetBuffManager().AddBuff(b);
+        h.enemy->PendingPlayerBuffs().clear();
+    }
+    return MULTI_HIT_INTERVAL;
+}
+
+// 大蛇のとぐろ：通ったマスの罠を1つ
+float BattleScene::StepCoilTrap(CoilTrap& t)
+{
+    auto& cell = m_gridMap->GetCell(t.c, t.r);
+    if (cell.tileEffect.active && t.enemy->GetHp() > 0)
+        CardExecutor::TriggerTrap(cell, t.enemy, t.c, t.r, m_gridMap, m_enemies);
+    return 0.15f;
+}
+
+// レリック：戦闘開始時に全敵へ毒（1回だけ）
+float BattleScene::StepStartPoison(int& amount)
+{
+    for (auto enemy : m_enemies)
+    {
+        if (enemy->GetHp() <= 0) continue;
+        Buff b; b.type = BuffType::Poison;
+        b.value = amount + RelicManager::SumValue("poisonAdd");
+        b.duration = b.value;
+        b.name = BuffInfo::Get(BuffType::Poison).name; b.description = L"";
+        enemy->GetBuffManager().AddBuff(b);
+        float wx = (enemy->gridCol - m_gridMap->GetCols() / 2.0f) * 1.1f;
+        float wz = (enemy->gridRow - m_gridMap->GetRows() / 2.0f) * 1.1f;
+        EffectManager::Play("poison_apply", wx, 0.5f, wz);
+    }
+    return -1.0f;
+}
+
+// 連鎖起爆：今の波を起爆し、隣の罠を次の波に
+float BattleScene::StepChainWave(ChainWave& w)
+{
+    ChainWave next{ {}, w.full };
+    for (auto& [c, r] : w.cells)
+    {
+        auto& cell = m_gridMap->GetCell(c, r);
+        if (!cell.tileEffect.active || cell.tileEffect.enemyOwned) continue;   // 敵床は除外
+        CardExecutor::DetonateTrap(cell, c, r, m_gridMap, m_enemies, w.full, false);
+        for (int dr = -1; dr <= 1; dr++)
+            for (int dc = -1; dc <= 1; dc++)
+            {
+                if (dc == 0 && dr == 0) continue;
+                int nc = c + dc, nr = r + dr;
+                if (nc < 0 || nc >= m_gridMap->GetCols() || nr < 0 || nr >= m_gridMap->GetRows()) continue;
+                auto& ncell = m_gridMap->GetCell(nc, nr);
+                if (ncell.tileEffect.active && !ncell.tileEffect.enemyOwned)   // 敵床に連鎖しない
+                    next.cells.push_back({ nc, nr });
+            }
+    }
+    if (!next.cells.empty()) m_chain.Push(next);
+    ScreenShake::Add(0.3f);
+    ProcessDeadEnemies();
+    return 0.12f;   // 波の間隔（大きいほどゆっくり連鎖）
+}
+
+// 一斉起爆・導火線：罠を1つ
+float BattleScene::StepDetonate(TrapFire& f)
+{
+    auto& cell = m_gridMap->GetCell(f.c, f.r);
+    if (cell.tileEffect.active)
+    {
+        CardExecutor::DetonateTrap(cell, f.c, f.r, m_gridMap, m_enemies, f.full, false);
+        ScreenShake::Add(0.2f);
+        ProcessDeadEnemies();
+    }
+    return 0.08f;   // 1個ずつの間隔（大きいほどゆっくり）
 }
 
 // 自分の罠：自分のターンの始め（＝敵のターンが終わった所）に育つ（上限3回）。
@@ -4345,10 +2183,10 @@ void BattleScene::UpdateTrapsAtTurnStart()
                     nearEnemy = (ei >= 0 && m_enemies[ei]->GetHp() > 0);
                 }
             if (nearEnemy && ++t.fuse >= TRAP_FUSE
-                && std::find(m_detonateQueue.begin(), m_detonateQueue.end(), std::make_pair(c, r)) == m_detonateQueue.end())
-                m_detonateQueue.push_back({ c, r });   // 起爆カードと同じ順番待ちで1個ずつ
+                && !m_detonate.Any([&](const TrapFire& f) { return f.c == c && f.r == r; }))
+                m_detonate.Push({ c, r, false });   // 起爆カードと同じ順番待ちで1個ずつ（周りは半分）
         }
-    if (!m_detonateQueue.empty()) { m_detonateFull = false; m_detonateTimer = 0.3f; }   // 周りは半分。少し間をおいて
+    if (!m_detonate.Empty()) m_detonate.Delay(0.3f);   // 少し間をおいて
 }
 
 // バフが付いた／増えた時のエフェクト。ここに無いバフ（デバフ・表示用）は出さない。増やす時は1行
@@ -4357,7 +2195,7 @@ static const struct { BuffType type; const char* fx; } BUFF_GAIN_FX[] = {
     { BuffType::AttackUp, "buff_attack" },   { BuffType::AttackUpTurn, "buff_attack" }, { BuffType::AttackGrowth, "buff_attack" },
     { BuffType::Frenzy, "buff_attack" },     { BuffType::LastStand, "buff_attack" },    { BuffType::DeepStand, "buff_attack" },
     { BuffType::KnifePower, "buff_attack" }, { BuffType::HolyGround, "buff_attack" },   { BuffType::Charge, "buff_attack" },
-    { BuffType::TrapPower, "buff_attack" },
+    { BuffType::TrapPower, "buff_attack" },  { BuffType::HalfCarry, "buff_defense" }, { BuffType::StandFirm, "buff_defense" },
     // 守りが上がる
     { BuffType::DefenseUp, "buff_defense" }, { BuffType::Barricade, "buff_defense" },   { BuffType::Thorns, "buff_defense" },
     { BuffType::Momentum, "buff_defense" },  { BuffType::Riposte, "buff_defense" },     { BuffType::CardBlock, "buff_defense" },
@@ -4404,26 +2242,6 @@ bool BattleScene::SelectedNeedsTarget() const
     const CardData* sd = m_hand.GetCards()[m_selectedCardIndex]->GetData();
     CardType ct = sd->type;
     return ct == CardType::Attack || ct == CardType::Move || PicksCell(*sd);
-}
-
-bool BattleScene::TargetsHiddenByHand(const CardData& d) const
-{
-    XMMATRIX vp = m_renderer3D->GetViewMatrix() * m_renderer3D->GetProjectionMatrix();
-    float handTop = m_screenHeight - CardVisual::PLAY_LINE_OFFSET;   // 手札の上端（使用ラインと同じ線）
-    int rng = (d.type == CardType::Move) ? m_player->GetMoveRange(d.range) : d.range;
-
-    for (auto& [c, r] : BattleHighlighter::GetCandidates(m_playerCol, m_playerRow, d.rangeType, rng, 0, -1))
-    {
-        if (c < 0 || c >= m_gridMap->GetCols() || r < 0 || r >= m_gridMap->GetRows()) continue;   // 盤面外も返るので除く
-        float wx = (c - m_gridMap->GetCols() / 2.0f) * 1.1f;
-        float wz = (r - m_gridMap->GetRows() / 2.0f) * 1.1f;
-        XMFLOAT4 clip;
-        XMStoreFloat4(&clip, XMVector4Transform(XMVectorSet(wx, 0.0f, wz, 1.0f), vp));
-        if (clip.w <= 0.0f) continue;
-        float sy = (1.0f - clip.y / clip.w) * 0.5f * m_screenHeight;   // 画面のy（下ほど大きい）
-        if (sy > handTop) return true;
-    }
-    return false;
 }
 
 float BattleScene::HiddenTargetsPanZ(const CardData& d) const
@@ -4484,29 +2302,8 @@ void BattleScene::DashGlideTo(int c, int r)
 
 void BattleScene::FreeLookStep(Input& in, float deltaTime)
 {
-    // ズーム
-    int wd = in.GetMouseWheelDelta();
-    if (wd != 0) { m_cameraZoom -= wd > 0 ? ZOOM_SPEED : -ZOOM_SPEED; m_cameraZoom = max(ZOOM_MIN, min(ZOOM_MAX, m_cameraZoom)); }
-
-    // パン（中ボタンドラッグ）
-    if (in.GetMouseButtonPress(1)) {
-        POINT mp = in.GetMousePos();
-        if (!m_isDraggingCamera) { m_isDraggingCamera = true; m_dragStartPos = mp; }
-        else {
-            float dx = (float)(mp.x - m_dragStartPos.x), dy = (float)(mp.y - m_dragStartPos.y);
-            m_cameraOffsetX += dx * 0.02f * m_cameraZoom;
-            m_cameraOffsetZ -= dy * 0.02f * m_cameraZoom;
-            float gW = (m_gridMap->GetCols() / 2.0f) * 1.1f, gH = (m_gridMap->GetRows() / 2.0f) * 1.1f;
-            float zf = (m_cameraZoom > 1.0f) ? 1.0f / m_cameraZoom : 1.0f;
-            m_cameraOffsetX = max((-gW + 2.0f) * zf, min((gW - 3.0f) * zf, m_cameraOffsetX));
-            m_cameraOffsetZ = max((-gH + 1.0f) * zf, min((gH - 2.0f) * zf, m_cameraOffsetZ));
-            m_dragStartPos = mp;
-        }
-    }
-    else m_isDraggingCamera = false;
-
-    // リセット（中クリック）
-    if (in.GetMouseButtonTrigger(2)) { m_cameraZoom = ZOOM_MAX; m_cameraOffsetX = m_player->worldX; m_cameraOffsetZ = m_player->worldZ; }
+    // ズーム・パン・初期位置（本番の戦闘と同じ操作）
+    m_camera.HandleInput(in, m_gridMap->GetCols(), m_gridMap->GetRows(), m_player->worldX, m_player->worldZ);
 
     // 敵クリック（グリッド）→ 範囲選択
     if (in.GetMouseButtonTrigger(0)
@@ -4527,17 +2324,11 @@ void BattleScene::FreeLookStep(Input& in, float deltaTime)
         int i = BattleUI::EnemyEntryAt(in.GetMousePos(), m_enemies, m_screenWidth);
         if (i >= 0) {
             m_selectedEnemyRange = (m_selectedEnemyRange == i) ? -1 : i;
-            m_cameraOffsetX = m_enemies[i]->worldX; m_cameraOffsetZ = m_enemies[i]->worldZ;
+            m_camera.LookAt(m_enemies[i]->worldX, m_enemies[i]->worldZ);
         }
     }
 
-    // カメラ適用
-    {
-        float sx, sz; ScreenShake::GetOffset(sx, sz);
-        XMFLOAT3 tgt(m_cameraOffsetX + sx, -2.0f, m_cameraOffsetZ + sz);
-        XMFLOAT3 pos(m_cameraOffsetX + sx, tgt.y + 17.0f * m_cameraZoom, m_cameraOffsetZ + sz + 6.0f * m_cameraZoom);
-        m_renderer3D->SetCamera(pos, tgt, XMFLOAT3(0, 1, 0));
-    }
+    m_camera.Apply(m_renderer3D);   // カメラ適用
 
     // ハイライト（脅威範囲＋当たりマーカー）
     m_highlighter.SetSelectedEnemy(FocusEnemy());

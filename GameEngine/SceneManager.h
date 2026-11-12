@@ -23,27 +23,18 @@
 #include "ResultScene.h"
 #include "URect.h"
 #include "ScrollList.h"
+#include "UiContext.h"
+#include "GlossaryPanel.h"
+#include "SettingsPanel.h"
+#include "Tutorials.h"     // TutorialPanel と、チュートリアルの中身の表
+#include "EventPanel.h"
+#include "ItemPanel.h"
+#include "DeckPanel.h"
+#include "RestPanel.h"
+#include "MapPanel.h"
+#include "BossRelicPanel.h"
 
 #include <functional>
-struct SettingsUI 
-{ 
-    URect panel, 
-          disp, 
-          bgmTrack, 
-          seTrack, 
-          shake,
-          aimCam,
-          glossary,
-          title,
-          gameEnd, 
-          close,
-          gear, 
-          cfmPanel, 
-          cfmYes, 
-          cfmNo;
-    bool  hasTitle = true;   // 「タイトルに戻る」を出すか（タイトル画面では出さない）
-};
-
 class SceneManager
 {
 public:
@@ -84,58 +75,16 @@ public:
     void DrawImGui();
     void HandleInput();
 
-    struct TutorialPage {
-        std::wstring text; float hx = 0, hy = 0, hw = 0, hh = 0;
-        int hoverCard = -1; bool stepsTip = false; bool showHitmark = false;
-        bool enemyPanel = false;
-    };
-    std::vector<TutorialPage> m_tutorialPages;
-    int m_tutorialPage = 0;
-    bool m_tutorialOpen = false;
-    void ShowTutorial(const std::vector<TutorialPage>& pages);
-    void DrawTutorial();
-    void DrawHint();
     bool CamDemoActive() const;   // 今の戦闘でカメラ操作のデモ中か（ヒントを止めて隠す）
-    void DrawGuideBox(const wchar_t* text, float a, const char* icon, const wchar_t* note);   // 説明の窓（ヒント・カメラのデモで共通）
-    void DrawFrame(float x, float y, float w, float h, const DirectX::XMFLOAT4& c);   // 金枠（チュートリアル・ヒント共通）
-    std::vector<TutorialPage> m_pendingTutorial;
-    float m_tutorialDelay = 0.0f;
-    void ShowTutorialDelayed(const std::vector<TutorialPage>& pages, float delay);
-    // ページ型チュートリアルの表示中、または表示待ち中か（その間はヒントを出さない）
-    bool TutorialActive() const { return m_tutorialOpen || !m_pendingTutorial.empty(); }
+    void ShowTutorialOnce(TutorialId id);   // 初めての時に1回だけ（中身は Tutorials.h）
+    URect TutorialSpot(const TutorialPanel::Page& pg) const;   // 照らす場所（戦闘の物なら今の位置）
 
     void DrawBarTips();
 
-    void DrawCraft();
-    void GetCraftSlotRect(int i, float& x, float& y, float& w, float& h) const;
-    void GetCraftInvRect(int i, float& x, float& y, float& w, float& h) const;
-    void GetCraftBtnRect(float& x, float& y, float& w, float& h) const;
-    std::vector<std::pair<std::string, int>> CraftInventory() const;
-    void GetCraftBaseRect(int i, float& x, float& y, float& w, float& h) const;
-    void GetCraftModRect(int i, float& x, float& y, float& w, float& h) const;
-    std::vector<std::pair<std::string, int>> CraftBases() const;
-    int  m_craftEditIdx = -1;   // 素材を足している合成カード（デッキの番号。-1＝新しく作る）
-    int  m_craftLocked = 0;     // m_craftMods の先頭の、もう付いている素材の数（外せない）
-    std::vector<int> CraftEditables() const;   // 素材を足せる合成カード（デッキの番号）
-    std::vector<std::pair<std::string, int>> CraftMods() const;
-    std::string CraftRecipeId() const;
-    int CraftModSlots() const;
 
     void  GetBackBtnRect(float& x, float& y, float& w, float& h) const;
     bool  BackBtnHit(POINT m) const;
     void  DrawBackButton();
-
-    void DrawEventRelicPicker();
-    int  EventRelicAt(POINT p) const;
-
-    // イベントのレリック選択：1枠の矩形（描画とクリックで共有）／一覧を囲む窓
-    URect EventRelicRect(int i) const
-    {
-        const float w = 150.0f, h = 124.0f, gap = 14.0f; const int cols = 6;
-        float startX = (m_screenWidth - (cols * w + (cols - 1) * gap)) / 2.0f;
-        return { startX + (i % cols) * (w + gap), 170.0f + (i / cols) * (h + gap), w, h };
-    }
-    URect EventRelicPanel() const;
 
     std::string m_generalBgm;
     int m_generalBgmLayer = -1;
@@ -157,15 +106,10 @@ private:
 
     SpriteRenderer* m_uiSprite = nullptr;
     Input m_uiInput;
-    bool  m_deckOpen = false;
 
-    static constexpr float BAR_H = 40.0f;
+    static constexpr float BAR_H = UiContext::BAR_H;   // 上の帯の高さ（窓と共通）
 
-    float m_deckScroll = 0.0f;
-    float m_deckScrollTarget = 0.0f;
 
-    float m_matScroll = 0.0f;
-    float m_matScrollTarget = 0.0f;
 
     bool m_mDrag = false;
     int  m_mDragStartY = 0;
@@ -175,52 +119,15 @@ private:
     float m_uiTime = 0.0f;
 
     void DrawOverlay();
-    void DrawDeckCards(bool textPass);
 
-    bool m_deckRemoveMode = false;
-    static constexpr float DECK_SCALE = 1.1f;
 
-    bool GetDeckCardBase(int i, float& baseX, float& baseY) const;   // カードの基準位置
-    float DeckMaxScroll() const;   // デッキ表示のスクロール
-    float MatMaxScroll() const;
-    float MatTop() const;
-    float MatBottom() const;
-    float MatAlphaAt(float y) const;
-    float CoreTop() const;
-    int  GetDeckCardAt(POINT p) const;
-    int  DeckHoverIndex();                                          // ホバー中のカード（説明の上では前のカードのまま）
-    int  m_deckTipIdx = -1;                              // 座標→デッキindex
-    std::vector<int> VisibleDeckIndices() const;
 
-    bool m_deckUpgradeMode = false;
 
-    bool m_craftOpen = false;
-    std::string m_craftBase;
-    std::vector<std::string> m_craftMods;   // 最大2
-    void HandleCraftClick(POINT m);
-    void DoCraft();
 
-    bool m_invOpen = false;
-    void DrawInventory();
     void DrawItemTooltip(const std::string& id, POINT mp);
-    // アイテムのマス（インベントリ・合成で共通）：左にアイコン → 名前（入りきらなければ縮める）→ 右上の角に個数バッジ
-    float DrawItemIcons(const std::vector<const char*>& icons, float x, float y, float h, float size, float a);   // 戻り値＝名前の左端
-    void  DrawItemBadge(float x, float y, float w, float a);
-    void  DrawItemBadgeText(int count, float x, float y, float w, float a);
-    void  DrawItemName(const wchar_t* s, float left, float right, float y, float h, D2D1_COLOR_F c, bool matFade);
-    std::string HoveredItem(POINT mp) const;
 
-    bool m_mapOpen = false;
-    void DrawMap();
 
-    bool m_restOpen = false;     // 3択画面 表示中
-    bool m_restActive = false;   // 休憩の行動が未確定（サブ画面を開いている間もtrue）
-    bool m_restArmed = false;    // 押下が休憩画面内で始まったクリックだけ有効にする
-    static constexpr int REST_HEAL = 20;
-    void DrawRest();
-    void HandleRestClick(POINT m);
-    void FinishRest();
-    void GetRestBtnRect(int i, float& x, float& y, float& w, float& h) const;
+    void FinishRest();   // 休憩を終える（休憩・デッキ・合成を閉じて保存）
 
     float m_craftFxTimer = 0.0f;         // >0の間 演出再生
     std::string m_craftFxCard;           // 完成カードID
@@ -234,119 +141,43 @@ private:
     std::string HoveredRelic(POINT mp) const;
 
 
-    bool m_eventOpen = false;
-    std::string m_eventId;
-    int m_eventResult = -1;   // -1=選択中, >=0=結果表示
-    void DrawEvent();
     // ボスレリックの選択（候補があるフィールドで開くモーダル）
     bool BossRelicPickOpen() const;
-    void DrawBossRelicPick();
-    URect BossRelicCardRect(int i, int n) const
-    {
-        const float w = 300.0f, h = 310.0f, gap = 30.0f;
-        float total = n * w + (n - 1) * gap;
-        return { (m_screenWidth - total) / 2.0f + i * (w + gap), 170.0f, w, h };
-    }
-    URect BossRelicSkipRect() const { return { m_screenWidth / 2.0f - 90.0f, 520.0f, 180.0f, 44.0f }; }
-    void ApplyOutcomes(const EventChoice& c);
-    void GetEventChoiceRect(int i, float& x, float& y, float& w, float& h) const;
-    // イベントの窓（選択肢の数、または結果画面で受け取った物の数で高さが決まる）
-    URect EventPanelRect(int choiceCount, int gainCount = 0) const
-    {
-        float w = 640.0f;
-        float hc = 200.0f + choiceCount * 72.0f, hg = 264.0f + gainCount * 52.0f;
-        return { (m_screenWidth - w) / 2.0f, 96.0f, w, hc > hg ? hc : hg };
-    }
-
-    // イベントで実際に増減したもの（結果画面に一覧表示。確率つきの結果も起きたものだけ）
-    struct EventGain { std::string kind; std::string id; int value = 0; };   // kind: gold/hp/maxHp/material/relic/card
-    std::vector<EventGain> m_eventGains;
-    float m_eventHpDisplay = -1.0f;   // イベントでHPが減った時の表示HP（バトルと同じく徐々に減らす。-1=なし）
-    URect EventGainRect(int i, const URect& panel) const
-    {
-        const float w = 380.0f;
-        return { panel.x + (panel.w - w) / 2.0f, panel.y + 184.0f + i * 52.0f, w, 44.0f };
-    }
-    std::string m_eventPickType;   // "removeCard"/"upgradeCard"/"transformCard"（空=非ピッカー）
-    int m_eventPickChoice = -1;
     bool m_eatRelease = false;   // 確認の窓で押したクリックの「離す」を、閉じた後の画面に渡さない
-    ScrollList m_eventPickScroll;   // イベントのカード選択の一覧（デッキが多い時にスクロール）
-    void DrawEventPicker();
-    void ApplyCardPick(int idx);
-    void GetEventCardSlot(int i, float& x, float& y) const;
-    URect EventPickerPanel() const;   // イベントのカード選択：一覧を囲む窓（デッキ枚数で高さが決まる）
-    int  EventCardAt(POINT p) const;
-    int m_eventPickAnimIdx = -1;
-    float m_eventPickAnimTimer = 0.0f;
-    std::string m_eventPickAnimTo;   // 変化/強化先（空=削除の塵化）
-    static constexpr float EVENT_PICK_ANIM_DUR = 2.0f;
-    bool ChoiceEnabled(const EventChoice& c) const;
+    std::string  m_cardSelectMode;   // 次のカード報酬のモード（イベントから） 
 
-    enum class EventPending { None, Battle, Shop, Treasure, CardSelect };
-    EventPending m_eventPending = EventPending::None;
-    std::string  m_eventBattleParam;
-    std::string  m_cardSelectMode; 
 
-    void DrawBigCard(const CardData* d, float x, float y, float scale, bool textPass);
 
-    int  m_deckHoveredPrev = -1;
-    int  m_deckPreviewIdx = -1;   // クリックで拡大中のカード（-1=なし）
-    void DrawDeckPreview();
-    bool m_deckShowUpgrade = false;   // デッキ閲覧時に強化後も表示するか
-    bool m_previewShowUpgrade = false;   // 拡大表示中に+版を見せるか
-    bool m_upgradeBtnHov = false;
-
-    bool m_settingsOpen = false;
     bool m_swallowSceneClick = false;   // モーダルを閉じたクリックが下のシーンに漏れないよう、ボタンを離すまでシーンの入力を止める
-    int  m_confirmAction = 0;
-    int  m_dragSlider = -1;               // 0=BGM,1=SE,-1=なし
-    void DrawSettings();
-    // 用語集（設定から開く。Glossary::RequestOpen でどこからでも開ける）
-    bool m_glossaryOpen = false;
-    std::unique_ptr<class VideoClip> m_glossVideo;   // 選んでいる用語の動画
-    ULONGLONG m_glossVideoTick = 0;
-    int  m_glossCat = 0, m_glossSel = 0, m_glossScroll = 0;
-    struct GlossPage { int cat, sel, scroll; };
-    std::vector<GlossPage> m_glossBack;   // 戻る用：前に見ていたページ（閉じたら消す）
-    void OpenGlossary(const std::string& id);
-    void DrawGlossary();
-    void HandleGlossaryInput();
-    std::vector<int> GlossaryItems() const;
-    // 用語集の説明欄の並び（動画・説明文の上端・関連ボタン）。描画とクリック判定で共有
-    struct GlossDetail { URect video{}; float descTop = 0.0f; std::vector<std::pair<URect, std::string>> related; };
-    GlossDetail GlossDetailLayout(const struct GlossaryEntry& e, const URect& detail);
-    void HandleSettingsInput();   // 設定パネルの操作（帯のある画面・タイトルの両方から）
+    // 用語集の窓（Glossary::RequestOpen でどこからでも開ける）
+    GlossaryPanel m_glossary;
+    // 設定の窓（帯のギア・タイトルの左下から）
+    SettingsPanel m_settings;
+    // ページ型のチュートリアル
+    TutorialPanel m_tutorial;
+    // イベントの窓（フィールドのイベントマス・エディタから）
+    EventPanel m_event;
+    // アイテムの窓（持ち物と合成）
+    ItemPanel m_items;
+    // デッキの窓（帯の「デッキ」・休憩の「強化」）
+    DeckPanel m_deck;
+    RestPanel m_rest;             // 休憩の窓
+    MapPanel m_map;               // マップの窓
+    BossRelicPanel m_bossRelic;   // ボスのレリックの3択
+    // 窓のクラスに渡す描画と入力の道具
+    UiContext Ui() { return { m_textRenderer, m_uiSprite, &m_uiInput, m_screenWidth, m_screenHeight, m_uiTime }; }
     bool AnyModalOpen() const;
+    bool PanelPausesScene() const;        // シーンの Update を止める窓が開いているか
+    // 入力（HandleInput は上から順に呼び、受け取った所で止まる）
+    bool HandleConfirmAndTooltip();
+    void HandleScrollDrag();
+    void LogInputState();
+    bool HandleOverlayInput(UiContext& ui);
+    bool HandleTopBarInput(UiContext& ui);
+    bool HandleFieldPanelInput(UiContext& ui);
+    void PassInputToScene();
     bool TooltipBlocked() const;          // カードの説明を残せない画面が開いているか
 
-    SettingsUI SettingsLayout() const
-    {
-        SettingsUI u{};
-        u.hasTitle = (m_currentType != SceneType::Title);   // タイトルでは「タイトルに戻る」を出さない
-        u.gear = { (float)m_screenWidth - 58.0f, 5.0f, 48.0f, 30.0f };
-        float pw = 440.0f, ph = u.hasTitle ? 480.0f : 438.0f;   // 「タイトルに戻る」の分だけ縦に伸ばす
-        float px = (m_screenWidth - pw) / 2.0f, py = (m_screenHeight - ph) / 2.0f;
-        u.panel = { px, py, pw, ph };
-        u.disp = { px + 180.0f, py + 54.0f, 200.0f, 34.0f };
-        u.bgmTrack = { px + 180.0f, py + 120.0f, 200.0f, 14.0f };
-        u.seTrack = { px + 180.0f, py + 168.0f, 200.0f, 14.0f };
-        u.shake = { px + 180.0f, py + 208.0f, 120.0f, 34.0f };
-        u.aimCam = { px + 180.0f, py + 250.0f, 120.0f, 34.0f };
-        float by = py + 292.0f;
-        u.glossary = { px + pw / 2.0f - 90.0f, by, 180.0f, 34.0f }; by += 42.0f;   // 用語集
-        if (u.hasTitle) { u.title = { px + pw / 2.0f - 90.0f, by, 180.0f, 34.0f }; by += 42.0f; }   // タイトルに戻る
-        else            u.title = { -1000.0f, -1000.0f, 0.0f, 0.0f };                             // 画面外（押せない）
-        u.gameEnd = { px + pw / 2.0f - 90.0f, by, 180.0f, 34.0f };
-        u.close = { px + pw / 2.0f - 70.0f, py + ph - 52.0f, 140.0f, 38.0f };
-
-        // 確認ダイアログ（はい/いいえ）
-        float cw = 360.0f, ch = 170.0f;
-        float ccx = (m_screenWidth - cw) / 2.0f, ccy = (m_screenHeight - ch) / 2.0f;
-        u.cfmPanel = { ccx, ccy, cw, ch };
-        u.cfmYes = { ccx + 40.0f, ccy + ch - 60.0f, 120.0f, 40.0f };
-        u.cfmNo = { ccx + cw - 160.0f, ccy + ch - 60.0f, 120.0f, 40.0f };
-        return u;
-    }
 
     // 上部の帯の数値欄（0=HP, 1=Steps, 2=Layer, 3=G）。描画と説明のホバー判定で共有
     URect BarStatRect(int i) const
@@ -356,6 +187,7 @@ private:
         return { xs[i], 6.0f, ws[i], 28.0f };
     }
 
+    URect BarGearRect() const { return { (float)m_screenWidth - 58.0f, 5.0f, 48.0f, 30.0f }; }   // 帯の設定ボタン（ギア）
     // 上部の帯のボタン（0=マップ, 1=アイテム, 2=デッキ）。描画・クリック・説明で共有
     URect BarButtonRect(int i) const
     {
@@ -364,13 +196,8 @@ private:
         return { xs[i], 5.0f, ws[i], 30.0f };
     }
 
-    // ホバー中のボタンは少し持ち上げて描く（判定と色は元の矩形のまま＝持ち上がっても外れない）
-    static constexpr float HOVER_LIFT = 3.0f;
-    URect Lifted(const URect& r)
-    {
-        float up = HoverLift::Get(r.x, r.y, r.has(m_uiInput.GetMousePos()), HOVER_LIFT);   // 手札と同じ補間で浮く
-        return URect{ r.x, r.y - up, r.w, r.h };
-    }
+    // ホバー中のボタンは少し持ち上げて描く（判定と色は元の矩形のまま＝持ち上がっても外れない。UiContext と共通）
+    URect Lifted(const URect& r) { return Ui().Lifted(r); }
 
     // 上部のバー（HP・デッキ・設定など）を出すシーンか
     bool HasTopBar() const { return m_currentType != SceneType::Title && m_currentType != SceneType::QuickSelect; }

@@ -1,5 +1,7 @@
 #include "TextureManager.h"
 #include "TextureLoader.h"
+#include <fstream>
+#include <nlohmann/json.hpp>
 
 ID3D11Device* TextureManager::m_device = nullptr;
 std::unordered_map<std::string, ID3D11ShaderResourceView*> TextureManager::m_textures;
@@ -46,4 +48,24 @@ ID3D11ShaderResourceView* TextureManager::Get(const std::string& name)
         return nullptr;
     }
     return it->second;
+}
+// 画像の一覧をまとめて読む。{ "groups": [ { "name": ..., "textures": [ { "key": ..., "path": ... } ] } ] }
+// （パスは ASCII だけ。読み込み済みの key は Load が飛ばす）
+int TextureManager::LoadList(const std::string& jsonPath)
+{
+    std::ifstream f(jsonPath);
+    if (!f) { OutputDebugStringA(("TextureManager: list not found " + jsonPath + "\n").c_str()); return 0; }
+    nlohmann::json j;
+    try { f >> j; }
+    catch (const std::exception& e) { OutputDebugStringA(("TextureManager: list parse error " + std::string(e.what()) + "\n").c_str()); return 0; }
+    int n = 0;
+    for (auto& g : j.value("groups", nlohmann::json::array()))
+        for (auto& tx : g.value("textures", nlohmann::json::array()))
+        {
+            std::string key = tx.value("key", ""), path = tx.value("path", "");
+            if (key.empty() || path.empty()) continue;
+            std::wstring wpath(path.begin(), path.end());
+            if (Load(key, wpath.c_str())) n++;
+        }
+    return n;
 }

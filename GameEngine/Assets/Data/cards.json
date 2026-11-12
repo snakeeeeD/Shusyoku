@@ -130,7 +130,8 @@
       "mainEffect": {
         "type": "Damage",
         "value": 2
-      }
+      },
+      "exhaust": true
     },
     {
       "id": "ATK_body_slum",
@@ -1085,17 +1086,18 @@
       "id": "SKL_intimidate",
       "name": "威圧の盾",
       "type": "Skill",
-      "rarity": "Common",
+      "rarity": "Uncommon",
       "tags": [
         "Bulwark"
       ],
       "cost": 1,
       "range": 0,
       "rangeType": "None",
-      "description": "ブロック{value} 全敵に弱体2ターン",
+      "description": "ブロック{value} 全敵に弱体1ターン",
       "vfx": "block_gain",
       "upgrade": {
-        "mainValue": 3
+        "allEnemyDuration": 1,
+        "description": "ブロック{value} 全敵に弱体2ターン"
       },
       "mainEffect": {
         "type": "Block",
@@ -1104,7 +1106,7 @@
       "allEnemyEffect": {
         "buffType": "Vulnerable",
         "value": 1,
-        "duration": 2
+        "duration": 1
       }
     },
     {
@@ -1201,18 +1203,19 @@
       "rangeType": "None",
       "description": "ブロック{value} このターン踏ん張り",
       "upgrade": {
-        "mainValue": 20
+        "mainValue": 10
       },
       "mainEffect": {
         "type": "Block",
-        "value": 100
+        "value": 50
       },
       "subEffect": {
         "type": "ApplyBuff",
         "value": 1,
         "duration": 1,
         "buffType": "MoveLock"
-      }
+      },
+      "exhaust": true
     },
     {
       "id": "SKL_discard_guard",
@@ -1849,13 +1852,13 @@
       "cost": 4,
       "range": 0,
       "rangeType": "None",
-      "description": "2ターンに一度、攻撃力が{value}上昇",
+      "description": "毎ターン、攻撃力が{value}上昇",
       "upgrade": {
-        "mainValue": 1
+        "cost": -1
       },
       "mainEffect": {
         "type": "ApplyBuff",
-        "value": 2,
+        "value": 1,
         "duration": -1,
         "buffType": "AttackGrowth"
       }
@@ -1978,13 +1981,13 @@
       "cost": 1,
       "range": 0,
       "rangeType": "None",
-      "description": "攻撃を完全に防ぐと 攻撃した敵に{value}ダメージ",
+      "description": "ブロックで防いだダメージの{value}%を 攻撃した敵に返す",
       "upgrade": {
-        "mainValue": 3
+        "mainValue": 50
       },
       "mainEffect": {
         "type": "ApplyBuff",
-        "value": 6,
+        "value": 100,
         "duration": -1,
         "buffType": "Riposte"
       }
@@ -3247,6 +3250,73 @@
         "value": 3,
         "duration": -1,
         "buffType": "TrapPower"
+      }
+    },
+    {
+      "id": "ATK_shield_strike",
+      "name": "盾打ち",
+      "type": "Attack",
+      "rarity": "Common",
+      "tags": [
+        "Bulwark"
+      ],
+      "vfx": "smash",
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "ブロック6を得てから、 ブロックの半分のダメージ",
+      "preBlock": 6,
+      "upgrade": {
+        "preBlock": 2,
+        "description": "ブロック8を得てから、 ブロックの半分のダメージ"
+      },
+      "mainEffect": {
+        "type": "BlockDamage",
+        "value": 50
+      }
+    },
+    {
+      "id": "POW_zanshin",
+      "name": "残心",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "tags": [
+        "Bulwark"
+      ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "ターンの始めに ブロックを半分持ち越す",
+      "upgrade": {
+        "cost": -1
+      },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 1,
+        "duration": -1,
+        "buffType": "HalfCarry"
+      }
+    },
+    {
+      "id": "POW_stand_firm",
+      "name": "不退転",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "tags": [
+        "Bulwark"
+      ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "ターンの終わりに 隣の敵全員に ブロックの{value}%ダメージ",
+      "upgrade": {
+        "mainValue": 15
+      },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 30,
+        "duration": -1,
+        "buffType": "StandFirm"
       }
     }
   ]

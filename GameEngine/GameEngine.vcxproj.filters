@@ -378,7 +378,43 @@
     <ClInclude Include="Scene.h">
       <Filter>ソース ファイル\02-Scene\00-Scene</Filter>
     </ClInclude>
+    <ClInclude Include="GlossaryPanel.h">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClInclude>
+    <ClInclude Include="UiContext.h">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClInclude>
+    <ClInclude Include="EventPanel.h">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClInclude>
+    <ClInclude Include="ItemPanel.h">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClInclude>
+    <ClInclude Include="DeckPanel.h">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClInclude>
+    <ClInclude Include="BossRelicPanel.h">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClInclude>
+    <ClInclude Include="MapPanel.h">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClInclude>
+    <ClInclude Include="RestPanel.h">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClInclude>
+    <ClInclude Include="GuideBox.h">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClInclude>
+    <ClInclude Include="TutorialPanel.h">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Tutorials.h">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClInclude>
     <ClInclude Include="SceneManager.h">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClInclude>
+    <ClInclude Include="SettingsPanel.h">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClInclude>
     <ClInclude Include="TitleScene.h">
@@ -464,6 +500,9 @@
     </ClInclude>
     <ClInclude Include="CardEffect.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\05-CardEffect</Filter>
+    </ClInclude>
+    <ClInclude Include="BattleCamera.h">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
     </ClInclude>
     <ClInclude Include="BattleScene.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
@@ -665,7 +704,37 @@
     <ClCompile Include="GameObject.cpp">
       <Filter>ソース ファイル\03-Object関連\01-GameObject</Filter>
     </ClCompile>
+    <ClCompile Include="GlossaryPanel.cpp">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClCompile>
+    <ClCompile Include="EventPanel.cpp">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClCompile>
+    <ClCompile Include="ItemPanel.cpp">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClCompile>
+    <ClCompile Include="DeckPanel.cpp">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClCompile>
+    <ClCompile Include="BossRelicPanel.cpp">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClCompile>
+    <ClCompile Include="MapPanel.cpp">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClCompile>
+    <ClCompile Include="RestPanel.cpp">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClCompile>
+    <ClCompile Include="GuideBox.cpp">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClCompile>
+    <ClCompile Include="TutorialPanel.cpp">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClCompile>
     <ClCompile Include="SceneManager.cpp">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClCompile>
+    <ClCompile Include="SettingsPanel.cpp">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClCompile>
     <ClCompile Include="TitleScene.cpp">
@@ -716,7 +785,16 @@
     <ClCompile Include="BuffManager.cpp">
       <Filter>ソース ファイル\03-Object関連\30-Card\30-Buff\10-BuffManager</Filter>
     </ClCompile>
+    <ClCompile Include="BattleCamera.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
+    </ClCompile>
     <ClCompile Include="BattleScene.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
+    </ClCompile>
+    <ClCompile Include="BattleSceneDraw.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
+    </ClCompile>
+    <ClCompile Include="BattleSceneInput.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
     </ClCompile>
     <ClCompile Include="Battlehighlighter.cpp">

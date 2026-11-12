@@ -90,6 +90,7 @@ struct CardData
     bool dash = false;      // moveカード以外に移動効果があるかフラグ
     bool drawBeforeDiscard = false;   // 捨てる前に1ドローする（攻撃＋捨て系の救済）
     int selfDamage = 0;     // 自傷ダメージ
+    int preBlock = 0;       // 効果の前に得るブロック（盾打ち：先にブロックを得てから、ブロック分で殴る）
     int hits = 1;         // 攻撃回数（マルチヒット）
     bool unplayable = false;   // 使用不可（妨害/呪い）
     bool ethereal = false;     // ターン終了時、手札にあると廃棄（消滅）

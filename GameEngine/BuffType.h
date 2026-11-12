@@ -68,4 +68,6 @@ enum class BuffType
     Mire,           // 沼：移動距離-value（沼の上にいる間）
     Immovable,      // 移動不可：押し出し・引き寄せで動かない（表示用・永続）
     TrapPower,      // 罠術：罠のダメージ+value（罠職人の心得）
+    HalfCarry,      // 残心：ターンの始めにブロックを半分持ち越す
+    StandFirm,      // 不退転：ターンの終わりに、隣の敵全員に残ったブロックのvalue%ダメージ
 };

@@ -1,5 +1,6 @@
 #pragma once
 #include "BuffType.h"
+#include "BuffManager.h"
 #include <string>
 #include <DirectXMath.h>
 
@@ -38,12 +39,12 @@ struct BuffInfo
             { L"毒",                  L"毎ターン{value}ダメージを受け、1ずつ減少",    {0.5f,0.0f,0.8f,1.0f},    "buff_poison" },       // Poison
 
             { L"攻撃UP(今)",          L"このターン攻撃力が{value}上昇する",                      {0.9f, 0.45f, 0.15f, 1.0f},  "buff_attackupturn" },  // AttackUpTurn
-            { L"闘気",                L"2ターンに一度、攻撃力が{value}上昇する",                 {0.95f, 0.35f, 0.05f, 1.0f}, "buff_attackgrowth" },  // AttackGrowth
+            { L"闘気",                L"毎ターン、攻撃力が{value}上昇する"      ,                 {0.95f, 0.35f, 0.05f, 1.0f}, "buff_attackgrowth" },  // AttackGrowth
             { L"狂乱",                L"与ダメージ+{pct}%／被ダメージ+{pct}%／移動で自傷{self}", {0.85f, 0.15f, 0.15f, 1.0f}, "buff_frenzy" },        // Frenzy
             { L"毒の瘴気",            L"2ターンに一度 全ての敵に毒{value}",                      {0.6f, 0.3f, 0.9f, 1.0f},    "buff_noxiousfumes" },  // NoxiousFumes
             { L"毒の脈動",            L"毒のダメージ回数+{value}",                               {0.65f, 0.4f, 0.95f, 1.0f},  "buff_toxicrhythm" },   // ToxicRhythm
             { L"踏ん張り",            L"このターン移動できない。そのかわり、敵のノックバックや引き寄せで動かない", {0.5f, 0.5f, 0.6f, 1.0f},    "buff_movelock" },      // MoveLock
-            { L"受け返し",            L"攻撃を完全に防ぐと 敵に{value}ダメージ",                 {0.4f, 0.7f, 1.0f, 1.0f}, 	  "buff_riposte" },       // Riposte
+            { L"受け返し",            L"ブロックで防いだダメージの{value}%を 攻撃した敵に返す",                 {0.4f, 0.7f, 1.0f, 1.0f}, 	  "buff_riposte" },       // Riposte
             { L"研磨",                L"ナイフのダメージ+{value}",                               {0.7f, 0.7f, 0.8f, 1.0f},	  "buff_knifepower" },    // KnifePower
             { L"投擲術",              L"ナイフが遠距離攻撃になる",                               {0.6f, 0.75f, 0.9f, 1.0f},   "buff_knifethrow" },    // KnifeThrow
             { L"刃の守り",            L"カードを使うたび ブロック{value}",                       {0.3f, 0.6f, 0.9f, 1.0f},    "buff_cardblock" },     // CardBlock
@@ -62,6 +63,8 @@ struct BuffInfo
             { L"沼",                  L"移動カードのコスト+{value}（沼の上にいる間）",  {0.5f, 0.5f, 0.3f, 1.0f},	"buff_mire" },         // Mire
             { L"移動不可",            L"押し出しや引き寄せで動かない。引き寄せると自分のほうが寄っていく", {0.75f, 0.7f, 0.6f, 1.0f}, "buff_immovable" }, // Immovable
             { L"罠術",                L"罠のダメージ+{value}",                                   {1.0f, 0.55f, 0.15f, 1.0f},  "buff_trappower" },   // TrapPower
+            { L"残心",                L"ターンの始めに、ブロックを半分持ち越す",                 {0.45f, 0.6f, 0.9f, 1.0f},   "buff_halfcarry" },   // HalfCarry
+            { L"不退転",              L"ターンの終わりに、隣の敵全員に残ったブロックの{value}%のダメージ", {0.95f, 0.75f, 0.3f, 1.0f}, "buff_standfirm" },   // StandFirm
         };
         return infos[static_cast<int>(type)];
     }
@@ -101,5 +104,29 @@ struct BuffInfo
 
     // アイコンだけで数字を出さないバフ（状態を示すだけのもの）
     static bool HidesValue(BuffType t) { return t == BuffType::Immovable; }
+
+    // 残りターンの文（値を足す種類のバフ用。表示はすべてこれを使う）
+    //   全部が期限つき（1つ）→「あと2ターン」／永続と混ざる・期限つきが複数 →「+2はあと2ターン」（「、」でつなぐ）／全部永続 → 空
+    static std::wstring TurnsNote(const BuffManager& bm, BuffType t)
+    {
+        if (IsDurationBased(t) || t == BuffType::Poison || HidesValue(t)) return L"";
+        auto parts = bm.TimedParts(t);
+        if (parts.empty()) return L"";
+        if (parts.size() == 1 && parts[0].value == bm.GetBuffValue(t))
+            return L"あと" + std::to_wstring(parts[0].turns) + L"ターン";
+        std::wstring s;
+        for (auto& p : parts)
+        {
+            if (!s.empty()) s += L"、";
+            s += (p.value >= 0 ? L"+" : L"") + std::to_wstring(p.value) + L"はあと" + std::to_wstring(p.turns) + L"ターン";
+        }
+        return s;
+    }
+    // 名前と値の後ろにつける形：「 あと2ターン」または「（+2はあと2ターン）」
+    static std::wstring TurnsSuffix(const std::wstring& note)
+    {
+        if (note.empty()) return L"";
+        return (note.rfind(L"あと", 0) == 0) ? L" " + note : L"（" + note + L"）";
+    }
 
 };

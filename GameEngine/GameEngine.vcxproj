@@ -138,6 +138,7 @@
     <ClInclude Include="AnimTune.h" />
     <ClInclude Include="Audio.h" />
     <ClInclude Include="BattleHighlighter.h" />
+    <ClInclude Include="BattleCamera.h" />
     <ClInclude Include="BattleScene.h" />
     <ClInclude Include="BattleUI.h" />
     <ClInclude Include="Buff.h" />
@@ -217,7 +218,19 @@
     <ClInclude Include="ResultScene.h" />
     <ClInclude Include="RunSetup.h" />
     <ClInclude Include="Scene.h" />
+    <ClInclude Include="GlossaryPanel.h" />
+    <ClInclude Include="UiContext.h" />
+    <ClInclude Include="BossRelicPanel.h" />
+    <ClInclude Include="MapPanel.h" />
+    <ClInclude Include="RestPanel.h" />
+    <ClInclude Include="DeckPanel.h" />
+    <ClInclude Include="EventPanel.h" />
+    <ClInclude Include="ItemPanel.h" />
+    <ClInclude Include="GuideBox.h" />
+    <ClInclude Include="TutorialPanel.h" />
+    <ClInclude Include="Tutorials.h" />
     <ClInclude Include="SceneManager.h" />
+    <ClInclude Include="SettingsPanel.h" />
     <ClInclude Include="Scenetype.h" />
     <ClInclude Include="ScreenShake.h" />
     <ClInclude Include="Se.h" />
@@ -240,7 +253,10 @@
   <ItemGroup>
     <ClCompile Include="Audio.cpp" />
     <ClCompile Include="Battlehighlighter.cpp" />
+    <ClCompile Include="BattleCamera.cpp" />
     <ClCompile Include="BattleScene.cpp" />
+    <ClCompile Include="BattleSceneDraw.cpp" />
+    <ClCompile Include="BattleSceneInput.cpp" />
     <ClCompile Include="BattleSceneDebug.cpp" />
     <ClCompile Include="BattleUI.cpp" />
     <ClCompile Include="BuffManager.cpp" />
@@ -287,7 +303,17 @@
     <ClCompile Include="Renderer3D.cpp" />
     <ClCompile Include="ResultScene.cpp" />
     <ClCompile Include="RunSetup.cpp" />
+    <ClCompile Include="GlossaryPanel.cpp" />
+    <ClCompile Include="BossRelicPanel.cpp" />
+    <ClCompile Include="MapPanel.cpp" />
+    <ClCompile Include="RestPanel.cpp" />
+    <ClCompile Include="DeckPanel.cpp" />
+    <ClCompile Include="EventPanel.cpp" />
+    <ClCompile Include="ItemPanel.cpp" />
+    <ClCompile Include="GuideBox.cpp" />
+    <ClCompile Include="TutorialPanel.cpp" />
     <ClCompile Include="SceneManager.cpp" />
+    <ClCompile Include="SettingsPanel.cpp" />
     <ClCompile Include="Settings.cpp" />
     <ClCompile Include="ShopScene.cpp" />
     <ClCompile Include="SpriteRenderer.cpp" />

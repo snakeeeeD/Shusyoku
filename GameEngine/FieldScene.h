@@ -14,6 +14,9 @@
 class FieldScene : public Scene
 {
 public:
+    static constexpr int   GRID_COLS = 12;   // フィールドのマスの数（マップの窓でも使う）
+    static constexpr int   GRID_ROWS = 7;
+
     FieldScene();
     ~FieldScene();
 
@@ -76,8 +79,6 @@ private:
 
     float m_highlightTimer = 0.0f;
 
-    static constexpr int   GRID_COLS = 12;
-    static constexpr int   GRID_ROWS = 7;
     static constexpr int   INITIAL_STEPS = 20;
     static constexpr int   MIN_STEPS = -5;   // 歩数はここで止まる（敵の強化もここまで）
     static constexpr float CELL_SIZE = 60.0f;

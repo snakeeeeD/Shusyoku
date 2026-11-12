@@ -16,6 +16,13 @@ public:
     static const CardData* Get(const std::string& id);
     // デッキから外せるか（削除・変化の対象にできるか）。permanent のカードは外せない
     static bool CanRemove(const std::string& id) { const CardData* d = Get(id); return !(d && d->permanent); }
+    // 強化できるか：+版があるか（合成カード・強化済みは不可）。デッキ閲覧・イベントで共有
+    static bool CanUpgrade(const std::string& id)
+    {
+        if (id.rfind("CRAFT:", 0) == 0) return false;
+        if (!id.empty() && id.back() == '+') return false;
+        return Get(id + "+") != nullptr;
+    }
 
     static const std::unordered_map<std::string, CardData>& GetAll() { return m_data; }
     static CardData BuildCrafted(const std::string& id);

@@ -131,6 +131,8 @@ inline BuffType StringToBuffType(const std::string& str)
     if (str == "GuardianVow") return BuffType::GuardianVow;
     if (str == "Cathedral")   return BuffType::Cathedral;
     if (str == "TrapPower")   return BuffType::TrapPower;
+    if (str == "HalfCarry")   return BuffType::HalfCarry;
+    if (str == "StandFirm")   return BuffType::StandFirm;
 
     return BuffType::AttackUp;
 }

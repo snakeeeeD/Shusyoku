@@ -559,30 +559,6 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                     }
             }
 
-            // バフ/デバフ数値
-            float buffIconY = barY + barHeight + 4.0f;
-            float buffIconX = barX;
-            float buffMaxX = barX + barWidth + 40.0f;
-
-            for (auto& buff : enemy->GetBuffManager().GetBuffs())
-            {
-                float iconSize = 16.0f;
-                if (buffIconX + iconSize + 20.0f > buffMaxX)
-                {
-                    buffIconX = barX;
-                    buffIconY += iconSize + 6.0f;
-                }
-                wchar_t buffVal[16];
-                if (BuffInfo::IsDurationBased(buff.type))
-                    swprintf_s(buffVal, L"%dT", buff.duration);
-                else
-                    swprintf_s(buffVal, L"%d", buff.value);
-                if (!BuffInfo::HidesValue(buff.type))
-                    m_textRenderer->DrawText(buffVal,
-                        buffIconX + iconSize + 2.0f, buffIconY + 1.0f,
-                        11.0f, D2D1::ColorF(D2D1::ColorF::White));
-                buffIconX += iconSize + 20.0f;
-            }
         }
 
         // 自分の状態（左下）と山札類：敵のUIより手前に描く
@@ -811,20 +787,41 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 m_cardAnims[topIdx].currentX, m_cardAnims[topIdx].currentY,
                 m_cardAnims[topIdx].currentScale, m_cardAnims[topIdx].currentRot);
         }
-        const auto& buffs = ctx.player->GetBuffManager().GetBuffs();
+        const auto& buffs = ctx.player->GetBuffManager().GetBuffsSummed();
         float buffY = 90.0f + oy;
+        // 名前と値（期限つきの分は残りターンも）。窓の幅は一番長い文に合わせる
+        std::vector<std::wstring> buffTexts;
+        float listW = 190.0f;
+        for (auto& buff : buffs)
+        {
+            const auto& info = BuffInfo::Get(buff.type);
+            bool perm = (buff.duration < 0 || buff.duration >= 999);   // 永続判定
+            std::wstring s;
+            if (buff.type == BuffType::Poison)
+                s = info.name + L" " + std::to_wstring(buff.value);
+            else if (BuffInfo::IsDurationBased(buff.type))
+                s = info.name + (perm ? L" 永続" : L" " + std::to_wstring(buff.duration) + L"ターン");
+            else
+            {
+                std::wstring note = BuffInfo::TurnsNote(ctx.player->GetBuffManager(), buff.type);
+                s = info.name + L" " + std::to_wstring(buff.value) + (note.empty() ? L" 永続" : BuffInfo::TurnsSuffix(note));
+            }
+            float w = 20.0f + m_textRenderer->Measure(s.c_str(), 14.0f, FontRole::Body).width + 8.0f;   // アイコン＋文
+            if (w > listW) listW = w;
+            buffTexts.push_back(s);
+        }
 
         // バフがある時だけ、後ろにウィンドウを敷いて見やすく
         if (!buffs.empty())
         {
             const float pad = 6.0f;
             // ホバー説明が挟まると以降が1行(22px)下がるので、その分も窓を伸ばす
-            bool anyHover = (ctx.mousePos.x >= 20.0f && ctx.mousePos.x <= 200.0f
+            bool anyHover = (ctx.mousePos.x >= 20.0f && ctx.mousePos.x <= 20.0f + listW
                 && ctx.mousePos.y >= buffY
                 && ctx.mousePos.y <= buffY + (float)buffs.size() * 20.0f);
             float winX = 20.0f - pad;
             float winY = buffY - pad;
-            float winW = 190.0f + pad;
+            float winW = listW + pad;
             float winH = (float)buffs.size() * 20.0f + (anyHover ? 22.0f : 0.0f) + pad * 2.0f;
             m_textRenderer->End();
             m_spriteRenderer->Begin();
@@ -833,10 +830,11 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             m_textRenderer->Begin();
         }
 
-        for (auto& buff : buffs)
+        for (size_t bi = 0; bi < buffs.size(); bi++)
         {
+        const auto& buff = buffs[bi];
         const auto& info = BuffInfo::Get(buff.type);
-        bool buffHover = (ctx.mousePos.x >= 20.0f && ctx.mousePos.x <= 200.0f
+        bool buffHover = (ctx.mousePos.x >= 20.0f && ctx.mousePos.x <= 20.0f + listW
             && ctx.mousePos.y >= buffY && ctx.mousePos.y <= buffY + 20.0f);
         // アイコン
                // アイコン（実アイコン画像。無ければ従来の色四角）
@@ -855,25 +853,12 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         }
         m_spriteRenderer->End();
         m_textRenderer->Begin();
-        // 名前と値
-        wchar_t buffText[64];
-        bool perm = (buff.duration < 0 || buff.duration >= 999);   // 永続判定
-        if (buff.type == BuffType::Poison)
-            swprintf_s(buffText, L"%s %d", info.name.c_str(), buff.value);
-        else if (BuffInfo::IsDurationBased(buff.type))
-        {
-            if (perm) swprintf_s(buffText, L"%s 永続", info.name.c_str());
-            else      swprintf_s(buffText, L"%s %dターン", info.name.c_str(), buff.duration);
-        }
-        else
-        {
-            if (perm) swprintf_s(buffText, L"%s %d 永続", info.name.c_str(), buff.value);
-            else      swprintf_s(buffText, L"%s %d (%dT)", info.name.c_str(), buff.value, buff.duration);
-        }
+        // 名前と値（上で作った文）
+        const std::wstring& buffText = buffTexts[bi];
         D2D1::ColorF textColor = buffHover
             ? D2D1::ColorF(1.0f, 1.0f, 0.5f)
             : D2D1::ColorF(0.6f, 1.0f, 0.6f);
-        m_textRenderer->DrawText(buffText, 40.0f, buffY, 14.0f, textColor);
+        m_textRenderer->DrawText(buffText.c_str(), 40.0f, buffY, 14.0f, textColor);
         buffY += 20.0f;
         // ホバーで説明
         if (buffHover)
@@ -1056,6 +1041,9 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         const auto& info = BuffInfo::Get(m_hoveredBuffType);
         std::wstring desc = BuffInfo::GetDescription(m_hoveredBuffType, m_hoveredBuffValue);
         auto lines = WrapLines(desc, 20, false);                // 文の長さで枠を決める
+        size_t noteLine = lines.size();                         // ここから下は残りターン（橙）
+        if (!m_hoveredBuffNote.empty())
+            for (auto& l : WrapLines(m_hoveredBuffNote + L"で切れる", 20, false)) lines.push_back(l);
         float tipW = TextWidth(m_textRenderer, info.name, 13.0f);               // 一番長い行に合わせる
         for (auto& l : lines) tipW = max(tipW, TextWidth(m_textRenderer, l, 11.0f));
         tipW += 12.0f;
@@ -1076,7 +1064,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             D2D1::ColorF(1.0f, 1.0f, 0.5f));
         for (int i = 0; i < (int)lines.size(); i++)
             m_textRenderer->DrawText(lines[i].c_str(), tipX + 5.0f, tipY + 18.0f + i * 15.0f, 11.0f,
-                D2D1::ColorF(0.8f, 0.8f, 0.8f));
+                (size_t)i >= noteLine ? D2D1::ColorF(1.0f, 0.7f, 0.3f) : D2D1::ColorF(0.8f, 0.8f, 0.8f));
     }
 
     // 敵インテントアイコンの説明ウィンドウ
@@ -2353,7 +2341,7 @@ URect BattleUI::UnitStatusRect(float footX, float footY, float scale, bool isBos
     float barX = footX - barWidth / 2.0f, barY = footY - 30.0f;
     float maxX = barX + barWidth + 40.0f;
     float x = barX, y = barY + barHeight + 4.0f, bottom = barY + barHeight;
-    for (auto& buff : bm.GetBuffs())
+    for (auto& buff : bm.GetBuffsSummed())
     {
         if (x + 36.0f > maxX) { x = barX; y += 22.0f; }
         bottom = y + 16.0f;
@@ -2433,7 +2421,7 @@ std::vector<BattleUI::DetailRow> BattleUI::EnemyDetailRows(Enemy* e, float x, fl
     if (e->GetBlock() > 0)
         add(L"Block: " + std::to_wstring(e->GetBlock()), 15.0f, D2D1::ColorF(D2D1::ColorF::LightBlue), 18.0f, DETAIL_CH);
 
-    for (auto& buff : e->GetBuffManager().GetBuffs())
+    for (auto& buff : e->GetBuffManager().GetBuffsSummed())
     {
         const auto& info = BuffInfo::Get(buff.type);
         std::wstring buffText;
@@ -2443,9 +2431,8 @@ std::vector<BattleUI::DetailRow> BattleUI::EnemyDetailRows(Enemy* e, float x, fl
             buffText = info.name + L": " + std::to_wstring(buff.duration) + L"ターン";
         else
         {
-            buffText = info.name + L": " + std::to_wstring(buff.value);
-            if (buff.type != BuffType::Poison)
-                buffText += L" (" + std::to_wstring(buff.duration) + L"T)";
+            buffText = info.name + L": " + std::to_wstring(buff.value)
+                + BuffInfo::TurnsSuffix(BuffInfo::TurnsNote(e->GetBuffManager(), buff.type));   // 永続なら何もつけない
         }
         bool hov = (mp.x >= x && mp.x <= x + DETAIL_W && mp.y >= y && mp.y <= y + 20.0f);
         add(buffText, 14.0f, hov ? D2D1::ColorF(1.0f, 1.0f, 0.5f) : D2D1::ColorF(0.6f, 1.0f, 0.6f), 20.0f, DETAIL_CH + 1);
@@ -2975,7 +2962,7 @@ void BattleUI::DrawUnitStatusSprites(float footX, float footY, float scale, bool
     // バフ/デバフアイコン
     float bIconY = barY + barHeight + 4.0f, bIconX = barX;
     float bMaxX = barX + barWidth + 40.0f;
-    for (auto& buff : bm.GetBuffs())
+    for (auto& buff : bm.GetBuffsSummed())
     {
         float iconSize = 16.0f;
         if (bIconX + iconSize + 20.0f > bMaxX) { bIconX = barX; bIconY += iconSize + 6.0f; }
@@ -2986,6 +2973,7 @@ void BattleUI::DrawUnitStatusSprites(float footX, float footY, float scale, bool
         {
             m_hasHoveredBuff = true; m_hoveredBuffType = buff.type;
             m_hoveredBuffValue = BuffInfo::IsDurationBased(buff.type) ? buff.duration : buff.value;
+            m_hoveredBuffNote = BuffInfo::TurnsNote(bm, buff.type);
             m_hoveredBuffX = bIconX; m_hoveredBuffY = bIconY;
         }
         auto btex = TextureManager::Get(BuffInfo::Get(buff.type).texture);
@@ -3038,7 +3026,7 @@ void BattleUI::DrawUnitStatusText(float footX, float footY, float scale, bool is
 
     // バフ/デバフ数値
     float vY = barY + barHeight + 4.0f, vX = barX, vMaxX = barX + barWidth + 40.0f;
-    for (auto& buff : bm.GetBuffs())
+    for (auto& buff : bm.GetBuffsSummed())
     {
         float iconSize = 16.0f;
         if (vX + iconSize + 20.0f > vMaxX) { vX = barX; vY += iconSize + 6.0f; }
@@ -3047,6 +3035,13 @@ void BattleUI::DrawUnitStatusText(float footX, float footY, float scale, bool is
         else swprintf_s(bv, L"%d", buff.value);
         if (!BuffInfo::HidesValue(buff.type))
             m_textRenderer->DrawText(bv, vX + iconSize + 2.0f, vY + 1.0f, 11.0f, D2D1::ColorF(D2D1::ColorF::White));
+        // 期限つきの分があれば、アイコンの右下に一番早く切れる分の残りターン（橙）
+        if (!BuffInfo::TurnsNote(bm, buff.type).empty())
+        {
+            int soon = bm.TimedParts(buff.type).front().turns;
+            m_textRenderer->DrawOutlinedText(std::to_wstring(soon).c_str(), vX + iconSize - 6.0f, vY + iconSize - 10.0f, 9.0f,
+                D2D1::ColorF(1.0f, 0.65f, 0.2f), D2D1::ColorF(0, 0, 0), 2.0f);
+        }
         vX += iconSize + 20.0f;
     }
 }

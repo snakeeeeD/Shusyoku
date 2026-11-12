@@ -456,6 +456,11 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             if (!inShape)
                 return result;
             player->UseEnergy(payCost);
+            if (data.preBlock > 0)   // 盾打ち：先にブロックを得る（ブロック分のダメージに入る）
+            {
+                player->AddBlock(player->GetBuffManager().GetFinalBlock(data.preBlock));
+                EffectManager::Play("block_gain", player->worldX, player->worldY + 0.4f, player->worldZ);
+            }
 
             // dash: 狙ったマスの手前まで移動（蛇の体を狙うと、頭は一直線上にいるとは限らない）
             if (data.dash && target)

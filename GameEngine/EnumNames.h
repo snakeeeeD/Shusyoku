@@ -124,6 +124,8 @@ namespace EnumNames
         { BuffType::GuardianVow,  "GuardianVow" },
         { BuffType::Cathedral,    "Cathedral" },
         { BuffType::TrapPower,    "TrapPower" },
+        { BuffType::HalfCarry,    "HalfCarry" },
+        { BuffType::StandFirm,    "StandFirm" },
     };
 
     // ---- カード：効果の種類 ----

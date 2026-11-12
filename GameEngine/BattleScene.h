@@ -18,12 +18,15 @@
 #include "CardExecutor.h"
 #include "EncounterData.h"
 #include "EncounterDataBase.h"
+#include "BattleCamera.h"
+#include "TimedQueue.h"
 
 #include <vector>
 #include <utility>
 #include <functional>
 #include <unordered_map>
 #include <map>
+#include <set>
 
 enum class EnemyTurnPhase 
 {
@@ -93,10 +96,6 @@ public:
 
     int m_prevHoveredCard = -1;
 
-    std::vector<std::pair<int, int>> m_chainQueue;
-    float m_chainTimer = 0.0f;
-    bool  m_chainFull = false;
-
     void ApplyDiscardEffect(const CardEffectData& e);
     void AutoDiscardAll();
 
@@ -110,13 +109,9 @@ public:
 
     void OnCardPlayed(const CardData* d);
 
-    std::vector<std::pair<int, int>> m_coilTrapQueue;
-    float  m_coilTrapTimer = 0.0f;
-    Enemy* m_coilTrapEnemy = nullptr;
-
     bool IsRelicSpent(const std::string& id) const;   // 一度きりレリックが使用済みか
     bool CamDemoCaption(const wchar_t*& text, const char*& icon, float& alpha) const;
-    bool CamDemoActive() const { return m_camDemoStep >= 0; }   // カメラ操作のデモ中か   // カメラ操作のデモ中なら説明を返す
+    bool CamDemoActive() const { return m_camera.DemoActive(); }   // カメラ操作のデモ中か
     void OnTutorialClosed();   // 初戦チュートリアルを閉じた時（保留していたレリックを発動）
 
 private:
@@ -173,11 +168,25 @@ private:
     int m_selectedCardIndex;
     int m_hoveredCardIndex;
 
-    std::vector<Enemy*> m_multiHitTargets;
-    int    m_multiHitRemain = 0;
-    int    m_multiHitDamage = 0;
-    CardEffectData m_multiHitOnHit, m_multiHitOnHit2;   // 追撃のヒットごとに付ける命中時の効果
-    float  m_multiHitTimer = 0.0f;
+    // 時間を置いて1つずつ進める処理（TimedQueue）。1件ごとのデータはその件の中に持つ
+    struct PlayerHit { std::vector<Enemy*> targets; int damage = 0; CardEffectData onHit, onHit2; };   // 自分の連撃の追撃1発
+    struct EnemyHit  { Enemy* enemy = nullptr; int damage = 0; bool last = false; };   // 敵の多段の1発（last＝最後の1発の後に状態異常）
+    struct CoilTrap  { int c = 0, r = 0; Enemy* enemy = nullptr; };                      // 大蛇のとぐろが通ったマスの罠
+    struct TrapFire  { int c = 0, r = 0; bool full = false; };                           // 起爆する罠（full＝周りにもそのまま）
+    struct ChainWave { std::vector<std::pair<int, int>> cells; bool full = false; };     // 連鎖起爆の1つの波
+    TimedQueue<PlayerHit> m_playerHits;
+    TimedQueue<EnemyHit>  m_enemyHits;
+    TimedQueue<CoilTrap>  m_coilTraps;
+    TimedQueue<int>       m_startPoison;   // レリックの開始時の毒（量）
+    TimedQueue<ChainWave> m_chain;
+    TimedQueue<TrapFire>  m_detonate;
+    void  StartCardSequences(const CardExecutor::ExecuteResult& r);   // カードを使った後の順番待ちを始める
+    float StepPlayerHit(PlayerHit& h);
+    float StepEnemyHit(EnemyHit& h);
+    float StepCoilTrap(CoilTrap& t);
+    float StepStartPoison(int& amount);
+    float StepChainWave(ChainWave& w);
+    float StepDetonate(TrapFire& f);
     static constexpr float MULTI_HIT_INTERVAL = 0.12f;
 
     Deck m_deck;
@@ -187,7 +196,6 @@ private:
     bool m_showDrawPile;
     bool m_showDiscardPile;
     bool m_showExhaustPile;
-    bool m_rightClickDragged;
 
     bool m_firstAttackDone = false;
 
@@ -204,8 +212,6 @@ private:
     int m_currentEnemyIdx = 0;
     int m_poisonIdx = 0;
     int m_poisonSubTicks = 0;
-    int   m_startPoisonAmount = 0;
-    float m_startPoisonTimer = 0.0f;
     float m_enemyActionDelay = 0;
     static constexpr float ENEMY_ACTION_PAUSE = 0.05f;
     static constexpr float ENEMY_BETWEEN_PAUSE = 0.4f;
@@ -227,46 +233,17 @@ private:
     BattleHighlighter m_highlighter;
     CardExecutor      m_cardExecutor;
 
-    // カメラ
-    float m_cameraZoom;
-    static constexpr float ZOOM_MIN = 0.5f;
-    static constexpr float ZOOM_MAX = 0.8f;
-    static constexpr float ZOOM_SPEED = 0.1f;
-
-    bool m_isDraggingCamera;
-    POINT m_dragStartPos;
-    float m_cameraOffsetX;
-    float m_cameraOffsetZ;
-
-    // カメラ操作の自動デモ（初回の2ターン目に1回）
-    int   m_camDemoStep = -1;        // 表示中の手順（-1=していない）
-    float m_camDemoTime = 0.0f;      // 今の手順の経過時間
-    bool  m_camDemoHoming = false;   // デモの後、初期の位置へ戻している途中
+    BattleCamera m_camera;   // 位置・ズーム・手での操作・狙いカメラ・操作デモ
 
     // バフが付いた／増えた時のエフェクト（毎フレーム前の値と比べる＝どこで付いても拾える）
     std::unordered_map<const void*, std::map<int, int>> m_buffSnap;   // 持ち主 → バフ種類ごとの値（種類が増えても直さなくていいよう map）
     void UpdateBuffGainFx();
 
     void UpdateTrapsAtTurnStart();   // 自分の罠が育つ／敵が隣にいる間だけ導火線が進み、たまったら自分で起爆
-    void  UpdateCamDemo(float dt);
-    void  EndCamDemo();
-
-    // 狙いズーム：マスを選ぶカードを選んだ時、狙えるマスが手札に隠れるなら少し引く
-    static constexpr float AIM_ZOOM_OUT = 0.3f;    // 引く量（ズームに掛ける割合）
-    float m_aimZoom = 0.0f;                        // 0~1（滑らかに変化）
-    bool  m_aimZoomWanted = false;
-    int   m_aimZoomCardIndex = -1;                 // どのカードを選んだ時に判定したか
+    void  MaybeStartCamDemo();   // カメラ操作の自動デモを始めるか（条件はシーンの事情なので、ここで決める）
 
     bool SelectedNeedsTarget() const;                  // 選択中のカードがマスを選ぶ種類か（攻撃・移動・罠など）
-    bool TargetsHiddenByHand(const CardData& d) const; // 狙えるマスのどれかが手札に隠れる位置に映っているか
 
-    // 狙いパン：キャンセルなどでは元のカメラ位置へ戻す（移動カードで実際に移動した時はそのまま）
-    bool  m_aimPanned = false;      // この選択でカメラを寄せたか
-    float m_aimPanStartZ = 0.0f;    // 寄せる前のカメラ位置
-    bool  m_aimPanKeep = false;     // 移動カードを使った → 戻さない
-    bool  m_aimReturning = false;   // 元の位置へ戻している途中
-    float m_aimPanStartX = 0.0f;          // 寄せる前のカメラ位置（X）
-    bool  m_camAutoMoving = false;        // 今フレーム、狙いカメラが自動で動いたか
     bool CellToScreen(int col, int row, float& sx, float& sy) const;   // マスの中心が今のカメラで画面のどこに映るか
     bool CellInCardRange(const CardData& d, int c, int r) const;   // カードの射程にマスが入るか（使用時・予測で共通）
     int  AttackTargetEnemy() const;   // 攻撃カードを今離したら当たる敵（無ければ-1）
@@ -276,9 +253,41 @@ private:
     const Enemy* AttackTarget() const { int i = AttackTargetEnemy(); return i >= 0 ? m_enemies[i] : nullptr; }
     POINT m_prevPathMouse = { -1, -1 };   // 前フレームのマウス位置（経路を変えるのはマウスが動いた時だけにする）
 
-    static constexpr float AIM_FOLLOW_SPEED = 4.0f;   // ゴーストへ寄る速さ（大きいほど速い。手札に隠れるマスを出す時は 8）
-    static constexpr float AIM_FOLLOW_START = 1.6f;   // ゴーストがこれ以上離れたら寄り始める（1マス＝1.1）
-    bool m_ghostFollowing = false;                    // 今、ゴーストへ寄っている途中か
+
+    // 描画（BattleSceneDraw.cpp）。Draw は描く順番を並べるだけ
+    struct BattleTheme { const char* ground; const char* tex[3]; float w[3]; float h[3];
+                         const char* cellTex; int cellVariants; XMFLOAT4 cellCol; };   // 地面・装飾3種(絵/幅/高さ)・マスの絵(variants>1 なら _0.._n-1)・空マスの色
+    BattleTheme CurrentTheme() const;   // 層＋ボスで決まる背景テーマ
+    void RequestCellCursor();
+    void DrawBackground2D();
+    void UpdateCellHeights();           // 狙うマスを浮かせる＋キャラの高さ（描く前に）
+    void DrawGround(const BattleTheme& th);
+    void DrawCells(const BattleTheme& th);
+    void DrawFloorMarks();
+    void DrawTraps();
+    void DrawSnakes();
+    void DrawUnits();
+    void DrawOverlays();
+    void DrawAwakenCinematic();
+    BattleUIContext MakeUIContext();
+    float CellWX(int col) const { return (col - m_gridMap->GetCols() / 2.0f) * 1.1f; }   // マス→ワールド座標（X）
+    float CellWZ(int row) const { return (row - m_gridMap->GetRows() / 2.0f) * 1.1f; }   // マス→ワールド座標（Z）
+
+    // 入力（BattleSceneInput.cpp）。HandleInput は振り分けだけ
+    bool HandleBattleEndInput();      // 勝敗後のクリック。勝敗が付いていたら true
+    void HandleDiscardSelectInput();  // 捨てるカードの選択中
+    void PickEnemyOnGrid();           // 盤面の敵クリックで範囲を見る
+    void UpdateHoveredCell();         // 指しているマス・狙い確定のタイマー
+    void UpdateMovePath();            // 移動カードの経路づくり
+    void HandleReleaseToPlay();       // 左ボタンを離したら使う
+    void HandleClickInput();          // 山札・捨て札ボタン、一覧から選ぶ、クリックで使う
+    void HandleHandInput();           // 手札を選ぶ・ホバー
+    void HandleTurnEndAndPanel();     // ターン終了ボタン、敵パネル
+    bool PlayCard(int targetCol, int targetRow, const std::vector<std::pair<int, int>>* usePath);   // カードを使う（2つの使い方の共通）
+    void MovePlayerAfterCard(int newCol, int newRow, int moveDist, const std::vector<std::pair<int, int>>* usePath);   // 歩き・氷・地形
+    std::vector<std::pair<int, int>> ShortestPath(std::pair<int, int> from, std::pair<int, int> to, int budget,
+        const std::set<std::pair<int, int>>& blocked = {}) const;   // 空きマスだけの最短経路（見つからなければ空）
+    static void ApplyKnifeThrow(CardData& d, const Player* p);       // ナイフ＋投擲術なら遠距離化
 
     float HiddenTargetsPanZ(const CardData& d) const;   // 手札に隠れるマスを手札の上に出すのに必要なカメラのずらし量
 
@@ -314,17 +323,8 @@ private:
     bool m_forceHitmark = false;
     bool m_uiBlocked = false;      // SetUiBlocked
 
-    std::vector<std::pair<int, int>> m_detonateQueue;
-    float m_detonateTimer = 0.0f;
-    bool  m_detonateFull = false;
-
     struct Deco { float x, z, scale; int type; };   // type: 0=木 1=茂み 2=岩
     std::vector<Deco> m_decos;
-
-    int   m_eMultiRemain = 0;
-    int   m_eMultiDamage = 0;
-    float m_eMultiTimer = 0.0f;
-    Enemy* m_eMultiEnemy = nullptr;
 
     struct BurnHit { float atTime; int dmg; bool curse = false; };
     std::vector<BurnHit> m_burnHits;

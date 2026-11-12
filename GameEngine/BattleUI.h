@@ -269,6 +269,7 @@ private:
 
     BuffType m_hoveredBuffType = BuffType::AttackUp;
     int m_hoveredBuffValue = 0;
+    std::wstring m_hoveredBuffNote;   // 期限つきの分の残りターン（説明の下に出す）
     float m_hoveredBuffX = 0;
     float m_hoveredBuffY = 0;
     bool m_hasHoveredBuff = false;

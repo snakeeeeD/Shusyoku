@@ -64,6 +64,7 @@ static void ParseCard(const json& c, CardData& data, CardData& up, bool& hasUp)
     data.dash = c.value("dash", false);
     data.drawBeforeDiscard = c.value("drawBeforeDiscard", false);
     data.selfDamage = c.value("selfDamage", 0);
+    data.preBlock = c.value("preBlock", 0);
     data.hits = c.value("hits", 1);
 
     // mainEffect
@@ -149,12 +150,14 @@ static void ParseCard(const json& c, CardData& data, CardData& up, bool& hasUp)
         up.cost += u.value("cost", 0);
         up.hits += u.value("hits", 0);
         up.range += u.value("range", 0);
+        up.preBlock += u.value("preBlock", 0);
         up.mainEffect.value += u.value("mainValue", 0);
         up.mainEffect.duration += u.value("duration", 0);
         if (up.onHitEffect.hasEffect) up.onHitEffect.value += u.value("onHitValue", 0);
         if (up.onHitEffect.hasEffect)  up.onHitEffect.duration += u.value("onHitDuration", 0);
         if (up.onHitEffect2.hasEffect) up.onHitEffect2.duration += u.value("onHitDuration", 0);
         if (up.subEffect.hasEffect)   up.subEffect.value += u.value("subValue", 0);
+        if (up.allEnemyEffect.hasEffect) up.allEnemyEffect.duration += u.value("allEnemyDuration", 0);   // ëSìGÇ÷ÇÃå¯â ÇÃéùë±
         if (up.cost < 0) up.cost = 0;
         if (u.contains("rangeType"))
             up.rangeType = StringToRangeType(u["rangeType"]);
@@ -199,12 +202,14 @@ void CardDataBase::Init()
                 up.cost += u.value("cost", 0);
                 up.hits += u.value("hits", 0);
                 up.range += u.value("range", 0);
+                up.preBlock += u.value("preBlock", 0);
                 up.mainEffect.value += u.value("mainValue", 0);
                 up.mainEffect.duration += u.value("duration", 0);
                 if (up.onHitEffect.hasEffect) up.onHitEffect.value += u.value("onHitValue", 0);
                 if (up.onHitEffect.hasEffect)  up.onHitEffect.duration += u.value("onHitDuration", 0);
                 if (up.onHitEffect2.hasEffect) up.onHitEffect2.duration += u.value("onHitDuration", 0);
                 if (up.subEffect.hasEffect)   up.subEffect.value += u.value("subValue", 0);
+                if (up.allEnemyEffect.hasEffect) up.allEnemyEffect.duration += u.value("allEnemyDuration", 0);   // ëSìGÇ÷ÇÃå¯â ÇÃéùë±
                 if (up.cost < 0) up.cost = 0;
                 if (u.contains("rangeType"))
                     up.rangeType = StringToRangeType(u["rangeType"]);
