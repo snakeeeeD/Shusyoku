@@ -740,6 +740,8 @@ bool SceneManager::HandleFieldPanelInput(UiContext& ui)
 	if (m_event.IsOpen())
 	{
 		EventPanel::Request rq = m_event.HandleInput(ui);   // 窓の外でやること（窓は頼むだけ）
+		auto& pd = PlayerDataManager::GetData();
+		if (pd.startBlessing && m_event.Chosen()) { pd.startBlessing = false; PlayerDataManager::Save(); }   // 旅立ち：選んだら済み
 		if (!rq.showCards.empty())                          // 呪いなど、手に入る瞬間を見せる
 		{
 			for (auto& c : rq.showCards) m_craftFxQueue.push_back(c);
@@ -887,6 +889,11 @@ void SceneManager::Update(float deltaTime)
 		m_fadeAlpha -= FADE_SPEED * deltaTime;
 		if (m_fadeAlpha <= 0.0f) { m_fadeAlpha = 0.0f; m_fadeState = Fade::None; }
 	}
+
+	// ランの始めの「旅立ち」：マップが見えて（暗転が明けて）、マップの説明を閉じてから開く
+	if (PlayerDataManager::GetData().startBlessing && !m_event.IsOpen() && !m_tutorial.Active()
+		&& m_fadeState == Fade::None && dynamic_cast<FieldScene*>(m_currentScene))
+		m_event.Open("run_start");
 
 	m_uiTime += deltaTime;
 

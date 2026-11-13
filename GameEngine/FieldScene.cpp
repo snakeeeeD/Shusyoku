@@ -84,6 +84,8 @@ bool FieldScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         m_playerRow = playerData.fieldPlayerRow;
         m_steps = playerData.fieldSteps;
     }
+    else
+        SaveProgress();   // 作ったばかりのマップもすぐ保存（最初のマスを押す前でもマップの窓で見られる／やめて再開しても同じマップ）
 
     // 戦闘中に終了した場合：未クリアの戦闘マス上にいるなら再戦させる
     int cur = GetNodeIndex(m_playerCol, m_playerRow);

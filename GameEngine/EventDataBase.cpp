@@ -20,10 +20,12 @@ void EventDataBase::Load(const std::string& path)
         d.layer = e.value("layer", 0);
         d.maxLayer = e.value("maxLayer", d.layer);
         d.random = e.value("random", true);
+        d.slots = e.value("slots", std::vector<std::string>{});
         for (auto& c : e["choices"])
         {
             EventChoice ch;
             ch.label = c.value("label", ""); ch.result = c.value("result", "");
+            ch.group = c.value("group", "");
             if (c.contains("outcomes"))
                 for (auto& o : c["outcomes"])
                 {
@@ -49,6 +51,31 @@ void EventDataBase::Reload(const std::string& path)
 const EventDef* EventDataBase::Get(const std::string& id)
 {
     auto it = s_events.find(id); return it != s_events.end() ? &it->second : nullptr;
+}
+
+EventDef EventDataBase::Roll(const std::string& id)
+{
+    const EventDef* src = Get(id);
+    if (!src) return {};
+    EventDef d = *src;
+    if (d.slots.empty()) return d;
+
+    d.choices.clear();
+    std::vector<int> used;
+    for (const auto& slot : d.slots)   // 枠ごとに、その group から（まだ出していない物を）1つ
+    {
+        std::vector<int> cand;
+        for (int i = 0; i < (int)src->choices.size(); i++)
+            if (src->choices[i].group == slot && std::find(used.begin(), used.end(), i) == used.end())
+                cand.push_back(i);
+        if (cand.empty()) continue;
+        int pick = cand[rand() % cand.size()];
+        used.push_back(pick);
+        d.choices.push_back(src->choices[pick]);
+    }
+    for (const auto& c : src->choices)   // group の無い選択肢は毎回出す（「何もしない」など）
+        if (c.group.empty()) d.choices.push_back(c);
+    return d;
 }
 
 static bool InLayer(const EventDef& d, int layer)   // 0＝全層、それ以外は layer～maxLayer

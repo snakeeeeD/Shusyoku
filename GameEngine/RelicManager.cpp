@@ -30,6 +30,7 @@ void RelicManager::Load(const std::string& path) {
             d.perTurn = r.value("perTurn", false);
             d.rarity = r.value("rarity", "common");
             d.icon = r.value("icon", "");
+            if (r.contains("tags")) d.tags = r["tags"].get<std::vector<std::string>>();
             if (r.contains("extra"))
                 for (auto& e : r["extra"]) d.extra.push_back({ e.value("kind", ""), e.value("value", 0), e.value("param", "") });
             s_defs[d.id] = d;
@@ -66,7 +67,8 @@ DirectX::XMFLOAT4 RelicManager::RarityColor(const std::string& r)
     if (r == "boss")     return { 0.9f, 0.3f, 0.3f, 1 };
     if (r == "event")    return { 0.3f, 0.8f, 0.4f, 1 };
     if (r == "shop")     return { 0.7f, 0.4f, 0.9f, 1 };
-    return { 0.85f, 0.85f, 0.88f, 1 };   // common / starter（明るい銀色）
+    if (r == "starter")  return { 1.0f, 0.55f, 0.75f, 1 };   // ピンク（最初のレリック・旅立ちの軸のレリック）
+    return { 0.85f, 0.85f, 0.88f, 1 };   // common（明るい銀色）
 }
 
 const RelicDef* RelicManager::Get(const std::string& id) {
@@ -83,6 +85,12 @@ int RelicManager::SumValue(const std::string& kind) {
     for (auto& id : PlayerDataManager::GetData().relics)
         if (auto d = Get(id)) sum += d->ValueOf(kind);   // 追加効果（代償）も合算
     return sum;
+}
+std::vector<std::string> RelicManager::OwnedTags() {
+    std::vector<std::string> v;
+    for (auto& id : PlayerDataManager::GetData().relics)
+        if (auto d = Get(id)) v.insert(v.end(), d->tags.begin(), d->tags.end());
+    return v;
 }
 
 std::vector<const RelicDef*> RelicManager::OwnedByKind(const std::string& kind) {
@@ -140,7 +148,7 @@ std::vector<std::string> RelicManager::ShopPool()
     {
         if (Owns(kv.first)) continue;
         const std::string& r = kv.second.rarity;
-        if (r == "boss" || r == "event") continue;   // ショップでは売らない
+        if (r == "boss" || r == "event" || r == "starter") continue;   // ショップでは売らない（最初のレリック・旅立ちの軸のレリックも）
         pool.push_back(kv.first);
     }
     return pool;

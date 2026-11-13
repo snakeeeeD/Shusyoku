@@ -256,7 +256,8 @@ private:
 
     // 描画（BattleSceneDraw.cpp）。Draw は描く順番を並べるだけ
     struct BattleTheme { const char* ground; const char* tex[3]; float w[3]; float h[3];
-                         const char* cellTex; int cellVariants; XMFLOAT4 cellCol; };   // 地面・装飾3種(絵/幅/高さ)・マスの絵(variants>1 なら _0.._n-1)・空マスの色
+                         const char* cellTex; int cellVariants; XMFLOAT4 cellCol;
+                         float bright = 1.0f; };   // 地面・装飾3種(絵/幅/高さ)・マスの絵(variants>1 なら _0.._n-1)・空マスの色・地面と装飾の明るさ
     BattleTheme CurrentTheme() const;   // 層＋ボスで決まる背景テーマ
     void RequestCellCursor();
     void DrawBackground2D();

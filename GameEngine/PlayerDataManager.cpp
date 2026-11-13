@@ -77,6 +77,7 @@ void PlayerDataManager::Save()
 	j["tutorialRest"] = m_data.tutorialRest;
 	j["seenHints"] = m_data.seenHints;
 	j["bossRelicChoices"] = m_data.bossRelicChoices;                                            // StartNewGame
+	j["startBlessing"] = m_data.startBlessing;
 
 	j["gold"] = m_data.gold;
 	j["materials"] = m_data.materials;
@@ -143,6 +144,7 @@ void PlayerDataManager::Load()
 		m_data.seenHints = j.value("seenHints", std::set<std::string>{});
 		m_data.bossRelicChoices = j.value("bossRelicChoices", std::vector<std::string>{});   // Load
 		m_data.bossRelicChoices.clear();
+		m_data.startBlessing = j.value("startBlessing", false);
 		m_data.removeCount = j.value("removeCount", 0);
 		m_data.layer = j.value("layer", 1);
 
@@ -230,6 +232,7 @@ void PlayerDataManager::StartNewGame()
 	m_data.lastEliteEnemy.clear();
 	m_data.fieldNodeVisited.clear();
 	m_data.relics = { "travelers_charm" };   // 初期レリック（回復＋レリック導入）
+	m_data.startBlessing = true;             // 最初のフィールドで「旅立ち」の4択を開く
 	Telemetry::Instance().BeginRun();
 	Telemetry::Instance().SetLocation(m_data.layer, 0);
 	Telemetry::Instance().Log("run_start", {

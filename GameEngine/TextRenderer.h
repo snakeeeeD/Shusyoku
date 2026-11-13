@@ -61,6 +61,19 @@ public:
         float size, D2D1_COLOR_F color,
         D2D1_COLOR_F outline = D2D1::ColorF(D2D1::ColorF::Black), float thickness = 2.0f);
 
+    // 四角（ボタン・バナー・窓）の真ん中に置く。UiWindow::Button などに渡したのと同じ x, y, w, h を渡せばよい
+    void DrawTextInRect(const wchar_t* text, float x, float y, float w, float h,
+        float size = 24.0f, D2D1_COLOR_F color = D2D1::ColorF(D2D1::ColorF::White))
+    {
+        DrawTextCentered(text, x + w / 2.0f, y, w, size, color, h);
+    }
+    void DrawOutlinedTextInRect(const wchar_t* text, float x, float y, float w, float h,
+        float size, D2D1_COLOR_F color,
+        D2D1_COLOR_F outline = D2D1::ColorF(D2D1::ColorF::Black), float thickness = 2.0f)
+    {
+        DrawOutlinedTextCentered(text, x + w / 2.0f, y, w, h, size, color, outline, thickness);
+    }
+
     // 描いた時の大きさ（論理座標）。位置を手で合わせず、これで中央に置く
     D2D1_SIZE_F Measure(const wchar_t* text, float size, FontRole role = FontRole::Body, float maxWidth = 4000.0f);
 

@@ -180,6 +180,12 @@ void BattleScene::HandleDiscardSelectInput()
                 m_hand.DiscardAt(idx);
                 m_battleUI->OnCardRemoved(idx);
             }
+            // 古い手帳：選んで捨てた枚数ぶんブロック
+            if (int per = RelicManager::SumValue("discardBlock"); per > 0 && !m_discardSelected.empty())
+            {
+                m_player->AddBlock(per * (int)m_discardSelected.size());
+                for (auto* d : RelicManager::OwnedByKind("discardBlock")) RelicManager::NotifyFired(d->id);   // 帯のアイコンを光らせる
+            }
             m_discardSelected.clear();
             m_discardSelectCount = 0;
             m_hoveredCardIndex = -1;

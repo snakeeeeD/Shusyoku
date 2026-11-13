@@ -223,6 +223,12 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         b.name = L""; b.description = L"";
         m_player->GetBuffManager().AddBuff(b);
     }
+    if (int atk = RelicManager::SumValue("startBuffAtkTurn"))   // 最初のターンだけ攻撃UP（鍛錬の鉢巻）
+    {
+        Buff b; b.type = BuffType::AttackUpTurn; b.value = atk; b.duration = 1;
+        b.name = L""; b.description = L"";
+        m_player->GetBuffManager().AddBuff(b);
+    }
     for (int i = 0; i < RelicManager::SumValue("startDraw"); i++)
     {
         std::string id = m_deck.DrawCard();
@@ -555,7 +561,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
      float gw = m_gridMap->GetCols() * 1.1f * 0.5f;   // 盤面半幅 ~6.6
      float gh = m_gridMap->GetRows() * 1.1f * 0.5f;   // 盤面半奥 ~3.85
      int placed = 0;
-     for (int i = 0; i < 200 && placed < 22; i++)     // 最大22個まで
+     for (int i = 0; i < 200 && placed < 14; i++)     // 最大14個まで（新しい絵は細かく目立つので控えめに）
      {
          float ang = ((rnd() % 1000) / 1000.0f) * 6.2832f;
          float m = 2.0f + ((rnd() % 1000) / 1000.0f) * 4.0f;   // フチから 2..6 外側
@@ -568,6 +574,8 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
          d.scale = 0.8f + (rnd() % 100) / 100.0f * 0.6f;
          m_decos.push_back(d); placed++;
      }
+     // 描く順：奥（z が小さい＝画面の上）から手前へ。足元が画面の下にある物ほど後に描いて、手前に見せる
+     std::sort(m_decos.begin(), m_decos.end(), [](const Deco& a, const Deco& b) { return a.z < b.z; });
 
      // テレメトリ: 戦闘開始（敵構成・開始HP）
      m_hpStart = m_player ? m_player->GetHp() : 0;
@@ -1220,6 +1228,9 @@ void BattleScene::Update(float deltaTime)
                 });
 
             m_player->Heal(RelicManager::SumValue("winHeal"));   // レリック（pd.hpに反映される）
+            // 止血帯：この戦闘で自傷で失ったHPの value% を戻す（端数は切り上げ）
+            if (int pct = RelicManager::SumValue("selfHealBack"); pct > 0 && m_player->GetSelfLost() > 0)
+                m_player->Heal((m_player->GetSelfLost() * pct + 99) / 100);
 
             // HPを保存、現在のマスをクリア済みに
             auto& pd = PlayerDataManager::GetData();
@@ -1816,7 +1827,7 @@ void BattleScene::ProcessDeadEnemies()
         m_defeatedEnemyIds.push_back(enemy->GetId());
 
         PlayerDataManager::AddGold(RelicManager::SumValue("killGold"));   // レリック
-        m_player->Heal(RelicManager::SumValue("killHeal"));                        // レリック
+        m_player->Heal(RelicManager::SumValue("killHeal") + m_player->GetBuffManager().GetBuffValue(BuffType::BloodThirst));   // 血の渇望も                        // レリック
         if (int ks = RelicManager::SumValue("killStrength"))                       // レリック（撃破で攻撃UP）
         {
             Buff b; b.type = BuffType::AttackUp; b.value = ks; b.duration = -1;
@@ -2196,6 +2207,7 @@ static const struct { BuffType type; const char* fx; } BUFF_GAIN_FX[] = {
     { BuffType::Frenzy, "buff_attack" },     { BuffType::LastStand, "buff_attack" },    { BuffType::DeepStand, "buff_attack" },
     { BuffType::KnifePower, "buff_attack" }, { BuffType::HolyGround, "buff_attack" },   { BuffType::Charge, "buff_attack" },
     { BuffType::TrapPower, "buff_attack" },  { BuffType::HalfCarry, "buff_defense" }, { BuffType::StandFirm, "buff_defense" },
+    { BuffType::BloodThirst, "buff_up" },   { BuffType::Berserker, "buff_attack" }, { BuffType::BloodFlash, "buff_up" },
     // 守りが上がる
     { BuffType::DefenseUp, "buff_defense" }, { BuffType::Barricade, "buff_defense" },   { BuffType::Thorns, "buff_defense" },
     { BuffType::Momentum, "buff_defense" },  { BuffType::Riposte, "buff_defense" },     { BuffType::CardBlock, "buff_defense" },
@@ -2389,7 +2401,7 @@ bool BattleScene::IsRelicSpent(const std::string& id) const
     const std::string& k = def->kind;
     // 戦闘開始で発動する系（最初のターン）＝戦闘中は常に使用済み
     if (k == "startBlock" || k == "startHeal" || k == "startDraw"
-        || k == "startBuffAtk" || k == "startPoison") return true;
+        || k == "startBuffAtk" || k == "startBuffAtkTurn" || k == "startPoison") return true;
     // 最初の攻撃
     if (k == "firstAttack") return m_firstAttackDone;
     return false;

@@ -65,6 +65,9 @@ static void ParseCard(const json& c, CardData& data, CardData& up, bool& hasUp)
     data.drawBeforeDiscard = c.value("drawBeforeDiscard", false);
     data.selfDamage = c.value("selfDamage", 0);
     data.preBlock = c.value("preBlock", 0);
+    data.missingHpPct = c.value("missingHpPct", 0);
+    data.requireTag = c.value("requireTag", "");
+    data.requireCount = c.value("requireCount", 1);
     data.hits = c.value("hits", 1);
 
     // mainEffect
@@ -151,6 +154,7 @@ static void ParseCard(const json& c, CardData& data, CardData& up, bool& hasUp)
         up.hits += u.value("hits", 0);
         up.range += u.value("range", 0);
         up.preBlock += u.value("preBlock", 0);
+        up.missingHpPct += u.value("missingHpPct", 0);
         up.mainEffect.value += u.value("mainValue", 0);
         up.mainEffect.duration += u.value("duration", 0);
         if (up.onHitEffect.hasEffect) up.onHitEffect.value += u.value("onHitValue", 0);
@@ -203,6 +207,7 @@ void CardDataBase::Init()
                 up.hits += u.value("hits", 0);
                 up.range += u.value("range", 0);
                 up.preBlock += u.value("preBlock", 0);
+                up.missingHpPct += u.value("missingHpPct", 0);
                 up.mainEffect.value += u.value("mainValue", 0);
                 up.mainEffect.duration += u.value("duration", 0);
                 if (up.onHitEffect.hasEffect) up.onHitEffect.value += u.value("onHitValue", 0);
@@ -472,6 +477,9 @@ std::vector<std::string> CardDataBase::PickRewardCards(int count, bool rareBias,
         if (!c) continue;
         for (const auto& t : c->tags) tagCounts[t]++;
     }
+    // 軸のレリック（タグ付き）は、1個でその軸のカード2枚分と数える
+    const int RELIC_TAG_CARDS = 2;
+    for (const auto& t : RelicManager::OwnedTags()) tagCounts[t] += RELIC_TAG_CARDS;
 
     const float K = 0.5f;   // タグ1枚あたりの出やすさ係数
 
@@ -483,6 +491,11 @@ std::vector<std::string> CardDataBase::PickRewardCards(int count, bool rareBias,
         if (!c) continue;
         if (rareOnly && c->rarity != CardRarity::Rare) continue;      // レアのみ
         if (upgradableOnly && !Get(id + "+")) continue;               // 強化版がある札のみ
+        if (!c->requireTag.empty())   // 軸のカードが一定枚数ないと出ない（吸血斬：自傷軸のデッキだけ）
+        {
+            auto it = tagCounts.find(c->requireTag);
+            if (it == tagCounts.end() || it->second < c->requireCount) continue;
+        }
         int aff = 0;
         for (const auto& t : c->tags)
         {

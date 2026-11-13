@@ -18,6 +18,7 @@ public:
     static std::vector<std::string> ShopPool();
     static std::vector<std::string> AllIds();
     static std::vector<const RelicDef*> OwnedByKind(const std::string& kind);
+    static std::vector<std::string> OwnedTags();   // 持っているレリックのタグ（重複あり）
 
     static void NotifyFired(const std::string& id);   // 発動した瞬間を記録（バー演出用）
     static float FlashAmount(const std::string& id);  // 0..1（発動直後=1 → 0.6秒で0）

@@ -21,6 +21,7 @@ void EventPanel::Open(const std::string& id)
 {
 	m_open = true;
 	m_id = id;
+	m_def = EventDataBase::Roll(id);
 	m_result = -1;
 	m_pick = Pick::None;
 }
@@ -136,6 +137,7 @@ void EventPanel::HandleInputBody(UiContext& ui, Request& rq)
 			{
 				m_pending = Pending::None;
 				m_id = "treasure_field";   // 財宝マスの中身を開く（呪いを払った後なので、デメリットなしで選ばせる）
+				m_def = EventDataBase::Roll(m_id);
 				m_result = -1;
 				m_pick = Pick::None;
 				// m_open は true のまま
@@ -147,7 +149,7 @@ void EventPanel::HandleInputBody(UiContext& ui, Request& rq)
 		}
 		else
 		{
-			const EventDef* e = EventDataBase::Get(m_id);
+			const EventDef* e = Def();
 			POINT m = ui.input->GetMousePos();
 			if (e) for (int i = 0; i < (int)e->choices.size(); i++)
 			{
@@ -281,16 +283,27 @@ void EventPanel::ApplyOutcomes(const EventChoice& c)
 		{
 			std::string rid = o.param.empty() ? RelicManager::RandomUnowned("event")     // 空＝イベント用のレリック
 				: o.param == "random" ? RelicManager::RandomDrop()                       // random＝普通のレリック（レア度ごとの確率）
+				: (o.param == "common" || o.param == "uncommon" || o.param == "rare")
+					? RelicManager::RandomUnowned(o.param)                               // レア度を指定してランダム
 				: o.param;
 			if (rid.empty()) rid = RelicManager::RandomDrop();
 			if (!rid.empty()) { PlayerDataManager::AddRelic(rid); m_gains.push_back({ "relic", rid, 1 }); }
 		}
 		else if (o.type == "addCard")
 		{
-			PlayerDataManager::AddCard(o.param);
-			m_gains.push_back({ "card", o.param, 1 });
-			if (const CardData* d = CardDataBase::Get(o.param); d && d->type == CardType::Curse)
-				m_showCards.push_back(o.param);   // 呪いは手に入る瞬間を見せる（HandleInput の戻り値で頼む）
+			std::string cid = o.param;
+			if (cid == "randomRare")   // ランダムなレアカード（選ばせない。報酬と同じく、デッキとレリックの軸に寄る）
+			{
+				auto picks = CardDataBase::PickRewardCards(1, true, PlayerDataManager::GetData().deck, /*rareOnly*/true);
+				cid = picks.empty() ? "" : picks[0];
+			}
+			if (!cid.empty())
+			{
+				PlayerDataManager::AddCard(cid);
+				m_gains.push_back({ "card", cid, 1 });
+				if (const CardData* d = CardDataBase::Get(cid); d && d->type == CardType::Curse)
+					m_showCards.push_back(cid);   // 呪いは手に入る瞬間を見せる（HandleInput の戻り値で頼む）
+			}
 		}
 		else if (o.type == "battle") { if (m_pending == Pending::None) { m_pending = Pending::Battle; m_battleParam = o.param; } }
 		else if (o.type == "shop") { if (m_pending == Pending::None) m_pending = Pending::Shop; }
@@ -302,7 +315,7 @@ void EventPanel::ApplyOutcomes(const EventChoice& c)
 
 void EventPanel::DrawChoices(UiContext& ui)
 {
-	const EventDef* e = EventDataBase::Get(m_id);
+	const EventDef* e = Def();
 	if (!e) { m_open = false; return; }
 	ID3D11ShaderResourceView* white = TextureManager::Get("white");
 	POINT mp = ui.input->GetMousePos();

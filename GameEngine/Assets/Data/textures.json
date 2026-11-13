@@ -12,7 +12,7 @@
       { "key": "smoke", "path": "Assets/Particles/smoke.png" },
       { "key": "star", "path": "Assets/Particles/star.png" },
       { "key": "arrow_up", "path": "Assets/Particles/arrow_up.png" },
-      { "key": "buff_trappower", "path": "Assets/UI/relic_trap_master.png" },
+      { "key": "buff_trappower", "path": "Assets/UI/buff_trappower.png" },
       { "key": "cross", "path": "Assets/Particles/cross.png" },
       { "key": "skull", "path": "Assets/Particles/skull.png" },
       { "key": "crosshair", "path": "Assets/Particles/crosshair.png" },
@@ -271,8 +271,11 @@
       { "key": "buff_embertrail", "path": "Assets/UI/buff_embertrail.png" },
       { "key": "buff_headweak", "path": "Assets/UI/buff_headweak.png" },
       { "key": "buff_immovable", "path": "Assets/UI/buff_immovable.png" },
-      { "key": "buff_halfcarry", "path": "Assets/UI/buff_barricade.png" },
-      { "key": "buff_standfirm", "path": "Assets/UI/buff_thorns.png" }
+      { "key": "buff_halfcarry", "path": "Assets/UI/buff_halfcarry.png" },
+      { "key": "buff_standfirm", "path": "Assets/UI/buff_standfirm.png" },
+      { "key": "buff_bloodthirst", "path": "Assets/UI/buff_bloodthirst.png" },
+      { "key": "buff_berserker", "path": "Assets/UI/buff_berserker.png" },
+      { "key": "buff_bloodflash", "path": "Assets/UI/buff_bloodflash.png" }
     ] }
   ]
 }

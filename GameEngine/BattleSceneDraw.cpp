@@ -256,20 +256,20 @@ BattleScene::BattleTheme BattleScene::CurrentTheme() const
                    "cell_stone", 4, { 0.52f, 0.48f, 0.62f, 0.92f } };
     }
     else if (m_category == EncCategory::Boss && m_battleEnemyId == "l2boss")
-        th = { "ground_snakepit", { "deco_darkspike","deco_bones","deco_egg" }, { 2.6f,2.4f,2.6f }, { 3.8f,3.4f,2.1f },
+        th = { "ground_snakepit", { "deco_darkspike","deco_bones","deco_egg" }, { 2.2f,4.3f,3.4f }, { 3.8f,2.1f,2.1f },
                "cell_stone", 4, { 0.50f, 0.56f, 0.44f, 0.92f } };
     else if (m_category == EncCategory::Boss)
-        th = { "ground_scorched", { "deco_deadtree","deco_ember","deco_darkrock" }, { 2.8f,2.6f,2.6f }, { 3.8f,2.1f,2.1f },   // dragon(1層)
+        th = { "ground_scorched", { "deco_deadtree","deco_ember","deco_darkrock" }, { 2.8f,3.3f,3.1f }, { 3.8f,2.1f,2.1f },   // dragon(1層)
                "cell_stone", 4, { 0.55f, 0.47f, 0.43f, 0.92f } };
     else if (themeLayer <= 1)
-        th = { "ground_grass",    { "deco_tree","deco_bush","deco_rock" },          { 3.0f,2.4f,2.6f }, { 3.8f,1.8f,2.1f },
+        th = { "ground_grass",    { "deco_tree","deco_bush","deco_rock" },          { 3.2f,2.5f,3.3f }, { 3.8f,1.8f,2.1f },
                "cell_stone", 4, { 0.80f, 0.76f, 0.66f, 0.92f } };
     else if (themeLayer == 2)
-        th = { "ground_cave",     { "deco_stalagmite","deco_crystal","deco_caverock" }, { 2.0f,2.4f,2.6f }, { 3.8f,3.4f,2.1f },
-               "cell_stone", 4, { 0.60f, 0.66f, 0.78f, 0.92f } };
+        th = { "ground_cave",     { "deco_stalagmite","deco_crystal","deco_caverock" }, { 1.9f,2.4f,3.1f }, { 3.8f,3.4f,2.1f },
+               "cell_stone", 4, { 0.60f, 0.66f, 0.78f, 0.92f }, 0.85f };   // 洞窟は少し暗く
     else
-        th = { "ground_future",   { "deco_pillar","deco_terminal","deco_techblock" }, { 1.9f,2.6f,2.6f }, { 3.8f,3.0f,2.2f },
-               "cell_panel", 1, { 0.62f, 0.70f, 0.78f, 0.92f } };
+        th = { "ground_future",   { "deco_pillar","deco_terminal","deco_techblock" }, { 1.2f,2.6f,3.2f }, { 3.8f,3.0f,2.2f },
+               "cell_panel", 1, { 0.62f, 0.70f, 0.78f, 0.92f }, 0.85f };   // 近未来も少し暗く
     return th;
 }
 
@@ -283,11 +283,12 @@ void BattleScene::DrawGround(const BattleTheme& th)
         for (int gz = -N; gz <= N; gz++)
             for (int gx = -N; gx <= N; gx++)
                 m_renderer3D->DrawTile(TextureManager::Get(th.ground),
-                    gx * TILE, gz * TILE, TILE * 1.02f, XMFLOAT4(1, 1, 1, 1), -0.06f);
+                    gx * TILE, gz * TILE, TILE * 1.02f, XMFLOAT4(th.bright, th.bright, th.bright, 1), -0.06f);
     }
 
     // 背景装飾（透明quadがdepthを書いて四角化するのを防ぐため depth-write OFF）
     m_renderer3D->SetDepthWrite(false);
+    // 影を先に全部（後から描くと、奥の装飾の本体に手前の影が乗るため）
     for (auto& dc : m_decos)
     {
         const char* tex = th.tex[dc.type];
@@ -301,10 +302,15 @@ void BattleScene::DrawGround(const BattleTheme& th)
         float bz = dc.z - (lenZ / dl) * tuck;
         m_renderer3D->DrawShadow(TextureManager::Get(tex),
             bx, bz, w, lenX, lenZ, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.30f));
-
-        // 本体
+    }
+    // 本体：m_decos は Init で奥→手前の順に並べてあるので、画面の下（手前）の物ほど上に描かれる
+    for (auto& dc : m_decos)
+    {
+        const char* tex = th.tex[dc.type];
+        float w = th.w[dc.type] * dc.scale;
+        float h = th.h[dc.type] * dc.scale;
         m_renderer3D->DrawBillboard(TextureManager::Get(tex),
-            dc.x, -0.10f, dc.z, w, h, 0.0f, XMFLOAT4(1, 1, 1, 1));  // y=中心ではなく足元(地面)
+            dc.x, -0.10f, dc.z, w, h, 0.0f, XMFLOAT4(th.bright, th.bright, th.bright, 1));  // y=中心ではなく足元(地面)
     }
 }
 

@@ -29,7 +29,10 @@ void BuffManager::AddBuff(const Buff& buff)
         buff.type == BuffType::DeepStand ||
         buff.type == BuffType::GuardianVow ||
         buff.type == BuffType::Cathedral ||
-        buff.type == BuffType::StandFirm)   // 不退転は重ねると%が足される
+        buff.type == BuffType::StandFirm ||   // 不退転は重ねると%が足される
+        buff.type == BuffType::BloodThirst ||
+        buff.type == BuffType::Berserker ||
+        buff.type == BuffType::BloodFlash)
     {
         // 残りターンが同じものだけまとめる。違えば別に持つ＝それぞれのターンで切れる
         //（永続と期限つきが混ざっても、期限つきの分だけが切れる。毒は値で減るのでいつもまとめる）

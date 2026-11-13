@@ -255,7 +255,7 @@ void DeckPanel::DrawPreview(UiContext& ui)
 			D2D1::ColorF(0.85f, 0.85f, 0.85f), D2D1::ColorF(0, 0, 0), 2.5f);
 		ui.text->DrawOutlinedText(L"強化後", x0 + cw + gap, y0 - 100.0f, 30.0f,
 			D2D1::ColorF(1.0f, 0.9f, 0.4f), D2D1::ColorF(0, 0, 0), 2.5f);
-		ui.text->DrawText(L"強化する", bX + 55.0f, bY + bDy + 11.0f, 22.0f, D2D1::ColorF(1, 0.95f, 0.7f));
+		ui.text->DrawTextInRect(L"強化する", bX, bY + bDy, bW, bH, 22.0f, D2D1::ColorF(1, 0.95f, 0.7f));
 		ui.text->End();
 		return;
 	}

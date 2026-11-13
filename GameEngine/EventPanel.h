@@ -22,6 +22,7 @@ public:
 
     void Open(const std::string& id);
     bool IsOpen() const { return m_open; }
+    bool Chosen() const { return m_result >= 0 || m_pick != Pick::None; }   // 選択肢をもう選んだ（結果・カード選択の画面）
     bool Animating() const { return m_animIdx >= 0; }   // カード・レリックが変わる演出中（説明を残さない）
     Request HandleInput(UiContext& ui);
     void    Update(UiContext& ui, float dt);   // 揺れ・表示HP・変わる演出・一覧のスクロール
@@ -68,6 +69,8 @@ private:
 
     bool m_open = false;
     std::string m_id;
+    EventDef m_def;                 // 今出しているイベント（slots のあるイベントは、出す選択肢を決めた写し）
+    const EventDef* Def() const { return m_def.id.empty() ? nullptr : &m_def; }
     int  m_result = -1;             // -1=選択中, >=0=結果表示（選んだ選択肢）
 
     // 実際に増減したもの（結果画面に一覧表示。確率つきの結果も起きたものだけ）

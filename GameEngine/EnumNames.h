@@ -126,6 +126,9 @@ namespace EnumNames
         { BuffType::TrapPower,    "TrapPower" },
         { BuffType::HalfCarry,    "HalfCarry" },
         { BuffType::StandFirm,    "StandFirm" },
+        { BuffType::BloodThirst,  "BloodThirst" },
+        { BuffType::Berserker,    "Berserker" },
+        { BuffType::BloodFlash,   "BloodFlash" },
     };
 
     // ---- カード：効果の種類 ----
@@ -218,6 +221,7 @@ namespace EnumNames
         { "startBlock",    false, u8"戦闘開始時 ブロック+value" },
         { "startHeal",     false, u8"戦闘開始時 HP+value" },
         { "startBuffAtk",  false, u8"戦闘開始時 攻撃UP+value" },
+        { "startBuffAtkTurn", false, u8"戦闘開始時 最初のターンだけ攻撃UP+value" },
         { "startDraw",     false, u8"戦闘開始時 追加でvalue枚引く" },
         { "startPoison",   false, u8"戦闘開始時 全ての敵に毒value" },
         // 毎ターン
@@ -239,12 +243,14 @@ namespace EnumNames
         { "trapDamage",    false, u8"罠のダメージ+value" },
         { "trapDebuff",    false, u8"罠のデバフ+value" },
         { "trapDraw",      false, u8"罠を置くとvalue枚引く" },
+        { "discardBlock",  false, u8"カードを選んで捨てるたび ブロック+value" },
         { "floorImmune",   false, u8"床の効果を受けない（value不使用）" },
         // 撃破・勝利
         { "killGold",      false, u8"敵を倒すと ゴールド+value" },
         { "killHeal",      false, u8"敵を倒すと HP+value" },
         { "killStrength",  false, u8"敵を倒すと 攻撃UP+value" },
         { "winHeal",       false, u8"戦闘勝利時 HP+value" },
+        { "selfHealBack",  false, u8"戦闘勝利時 この戦闘で自傷で失ったHPのvalue%を回復" },
         { "eliteMaterial", false, u8"エリート撃破時 素材をvalue個" },
         // 戦闘外
         { "maxHp",         false, u8"取得時 最大HP+value" },

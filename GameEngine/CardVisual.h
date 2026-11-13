@@ -97,6 +97,7 @@ public:
                     + RelicManager::SumValue("knifeBonus");
 
                 int hp = player->GetHp(), mhp = player->GetMaxHp();
+                actualValue += (mhp - hp) * data->missingHpPct / 100;   // 血刃：失ったHPの%
                 if (hp * 2 <= mhp) actualValue += player->GetBuffManager().GetBuffValue(BuffType::LastStand);
                 if (hp * 4 <= mhp) actualValue += player->GetBuffManager().GetBuffValue(BuffType::DeepStand);
             }

@@ -241,41 +241,42 @@ void ShopScene::Draw()
     float lvYY = lvHov ? leaveY - 6.0f : leaveY;
     UiWindow::Button(m_spriteRenderer, m_whiteTexture, leaveX, lvYY, leaveW, leaveH, XMFLOAT4(0.3f, 0.3f, 0.35f, 0.95f));
 
-    // ラベルの背景バナー
+    // ラベルの背景バナー（見出しの文字もこの四角の真ん中に置く）
+    const float fw = (CardVisual::CARD_H * SHOP_SCALE - CardVisual::CARD_H) / 2.0f;   // 拡大で上にはみ出す分
+    int cardN = 0; for (auto& it : m_items) if (it.kind == ShopKind::Card) cardN++;
+    const bool hasCards = cardN > 0, hasItems = cardN < (int)m_items.size();
+    const URect shopRect{ m_screenWidth / 2.0f - 100.0f, 48.0f, 200.0f, 46.0f };
+    auto labelRect = [&](int slot)   // その段の先頭カードの、少し上
+    {
+        float sx, by; GetSlotBase(slot, sx, by);
+        return URect{ m_screenWidth / 2.0f - 75.0f, by - fw - 30.0f, 150.0f, 34.0f };
+    };
     {
         auto banner = TextureManager::Get("ui_banner");
-        float cx = m_screenWidth / 2.0f;
-        const float fw2 = (CardVisual::CARD_H * SHOP_SCALE - CardVisual::CARD_H) / 2.0f;
-        int cardN2 = 0; for (auto& it : m_items) if (it.kind == ShopKind::Card) cardN2++;
-        m_spriteRenderer->DrawSprite(banner, cx - 100.0f, 48.0f, 200.0f, 46.0f, 0.0f, XMFLOAT4(1, 1, 1, 1)); // SHOP
-        if (cardN2 > 0)
+        auto drawBanner = [&](const URect& r)
         {
-            float ccx, by; GetSlotBase(0, ccx, by);      m_spriteRenderer->DrawSprite(banner, cx - 75.0f, by - fw2 - 30.0f, 150.0f, 34.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
-        } // CARDS
-        if (cardN2 < (int)m_items.size())
-        {
-            float ccx, by; GetSlotBase(cardN2, ccx, by); m_spriteRenderer->DrawSprite(banner, cx - 75.0f, by - fw2 - 30.0f, 150.0f, 34.0f, 0.0f, XMFLOAT4(1, 1, 1, 1));
-        } // ITEMS
+            m_spriteRenderer->DrawSprite(banner, r.x, r.y, r.w, r.h, 0.0f, XMFLOAT4(1, 1, 1, 1));
+        };
+        drawBanner(shopRect);
+        if (hasCards) drawBanner(labelRect(0));       // CARDS
+        if (hasItems) drawBanner(labelRect(cardN));   // ITEMS
     }
     m_spriteRenderer->End();
 
     m_textRenderer->Begin();
-    m_textRenderer->DrawOutlinedText(L"SHOP", m_screenWidth / 2.0f - 30.0f, 55.0f, 26.0f,
+    // 見出し（どれもバナーと同じ四角の真ん中）
+    m_textRenderer->DrawOutlinedTextInRect(L"SHOP", shopRect.x, shopRect.y, shopRect.w, shopRect.h, 26.0f,
         D2D1::ColorF(1.0f, 0.95f, 0.8f), D2D1::ColorF(0.2f, 0.08f, 0.04f), 2.5f);
-
-    // 見出し（拡大で上にはみ出す分 fw を引いて、カード上端の少し上に置く）
-    const float fw = (CardVisual::CARD_H * SHOP_SCALE - CardVisual::CARD_H) / 2.0f;
-    int cardN = 0; for (auto& it : m_items) if (it.kind == ShopKind::Card) cardN++;
-    if (cardN > 0)
+    if (hasCards)
     {
-        float cx, by; GetSlotBase(0, cx, by);
-        m_textRenderer->DrawOutlinedText(L"CARDS", m_screenWidth / 2.0f - 24.0f, by - fw - 24.0f, 16.0f,
+        URect r = labelRect(0);
+        m_textRenderer->DrawOutlinedTextInRect(L"CARDS", r.x, r.y, r.w, r.h, 16.0f,
             D2D1::ColorF(0.8f, 0.85f, 1.0f), D2D1::ColorF(0.1f, 0.1f, 0.2f), 2.0f);
     }
-    if (cardN < (int)m_items.size())
+    if (hasItems)
     {
-        float cx, by; GetSlotBase(cardN, cx, by);
-        m_textRenderer->DrawOutlinedText(L"ITEMS", m_screenWidth / 2.0f - 24.0f, by - fw - 24.0f, 16.0f,
+        URect r = labelRect(cardN);
+        m_textRenderer->DrawOutlinedTextInRect(L"ITEMS", r.x, r.y, r.w, r.h, 16.0f,
             D2D1::ColorF(1.0f, 0.85f, 0.6f), D2D1::ColorF(0.25f, 0.12f, 0.05f), 2.0f);
     }
 
@@ -337,14 +338,14 @@ void ShopScene::Draw()
     }
 
     if (m_removedThisShop)
-        m_textRenderer->DrawText(L"削除済み", 95.0f, rmYY + 12.0f, 20.0f, D2D1::ColorF(0.6f, 0.6f, 0.6f));
+        m_textRenderer->DrawTextInRect(L"削除済み", rmX, rmYY, rmW, rmH, 20.0f, D2D1::ColorF(0.6f, 0.6f, 0.6f));
     else
     {
         wchar_t rmT[48]; swprintf_s(rmT, L"カード削除 %dG", RemovePrice());
-        m_textRenderer->DrawText(rmT, 60.0f, rmYY + 12.0f, 20.0f, D2D1::ColorF(1, 1, 1));
+        m_textRenderer->DrawTextInRect(rmT, rmX, rmYY, rmW, rmH, 20.0f, D2D1::ColorF(1, 1, 1));
     }
-    m_textRenderer->DrawText(L"売却", slX + 55.0f, slYY + 12.0f, 20.0f, D2D1::ColorF(1, 1, 1));
-    m_textRenderer->DrawText(L"Leave", leaveX + 50.0f, lvYY + 12.0f, 20.0f, D2D1::ColorF(1, 1, 1));
+    m_textRenderer->DrawTextInRect(L"売却", slX, slYY, slW, slH, 20.0f, D2D1::ColorF(1, 1, 1));
+    m_textRenderer->DrawTextInRect(L"Leave", leaveX, lvYY, leaveW, leaveH, 20.0f, D2D1::ColorF(1, 1, 1));
     m_textRenderer->End();
 
     // カード削除/売却ボタンの説明

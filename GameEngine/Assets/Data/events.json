@@ -891,6 +891,284 @@
           "outcomes": []
         }
       ]
+    },
+    {
+      "id": "run_start",
+      "title": "旅立ち",
+      "desc": "出発の前に、ひとつだけ持っていけるものがある。",
+      "layer": 0,
+      "random": false,
+      "slots": [
+        "card",
+        "other",
+        "deal",
+        "axis"
+      ],
+      "choices": [
+        {
+          "group": "card",
+          "label": "手放す（カードを1枚削除）",
+          "result": "身軽になった。",
+          "outcomes": [
+            {
+              "type": "removeCard"
+            }
+          ]
+        },
+        {
+          "group": "card",
+          "label": "磨く（カードを1枚強化）",
+          "result": "手に馴染んだ。",
+          "outcomes": [
+            {
+              "type": "upgradeCard"
+            }
+          ]
+        },
+        {
+          "group": "card",
+          "label": "作り直す（カードを1枚変化）",
+          "result": "形が変わった。",
+          "outcomes": [
+            {
+              "type": "transformCard"
+            }
+          ]
+        },
+        {
+          "group": "card",
+          "label": "学ぶ（3枚からカードを1枚選ぶ）",
+          "result": "新しい技を覚えた。",
+          "outcomes": [
+            {
+              "type": "pickCard",
+              "param": ""
+            }
+          ]
+        },
+        {
+          "group": "card",
+          "label": "授かる（ランダムなレアカード）",
+          "result": "強い技を授かった。",
+          "outcomes": [
+            {
+              "type": "addCard",
+              "param": "randomRare"
+            }
+          ]
+        },
+        {
+          "group": "other",
+          "label": "鍛える（最大HP+8）",
+          "result": "体が強くなった。",
+          "outcomes": [
+            {
+              "type": "maxHp",
+              "value": 8
+            }
+          ]
+        },
+        {
+          "group": "other",
+          "label": "蓄える（100ゴールド）",
+          "result": "懐が温かい。",
+          "outcomes": [
+            {
+              "type": "gold",
+              "value": 100
+            }
+          ]
+        },
+        {
+          "group": "other",
+          "label": "拾う（ランダムなコモンのレリック）",
+          "result": "何かを拾った。",
+          "outcomes": [
+            {
+              "type": "relic",
+              "param": "common"
+            }
+          ]
+        },
+        {
+          "group": "deal",
+          "label": "血を捧げる（最大HP-6 / ランダムなレアのレリック）",
+          "result": "代わりに力を得た。",
+          "outcomes": [
+            {
+              "type": "maxHp",
+              "value": -6
+            },
+            {
+              "type": "relic",
+              "param": "rare"
+            }
+          ]
+        },
+        {
+          "group": "deal",
+          "label": "血を捧げる（最大HP-6 / 250ゴールド）",
+          "result": "代わりに富を得た。",
+          "outcomes": [
+            {
+              "type": "maxHp",
+              "value": -6
+            },
+            {
+              "type": "gold",
+              "value": 250
+            }
+          ]
+        },
+        {
+          "group": "deal",
+          "label": "呪いを背負う（呪い・重荷 / ランダムなレアのレリック）",
+          "result": "重さと引き換えに。",
+          "outcomes": [
+            {
+              "type": "addCard",
+              "param": "cursed_burden"
+            },
+            {
+              "type": "relic",
+              "param": "rare"
+            }
+          ]
+        },
+        {
+          "group": "deal",
+          "label": "呪いを背負う（呪い・重荷 / 最大HP+12）",
+          "result": "重さと引き換えに。",
+          "outcomes": [
+            {
+              "type": "addCard",
+              "param": "cursed_burden"
+            },
+            {
+              "type": "maxHp",
+              "value": 12
+            }
+          ]
+        },
+        {
+          "group": "deal",
+          "label": "傷を負う（HP-10 / ランダムなレアカード）",
+          "result": "痛みと引き換えに。",
+          "outcomes": [
+            {
+              "type": "hp",
+              "value": -10
+            },
+            {
+              "type": "addCard",
+              "param": "randomRare"
+            }
+          ]
+        },
+        {
+          "group": "deal",
+          "label": "傷を負う（HP-10 / 250ゴールド）",
+          "result": "痛みと引き換えに。",
+          "outcomes": [
+            {
+              "type": "hp",
+              "value": -10
+            },
+            {
+              "type": "gold",
+              "value": 250
+            }
+          ]
+        },
+        {
+          "group": "axis",
+          "label": "止血帯（勝つと、自傷で失ったHPの半分を回復）",
+          "result": "止血帯を受け取った。",
+          "outcomes": [
+            {
+              "type": "relic",
+              "param": "start_tourniquet"
+            }
+          ]
+        },
+        {
+          "group": "axis",
+          "label": "鍛錬の鉢巻（最初のターンだけ、攻撃+2）",
+          "result": "鍛錬の鉢巻を受け取った。",
+          "outcomes": [
+            {
+              "type": "relic",
+              "param": "start_headband"
+            }
+          ]
+        },
+        {
+          "group": "axis",
+          "label": "古びた盾（戦闘開始時、ブロック+8）",
+          "result": "古びた盾を受け取った。",
+          "outcomes": [
+            {
+              "type": "relic",
+              "param": "start_old_shield"
+            }
+          ]
+        },
+        {
+          "group": "axis",
+          "label": "毒草の小瓶（戦闘開始時、全ての敵に毒2）",
+          "result": "毒草の小瓶を受け取った。",
+          "outcomes": [
+            {
+              "type": "relic",
+              "param": "start_herb_vial"
+            }
+          ]
+        },
+        {
+          "group": "axis",
+          "label": "旅の砥石（ナイフのダメージ+1）",
+          "result": "旅の砥石を受け取った。",
+          "outcomes": [
+            {
+              "type": "relic",
+              "param": "start_pocket_stone"
+            }
+          ]
+        },
+        {
+          "group": "axis",
+          "label": "罠師の道具袋（罠のダメージ+3）",
+          "result": "罠師の道具袋を受け取った。",
+          "outcomes": [
+            {
+              "type": "relic",
+              "param": "start_trap_pouch"
+            }
+          ]
+        },
+        {
+          "group": "axis",
+          "label": "巡礼の数珠（信仰を刻む時 +1）",
+          "result": "巡礼の数珠を受け取った。",
+          "outcomes": [
+            {
+              "type": "relic",
+              "param": "start_prayer_beads"
+            }
+          ]
+        },
+        {
+          "group": "axis",
+          "label": "古い手帳（カードを選んで捨てるたび、ブロック+2）",
+          "result": "古い手帳を受け取った。",
+          "outcomes": [
+            {
+              "type": "relic",
+              "param": "start_notebook"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

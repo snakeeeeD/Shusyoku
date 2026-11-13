@@ -65,6 +65,9 @@ struct BuffInfo
             { L"罠術",                L"罠のダメージ+{value}",                                   {1.0f, 0.55f, 0.15f, 1.0f},  "buff_trappower" },   // TrapPower
             { L"残心",                L"ターンの始めに、ブロックを半分持ち越す",                 {0.45f, 0.6f, 0.9f, 1.0f},   "buff_halfcarry" },   // HalfCarry
             { L"不退転",              L"ターンの終わりに、隣の敵全員に残ったブロックの{value}%のダメージ", {0.95f, 0.75f, 0.3f, 1.0f}, "buff_standfirm" },   // StandFirm
+            { L"血の渇望",            L"敵を倒すたびHP+{value}",                                 {0.85f, 0.2f, 0.25f, 1.0f},  "buff_bloodthirst" },   // BloodThirst
+            { L"狂戦士",              L"カードで自傷するたび、このターンの攻撃+{value}",         {0.95f, 0.3f, 0.2f, 1.0f},   "buff_berserker" },     // Berserker
+            { L"血の閃き",            L"カードで自傷するたび、カードを{value}枚引く",            {0.9f, 0.45f, 0.55f, 1.0f},  "buff_bloodflash" },    // BloodFlash
         };
         return infos[static_cast<int>(type)];
     }

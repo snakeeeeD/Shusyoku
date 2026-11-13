@@ -258,6 +258,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             int hits = EffectiveHits(data, player);
             int dmg = player->GetBuffManager().GetFinalAttack(baseVal);
             dmg += player->GetMoved() * data.movedBonus;   // 移動マス数で増える
+            dmg += (player->GetMaxHp() - player->GetHp()) * data.missingHpPct / 100;   // 血刃：失ったHPの%
             for (auto enemy : targets)
             {
                 enemy->TakeDamage(dmg);
@@ -556,6 +557,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 dmg = player->GetBuffManager().GetFinalAttack(data.mainEffect.value);
                 if (data.scaleByFaith) dmg += player->GetFeetFaith();   // 聖なる刃
                 dmg += player->GetMoved() * data.movedBonus;            // 移動マス数で増える
+                dmg += (player->GetMaxHp() - player->GetHp()) * data.missingHpPct / 100;   // 血刃：失ったHPの%
 
                 // 背水：低HPで攻撃UP（Powerのバフ値ぶん・今のHPで判定）
                 int hp = player->GetHp(), mhp = player->GetMaxHp();
@@ -1058,6 +1060,17 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     if (data.selfDamage > 0)
     {
         player->LoseHp(data.selfDamage);
+        // 自傷したら：狂戦士＝このターンの攻撃+、血の閃き＝カードを引く
+        if (int b = player->GetBuffManager().GetBuffValue(BuffType::Berserker); b > 0)
+        {
+            Buff ab; ab.type = BuffType::AttackUpTurn; ab.value = b; ab.duration = 1; ab.name = L""; ab.description = L"";
+            player->GetBuffManager().AddBuff(ab);
+        }
+        if (int n = player->GetBuffManager().GetBuffValue(BuffType::BloodFlash); n > 0)
+        {
+            CardEffectData dr; dr.hasEffect = true; dr.type = CardEffectType::Draw; dr.value = n;
+            applySub(dr);
+        }
         float px = (playerCol - gridMap->GetCols() / 2.0f) * 1.1f;
         float pz = (playerRow - gridMap->GetRows() / 2.0f) * 1.1f;
         EffectManager::Play("bleed", px + 0.5, 0.6f, pz + 0.5);

@@ -50,9 +50,6 @@
       "name": "回転切り",
       "type": "Attack",
       "rarity": "Uncommon",
-      "tags": [
-        "Strike"
-      ],
       "cost": 2,
       "range": 1,
       "rangeType": "Area",
@@ -755,7 +752,9 @@
       "subEffect": {
         "type": "Heal",
         "value": 2
-      }
+      },
+      "requireTag": "Berserk",
+      "requireCount": 2
     },
     {
       "id": "ATK_frenzy_blow",
@@ -848,11 +847,10 @@
       "cost": 2,
       "range": 1,
       "rangeType": "Cross",
-      "description": "敵に{value}ダメージ、\n弱体{onhit}付与",
+      "description": "敵に{value}ダメージ、\n弱体{onhitdur}ターン",
       "upgrade": {
         "mainValue": 2,
-        "subValue": 1,
-        "onHitValue": 1
+        "onHitDuration": 1
       },
       "mainEffect": {
         "type": "Damage",
@@ -925,7 +923,7 @@
       "cost": 0,
       "range": 1,
       "rangeType": "Adjacent",
-      "description": "{value}ダメージ、\n脱力{onhit}付与",
+      "description": "{value}ダメージ、\n脱力{onhitdur}ターン",
       "upgrade": {
         "mainValue": 2,
         "onHitDuration": 1
@@ -3317,6 +3315,96 @@
         "value": 30,
         "duration": -1,
         "buffType": "StandFirm"
+      }
+    },
+    {
+      "id": "ATK_blood_blade",
+      "name": "血刃",
+      "type": "Attack",
+      "rarity": "Common",
+      "tags": [
+        "Berserk"
+      ],
+      "vfx": "slash",
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "自傷2。{value}ダメージ ＋失ったHPの1/5",
+      "selfDamage": 2,
+      "missingHpPct": 20,
+      "upgrade": {
+        "missingHpPct": 5,
+        "description": "自傷2。{value}ダメージ ＋失ったHPの1/4"
+      },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 5
+      }
+    },
+    {
+      "id": "POW_bloodthirst",
+      "name": "血の渇望",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "tags": [
+        "Berserk"
+      ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "敵を倒すたび HP+{value}",
+      "upgrade": {
+        "mainValue": 1
+      },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 2,
+        "duration": -1,
+        "buffType": "BloodThirst"
+      }
+    },
+    {
+      "id": "POW_berserker",
+      "name": "狂戦士",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "tags": [
+        "Berserk"
+      ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "カードで自傷するたび このターン攻撃+{value}",
+      "upgrade": {
+        "mainValue": 1
+      },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 1,
+        "duration": -1,
+        "buffType": "Berserker"
+      }
+    },
+    {
+      "id": "POW_blood_flash",
+      "name": "血の閃き",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "tags": [
+        "Berserk"
+      ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "カードで自傷するたび {value}枚引く",
+      "upgrade": {
+        "cost": -1
+      },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 1,
+        "duration": -1,
+        "buffType": "BloodFlash"
       }
     }
   ]

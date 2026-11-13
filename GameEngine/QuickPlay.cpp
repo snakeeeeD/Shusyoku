@@ -37,6 +37,7 @@ void QuickPlay::Enter()
     PlayerDataManager::SetSaveEnabled(false);  // 本編のセーブに触らない
     PlayerDataManager::StartNewGame();
     PlayerDataManager::GetData().tutorialCraft = true;   // クラフトが無いので、初勝利のコア確定ドロップと説明を出さない
+    PlayerDataManager::GetData().startBlessing = false;  // デッキとレリックは選んだ物で決まるので、旅立ちの4択は出さない
     s_base = PlayerDataManager::GetData();
 }
 

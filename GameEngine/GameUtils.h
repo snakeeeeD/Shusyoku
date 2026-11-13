@@ -133,6 +133,9 @@ inline BuffType StringToBuffType(const std::string& str)
     if (str == "TrapPower")   return BuffType::TrapPower;
     if (str == "HalfCarry")   return BuffType::HalfCarry;
     if (str == "StandFirm")   return BuffType::StandFirm;
+    if (str == "BloodThirst") return BuffType::BloodThirst;
+    if (str == "Berserker")   return BuffType::Berserker;
+    if (str == "BloodFlash")  return BuffType::BloodFlash;
 
     return BuffType::AttackUp;
 }

@@ -87,6 +87,8 @@ void CardSelectScene::Draw()
     const float totalW = CHOICE_COUNT * cw + (CHOICE_COUNT - 1) * 30.0f;
     const float startX = (m_screenWidth - totalW) / 2.0f;
     const float cardY = (m_screenHeight - ch) / 2.0f;
+    const float bannerW = 480.0f, bannerH = 96.0f;   // 布バナー（文字もこの四角の真ん中に置く）
+    const float bannerX = (m_screenWidth - bannerW) / 2.0f, bannerY = 52.0f;
 
     m_spriteRenderer->Begin();
 
@@ -122,22 +124,20 @@ void CardSelectScene::Draw()
         skipHover ? XMFLOAT4(0.5f, 0.3f, 0.3f, 1.0f) : XMFLOAT4(0.3f, 0.2f, 0.2f, 0.9f));
 
     // カード取得の布バナー
-    {
-        float bw = 480.0f, bh = 96.0f;
-        m_spriteRenderer->DrawSprite(TextureManager::Get("ui_banner"),
-            m_screenWidth / 2.0f - bw / 2.0f, 52.0f, bw, bh, 0.0f, XMFLOAT4(1, 1, 1, 1));
-    }
+    m_spriteRenderer->DrawSprite(TextureManager::Get("ui_banner"),
+        bannerX, bannerY, bannerW, bannerH, 0.0f, XMFLOAT4(1, 1, 1, 1));
 
     m_spriteRenderer->End();
 
     m_textRenderer->Begin();
 
-    // タイトル
-    m_textRenderer->DrawOutlinedText(L"カードを1枚選んでください",
-        m_screenWidth / 2.0f - 130.0f, 84.0f, 28.0f,
+    // タイトル（布バナーの真ん中）
+    m_textRenderer->DrawOutlinedTextInRect(L"カードを1枚選んでください",
+        bannerX, bannerY, bannerW, bannerH, 28.0f,
         D2D1::ColorF(1.0f, 0.95f, 0.8f), D2D1::ColorF(0.25f, 0.04f, 0.06f), 3.0f);
 
-    m_textRenderer->DrawText(L"スキップ", skipX + 40.0f, skipY + skipDy + 8.0f, 20.0f,
+    // スキップ（ボタンと同じ四角。浮く分 skipDy も同じ）
+    m_textRenderer->DrawTextInRect(L"スキップ", skipX, skipY + skipDy, skipW, skipH, 20.0f,
         D2D1::ColorF(D2D1::ColorF::White));
 
     // カード情報

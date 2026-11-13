@@ -70,4 +70,7 @@ enum class BuffType
     TrapPower,      // 罠術：罠のダメージ+value（罠職人の心得）
     HalfCarry,      // 残心：ターンの始めにブロックを半分持ち越す
     StandFirm,      // 不退転：ターンの終わりに、隣の敵全員に残ったブロックのvalue%ダメージ
+    BloodThirst,    // 血の渇望：敵を倒すたびHP+value
+    Berserker,      // 狂戦士：カードで自傷するたび、このターンの攻撃+value
+    BloodFlash,     // 血の閃き：カードで自傷するたび、value枚引く
 };

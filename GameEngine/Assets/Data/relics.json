@@ -564,6 +564,102 @@
       "value": 1,
       "rarity": "uncommon",
       "desc": "敵が置いた床の効果を受けない"
+    },
+    {
+      "id": "start_tourniquet",
+      "icon": "relic_start_tourniquet",
+      "name": "止血帯",
+      "kind": "selfHealBack",
+      "value": 50,
+      "rarity": "starter",
+      "tags": [
+        "Berserk"
+      ],
+      "desc": "勝つと、この戦闘で自傷で失ったHPの半分を回復"
+    },
+    {
+      "id": "start_headband",
+      "icon": "relic_start_headband",
+      "name": "鍛錬の鉢巻",
+      "kind": "startBuffAtkTurn",
+      "value": 2,
+      "rarity": "starter",
+      "tags": [
+        "Strike"
+      ],
+      "desc": "最初のターンだけ、攻撃+2"
+    },
+    {
+      "id": "start_old_shield",
+      "icon": "relic_start_old_shield",
+      "name": "古びた盾",
+      "kind": "startBlock",
+      "value": 8,
+      "rarity": "starter",
+      "tags": [
+        "Bulwark"
+      ],
+      "desc": "戦闘開始時、ブロック+8"
+    },
+    {
+      "id": "start_herb_vial",
+      "icon": "relic_start_herb_vial",
+      "name": "毒草の小瓶",
+      "kind": "startPoison",
+      "value": 2,
+      "rarity": "starter",
+      "tags": [
+        "Poison"
+      ],
+      "desc": "戦闘開始時、全ての敵に毒2"
+    },
+    {
+      "id": "start_pocket_stone",
+      "icon": "relic_start_pocket_stone",
+      "name": "旅の砥石",
+      "kind": "knifeBonus",
+      "value": 1,
+      "rarity": "starter",
+      "tags": [
+        "Knife"
+      ],
+      "desc": "ナイフのダメージ+1"
+    },
+    {
+      "id": "start_trap_pouch",
+      "icon": "relic_start_trap_pouch",
+      "name": "罠師の道具袋",
+      "kind": "trapDamage",
+      "value": 3,
+      "rarity": "starter",
+      "tags": [
+        "Trap"
+      ],
+      "desc": "罠のダメージ+3"
+    },
+    {
+      "id": "start_prayer_beads",
+      "icon": "relic_start_prayer_beads",
+      "name": "巡礼の数珠",
+      "kind": "engraveAdd",
+      "value": 1,
+      "rarity": "starter",
+      "tags": [
+        "Faith"
+      ],
+      "desc": "信仰を刻む時 +1"
+    },
+    {
+      "id": "start_notebook",
+      "icon": "relic_start_notebook",
+      "name": "古い手帳",
+      "kind": "discardBlock",
+      "value": 2,
+      "rarity": "starter",
+      "tags": [
+        "Discard"
+      ],
+      "desc": "カードを選んで捨てるたび、ブロック+2"
     }
   ]
 }

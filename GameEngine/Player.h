@@ -48,7 +48,14 @@ public:
 
     void ResetBlock() { if (!m_buffManager.HasBuff(BuffType::Barricade)) m_block = 0; }
 
-    void LoseHp(int amount) { m_hp -= amount; if (m_hp < 0) m_hp = 0; }   // 0まで許可＝自傷で死ぬ
+    // 0まで許可＝自傷で死ぬ。失った分は数えておく（止血帯：勝ったあとに一部が戻る）
+    void LoseHp(int amount)
+    {
+        int lost = amount < m_hp ? amount : m_hp;
+        m_hp -= lost;
+        m_selfLost += lost;
+    }
+    int GetSelfLost() const { return m_selfLost; }
 
     void SetFacing(int dx, int dz) { m_faceDx = dx; m_faceDz = dz; }   // 攻撃時などに明示指定
     // その場に置く（移動扱いにしない＝向きが変わらない）。戦闘開始時は正面を向いて立つ
@@ -70,6 +77,7 @@ private:
 
     int m_hp;
     int m_maxHp;
+    int m_selfLost = 0;   // この戦闘で自傷で失ったHP（Player は戦闘ごとに作り直すので、戦闘ごとに0から）
     int m_energy;
     int m_maxEnergy;
     int m_block;

@@ -62,8 +62,8 @@ Player::Player()
     , m_energy(5), m_maxEnergy(5)
     , m_block(0)
 {
-    width = 1.0f;
-    height = 1.0f;
+    width = 1.15f;    // 少し大きく（頭上のアイコン・移動先の残像もこの大きさに合わせて動く）
+    height = 1.15f;
     worldY = 0.0f;
     m_BillboardRotation = 0.0f;
     m_displayHp = (float)m_maxHp;

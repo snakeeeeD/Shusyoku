@@ -34,4 +34,5 @@ struct RelicDef {
     }
 
     std::string icon;   // アイコンのテクスチャ名（Assets/UI/<icon>.png。空なら名前の文字で表示）
+    std::vector<std::string> tags;   // カードと同じタグ（軸のレリック）。持っているとその軸のカードが報酬に出やすい
 };

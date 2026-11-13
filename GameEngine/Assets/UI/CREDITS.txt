@@ -65,6 +65,14 @@ relic_shop_gold_glove.png  "Gloves" by Delapouite  https://game-icons.net/1x1/de
 relic_shop_spirit_bell.png  "Ringing bell" by Lorc  https://game-icons.net/1x1/lorc/ringing-bell.html
 relic_holy_seal.png  "Holy symbol" by Lorc  https://game-icons.net/1x1/lorc/holy-symbol.html
 relic_pilgrim_hat.png  "Pilgrim hat" by Delapouite  https://game-icons.net/1x1/delapouite/pilgrim-hat.html
+relic_start_tourniquet.png  "Arm bandage" by Delapouite  https://game-icons.net/1x1/delapouite/arm-bandage.html
+relic_start_headband.png  "Headband knot" by Delapouite  https://game-icons.net/1x1/delapouite/headband-knot.html
+relic_start_old_shield.png  "Viking shield" by Delapouite  https://game-icons.net/1x1/delapouite/viking-shield.html
+relic_start_herb_vial.png  "Round bottom flask" by Lorc  https://game-icons.net/1x1/lorc/round-bottom-flask.html
+relic_start_pocket_stone.png  "Flint spark" by Delapouite  https://game-icons.net/1x1/delapouite/flint-spark.html
+relic_start_trap_pouch.png  "Caltrops" by Delapouite  https://game-icons.net/1x1/delapouite/caltrops.html
+relic_start_prayer_beads.png  "Prayer beads" by Delapouite  https://game-icons.net/1x1/delapouite/prayer-beads.html
+relic_start_notebook.png  "Notebook" by Delapouite  https://game-icons.net/1x1/delapouite/notebook.html
 
 Fonts (SIL Open Font License 1.1, Assets/Font/OFL.txt):
   Noto Serif JP - Copyright 2017 Adobe (https://fonts.google.com/specimen/Noto+Serif+JP)
@@ -114,6 +122,12 @@ buff_cathedral.png  "Church" by Delapouite  https://game-icons.net/1x1/delapouit
 buff_molt.png  "Snake" by Lorc  https://game-icons.net/1x1/lorc/snake.html
 buff_mire.png  "Quicksand" by Lorc  https://game-icons.net/1x1/lorc/quicksand.html
 buff_immovable.png  "Anchor" by Lorc  https://game-icons.net/1x1/lorc/anchor.html
+buff_trappower.png  "Spiky pit" by Delapouite  https://game-icons.net/1x1/delapouite/spiky-pit.html
+buff_halfcarry.png  "Eye shield" by Lorc  https://game-icons.net/1x1/lorc/eye-shield.html
+buff_standfirm.png  "Shield bash" by Delapouite  https://game-icons.net/1x1/delapouite/shield-bash.html
+buff_bloodthirst.png  "Bleeding heart" by Lorc  https://game-icons.net/1x1/lorc/bleeding-heart.html
+buff_berserker.png  "Barbarian" by Delapouite  https://game-icons.net/1x1/delapouite/barbarian.html
+buff_bloodflash.png  "Bleeding eye" by Lorc  https://game-icons.net/1x1/lorc/bleeding-eye.html
 
 Enemy intent icons (intent_<id>.png), same license (CC BY 3.0), white glyph on a drawn badge, 128x128:
 intent_attack.png  "Crossed swords" by Lorc  https://game-icons.net/1x1/lorc/crossed-swords.html

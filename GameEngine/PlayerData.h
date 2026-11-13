@@ -46,6 +46,7 @@ struct PlayerData
     bool tutorialRest = false;
     std::set<std::string> seenHints;   // 表示済みのその場ヒントid
     std::vector<std::string> bossRelicChoices;   // ボス撃破後に選ぶレリックの候補（空＝選択なし）
+    bool startBlessing = false;   // ランの始めの「旅立ち」をまだ選んでいない（セーブに入れる＝選ぶ前にやめても次に開く）
 
     std::map<std::string, int> relicCounters;   // レリックid → 現在カウント
 };
