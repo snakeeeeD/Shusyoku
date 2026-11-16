@@ -11,6 +11,7 @@
 #include "ScreenShake.h"
 #include "HitStop.h"
 #include "Audio.h"
+#include "EffectDataBase.h"   // 溶ける見た目の材質（fx_dissolve）
 #include <algorithm>
 #include <map>
 #include <queue>
@@ -53,16 +54,12 @@ void Enemy::Draw3D(Renderer3D* renderer)
     if (!isActive) return;
     if (m_isSnake) return;
 
+    if (m_dying) { DrawDeath(renderer); return; }   // 倒れていく途中は、溶ける絵だけ
+
     XMFLOAT4 drawColor = GetDrawColor();
 
     float y = worldY;
     float s = GetJumpScale();
-    if (m_dying)
-    {
-        float t = m_deathTimer / DEATH_DUR;
-        drawColor.w *= (1.0f - t);
-        y += t * 0.3f;
-    }
 
     // 残像（2マス以上続けて動いた時。少し前の位置に、薄く）
     for (auto& g : m_feel.Ghosts())
@@ -85,6 +82,33 @@ void Enemy::Draw3D(Renderer3D* renderer)
         renderer->DrawBillboard(TextureManager::Get(o),
             worldX, y, worldZ + m_drawZ,
             w, h, 0.0f, drawColor, FacingUV());
+}
+
+// 倒れていく途中：とどめの瞬間は白く光って少し大きく、その後ノイズに沿って焼けるように溶ける（Dissolve_PS）
+void Enemy::DrawDeath(Renderer3D* renderer)
+{
+    const FxMaterial* mat = EffectDataBase::GetMaterial("fx_dissolve");   // ノイズ・色の帯・細かさ・明るさ
+    DissolveParams dp;
+    float s = 1.0f;
+    if (m_deathTimer < DEATH_FLASH) { dp.white = 0.85f; s = 1.04f; }
+    else dp.progress = (std::min)(1.0f, (m_deathTimer - DEATH_FLASH) / DEATH_DISSOLVE);
+    dp.seed = m_deathSeed;
+    XMFLOAT4 c = GetDrawColor();
+    float w = width * s, h = height * s;
+    if (!mat)   // 材質が無ければ、前と同じく薄くなって消える
+    {
+        c.w *= 1.0f - dp.progress;
+        renderer->DrawBillboard(TextureManager::Get(m_textureName), worldX, worldY, worldZ + m_drawZ, w, h, 0.0f, c, FacingUV());
+        return;
+    }
+    dp.noiseScale = mat->noiseScale; dp.glow = mat->glow;
+    ID3D11ShaderResourceView* noise = TextureManager::Get(mat->noise);
+    ID3D11ShaderResourceView* ramp = TextureManager::Get(mat->ramp);
+    renderer->DrawDissolveBillboard(TextureManager::Get(m_textureName), noise, ramp, dp,
+        worldX, worldY, worldZ + m_drawZ, w, h, 0.0f, c, FacingUV());
+    for (auto& o : m_overlays)   // 重ねる絵も同じ模様で一緒に溶かす
+        renderer->DrawDissolveBillboard(TextureManager::Get(o), noise, ramp, dp,
+            worldX, worldY, worldZ + m_drawZ, w, h, 0.0f, c, FacingUV());
 }
 
 bool Enemy::RemoveOverlay(const std::string& t)
@@ -998,15 +1022,31 @@ void Enemy::StartDeath()
     if (m_dying) return;
     m_dying = true;
     m_deathTimer = 0.0f;
-
-    // チリになる：灰色の粒を球状にまく
-    EffectManager::Play("death", worldX, worldY + height * 0.5f, worldZ);
+    m_emberTimer = 0.0f;
+    m_deathSeed = (float)rand() / RAND_MAX * 10.0f;
+    HitStop::Add(0.1f);   // とどめは、ふつうの命中（0.05秒）より長く止める
 }
 
 void Enemy::UpdateDeath(float deltaTime)
 {
     if (!m_dying) return;
     m_deathTimer += deltaTime;
+
+    // 溶けている間、溶けているあたりから火の粉を出す（上の方から先に溶けるので、出す高さも上から下へ）
+    const float EMBER_STEP = 0.03f;   // 火の粉を出す間隔（秒）
+    float p = (m_deathTimer - DEATH_FLASH) / DEATH_DISSOLVE;
+    if (p <= 0.0f || p >= 0.95f) return;
+    m_emberTimer -= deltaTime;
+    const float pitch = XMConvertToRadians(Renderer3D::GetBillboardPitch());   // 絵の板の傾き（板の上方向＝(0, cos, sin)）
+    while (m_emberTimer <= 0.0f)
+    {
+        m_emberTimer += EMBER_STEP;
+        float lx = ((float)rand() / RAND_MAX - 0.5f) * 0.7f;                  // 絵の横幅の真ん中7割
+        float ly = 1.0f - p - ((float)rand() / RAND_MAX - 0.3f) * 0.5f;       // 今溶けているあたりの高さ（1＝頭、0＝足）
+        ly = (std::max)(0.0f, (std::min)(1.0f, ly));
+        EffectManager::Play("death_ember", worldX + lx * width,
+            worldY + ly * height * cosf(pitch), worldZ + m_drawZ + ly * height * sinf(pitch));
+    }
 }
 
 void Enemy::ApplyDifficulty(float hpMul, float dmgMul, int bonusActions)

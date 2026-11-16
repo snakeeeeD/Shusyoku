@@ -361,6 +361,9 @@
     <Filter Include="ソース ファイル\01-描画関連\20-Effect\10-種類\03-GroundRing">
       <UniqueIdentifier>{b1919a49-8fa9-40b1-8301-14f37860a838}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\20-Effect\10-種類\06-FlashSprite">
+      <UniqueIdentifier>{e8796978-11ff-461b-81de-aa7dfff75ae3}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ソース ファイル\01-描画関連\20-Effect\10-種類\05-ScreenOverlay">
       <UniqueIdentifier>{6919a5f3-d902-4d45-8e1c-cad3ce11233d}</UniqueIdentifier>
     </Filter>
@@ -375,6 +378,9 @@
     </Filter>
     <Filter Include="ソース ファイル\01-描画関連\20-Effect\30-ScreenFx">
       <UniqueIdentifier>{44d47feb-6500-4064-aea0-312ec7479e18}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\20-Effect\40-CardBurn">
+      <UniqueIdentifier>{92e8d46a-e014-470b-850f-546cdc8e40e6}</UniqueIdentifier>
     </Filter>
     <Filter Include="ソース ファイル\01-描画関連\20-Effect\20-MoveFeel">
       <UniqueIdentifier>{dd824e83-b815-4fcc-9a75-34a295dd4f9a}</UniqueIdentifier>
@@ -729,6 +735,12 @@
     <ClInclude Include="EffectManager.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\01-EffectManager</Filter>
     </ClInclude>
+    <ClInclude Include="CardBurn.h">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\40-CardBurn</Filter>
+    </ClInclude>
+    <ClInclude Include="FlashSprite.h">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\06-FlashSprite</Filter>
+    </ClInclude>
     <ClInclude Include="ScreenOverlay.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\05-ScreenOverlay</Filter>
     </ClInclude>
@@ -977,6 +989,12 @@
     <ClCompile Include="EffectManager.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\01-EffectManager</Filter>
     </ClCompile>
+    <ClCompile Include="CardBurn.cpp">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\40-CardBurn</Filter>
+    </ClCompile>
+    <ClCompile Include="FlashSprite.cpp">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\06-FlashSprite</Filter>
+    </ClCompile>
     <ClCompile Include="ScreenOverlay.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\05-ScreenOverlay</Filter>
     </ClCompile>
@@ -1035,6 +1053,9 @@
       <Filter>シェーダーファイル</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Fx_PS.hlsl">
+      <Filter>シェーダーファイル</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Dissolve_PS.hlsl">
       <Filter>シェーダーファイル</Filter>
     </FxCompile>
   </ItemGroup>

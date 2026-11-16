@@ -10,6 +10,8 @@ namespace
 {
     const float SCALE = 2.0f;            // 全体のエフェクト倍率（粒の大きさに掛ける）
     const float STREAK_MIN_LEN = 2.0f;   // 伸ばす粒は、止まりかけても幅のこの倍の長さを残す（欠片に見える）
+    const float SWAY_FREQ = 7.0f;        // ゆれの速さ（ラジアン/秒）
+    const float FLICKER_FREQ = 35.0f;    // ちらつきの速さ（ラジアン/秒）
     float Rand01() { return (float)rand() / RAND_MAX; }
     XMFLOAT4 Lerp(const XMFLOAT4& a, const XMFLOAT4& b, float t)
     {
@@ -43,6 +45,8 @@ std::unique_ptr<EffectPartDef> BurstDef::Load(const nlohmann::json& b)
     std::string spread = b.value("spread", "");
     d->spread = (spread == "screen") ? Spread::Screen : (spread == "forward") ? Spread::Forward : Spread::Sphere;
     d->cone = b.value("cone", d->cone);
+    d->sway = b.value("sway", d->sway);
+    d->flicker = b.value("flicker", d->flicker);
     return d;
 }
 
@@ -134,6 +138,9 @@ void ParticleBurst::Draw(Renderer3D* r, EffectLayer layer)
         float t = 1.0f - p.life / p.lifeMax;   // 寿命の進み具合（0→1）
         XMFLOAT4 c = Lerp(m_def.colorStart, m_def.colorEnd, t);
         float px = p.pos.x, py = p.pos.y, pz = p.pos.z;
+        float phase = p.seed * 6.2832f;                                        // 粒ごとにずらす
+        if (m_def.sway > 0.0f) px += m_def.sway * sinf(phase + m_time * SWAY_FREQ);   // 左右にゆらゆら
+        if (m_def.flicker > 0.0f) c.w *= 1.0f - m_def.flicker * (0.5f + 0.5f * sinf(phase * 3.0f + m_time * FLICKER_FREQ));   // ちらつく
         if (m_def.center)   // 発生点に絵の中心が来るよう、上方向に半分下げる
         {
             py -= 0.5f * sc * cosf(pitch);

@@ -37,7 +37,8 @@ public:
     void ResetMoved() { m_movedThisTurn = 0; }
 
     void AddBlock(int amount);
-    void TakeDamage(int damage, DamageFeel feel = DamageFeel::Hit);
+    // from＝攻撃してきた所（ブロックの盾をそちらに向ける。無ければ手前＝カメラの側）
+    void TakeDamage(int damage, DamageFeel feel = DamageFeel::Hit, const XMFLOAT3* from = nullptr);
 
     void Heal(int amount);
     void AddEnergy(int amount) { m_energy += amount; }
@@ -74,6 +75,7 @@ public:
     void OnCardUsed(CardType type, int dc, int dr);   // カードが実際に使われた時の動き（dc,dr＝対象への差分）
 
 private:
+    void PlayBlockFx(bool broken, const XMFLOAT3* from);   // ブロックで受けた：盾（割れたら破片）
 
     int m_hp;
     int m_maxHp;

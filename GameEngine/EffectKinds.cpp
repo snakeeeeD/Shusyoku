@@ -4,6 +4,7 @@
 #include "GroundRing.h"
 #include "ShockWall.h"
 #include "ScreenOverlay.h"
+#include "FlashSprite.h"
 #include <unordered_map>
 #include <Windows.h>
 
@@ -16,6 +17,7 @@ std::unique_ptr<EffectPartDef> EffectKinds::Load(const std::string& type, const 
         { "ring",  &GroundRingDef::Load },   // 地面に広がる輪（GroundRing.cpp）
         { "wall",  &ShockWallDef::Load },    // 輪から立ち上がる衝撃波の壁（ShockWall.cpp）
         { "screen", &ScreenOverlayDef::Load },   // 画面いっぱいの演出（ScreenOverlay.cpp）
+        { "flash", &FlashSpriteDef::Load },      // カメラに向いた絵1枚（FlashSprite.cpp）
     };
     auto it = KINDS.find(type);
     if (it == KINDS.end())

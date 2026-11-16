@@ -94,6 +94,11 @@ public:
     void Begin();
     void End();
 
+    // 別の絵（テクスチャ）に文字を描くための描き先を作る（カードを1枚の絵にまとめるときなど）
+    ComPtr<ID2D1RenderTarget> CreateTextureTarget(ID3D11Texture2D* texture);
+    // 描き先を切り替える（nullptr で画面に戻す）。ブラシは描き先ごとに作り直す
+    void SetTarget(ID2D1RenderTarget* target);
+
 private:
     ComPtr<IDWriteTextFormat> MakeFormat(float size, bool centerH, bool centerV, FontRole role);
     bool LoadFonts();                               // Assets/Font のフォントを登録（無ければ Arial のまま）
@@ -104,7 +109,8 @@ private:
         float rotation, float pivotX, float pivotY, const std::vector<TextSpan>* spans = nullptr);
 
     ComPtr<ID2D1Factory>        m_d2dFactory;
-    ComPtr<ID2D1RenderTarget>   m_d2dRenderTarget;
+    ComPtr<ID2D1RenderTarget>   m_d2dRenderTarget;   // 今の描き先
+    ComPtr<ID2D1RenderTarget>   m_screenTarget;      // 画面（SetTarget(nullptr) で戻る先）
     ComPtr<IDWriteFactory>      m_dwriteFactory;
     ComPtr<IDWriteTextFormat>   m_textFormat;
     ComPtr<ID2D1SolidColorBrush> m_brush;

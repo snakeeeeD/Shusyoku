@@ -1562,7 +1562,8 @@ void BattleScene::Update(float deltaTime)
                     else
                     {
                         int hpBefore = m_player->GetHp(), blockBefore = m_player->GetBlock();
-                        m_player->TakeDamage(damage);
+                        XMFLOAT3 from(enemy->worldX, 0.0f, enemy->worldZ);   // ブロックの盾を、この敵の方に向ける
+                        m_player->TakeDamage(damage, DamageFeel::Hit, &from);
                         fullyBlocked = (m_player->GetHp() == hpBefore);
                         int blocked = blockBefore - m_player->GetBlock();   // ブロックで防いだ量
                         int th = m_player->GetBuffManager().GetBuffValue(BuffType::Thorns);
@@ -2114,7 +2115,8 @@ float BattleScene::StepPlayerHit(PlayerHit& h)
 float BattleScene::StepEnemyHit(EnemyHit& h)
 {
     int hpBefore = m_player->GetHp(), blockBefore = m_player->GetBlock();
-    m_player->TakeDamage(h.damage);   // 1発（数字はTakeDamage内で出る）
+    XMFLOAT3 from = h.enemy ? XMFLOAT3(h.enemy->worldX, 0.0f, h.enemy->worldZ) : XMFLOAT3(m_player->worldX, 0.0f, m_player->worldZ + 1.0f);
+    m_player->TakeDamage(h.damage, DamageFeel::Hit, &from);   // 1発（数字はTakeDamage内で出る）。盾は攻撃してきた敵の方へ
     bool fullyBlocked = (m_player->GetHp() == hpBefore);
     int blocked = blockBefore - m_player->GetBlock();   // ブロックで防いだ量
     if (h.enemy && h.enemy->GetHp() > 0)

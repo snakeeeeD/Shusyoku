@@ -26,6 +26,7 @@ bool TextRenderer::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     hr = m_d2dFactory->CreateDxgiSurfaceRenderTarget(
         dxgiSurface.Get(), &props, m_d2dRenderTarget.GetAddressOf());
     if (FAILED(hr)) return false;
+    m_screenTarget = m_d2dRenderTarget;
 
     // DirectWriteファクトリ作成
     hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED,
@@ -73,6 +74,26 @@ void TextRenderer::Begin()
 void TextRenderer::End()
 {
     m_d2dRenderTarget->EndDraw();
+}
+
+ComPtr<ID2D1RenderTarget> TextRenderer::CreateTextureTarget(ID3D11Texture2D* texture)
+{
+    ComPtr<IDXGISurface> surface;
+    if (FAILED(texture->QueryInterface(IID_PPV_ARGS(surface.GetAddressOf())))) return nullptr;
+    D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(   // 画面の描き先と同じ設定
+        D2D1_RENDER_TARGET_TYPE_DEFAULT,
+        D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED));
+    ComPtr<ID2D1RenderTarget> rt;
+    if (FAILED(m_d2dFactory->CreateDxgiSurfaceRenderTarget(surface.Get(), &props, rt.GetAddressOf()))) return nullptr;
+    return rt;
+}
+
+void TextRenderer::SetTarget(ID2D1RenderTarget* target)
+{
+    m_d2dRenderTarget = target ? target : m_screenTarget.Get();
+    m_brush.Reset(); m_outlineBrush.Reset();   // ブラシは描き先で作ったものを使う
+    m_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), m_brush.GetAddressOf());
+    m_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), m_outlineBrush.GetAddressOf());
 }
 
 // 同梱フォントを登録する（Windows 10 以降の FontSet）。失敗したら Arial のまま

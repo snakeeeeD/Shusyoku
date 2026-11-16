@@ -160,7 +160,7 @@ void Player::OnCardUsed(CardType type, int dc, int dr)
         StartSkill();
 }
 
-void Player::TakeDamage(int damage, DamageFeel feel)
+void Player::TakeDamage(int damage, DamageFeel feel, const XMFLOAT3* from)
 {
     if (feel == DamageFeel::Poison)
     {
@@ -188,6 +188,7 @@ void Player::TakeDamage(int damage, DamageFeel feel)
     m_hp -= damage;
     if (m_hp < 0) m_hp = 0;
     Se::Play(damage > 0 ? Se::PlayerHurt : Se::Shield);   // 通ったら被弾の音、全部防いだら盾の音
+    if (blocked > 0) PlayBlockFx(m_block == 0, from);       // ブロックを削り切られたら盾が割れる
 
     if (damage > 0 && feel == DamageFeel::Hit)
     {
@@ -197,6 +198,21 @@ void Player::TakeDamage(int damage, DamageFeel feel)
         HitStop::Add(0.05f);
     }
     DamageFeedback::Play(feel, worldX, worldY + height * 0.5f, worldZ, damage, blocked);
+}
+
+void Player::PlayBlockFx(bool broken, const XMFLOAT3* from)
+{
+    float dx = 0.0f, dz = 1.0f;                     // 来た向きが分からない時は手前（カメラの側）
+    if (from)
+    {
+        float x = from->x - worldX, z = from->z - worldZ;
+        float len = sqrtf(x * x + z * z);
+        if (len > 0.01f) { dx = x / len; dz = z / len; }
+    }
+    const float OFFSET = 0.35f;                     // 体の中心から盾までの距離
+    float rot = atan2f(dx, dz);                     // 演出の向き（(sin rot, 0, cos rot) が来た向き）
+    EffectManager::Play(broken ? "block_break" : "block_deflect",
+        worldX + dx * OFFSET, worldY + height * 0.5f, worldZ + dz * OFFSET, rot);
 }
 
 void Player::Heal(int amount)

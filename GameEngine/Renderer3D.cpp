@@ -2,6 +2,7 @@
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
 #include "Renderer3D.h"
+#include "RenderConfig.h"   // 論理座標の大きさ（DrawDissolveScreen）
 #include "RenderConfig.h"
 
 #pragma comment(lib, "d3dcompiler.lib")
@@ -601,6 +602,17 @@ bool Renderer3D::InitFx()
     bd.ByteWidth = sizeof(FxParams); bd.Usage = D3D11_USAGE_DEFAULT; bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     if (FAILED(m_device->CreateBuffer(&bd, nullptr, m_fxCB.GetAddressOf()))) return false;
 
+    // 溶けるシェーダー（サンプラーと t1・t2 の使い方はエフェクト用シェーダーと同じ）
+    ComPtr<ID3DBlob> dps;
+    if (FAILED(D3DCompileFromFile(L"Shaders/Dissolve_PS.hlsl", nullptr, nullptr, "main", "ps_5_0", 0, 0, dps.GetAddressOf(), err.ReleaseAndGetAddressOf())))
+    {
+        if (err) OutputDebugStringA((char*)err->GetBufferPointer());
+        return false;
+    }
+    if (FAILED(m_device->CreatePixelShader(dps->GetBufferPointer(), dps->GetBufferSize(), nullptr, m_dissolvePS.GetAddressOf()))) return false;
+    bd.ByteWidth = sizeof(DissolveParams);
+    if (FAILED(m_device->CreateBuffer(&bd, nullptr, m_dissolveCB.GetAddressOf()))) return false;
+
     D3D11_SAMPLER_DESC sd = {};
     sd.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
     sd.AddressU = sd.AddressV = sd.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;   // ノイズを流すため、端でくり返す
@@ -619,6 +631,68 @@ void Renderer3D::DrawFxBillboard(ID3D11ShaderResourceView* shape, ID3D11ShaderRe
     m_context->PSSetShader(m_fxPS.Get(), nullptr, 0);
     DrawBillboard(shape, x, y, z, size, size, 0.0f, color);    // 板・行列・形の画像（t0）はいつもの板と同じ
     m_context->PSSetShader(m_pixelShader.Get(), nullptr, 0);   // いつものシェーダーに戻す
+}
+
+void Renderer3D::DrawDissolveBillboard(ID3D11ShaderResourceView* texture, ID3D11ShaderResourceView* noise, ID3D11ShaderResourceView* ramp,
+    const DissolveParams& dp, float x, float y, float z, float width, float height, float rotation,
+    const XMFLOAT4& color, const XMFLOAT4& uvRect)
+{
+    m_context->UpdateSubresource(m_dissolveCB.Get(), 0, nullptr, &dp, 0, 0);
+    m_context->PSSetConstantBuffers(1, 1, m_dissolveCB.GetAddressOf());
+    ID3D11ShaderResourceView* extra[2] = { noise, ramp };
+    m_context->PSSetShaderResources(1, 2, extra);
+    m_context->PSSetSamplers(1, 1, m_samplerWrap.GetAddressOf());
+    m_context->PSSetShader(m_dissolvePS.Get(), nullptr, 0);
+    DrawBillboard(texture, x, y, z, width, height, rotation, color, uvRect);   // 板・行列・溶かす絵（t0）はいつもの板と同じ
+    m_context->PSSetShader(m_pixelShader.Get(), nullptr, 0);   // いつものシェーダーに戻す
+}
+
+void Renderer3D::DrawDissolveScreen(ID3D11ShaderResourceView* texture, ID3D11ShaderResourceView* noise, ID3D11ShaderResourceView* ramp,
+    const DissolveParams& dp, float x, float y, float w, float h, const XMFLOAT4& color)
+{
+    // 範囲の四隅を、画面の座標（左下 -1,-1 ～ 右上 1,1）にする
+    float l = x / LOGICAL_WIDTH * 2.0f - 1.0f, r = (x + w) / LOGICAL_WIDTH * 2.0f - 1.0f;
+    float t = 1.0f - y / LOGICAL_HEIGHT * 2.0f, b = 1.0f - (y + h) / LOGICAL_HEIGHT * 2.0f;
+    D3D11_MAPPED_SUBRESOURCE ms;
+    if (FAILED(m_context->Map(m_quadVertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &ms))) return;
+    Vertex3D* v = (Vertex3D*)ms.pData;   // 左上・右上・左下・右下
+    v[0] = { XMFLOAT3(l, t, 0.0f), XMFLOAT2(0.0f, 0.0f) };
+    v[1] = { XMFLOAT3(r, t, 0.0f), XMFLOAT2(1.0f, 0.0f) };
+    v[2] = { XMFLOAT3(l, b, 0.0f), XMFLOAT2(0.0f, 1.0f) };
+    v[3] = { XMFLOAT3(r, b, 0.0f), XMFLOAT2(1.0f, 1.0f) };
+    m_context->Unmap(m_quadVertexBuffer.Get(), 0);
+
+    ConstantBuffer3D cb;
+    cb.World = XMMatrixIdentity(); cb.View = XMMatrixIdentity(); cb.Projection = XMMatrixIdentity();
+    cb.Color = color;
+    cb.UvRect = XMFLOAT4(x / LOGICAL_WIDTH, y / LOGICAL_HEIGHT, w / LOGICAL_WIDTH, h / LOGICAL_HEIGHT);   // 同じ範囲を読む
+    m_context->UpdateSubresource(m_constantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+    m_context->UpdateSubresource(m_dissolveCB.Get(), 0, nullptr, &dp, 0, 0);
+
+    // UI を描いている途中でも描けるように、板を描く設定を全部ここでする
+    UINT stride = sizeof(Vertex3D), offset = 0;
+    m_context->IASetInputLayout(m_inputLayout.Get());
+    m_context->IASetVertexBuffers(0, 1, m_quadVertexBuffer.GetAddressOf(), &stride, &offset);
+    m_context->IASetIndexBuffer(m_indexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+    m_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    m_context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
+    m_context->VSSetConstantBuffers(0, 1, m_constantBuffer.GetAddressOf());
+    m_context->PSSetShader(m_dissolvePS.Get(), nullptr, 0);
+    ID3D11Buffer* cbs[2] = { m_constantBuffer.Get(), m_dissolveCB.Get() };
+    m_context->PSSetConstantBuffers(0, 2, cbs);
+    ID3D11ShaderResourceView* tex[3] = { texture, noise, ramp };
+    m_context->PSSetShaderResources(0, 3, tex);
+    ID3D11SamplerState* samp[2] = { m_samplerState.Get(), m_samplerWrap.Get() };
+    m_context->PSSetSamplers(0, 2, samp);
+    float bf[4] = {};
+    m_context->OMSetBlendState(m_blendState.Get(), bf, 0xffffffff);
+    m_context->OMSetDepthStencilState(m_depthDisabledState.Get(), 0);
+    m_context->DrawIndexed(6, 0, 0);
+
+    ID3D11ShaderResourceView* none[1] = { nullptr };   // 読んだ絵を外す（次にまた描き先にするため）
+    m_context->PSSetShaderResources(0, 1, none);
+    m_context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
+    m_context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
 }
 
 void Renderer3D::DrawFxScreen(ID3D11ShaderResourceView* shape, ID3D11ShaderResourceView* noise, ID3D11ShaderResourceView* ramp,

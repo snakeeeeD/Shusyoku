@@ -38,6 +38,19 @@ struct FxParams
     float pad[2] = {};
 };
 
+// 溶けるシェーダー（Dissolve_PS.hlsl）に渡す数字。シェーダーの DissolveParams と同じ並び（32バイト）
+struct DissolveParams
+{
+    float progress = 0.0f;       // 溶けた割合（0→1）
+    float edge = 0.07f;          // 光る境目の幅
+    float noiseScale = 1.6f;     // ノイズの細かさ
+    float glow = 1.0f;           // 境目の明るさ
+    float bias = 0.22f;          // 上から溶ける強さ（0＝ノイズだけ）
+    float seed = 0.0f;           // 模様をずらす乱数
+    float white = 0.0f;          // 白を混ぜる量（とどめの一瞬）
+    float premultiplied = 0.0f;  // 1＝絵の色に透明度がもう掛かっている（オフスクリーンにまとめた絵）
+};
+
 class Renderer3D
 {
 public:
@@ -90,6 +103,14 @@ public:
     // エフェクト用シェーダーで板を描く（t0=形 t1=ノイズ t2=色の帯）。位置の基準と傾きは DrawBillboard と同じ
     void DrawFxBillboard(ID3D11ShaderResourceView* shape, ID3D11ShaderResourceView* noise, ID3D11ShaderResourceView* ramp,
         const FxParams& fx, float x, float y, float z, float size, const XMFLOAT4& color);
+    // 溶けるシェーダーで板を描く（t0=溶かす絵 t1=ノイズ t2=色の帯）。位置・大きさ・uv は DrawBillboard と同じ
+    void DrawDissolveBillboard(ID3D11ShaderResourceView* texture, ID3D11ShaderResourceView* noise, ID3D11ShaderResourceView* ramp,
+        const DissolveParams& dp, float x, float y, float z, float width, float height, float rotation,
+        const XMFLOAT4& color, const XMFLOAT4& uvRect = XMFLOAT4(0, 0, 1, 1));
+    // 溶けるシェーダーで、画面の (x, y, w, h)（論理座標）に描く。texture は画面と同じ大きさの絵で、同じ範囲を読む。
+    // UI を描いている途中でも呼べるように、必要な設定はこの中で全部する
+    void DrawDissolveScreen(ID3D11ShaderResourceView* texture, ID3D11ShaderResourceView* noise, ID3D11ShaderResourceView* ramp,
+        const DissolveParams& dp, float x, float y, float w, float h, const XMFLOAT4& color);
     // エフェクト用シェーダーで、画面いっぱいに1枚描く（Begin～End の間で呼ぶ。奥行きは見ない）
     void DrawFxScreen(ID3D11ShaderResourceView* shape, ID3D11ShaderResourceView* noise, ID3D11ShaderResourceView* ramp,
         const FxParams& fx, const XMFLOAT4& color);
@@ -127,6 +148,8 @@ private:
     float m_whiteMix = 0.0f;               // 白を混ぜる量
     ComPtr<ID3D11PixelShader>  m_fxPS;     // エフェクト用のピクセルシェーダー（Fx_PS.hlsl）
     ComPtr<ID3D11Buffer>       m_fxCB;     // その数字（FxParams）
+    ComPtr<ID3D11PixelShader>  m_dissolvePS;   // 溶けるシェーダー（Dissolve_PS.hlsl）
+    ComPtr<ID3D11Buffer>       m_dissolveCB;   // その数字（DissolveParams）
     ComPtr<ID3D11SamplerState> m_samplerWrap;   // 端でくり返す読み方（ノイズを流す用）
     ComPtr<ID3D11RasterizerState> m_rasterState;
     ComPtr<ID3D11DepthStencilState> m_depthStencilState;

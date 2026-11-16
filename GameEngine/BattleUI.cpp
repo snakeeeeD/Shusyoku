@@ -48,6 +48,7 @@ bool BattleUI::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     m_textRenderer = new TextRenderer();
     if (!m_textRenderer->Init(device, context, swapChain))
         return false;
+    m_cardBurn.Init(device, context);
 
     m_whiteTexture = TextureManager::Get("white");
     return true;
@@ -1916,7 +1917,7 @@ void BattleUI::UpdateDiscardEffects(float deltaTime)
             e.sparked = true;
         }
         e.timer += deltaTime;
-        float dur = e.exhaust ? EXHAUST_FADE_DUR : DISCARD_EFFECT_DUR;
+        float dur = e.exhaust ? EXHAUST_BURN_DUR : DISCARD_EFFECT_DUR;
         float t = min(1.0f, e.timer / dur);
         e.alpha = 1.0f - t;
         if (t >= 1.0f) e.done = true;
@@ -1965,6 +1966,30 @@ void BattleUI::DrawDiscardEffectTexts(const BattleUIContext& ctx)
     }
 }
 
+void BattleUI::DrawCardBurning(const BattleUIContext& ctx, const CardData* data, CardType type,
+    float baseX, float baseY, float scale, float rot, float progress)
+{
+    // 1. カード（枠・絵・文字）を、別の絵に描いて1枚にまとめる
+    m_spriteRenderer->End();
+    if (!m_cardBurn.BeginCapture(m_textRenderer)) { m_spriteRenderer->Begin(); return; }
+    m_spriteRenderer->Begin();
+    CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, baseX, baseY, scale, rot, CardVisual::GetCardColor(type, false), data, 0.0f);
+    m_spriteRenderer->End();
+    m_textRenderer->Begin();
+    CardVisual::DrawTexts(m_textRenderer, data, ctx.player, baseX, baseY, scale, rot, 1.0f);
+    m_textRenderer->End();
+    m_cardBurn.EndCapture(m_textRenderer);
+
+    // 2. その1枚の、カードを囲む四角の範囲を、溶けるシェーダーで画面に描く（傾いている分だけ四角を広げる）
+    float rx, ry, rw, rh; CardVisual::GetRect(baseX, baseY, scale, rx, ry, rw, rh);
+    float c = fabsf(cosf(rot)), s = fabsf(sinf(rot));
+    float bw = rw * c + rh * s + 8.0f, bh = rw * s + rh * c + 8.0f;
+    float cx = rx + rw * 0.5f, cy = ry + rh * 0.5f;
+    float seed = baseX * 0.013f + baseY * 0.007f;   // カードごとに模様を変える（毎フレーム同じ値になるよう、位置から決める）
+    m_cardBurn.Draw(ctx.renderer3D, cx - bw * 0.5f, cy - bh * 0.5f, bw, bh, progress, seed);
+    m_spriteRenderer->Begin();
+}
+
 void BattleUI::DrawDiscardEffectsFull(const BattleUIContext& ctx)
 {
     // 呼び出し時はスプライトパス中
@@ -1974,17 +1999,10 @@ void BattleUI::DrawDiscardEffectsFull(const BattleUIContext& ctx)
         float s = e.startScale, rot = e.startRot, x, y;
         XMFLOAT4 c = CardVisual::GetCardColor(e.cardType, false);
         if (e.delay > 0.0f) { x = e.startX; y = e.startY; }
-        else if (e.exhaust)
+        else if (e.exhaust)   // 廃棄：その場で文字ごと焼けて溶ける
         {
-            float t = min(1.0f, e.timer / DISCARD_EFFECT_DUR);
-            float rx, ry, rw, rh; CardVisual::GetRect(e.startX, e.startY, e.startScale, rx, ry, rw, rh);
-            m_spriteRenderer->SetCardFade(ry, ry + rh, t, 45.0f);
-            XMFLOAT4 cc = CardVisual::GetCardColor(e.cardType, false);
-            CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, e.startX, e.startY, e.startScale, e.startRot, cc, e.data, 0.0f);
-            m_spriteRenderer->ClearCardFade();
-            m_spriteRenderer->End(); m_textRenderer->Begin();
-            CardVisual::DrawTexts(m_textRenderer, e.data, ctx.player, e.startX, e.startY, e.startScale, e.startRot, 1.0f - t);
-            m_textRenderer->End(); m_spriteRenderer->Begin();
+            DrawCardBurning(ctx, e.data, e.cardType, e.startX, e.startY, e.startScale, e.startRot,
+                min(1.0f, e.timer / EXHAUST_BURN_DUR));
             continue;
         }
         else {                                // 通常：捨て札へスライド
@@ -2028,7 +2046,8 @@ void BattleUI::UpdatePlayCardEffects(float deltaTime)
                         m_screenHeight / 2.0f + g_animTune.playCenterY, CardVisual::CARD_W, CardVisual::CARD_H);
                     e.sparked = true;
                 }
-                if (et >= holdEnd + EXHAUST_FADE_DUR) e.done = true;
+                if (e.exhaust && et >= holdEnd + EXHAUST_BURN_DUR) e.done = true;
+                else if (!e.exhaust && et >= holdEnd + EXHAUST_FADE_DUR) e.done = true;
             }
             if (et >= holdEnd + DISCARD_EFFECT_DUR) e.done = true;
         }
@@ -2870,17 +2889,10 @@ void BattleUI::DrawPlayCardEffectsFull(const BattleUIContext& ctx)
 
         float et = e.timer - e.delay;
         float holdEnd = 0.72f * PLAY_EFFECT_DUR;
-        if (e.exhaust && et > holdEnd)                 // 廃棄：下から透明化
+        if (e.exhaust && et > holdEnd)                 // 廃棄：中央で文字ごと焼けて溶ける
         {
-            float prog = min(1.0f, (et - holdEnd) / EXHAUST_FADE_DUR);
-            float rx, ry, rw, rh; CardVisual::GetRect(baseX, baseY, s, rx, ry, rw, rh);
-            m_spriteRenderer->SetCardFade(ry, ry + rh, prog, 45.0f);
-            XMFLOAT4 color = CardVisual::GetCardColor(e.cardType, false);   // αは1（透明化はシェーダ）
-            CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, baseX, baseY, s, rot, color, e.data, 0.0f);
-            m_spriteRenderer->ClearCardFade();
-            m_spriteRenderer->End(); m_textRenderer->Begin();
-            CardVisual::DrawTexts(m_textRenderer, e.data, ctx.player, baseX, baseY, s, rot, 1.0f - prog); // 文字は一様フェード
-            m_textRenderer->End(); m_spriteRenderer->Begin();
+            DrawCardBurning(ctx, e.data, e.cardType, baseX, baseY, s, rot,
+                min(1.0f, (et - holdEnd) / EXHAUST_BURN_DUR));
         }
         else
         {

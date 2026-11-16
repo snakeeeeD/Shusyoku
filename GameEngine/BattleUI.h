@@ -16,6 +16,7 @@
 #include "FloatingText.h"
 #include "URect.h"
 #include "HpBar.h"
+#include "CardBurn.h"
 #include <vector>
 #include <utility>
 #include <string>
@@ -289,6 +290,9 @@ private:
     void DrawPlayCardEffectsFull(const BattleUIContext& ctx);
     void DrawDiscardEffectTexts(const BattleUIContext& ctx);
     void DrawDiscardEffectsFull(const BattleUIContext& ctx);
+    // 廃棄：カードを1枚の絵にまとめてから、文字ごと焼けるように溶かす（スプライトを描いている途中で呼ぶ）
+    void DrawCardBurning(const BattleUIContext& ctx, const CardData* data, CardType type,
+        float baseX, float baseY, float scale, float rot, float progress);
     void SpawnExhaustEmbers(float cx, float cy, float w, float h);
     void UpdateExhaustEmbers(float dt);
     void DrawExhaustEmbers();
@@ -310,6 +314,7 @@ private:
     static constexpr float PLAY_EFFECT_DUR = 0.45f;
     static constexpr float DISCARD_EFFECT_DUR = 0.55f;
     static constexpr float EXHAUST_FADE_DUR = 0.3f;   // 廃棄フェード時間（大=遅い）
+    static constexpr float EXHAUST_BURN_DUR = 0.55f;  // 廃棄：カードが焼けて溶けきるまでの秒数
 
     bool WorldToScreen(float wx, float wy, float wz, Renderer3D* renderer3D,
         float& outX, float& outY) const;
@@ -324,5 +329,6 @@ private:
     float m_hoverDropX = 0.0f, m_hoverDropY = 0.0f;
 
     std::vector<UiEmber> m_exhaustEmbers;
+    CardBurn m_cardBurn;   // 廃棄のカードを1枚の絵にまとめる別の絵
 
 };

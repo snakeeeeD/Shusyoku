@@ -24,6 +24,8 @@ struct BurstDef : EffectPartDef
     float dragY = 0.0f;    // 縦の空気抵抗（drag は横だけにかかる。既定0＝今まで通り）
     Spread spread = Spread::Sphere;   // "spread": "screen" で画面に平行な円状（どの向きの線も同じ長さに見える）
     float cone = 30.0f;    // "spread": "forward" の広がり（度）。出す向き（Play の rot）から左右へ、上へ、この角度まで
+    float sway = 0.0f;     // 左右にゆらゆらする幅（ワールド。火の粉など。0＝ゆれない）
+    float flicker = 0.0f;  // 明るさのちらつき（0～1。0＝ちらつかない）
 
     static std::unique_ptr<EffectPartDef> Load(const nlohmann::json& j);   // 種類の表から呼ばれる
     std::unique_ptr<EffectPart> Spawn(const SpawnAt& at) const override;

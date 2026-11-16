@@ -180,7 +180,12 @@ private:
 
 	bool  m_dying = false;
 	float m_deathTimer = 0.0f;
-	static constexpr float DEATH_DUR = 0.6f;
+	static constexpr float DEATH_FLASH = 0.08f;      // ‚Æ‚Ç‚ß‚ÌuŠÔA”’‚­Œõ‚é•b”
+	static constexpr float DEATH_DISSOLVE = 0.65f;   // Ä‚¯‚é‚æ‚¤‚É—n‚¯‚ÄÁ‚¦‚é•b”
+	static constexpr float DEATH_DUR = DEATH_FLASH + DEATH_DISSOLVE;
+	float m_deathSeed = 0.0f;      // —n‚¯‚é–Í—l‚ğ“G‚²‚Æ‚É•Ï‚¦‚é
+	float m_emberTimer = 0.0f;     // Ÿ‚Ì‰Î‚Ì•²‚Ü‚Å‚Ì•b”
+	void DrawDeath(Renderer3D* renderer);   // “|‚ê‚Ä‚¢‚­“r’†‚ÌŠGi”’‚­Œõ‚é ¨ —n‚¯‚éj
 
 	float m_dmgScale = 1.0f;
 	int   m_bonusActions = 0;
