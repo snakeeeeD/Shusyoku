@@ -857,7 +857,8 @@ void BattleScene::Update(float deltaTime)
     }
     SyncFaithBuffs();
     m_screenFx.Update(deltaTime, { m_player->GetHp(), m_player->GetMaxHp(),
-        m_player->GetBuffManager().HasBuff(BuffType::Poison) });   // 画面の演出（演出中・ヒットストップ中も止めない）
+        m_player->GetBuffManager().HasBuff(BuffType::Poison),
+        m_player->GetBuffManager().HasBuff(BuffType::Burn) });   // 画面の演出（演出中・ヒットストップ中も止めない）
     // 信仰のマスから、ときどき光の粒が昇る（信仰が多いほど多い。見た目は effects.json の faith_mote）
     for (int r = 0; r < m_gridMap->GetRows(); r++)
         for (int c = 0; c < m_gridMap->GetCols(); c++)

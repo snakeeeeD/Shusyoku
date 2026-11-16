@@ -9,6 +9,7 @@ struct ScreenStatus
 {
     int hp = 0, maxHp = 0;    // プレイヤーのHP
     bool poisoned = false;    // プレイヤーが毒か
+    bool burning = false;     // プレイヤーがやけどか
 };
 
 // 状態に合わせて出し続ける、画面（スクリーン）の演出。
@@ -16,12 +17,13 @@ struct ScreenStatus
 // 始まった・終わったを追いかけないので、回復やバフの付け外しがどこで起きても漏れない。
 //  今あるもの：HPが低いとき、画面の端が赤くなる（3割以下に入った直後だけ、鼓動に合わせて大きく明滅する）
 //             毒のとき、画面の端に紫のもや（エフェクト用シェーダー）＋上の帯からときどきしずくが垂れる
+//             やけどのとき、画面の下の端に炎のゆらめき（エフェクト用シェーダー）＋火の粉が昇る
 class ScreenStatusFx
 {
 public:
     // 毎フレーム
     void Update(float dt, const ScreenStatus& s);
-    // 3Dを描き終えた後、UIより前に呼ぶ（手札や数字にはかからない）。毒のもや → しずく → HPの赤み、の順に重ねる
+    // 3Dを描き終えた後、UIより前に呼ぶ（手札や数字にはかからない）。毒のもや → 炎 → しずく → 火の粉 → HPの赤み、の順に重ねる
     void Draw(Renderer3D* r, SpriteRenderer* sr, float screenW, float screenH) const;
 
 private:
@@ -37,4 +39,15 @@ private:
     float m_time = 0.0f;        // もやの模様を流す時間（0に戻さず増やし続ける）
     float m_dripTimer = 0.0f;   // 次のしずくまでの秒数
     std::vector<Drip> m_drips;
+
+    // やけど
+    struct Ember { float x, age, life, speed, size, phase; };   // 火の粉1つ（横の位置 0～1、出てからの秒数、寿命、昇る速さ、大きさ、ゆれの位相）
+    void UpdateEmbers(float dt, bool spawn);
+    void DrawEmbers(SpriteRenderer* sr, float screenW, float screenH) const;
+    float m_burn = 0.0f;        // 炎の濃さ（0～1。目標へ少しずつ近づける）
+    float m_emberTimer = 0.0f;  // 次の火の粉までの秒数
+    std::vector<Ember> m_embers;
+
+    // 状態のもや（毒・やけど）：材質の3枚で画面いっぱいに描く
+    void DrawMist(Renderer3D* r, const char* material, float life, float alpha) const;
 };

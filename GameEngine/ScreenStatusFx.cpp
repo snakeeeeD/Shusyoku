@@ -35,6 +35,17 @@ namespace
     const float DRIP_FADE_START = 0.4f;  // 落ち始めてこの秒数で薄くなり始め（画面の約4割の高さ）
     const float DRIP_FADE_END = 0.56f;   // この秒数で消える（画面の約7割の高さ）
 
+    // やけど：下の端の炎（effects.json の材質 fx_burn_edge。形・ノイズ・炎の色の帯）
+    const char* BURN_MATERIAL = "fx_burn_edge";
+    const float BURN_LIFE = 0.55f;       // シェーダーに渡す「進み具合」（ずっとこの値。0.55で橙～赤の炎の色）
+    const float BURN_ALPHA = 0.65f;      // 炎の濃さ
+    // やけど：火の粉（particle の丸い画像に色を掛ける）
+    const float EMBER_GAP_MIN = 0.03f, EMBER_GAP_MAX = 0.09f;   // 次の火の粉までの秒数
+    const float EMBER_LIFE_MIN = 1.4f, EMBER_LIFE_MAX = 2.4f;   // 寿命（秒）
+    const float EMBER_SPEED_MIN = 140.0f, EMBER_SPEED_MAX = 300.0f;   // 昇る速さ（ピクセル/秒）
+    const float EMBER_SIZE_MIN = 3.6f, EMBER_SIZE_MAX = 6.0f;   // 芯の半径（ピクセル）
+    const float EMBER_SWAY = 20.0f;      // 左右にゆれる幅（ピクセル）
+
     float Rand(float lo, float hi) { return lo + (hi - lo) * (float)rand() / RAND_MAX; }
     float Approach(float v, float target, float step) { return v + (std::max)(-step, (std::min)(step, target - v)); }   // 目標へ一定の速さで近づける
 
@@ -61,6 +72,25 @@ void ScreenStatusFx::Update(float dt, const ScreenStatus& s)
     m_time += dt;
     m_poison = Approach(m_poison, s.poisoned ? 1.0f : 0.0f, dt / FADE_TIME);
     UpdateDrips(dt, s.poisoned);
+
+    // やけどのとき
+    m_burn = Approach(m_burn, s.burning ? 1.0f : 0.0f, dt / FADE_TIME);
+    UpdateEmbers(dt, s.burning);
+}
+
+void ScreenStatusFx::UpdateEmbers(float dt, bool spawn)
+{
+    for (auto& e : m_embers) e.age += dt;
+    m_embers.erase(std::remove_if(m_embers.begin(), m_embers.end(),
+        [](const Ember& e) { return e.age >= e.life; }), m_embers.end());   // 消えた火の粉を捨てる
+    if (!spawn) { m_emberTimer = 0.0f; return; }   // やけどが治ったら新しい火の粉は出さない
+    m_emberTimer -= dt;
+    while (m_emberTimer <= 0.0f)
+    {
+        m_emberTimer += Rand(EMBER_GAP_MIN, EMBER_GAP_MAX);
+        m_embers.push_back({ Rand(0.03f, 0.97f), 0.0f, Rand(EMBER_LIFE_MIN, EMBER_LIFE_MAX),
+            Rand(EMBER_SPEED_MIN, EMBER_SPEED_MAX), Rand(EMBER_SIZE_MIN, EMBER_SIZE_MAX), Rand(0.0f, 6.2832f) });
+    }
 }
 
 void ScreenStatusFx::UpdateDrips(float dt, bool spawn)
@@ -77,22 +107,12 @@ void ScreenStatusFx::UpdateDrips(float dt, bool spawn)
 
 void ScreenStatusFx::Draw(Renderer3D* r, SpriteRenderer* sr, float screenW, float screenH) const
 {
-    // 毒のもや：エフェクト用シェーダーで画面いっぱいに（端の枠の形×流れるノイズ×紫の色の帯）
-    const FxMaterial* mat = EffectDataBase::GetMaterial(POISON_MATERIAL);
-    if (m_poison > 0.0f && mat)
-    {
-        FxParams fx;
-        fx.life = MIST_LIFE; fx.erodeStart = mat->erodeStart; fx.erodeEnd = mat->erodeEnd;
-        fx.glow = mat->glow; fx.scroll = mat->scroll; fx.noiseScale = mat->noiseScale;
-        fx.time = m_time;
-        r->Begin();
-        r->DrawFxScreen(TextureManager::Get(mat->shape), TextureManager::Get(mat->noise), TextureManager::Get(mat->ramp),
-            fx, XMFLOAT4(1.0f, 1.0f, 1.0f, MIST_ALPHA * m_poison));
-        r->End();
-    }
+    if (m_poison > 0.0f) DrawMist(r, POISON_MATERIAL, MIST_LIFE, MIST_ALPHA * m_poison);   // 毒のもや（端の枠×紫）
+    if (m_burn > 0.0f)   DrawMist(r, BURN_MATERIAL, BURN_LIFE, BURN_ALPHA * m_burn);    // やけどの炎（下の端×炎の色）
 
     sr->Begin();
     DrawDrips(sr, screenW);
+    DrawEmbers(sr, screenW, screenH);
     if (m_lowHp > 0.0f || m_beatLeft > 0.0f)
     {
         float beat = (m_beatLeft > 0.0f) ? Heartbeat(BEAT_PERIOD * BEAT_SETS - m_beatLeft) : 0.0f;   // 入ってからの時間で鼓動
@@ -102,6 +122,43 @@ void ScreenStatusFx::Draw(Renderer3D* r, SpriteRenderer* sr, float screenW, floa
             0.0f, XMFLOAT4(COLOR.x, COLOR.y, COLOR.z, a));
     }
     sr->End();
+}
+
+// 状態のもや：エフェクト用シェーダーで画面いっぱいに（材質の形×流れるノイズ×色の帯）。
+// ずっと出すものなので「進み具合」は life で固定し、ノイズだけを流し続ける
+void ScreenStatusFx::DrawMist(Renderer3D* r, const char* material, float life, float alpha) const
+{
+    const FxMaterial* mat = EffectDataBase::GetMaterial(material);
+    if (!mat) return;
+    FxParams fx;
+    fx.life = life; fx.erodeStart = mat->erodeStart; fx.erodeEnd = mat->erodeEnd;
+    fx.glow = mat->glow; fx.scroll = mat->scroll; fx.noiseScale = mat->noiseScale;
+    fx.time = m_time;
+    r->Begin();
+    if (mat->additive) r->SetAdditive(true);
+    r->DrawFxScreen(TextureManager::Get(mat->shape), TextureManager::Get(mat->noise), TextureManager::Get(mat->ramp),
+        fx, XMFLOAT4(1.0f, 1.0f, 1.0f, alpha));
+    if (mat->additive) r->SetAdditive(false);
+    r->End();
+}
+
+// 火の粉：画面の下から、左右にゆらゆらしながら昇り、ちらつきながら消える（外側の淡い光＋明るい芯）
+void ScreenStatusFx::DrawEmbers(SpriteRenderer* sr, float screenW, float screenH) const
+{
+    ID3D11ShaderResourceView* tex = TextureManager::Get("particle");
+    float fade = (std::min)(1.0f, m_burn * 2.0f);   // やけどが治ったら、残っている火の粉も早めに薄く
+    for (const Ember& e : m_embers)
+    {
+        float u = e.age / e.life;                                  // 寿命の進み具合（0→1）
+        float x = e.x * screenW + EMBER_SWAY * sinf(e.phase + e.age * 3.0f);
+        float y = screenH - e.speed * e.age;
+        float flicker = 0.55f + 0.45f * sinf(e.phase * 5.0f + e.age * 30.0f);
+        float a = powf(1.0f - u, 1.2f) * flicker * fade;
+        float r = e.size * (1.0f - 0.4f * u);
+        float g = 0.55f + 0.35f * (1.0f - u);                     // 昇るほど赤く
+        sr->DrawSprite(tex, x - r * 2.6f, y - r * 2.6f, r * 5.2f, r * 5.2f, 0.0f, XMFLOAT4(1.0f, g, 0.2f, a * 0.25f));   // 淡い光
+        sr->DrawSprite(tex, x - r, y - r, r * 2.0f, r * 2.0f, 0.0f, XMFLOAT4(1.0f, g + 0.1f, 0.35f, a));                 // 芯
+    }
 }
 
 // しずく：上の帯の下の端でふくらんでから、重力で落ちる。落ちる間は速さの向き（下）に伸ばし、途中で薄くなって消える

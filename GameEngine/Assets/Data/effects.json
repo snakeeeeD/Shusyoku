@@ -1370,6 +1370,8 @@
                    "erodeStart": 0.55, "erodeEnd": 1.0, "glow": 1.0, "noiseScale": 1.6, "scroll": [ 0.03, 0.35 ], "appear": 0.4 },
     "fx_poison_edge": { "shape": "fx_shape_edge", "noise": "fx_noise", "ramp": "fx_ramp_poison",
                         "erodeStart": 1.0, "erodeEnd": 1.0, "glow": 1.0, "noiseScale": 2.2, "scroll": [ 0.02, 0.05 ] },
+    "fx_burn_edge": { "shape": "fx_shape_burn", "noise": "fx_noise", "ramp": "fx_ramp_fire",
+                      "erodeStart": 1.0, "erodeEnd": 1.0, "glow": 1.0, "noiseScale": 2.0, "scroll": [ 0.02, 0.6 ] },
     "fx_dissolve": { "noise": "fx_noise", "ramp": "fx_ramp_fire", "noiseScale": 1.6, "glow": 1.0 }
   }
 }
