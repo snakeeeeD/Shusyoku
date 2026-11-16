@@ -14,6 +14,8 @@
 #include <DirectXMath.h>
 #include <string>
 #include <set>
+#include <algorithm>
+#include <unordered_map>
 
 using namespace DirectX;
 
@@ -79,11 +81,9 @@ public:
         return out;
     }
 
-    static std::wstring GetEffectText(const CardData* data, const Player* player = nullptr, int wrapChars = 8)
+    // 説明の {value} と効果の札に出す「実際の値」（攻撃UP・ブロックUP・レリックなどを足した値）
+    static int ActualMainValue(const CardData* data, const Player* player)
     {
-        if (!data) return L"";
-        if (data->description.empty()) return L"(no desc)";
-
         int actualValue = data->mainEffect.value;
         if (player)
         {
@@ -120,6 +120,15 @@ public:
             }
         }
 
+        return actualValue;
+    }
+
+    static std::wstring GetEffectText(const CardData* data, const Player* player = nullptr, int wrapChars = 8)
+    {
+        if (!data) return L"";
+        if (data->description.empty()) return L"(no desc)";
+
+        int actualValue = ActualMainValue(data, player);
         std::wstring result = data->description;
         std::wstring placeholder = L"{value}";
         size_t pos = result.find(placeholder);
@@ -181,6 +190,89 @@ public:
         w = CARD_W * scale; h = CARD_H * scale;
         x = baseX - (w - CARD_W) / 2.0f;
         y = baseY - (h - CARD_H) / 2.0f;
+    }
+
+    // ===== 効果の札（図の枠の左に縦に並べる。見た目が似たカードを見分けるため） =====
+    // アイコンは敵の行動予告と同じ作り。value<0＝数字なし（hits>1 なら「×hits」だけ出す）
+    struct EffectBadge { const char* icon; int value; int hits; };
+    static constexpr float BADGE_X = 11.0f, BADGE_TOP = 35.0f, BADGE_AREA_H = 39.0f;   // 1倍のカードでの位置（図の枠の左側）
+    static constexpr float BADGE_W = 25.0f, BADGE_H = 12.0f, BADGE_GAP = 1.5f;
+    static float BadgeRowH(int n) { return n > 0 ? (std::min)(BADGE_H + BADGE_GAP, BADGE_AREA_H / (float)n) : 0.0f; }   // 多い時は縦に詰める
+
+    static std::vector<EffectBadge> GetEffectBadges(const CardData* d, const Player* player)
+    {
+        std::vector<EffectBadge> v;
+        if (!d || d->type == CardType::Status || d->type == CardType::Curse) return v;
+        auto add = [&](const CardEffectData& e, int value, int hits) {
+            if (!e.hasEffect) return;
+            switch (e.type)
+            {
+            case CardEffectType::Damage:       v.push_back({ hits > 1 ? "intent_multihit" : "intent_attack", value, hits }); break;
+            case CardEffectType::Block:        v.push_back({ "intent_block", value, 1 }); break;
+            case CardEffectType::Heal:         v.push_back({ "intent_heal", value, 1 }); break;
+            case CardEffectType::ApplyBuff:
+            case CardEffectType::ApplyDebuff:
+            {
+                if (e.buffType.empty()) break;
+                BuffType bt = StringToBuffType(e.buffType);
+                int n = BuffInfo::IsDurationBased(bt) ? e.duration : value;      // 弱体・脱力などはターン数
+                const char* ic = (e.type == CardEffectType::ApplyBuff) ? "intent_buff" : "intent_debuff";
+                if (bt == BuffType::Poison) { ic = "intent_poison"; n += RelicManager::SumValue("poisonAdd"); }
+                v.push_back({ ic, BuffInfo::HidesValue(bt) ? -1 : n, 1 });
+                break;
+            }
+            // 毒を使う
+            case CardEffectType::Catalyst:     v.push_back({ "intent_poison", -1, value }); break;   // 毒を×倍
+            case CardEffectType::DrainPoison:  v.push_back({ "intent_poison", -1, 1 }); v.push_back({ "intent_heal", -1, 1 }); break;
+            case CardEffectType::PoisonBurst:  v.push_back({ "intent_poison", value + RelicManager::SumValue("poisonAdd"), 1 }); break;
+            // カードを動かす
+            case CardEffectType::BlockDamage:  v.push_back({ "intent_blockdamage", -1, 1 }); break;
+            case CardEffectType::Draw:         v.push_back({ "intent_draw", value, 1 }); break;
+            case CardEffectType::Discard:      v.push_back({ "intent_discard", value, 1 }); break;
+            case CardEffectType::AddEnergy:    v.push_back({ "intent_energy", value, 1 }); break;
+            case CardEffectType::CreateCard:   v.push_back({ "intent_create", value, 1 }); break;
+            case CardEffectType::Search:
+            case CardEffectType::Salvage:      v.push_back({ "intent_search", -1, 1 }); break;
+            case CardEffectType::UpgradeHand:  v.push_back({ "intent_upgrade", -1, 1 }); break;
+            case CardEffectType::PlaceDecoy:   v.push_back({ "intent_decoy", -1, 1 }); break;
+            // 罠・床（罠を置く札は、その罠の盤面の絵）
+            case CardEffectType::PlaceTrap:
+            case CardEffectType::PlaceTrapArea:
+                if (const TerrainDef* t = TerrainDataBase::Get(e.trapType); t && !t->texture.empty())
+                    v.push_back({ t->texture.c_str(), value, 1 });
+                break;
+            case CardEffectType::Detonate: case CardEffectType::DetonateAt:
+            case CardEffectType::DetonateChain: case CardEffectType::RecallTraps:
+            case CardEffectType::ClearFloors:  v.push_back({ "intent_hazard", -1, 1 }); break;
+            // 信仰
+            case CardEffectType::Engrave:
+            case CardEffectType::EngraveArea:
+            case CardEffectType::Purify:       v.push_back({ "intent_buff", value > 0 ? value : -1, 1 }); break;
+            case CardEffectType::Judgement:
+            case CardEffectType::Miracle:      v.push_back({ "intent_buff", -1, value }); break;   // 信仰×倍
+            case CardEffectType::Knockback:    v.push_back({ "intent_knockback", -1, 1 }); break;
+            case CardEffectType::Pull:         v.push_back({ "intent_pull", -1, 1 }); break;
+            default: break;
+            }
+        };
+        auto addMove = [&]() { v.push_back({ "intent_move", d->range > 0 ? d->range : -1, 1 }); };   // 移動：何マスまで動けるか（敵の「移動」と同じ絵）
+        if (d->type == CardType::Move) addMove();                // 移動カード：まず移動、その後ろにブロック・ドローなど
+        add(d->mainEffect, ActualMainValue(d, player), d->hits);
+        if (d->type != CardType::Move && d->dash) addMove();     // 突進する攻撃（突撃猛進・駆け抜け斬り）：攻撃の後ろに移動
+        add(d->onHitEffect, d->onHitEffect.value, 1);
+        add(d->onHitEffect2, d->onHitEffect2.value, 1);
+        add(d->subEffect, d->subEffect.value, 1);
+        add(d->subEffect2, d->subEffect2.value, 1);
+        add(d->allEnemyEffect, d->allEnemyEffect.value, 1);
+        if (d->selfDamage > 0) v.push_back({ "intent_selfdamage", d->selfDamage, 1 });   // 自傷（代償なので効果の後ろ）
+        if (d->onDiscardEffect.hasEffect)   // 捨てられた時：目印の後ろに、その効果の札
+        {
+            v.push_back({ "intent_ondiscard", -1, 1 });
+            add(d->onDiscardEffect, d->onDiscardEffect.value, 1);
+        }
+        // 数値が0の札（毒塗りの「0ダメージ」など）は出さない。数字を出さない札（-1）は残す
+        v.erase(std::remove_if(v.begin(), v.end(), [](const EffectBadge& b) { return b.value == 0; }), v.end());
+        return v;
     }
 
     // スプライトパスで呼ぶ
@@ -333,6 +425,26 @@ public:
                     }
             }
         }
+        // 効果の札：下地とアイコン（数値は DrawTexts で）。手札の傾きに合わせて、カードの中心まわりに回す
+        if (data)
+        {
+            auto badges = GetEffectBadges(data, nullptr);
+            float rowH = BadgeRowH((int)badges.size());
+            float bcs = cosf(rot), bsn = sinf(rot), ccx = x + w / 2.0f, ccy = y + h / 2.0f;
+            auto place = [&](float ux, float uy, float bw, float bh, ID3D11ShaderResourceView* tex, const XMFLOAT4& col) {
+                float cx = ux + bw / 2.0f, cy = uy + bh / 2.0f;
+                float rx = ccx + (cx - ccx) * bcs - (cy - ccy) * bsn, ry = ccy + (cx - ccx) * bsn + (cy - ccy) * bcs;
+                sr->DrawSprite(tex, rx - bw / 2.0f, ry - bh / 2.0f, bw, bh, rot, col);
+            };
+            for (int i = 0; i < (int)badges.size(); i++)
+            {
+                float bx = x + BADGE_X * scale, by = y + (BADGE_TOP + i * rowH) * scale, bh = (rowH - BADGE_GAP) * scale;
+                place(bx, by, BADGE_W * scale, bh, white, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.55f * color.w));   // 下地
+                float is = bh - 2.0f * scale;
+                if (auto tex = TextureManager::Get(badges[i].icon))
+                    place(bx + 1.0f * scale, by + 1.0f * scale, is, is, tex, XMFLOAT4(1, 1, 1, color.w));
+            }
+        }
     }
 
     // テキストパスで呼ぶ
@@ -352,17 +464,26 @@ public:
             : D2D1::ColorF(1, 1, 1, alpha);
         // 名前はオーブの右へ
         // 名前（長いと自動縮小）。全角≒0.95 / 半角≒0.5 で概算し、カード幅に収める
-        float nameFont = 13.0f * s;
-        {
-            float avail = w - 40.0f * s;          // オーブ右〜カード右端
+        // 合成カードの名前「コア名【素材の略】」は2段に分ける（1段だとカードからはみ出すため）
+        std::wstring nameMain = data->name, nameSub;
+        if (size_t k = nameMain.find(L'【'); k != std::wstring::npos) { nameSub = nameMain.substr(k); nameMain.resize(k); }
+        const float avail = w - 40.0f * s;          // オーブ右〜カード右端
+        auto fitFont = [&](const std::wstring& str, float f, float minF) {   // 全角≒1.0 / 半角≒0.5 で概算して、幅に収まる大きさに（下限 minF）
             float est = 0.0f;
-            for (wchar_t c : data->name) est += (c < 0x100 ? 0.5f : 0.95f) * nameFont;
-            if (est > avail && est > 0.0f) nameFont *= avail / est;
-            if (nameFont < 7.0f * s) nameFont = 7.0f * s;   // 下限
-        }
+            for (wchar_t c : str) est += (c < 0x100 ? 0.5f : 1.0f) * f;
+            if (est > avail && est > 0.0f) f *= avail / est;
+            return f < minF ? minF : f;
+        };
         {
             TextRenderer::RoleScope heading(*tr, FontRole::Heading);   // カード名は見出しのフォント
-            tr->DrawOutlinedText(data->name.c_str(), x + 34 * s, y + 11 * s, nameFont, nameCol, ol, olT, rot, px, py);
+            if (nameSub.empty())
+                tr->DrawOutlinedText(nameMain.c_str(), x + 34 * s, y + 11 * s, fitFont(nameMain, 13.0f * s, 7.0f * s), nameCol, ol, olT, rot, px, py);
+            else
+            {
+                tr->DrawOutlinedText(nameMain.c_str(), x + 34 * s, y + 4 * s,  fitFont(nameMain, 11.0f * s, 7.0f * s), nameCol, ol, olT, rot, px, py);
+                // 【素材の略】は補足なので、小さくなっても入りきるほうを優先（素材6つ＝13文字まで）
+                tr->DrawOutlinedText(nameSub.c_str(),  x + 34 * s, y + 20 * s, fitFont(nameSub, 9.0f * s, 4.5f * s), nameCol, ol, olT, rot, px, py);
+            }
         }
 
         // コストは左上オーブの上に「数字だけ」
@@ -385,24 +506,63 @@ public:
         // 小さくするたびに1行の文字数も増やして折り返し直す（行数そのものを減らす）
         const float DESC_W = 80.0f, DESC_H = 49.0f, LINE = 1.25f, MIN_FONT = 7.0f;
         const bool perm = data->permanent;   // 削除不可は説明の1行目に色を変えて出す（説明文のデータには書かない）
+        // 決まった文字サイズは覚えておく（毎フレーム測り直さない）。キー＝最初の説明文（数値が変われば別のキー）
+        static std::unordered_map<std::wstring, float> s_fit;
+        std::wstring key = GetEffectText(data, player, (int)(DESC_W / 10.0f)) + (perm ? L"|p" : L"");
         float df = 10.0f;
         std::wstring desc;
-        while (true)
+        if (auto it = s_fit.find(key); it != s_fit.end())
         {
-            desc = GetEffectText(data, player, (int)(DESC_W / df));   // 全角1文字≒文字サイズの幅
-            int lines = perm ? 2 : 1; for (wchar_t c : desc) if (c == L'\n') lines++;   // 「削除不可」の1行も数える
-            if (lines * df * LINE <= DESC_H || df <= MIN_FONT) break;
-            df -= 0.5f;
+            df = it->second;
+            desc = GetEffectText(data, player, (int)(DESC_W / df));
+        }
+        else
+        {
+            while (true)
+            {
+                desc = GetEffectText(data, player, (int)(DESC_W / df));   // 全角1文字≒文字サイズの幅
+                // 高さは実際のフォントで測る（行の高さはフォントで決まり、文字サイズの1.25倍より大きい）
+                float need = tr->Measure(desc.c_str(), df).height + (perm ? tr->Measure(L"削除不可", df).height : 0.0f);
+                if (need <= DESC_H || df <= MIN_FONT) break;
+                df -= 0.5f;
+            }
+            s_fit[key] = df;
         }
         float ty = y + 82 * s;
         if (perm)
         {
             tr->DrawOutlinedText(L"削除不可", x + 12 * s, ty, df * s,
                 D2D1::ColorF(1.0f, 0.45f, 0.4f, alpha), ol, olT, rot, px, py);   // 赤系で目立たせる
-            ty += df * LINE * s;
+            ty += tr->Measure(L"削除不可", df).height * s;
         }
         tr->DrawOutlinedText(desc.c_str(),
             x + 12 * s, ty, df * s, dc, ol, olT, rot, px, py);
+
+        // 効果の札の数値（アイコンの右）。主な効果が増えている時は説明と同じく緑
+        {
+            auto badges = GetEffectBadges(data, player);
+            float rowH = BadgeRowH((int)badges.size());
+            for (int i = 0; i < (int)badges.size(); i++)
+            {
+                if (badges[i].value < 0 && badges[i].hits <= 1) continue;   // 数字なし
+                float bh = rowH - BADGE_GAP, fs = bh * 0.8f * s;
+                float tx = x + (BADGE_X + bh) * s, ty = y + (BADGE_TOP + i * rowH) * s + (bh * s - fs * 1.45f) / 2.0f;   // 行の高さ≒文字の1.45倍
+                D2D1_COLOR_F nc = (i == 0 && IsCardBoosted(data, player)) ? D2D1::ColorF(0.4f, 1.0f, 0.4f, alpha) : D2D1::ColorF(1.0f, 0.96f, 0.8f, alpha);
+                if (badges[i].value < 0)   // 「×倍」だけ（触媒・審判など）
+                {
+                    std::wstring hx = L"×" + std::to_wstring(badges[i].hits);
+                    tr->DrawOutlinedText(hx.c_str(), tx, ty, fs, nc, ol, olT, rot, px, py);
+                    continue;
+                }
+                std::wstring t = std::to_wstring(badges[i].value);
+                tr->DrawOutlinedText(t.c_str(), tx, ty, fs, nc, ol, olT, rot, px, py);
+                if (badges[i].hits > 1)   // 連撃：数値の右に小さく「×回数」
+                {
+                    std::wstring hx = L"×" + std::to_wstring(badges[i].hits);
+                    tr->DrawOutlinedText(hx.c_str(), tx + tr->Measure(t.c_str(), fs).width, ty + fs * 0.35f, fs * 0.6f, nc, ol, olT, rot, px, py);
+                }
+            }
+        }
     }
 
     // カードが参照するバフ/デバフのキーワード（名前, 説明）を重複なしで
@@ -419,6 +579,8 @@ public:
             };
         add(d->mainEffect); add(d->onHitEffect); add(d->onHitEffect2);
         add(d->onDiscardEffect); add(d->subEffect); add(d->subEffect2); add(d->allEnemyEffect);
+        if (d->onDiscardEffect.hasEffect)   // 捨てられた時の効果：いつ発動するかを説明する
+            out.push_back({ L"捨てられた時", L"このカードが、カードの効果で手札から選んで捨てられた時に発動する。\nターン終了で捨て札に行く時は発動しない。" });
         return out;
     }
 };

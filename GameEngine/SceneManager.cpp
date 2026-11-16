@@ -124,7 +124,11 @@ void SceneManager::DoChangeScene(SceneType type)
 	Hint::Clear();
 	CardTooltip::ClearHeld();   // 暗転中に前のシーンが覚え直した説明も、ここで消す（次のシーンに残さない）
 
-	if (type == SceneType::Title) QuickPlay::End();   // タイトルへ戻る時は必ず終了（本編の状態に戻す）
+	if (type == SceneType::Title)
+	{
+		QuickPlay::End();   // タイトルへ戻る時は必ず終了（本編の状態に戻す）
+		m_map.Close(); m_deck.Close(); m_items.Close();   // 帯から開いた窓は閉じる（タイトルには帯が無く、閉じられなくなるため）
+	}
 	if (QuickPlay::Active() && type == SceneType::Field)
 		type = QuickPlay::NextScene();                // 「フィールドへ戻る」を次の戦闘か結果画面に読み替える
 
@@ -571,10 +575,8 @@ bool SceneManager::HandleConfirmAndTooltip()
 void SceneManager::HandleScrollDrag()
 {
 	{
-		// ホイールでもスクロール（デッキと同じ m_uiInput 経由・ドラッグと同じターゲットを共有）
-		if (m_items.IsOpen())
-			m_items.ScrollBy(-m_uiInput.GetMouseWheelDelta() * 0.5f);
-
+		// ホイールでもスクロール（合成の下の一覧が入りきらない時だけ動く）
+		if (m_items.IsCraft()) m_items.ScrollBy(-m_uiInput.GetMouseWheelDelta() * 0.5f);
 		bool held = m_uiInput.GetMouseButtonPress(0);
 		POINT mp = m_uiInput.GetMousePos();
 		if (held && (m_deck.IsOpen() || m_items.IsOpen()))
@@ -584,7 +586,7 @@ void SceneManager::HandleScrollDrag()
 			if (dy != 0)
 			{
 				if (m_deck.IsOpen()) m_deck.ScrollBy(-(float)dy);
-				else            m_items.ScrollBy(-(float)dy);     // 持ち物 / 合成
+				else if (m_items.IsCraft()) m_items.ScrollBy(-(float)dy);   // 合成の下の一覧
 				m_mDragLastY = mp.y;
 			}
 			int md = mp.y - m_mDragStartY; if (md < 0) md = -md;
@@ -664,7 +666,12 @@ bool SceneManager::HandleTopBarInput(UiContext& ui)
 		
 
 		// Map（どの画面でも開ける。フィールドでもイベント・休憩中に先の道を確認できる）
-		if (m_map.IsOpen()) { if (click && BackBtnHit(m)) m_map.Close(); return true; }
+		if (m_map.IsOpen())   // 「戻る」、またはもう一度マップのボタンで閉じる
+		{
+			if (click && BarButtonRect(0).has(m)) { Audio::PlaySE("Assets/Sound/se/click.mp3"); m_map.Close(); }
+			else if (click && BackBtnHit(m)) m_map.Close();
+			return true;
+		}
 		{
 			if (click && !m_deck.IsOpen() && !m_items.IsCraft() && !m_items.IsInventory()
 				&& BarButtonRect(0).has(m))
@@ -913,10 +920,10 @@ void SceneManager::Update(float deltaTime)
 
 	UiContext ui = Ui();
 	m_deck.Update(ui, deltaTime);   // デッキ：スクロール（ホイールを読むのはイベントより先）
+	m_items.Update(ui, deltaTime, m_mDrag);   // 合成の下の一覧のスクロール（ドラッグ中ははみ出しを戻さない）
 
 	m_event.Update(ui, deltaTime);   // イベント：揺れ・表示HP・変わる演出・カード選択の一覧（デッキ閲覧の後でホイールを読む）
 
-	m_items.Update(ui, deltaTime, m_mDrag);   // 持ち物・合成の素材の一覧（ドラッグ中ははみ出しを戻さない）
 
 	if (auto battle = dynamic_cast<BattleScene*>(m_currentScene))
 		battle->SetUiBlocked(AnyModalOpen() && !m_tutorial.IsOpen());   // チュートリアルは自前でホバーを動かすので除く

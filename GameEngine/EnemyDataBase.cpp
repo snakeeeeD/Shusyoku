@@ -136,6 +136,7 @@ void EnemyDataBase::Init()
                 data.immovable = e.value("immovable", false);
                 data.sequential = e.value("sequential", false);
                 data.snake = e.value("snake", false);
+                data.moveStyle = e.value("moveStyle", "walk");
 
                 // 行動データの読み込み
                 if (e.contains("actions") && e["actions"].is_array())

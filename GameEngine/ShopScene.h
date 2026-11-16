@@ -48,6 +48,14 @@ private:
         const float tw = 92.0f, th = 30.0f;
         return { x + (w - tw) / 2.0f, y + h - 8.0f, tw, th };   // 下端に少し重ねて「付いている」感じに
     }
+    // セールの札（カードの右上の角に、少し傾けて重ねる）。描画と文字で同じ矩形を使う
+    URect SaleTagRect(float cardX, float drawY) const
+    {
+        float x, y, w, h; CardVisual::GetRect(cardX, drawY, SHOP_SCALE, x, y, w, h);
+        const float tw = 72.0f, th = 30.0f;
+        return { x + w - tw + 14.0f, y - 10.0f, tw, th };
+    }
+    static constexpr float SALE_TILT = 0.2f;   // 札の傾き（ラジアン、約11度）
 
     SpriteRenderer* m_spriteRenderer = nullptr;
     TextRenderer* m_textRenderer = nullptr;

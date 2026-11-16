@@ -100,6 +100,11 @@ void Player::Draw3D(Renderer3D* renderer)
 {
     if (!isActive) return;
     SpriteFrame f = GetSprite();
+    for (auto& g : m_feel.Ghosts())   // 残像（2マス以上続けて動いた時。絵と向きは今と同じで、少し前の位置に薄く）
+    {
+        XMFLOAT4 gc = GetDrawColor(); gc.w *= g.alpha;
+        renderer->DrawBillboard(f.tex, f.x + (g.x - worldX), f.y, f.z + (g.z - worldZ), f.w, f.h, f.rot, gc, f.uv);
+    }
     renderer->DrawBillboard(f.tex, f.x, f.y, f.z, f.w, f.h, f.rot, GetDrawColor(), f.uv);
 }
 

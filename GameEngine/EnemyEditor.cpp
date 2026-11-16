@@ -6,6 +6,8 @@
 #include "EditorHub.h"
 #include "EnumNames.h"
 #include "EffectDataBase.h"
+#include "ParticleBurst.h"
+#include "SpriteSheet.h"
 #include "EnemyDataBase.h"
 #include "EnemyIntentVisual.h"
 #include "RangeShape.h"
@@ -28,7 +30,7 @@ namespace
     // ---- 演出のプレビュー：effects.json の粒とコマを、盤面の上に2Dで動かす ----
     constexpr float FX_PX = CELL / 1.1f;       // ワールド1単位のピクセル数
     struct FxParticle { ImVec2 pos, vel; XMFLOAT4 c0, c1; float delay, life, lifeMax, size, gravity, drag; ID3D11ShaderResourceView* tex; };
-    struct FxSheet { ImVec2 pos; const SheetAnim* a; float t; ID3D11ShaderResourceView* tex; };
+    struct FxSheet { ImVec2 pos; const SheetDef* a; float t; ID3D11ShaderResourceView* tex; };
     std::vector<FxParticle> g_fxParticles;
     std::vector<FxSheet> g_fxSheets;
     std::string g_fxReqId, g_fxReqKey;         // 再生ボタンの要求
@@ -38,19 +40,22 @@ namespace
     {
         const EffectDef* def = EffectDataBase::Get(id);
         if (!def) return;
-        for (auto& b : def->bursts)
+        for (auto& part : def->parts)   // プレビューできるのは粒とコマ送りだけ（ほかの種類は出さない）
         {
-            auto* tex = TextureManager::Get(b.texture.empty() ? "particle" : b.texture);
-            for (int i = 0; i < b.count; i++)
+            if (auto* b = dynamic_cast<const BurstDef*>(part.get()))
             {
-                float ang = (rand() % 628) / 100.0f, sp = b.speed * (0.5f + (rand() % 50) / 100.0f);
-                float life = b.life * (0.7f + (rand() % 60) / 100.0f);
-                g_fxParticles.push_back({ at, ImVec2(cosf(ang) * sp * FX_PX, -(b.speed * 0.5f) * FX_PX),
-                    b.colorStart, b.colorEnd, delay, life, life, b.scale * FX_PX, b.gravity * FX_PX, b.drag, tex });
+                auto* tex = TextureManager::Get(b->texture.empty() ? "particle" : b->texture);
+                for (int i = 0; i < b->count; i++)
+                {
+                    float ang = (rand() % 628) / 100.0f, sp = b->speed * (0.5f + (rand() % 50) / 100.0f);
+                    float life = b->life * (0.7f + (rand() % 60) / 100.0f);
+                    g_fxParticles.push_back({ at, ImVec2(cosf(ang) * sp * FX_PX, -(b->speed * 0.5f) * FX_PX),
+                        b->colorStart, b->colorEnd, delay, life, life, b->scale * FX_PX, b->gravity * FX_PX, b->drag, tex });
+                }
             }
+            else if (auto* s = dynamic_cast<const SheetDef*>(part.get()))
+                g_fxSheets.push_back({ ImVec2(at.x, at.y - s->yOffset * FX_PX), s, -(delay + s->delay), TextureManager::Get(s->texture) });
         }
-        for (auto& s : def->sheets)
-            g_fxSheets.push_back({ ImVec2(at.x, at.y - s.yOffset * FX_PX), &s, -(delay + s.delay), TextureManager::Get(s.texture) });
         if (!def->then.empty()) SpawnFx(def->then, at, delay + def->thenDelay);
     }
 

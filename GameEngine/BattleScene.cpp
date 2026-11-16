@@ -281,6 +281,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             // 毒の瘴気：2ターンに1回、全敵に毒を付与
             int nox = ((m_turnCount % 2) == 0)
                 ? m_player->GetBuffManager().GetBuffValue(BuffType::NoxiousFumes) : 0;
+            if (nox > 0) EffectManager::Play("miasma_screen", 0.0f, 0.0f, 0.0f);   // カードを使ったときと同じ画面の瘴気（画面の演出なので、場所は使わない）
             if (nox > 0)
                 for (auto enemy : m_enemies)
                 {
@@ -855,6 +856,8 @@ void BattleScene::Update(float deltaTime)
         EnemyIntentVisual::SetHidden(blind);
     }
     SyncFaithBuffs();
+    m_screenFx.Update(deltaTime, { m_player->GetHp(), m_player->GetMaxHp(),
+        m_player->GetBuffManager().HasBuff(BuffType::Poison) });   // 画面の演出（演出中・ヒットストップ中も止めない）
     // 信仰のマスから、ときどき光の粒が昇る（信仰が多いほど多い。見た目は effects.json の faith_mote）
     for (int r = 0; r < m_gridMap->GetRows(); r++)
         for (int c = 0; c < m_gridMap->GetCols(); c++)
@@ -1477,6 +1480,7 @@ void BattleScene::Update(float deltaTime)
                 }
                 m_windupPlayed = false;
 
+                int preCol = enemy->gridCol, preRow = enemy->gridRow;   // 実行前の位置（予告の範囲の中心。移動する攻撃でも演出は予告どおりの所に出す）
                 // 実行前の攻撃範囲を控える（移動を伴う攻撃でも予告と一致させる）
                 std::vector<std::pair<int, int>> preCells;
                 if (wa && !wa->target.unavoidable && wa->target.approach != ApproachType::Dash)
@@ -1522,34 +1526,7 @@ void BattleScene::Update(float deltaTime)
                 }
 
                 // 攻撃範囲に演出（当たり外れに関わらず出す）
-                if (wa && !wa->target.unavoidable)
-                {
-                    bool isAtkAction = false;
-                    for (auto& ef : wa->effects)
-                        if (ef.kind == EffectKind::Damage) { isAtkAction = true; break; }
-
-                    if (isAtkAction)
-                    {
-                        const std::string afx = wa->areaVfx.empty() ? "area_burst" : wa->areaVfx;
-                        bool isDash = (wa->target.approach == ApproachType::Dash);
-
-                        // 突進は「実際に走った経路」、それ以外は実行前の攻撃範囲
-                        std::vector<std::pair<int, int>> cells =
-                            isDash ? enemy->GetMovePath()
-                            : preCells;
-
-                        float step = isDash ? 0.10f : 0.04f;   // 突進はグライドに合わせて遅め
-                        for (int k = 0; k < (int)cells.size(); k++)
-                        {
-                            int c = cells[k].first, r = cells[k].second;
-                            float ex = (c - m_gridMap->GetCols() / 2.0f) * 1.1f;
-                            float ez = (r - m_gridMap->GetRows() / 2.0f) * 1.1f;
-                            int d = isDash ? k                                     // 走った順に尾を引く
-                                : abs(c - enemy->gridCol) + abs(r - enemy->gridRow);
-                            EffectManager::Play(afx, ex, 0.15f, ez, 0.0f, step * d);
-                        }
-                    }
-                }
+                if (wa) PlayEnemyAreaFx(enemy, *wa, tC, tR, preCol, preRow, preCells);
 
                 for (auto& pc : enemy->PendingCurses())
                 {
@@ -1785,6 +1762,59 @@ void BattleScene::Update(float deltaTime)
         {
             m_highlighter.ClearPlayerHighlight(m_gridMap);
         }
+    }
+}
+
+// 敵の攻撃が当たった範囲の演出（当たり外れに関わらず出す）
+//  中心から広がる形（周り・正方形・ひし形）：衝撃波を範囲のマス数ぶん、外へ重ねて出す（敵の識別色）
+//  それ以外（十字・直線・突進・市松など）：マスごとに、敵から近い順に時間差で出す
+void BattleScene::PlayEnemyAreaFx(Enemy* enemy, const EnemyAction& a, int tC, int tR, int preCol, int preRow,
+    const std::vector<std::pair<int, int>>& preCells)
+{
+    if (a.target.unavoidable) return;
+    bool isAtkAction = false;
+    for (auto& ef : a.effects)
+        if (ef.kind == EffectKind::Damage) { isAtkAction = true; break; }
+    if (!isAtkAction) return;
+
+    bool isDash = (a.target.approach == ApproachType::Dash);
+    RangeType rt = a.target.rangeType;
+    const int SHOCK_MIN_RANGE = 1;   // この範囲以上の攻撃を衝撃波にする（1＝周り1マスの普通の攻撃も含めて全部）
+    int range = a.target.range + enemy->GetBuffManager().GetBuffValue(BuffType::RangeUp);
+    bool radial = (rt == RangeType::Area || rt == RangeType::Square || rt == RangeType::Diamond);
+    if (radial && range >= SHOCK_MIN_RANGE && !isDash && a.impactVfx.empty())   // 着弾の演出（隕石の爆発など）がある攻撃は、そちらに任せる
+    {
+        const float SHOCK_BASE_CELLS = 1.5f;   // effects.json の enemy_shock は、中心から1.5マス（周り1マス）の大きさで作ってある
+        float cx, cz, body = 0.0f;
+        if (a.target.anchor != AnchorType::Self)   // 範囲の中心が、狙ったマスや決まったマス
+        {
+            int ac, ar; enemy->GetAnchorCell(a, tC, tR, ac, ar);
+            cx = CellWX(ac); cz = CellWZ(ar);
+        }
+        else                                       // 範囲の中心が、敵自身（2*2 なら体の中心。体の幅のぶん範囲も広い）
+        {
+            enemy->CenterWorld(preCol, preRow, m_gridMap, cx, cz);   // 動く前の位置（予告の範囲の中心）
+            int lo = 0, hi = 0;
+            for (auto& [dc, dr] : enemy->GetGridShape()) { lo = (std::min)(lo, dc); hi = (std::max)(hi, dc); }
+            body = (hi - lo) * 0.5f;
+        }
+        const float WAVE_GAP = 0.12f;          // 波と波の間の秒数
+        for (int k = 1; k <= range; k++)       // 範囲1マスごとに波を1つ。k マス目まで届く大きさで、少しずつ遅らせて外へ重ねる
+            EffectManager::Play("enemy_shock", cx, 0.5f, cz, 0.0f, WAVE_GAP * (k - 1), enemy->hueColor,
+                (k + 0.5f + body) / SHOCK_BASE_CELLS);
+        return;
+    }
+
+    const std::string afx = a.areaVfx.empty() ? "area_burst" : a.areaVfx;
+    // 突進は「実際に走った経路」、それ以外は実行前の攻撃範囲
+    std::vector<std::pair<int, int>> cells = isDash ? enemy->GetMovePath() : preCells;
+    float step = isDash ? 0.10f : 0.04f;   // 突進はグライドに合わせて遅め
+    for (int k = 0; k < (int)cells.size(); k++)
+    {
+        int c = cells[k].first, r = cells[k].second;
+        int d = isDash ? k                                     // 走った順に尾を引く
+            : abs(c - preCol) + abs(r - preRow);
+        EffectManager::Play(afx, CellWX(c), 0.15f, CellWZ(r), 0.0f, step * d);
     }
 }
 

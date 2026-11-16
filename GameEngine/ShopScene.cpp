@@ -218,6 +218,14 @@ void ShopScene::Draw()
         if (!m_items[i].bought)
             if (auto coin = TextureManager::Get("icon_gold"))
                 m_spriteRenderer->DrawSprite(coin, tag.x + 10.0f, tag.y + 6.0f, 18.0f, 18.0f, 0.0f, XMFLOAT4(1.0f, 0.85f, 0.3f, 1.0f));
+        // セールの札（影→濃い縁→赤い札を、同じ角度で重ねる）
+        if (!m_items[i].bought && m_items[i].sale)
+        {
+            URect st = SaleTagRect(cardX, drawY);
+            m_spriteRenderer->DrawSprite(m_whiteTexture, st.x + 3.0f, st.y + 4.0f, st.w, st.h, SALE_TILT, XMFLOAT4(0, 0, 0, 0.45f));
+            m_spriteRenderer->DrawSprite(m_whiteTexture, st.x - 2.0f, st.y - 2.0f, st.w + 4.0f, st.h + 4.0f, SALE_TILT, XMFLOAT4(0.35f, 0.04f, 0.04f, 1.0f));
+            m_spriteRenderer->DrawSprite(m_whiteTexture, st.x, st.y, st.w, st.h, SALE_TILT, XMFLOAT4(0.88f, 0.16f, 0.14f, 1.0f));
+        }
     }
     POINT mp = m_input.GetMousePos();
 
@@ -320,9 +328,15 @@ void ShopScene::Draw()
 
         // 値札の文字（金額はコインの右。所持金が足りない時は赤）
         URect tag = PriceTagRect(cardX, drawY);
-        if (!m_items[i].bought && m_items[i].sale)   // 特価：値札の上に赤い札
-            m_textRenderer->DrawOutlinedTextCentered(L"SALE -60%", tag.x + tag.w / 2.0f, tag.y - 24.0f, tag.w + 30.0f, 22.0f,
-                15.0f, D2D1::ColorF(1.0f, 0.35f, 0.3f), D2D1::ColorF(0, 0, 0), 2.0f);
+        if (!m_items[i].bought && m_items[i].sale)   // 特価：右上の札に割引率（札と同じ角度で傾ける）
+        {
+            URect st = SaleTagRect(cardX, drawY);
+            const wchar_t* off = L"-60%";
+            D2D1_SIZE_F os = m_textRenderer->Measure(off, 17.0f);
+            float cx = st.x + st.w / 2.0f, cy = st.y + st.h / 2.0f;
+            m_textRenderer->DrawOutlinedText(off, cx - os.width / 2.0f, cy - os.height / 2.0f, 17.0f,
+                D2D1::ColorF(1, 1, 1), D2D1::ColorF(0.3f, 0.02f, 0.02f), 2.0f, SALE_TILT, cx, cy);
+        }
         if (m_items[i].bought)
             m_textRenderer->DrawTextCentered(L"SOLD", tag.x + tag.w / 2.0f, tag.y, tag.w, 18.0f,
                 D2D1::ColorF(1.0f, 0.4f, 0.4f), tag.h);
@@ -333,7 +347,9 @@ void ShopScene::Draw()
             float left = tag.x + 30.0f;   // コインの右側
             m_textRenderer->DrawTextCentered(priceText, left + (tag.x + tag.w - left) / 2.0f, tag.y,
                 tag.x + tag.w - left, 18.0f,
-                canBuy ? D2D1::ColorF(1.0f, 0.9f, 0.3f) : D2D1::ColorF(1.0f, 0.35f, 0.3f), tag.h);
+                !canBuy ? D2D1::ColorF(1.0f, 0.35f, 0.3f)                                  // 足りない：赤
+                : m_items[i].sale ? D2D1::ColorF(0.45f, 1.0f, 0.5f)                          // 特価：緑（お得）
+                : D2D1::ColorF(1.0f, 0.9f, 0.3f), tag.h);
         }
     }
 

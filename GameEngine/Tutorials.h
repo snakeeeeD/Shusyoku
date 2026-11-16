@@ -26,7 +26,7 @@ inline const std::vector<TutorialDef>& TutorialDefs()
             { L"色付きのマスは敵の攻撃範囲\n移動で避けて、アタックで倒そう",         170, 130, 940, 540 },
         } },
         { TutorialId::CardSelect, &PlayerData::tutorialCardSelect, 0.0f, {
-            { L"1枚選ぶとデッキに加わる（スキップも可）", 376, 224, 490, 224 },
+            { L"1枚選ぶとデッキに加わる（スキップも可）", 298, 188, 684, 324 },   // カード3枚（2倍：x310〜970・y220〜500、浮く分20）を少し広めに
         } },
         { TutorialId::Shop, &PlayerData::tutorialShop, 0.0f, {
             { L"クリックで購入（ゴールドを使う）\n左下でカード削除、SELLで素材を売れる", 180, 120, 920, 470 },

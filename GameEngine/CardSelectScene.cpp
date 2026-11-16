@@ -80,13 +80,19 @@ void CardSelectScene::Update(float deltaTime)
     m_input.Update();
 }
 
+void CardSelectScene::CardBase(int i, float& bx, float& by) const
+{
+    const float cw = CardVisual::CARD_W * SEL_SCALE, ch = CardVisual::CARD_H * SEL_SCALE;
+    const float totalW = CHOICE_COUNT * cw + (CHOICE_COUNT - 1) * SEL_GAP;
+    float rx = (m_screenWidth - totalW) / 2.0f + i * (cw + SEL_GAP);   // 拡大したカードの左上
+    float ry = (m_screenHeight - ch) / 2.0f;
+    // CardVisual は「1倍のカードの左上」を基準に、中心のまわりで拡大する（GetRect）。拡大後の左上が rx, ry になるよう基準に直す
+    bx = rx + (cw - CardVisual::CARD_W) / 2.0f;
+    by = ry + (ch - CardVisual::CARD_H) / 2.0f;
+}
+
 void CardSelectScene::Draw()
 {
-    const float cw = CardVisual::CARD_W * SEL_SCALE;
-    const float ch = CardVisual::CARD_H * SEL_SCALE;
-    const float totalW = CHOICE_COUNT * cw + (CHOICE_COUNT - 1) * 30.0f;
-    const float startX = (m_screenWidth - totalW) / 2.0f;
-    const float cardY = (m_screenHeight - ch) / 2.0f;
     const float bannerW = 480.0f, bannerH = 96.0f;   // 布バナー（文字もこの四角の真ん中に置く）
     const float bannerX = (m_screenWidth - bannerW) / 2.0f, bannerY = 52.0f;
 
@@ -103,8 +109,8 @@ void CardSelectScene::Draw()
         const CardData* data = CardDataBase::Get(m_choices[i]);
         if (!data) continue;
 
-        float cardX = startX + i * (cw + 30.0f);
-        float drawY = (i == m_hoveredIndex) ? cardY - 20.0f : cardY;
+        float cardX, cardY; CardBase(i, cardX, cardY);
+        float drawY = (i == m_hoveredIndex) ? cardY - HOVER_UP : cardY;
 
         CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, cardX, drawY, SEL_SCALE, 0.0f,
             CardVisual::GetCardColor(data->type), data, m_time);
@@ -146,8 +152,8 @@ void CardSelectScene::Draw()
         const CardData* data = CardDataBase::Get(m_choices[i]);
         if (!data) continue;
 
-        float cardX = startX + i * (cw + 30.0f);
-        float drawY = (i == m_hoveredIndex) ? cardY - 20.0f : cardY;
+        float cardX, cardY; CardBase(i, cardX, cardY);
+        float drawY = (i == m_hoveredIndex) ? cardY - HOVER_UP : cardY;
 
         CardVisual::DrawTexts(m_textRenderer, data, nullptr, cardX, drawY, SEL_SCALE, 0.0f, 1.0f);
     }
@@ -157,8 +163,8 @@ void CardSelectScene::Draw()
     if (m_hoveredIndex >= 0 && m_hoveredIndex < (int)m_choices.size())
     {
         const CardData* d = CardDataBase::Get(m_choices[m_hoveredIndex]);
-        float cardX = startX + m_hoveredIndex * (cw + 30.0f);
-        float rx, ry, rw, rh; CardVisual::GetRect(cardX, cardY - 20.0f, SEL_SCALE, rx, ry, rw, rh);
+        float cardX, cardY; CardBase(m_hoveredIndex, cardX, cardY);
+        float rx, ry, rw, rh; CardVisual::GetRect(cardX, cardY - HOVER_UP, SEL_SCALE, rx, ry, rw, rh);
         CardTooltip::Draw(m_spriteRenderer, m_textRenderer, m_whiteTexture, d,
             rx + rw / 2.0f, ry, rw, rh, m_screenWidth, m_screenHeight);
     }
@@ -176,16 +182,11 @@ void CardSelectScene::HandleInput()
 
     POINT mousePos = m_input.GetMousePos();
 
-    const float cw = CardVisual::CARD_W * SEL_SCALE;
-    const float ch = CardVisual::CARD_H * SEL_SCALE;
-    const float totalW = CHOICE_COUNT * cw + (CHOICE_COUNT - 1) * 30.0f;
-    const float startX = (m_screenWidth - totalW) / 2.0f;
-    const float cardY = (m_screenHeight - ch) / 2.0f;
 
     m_hoveredIndex = -1;
     for (int i = 0; i < (int)m_choices.size(); i++)
     {
-        float cardX = startX + i * (cw + 30.0f);
+        float cardX, cardY; CardBase(i, cardX, cardY);
         float x, y, w, h; CardVisual::GetRect(cardX, cardY, SEL_SCALE, x, y, w, h);
         if (mousePos.x >= x && mousePos.x <= x + w
             && mousePos.y >= y && mousePos.y <= y + h)

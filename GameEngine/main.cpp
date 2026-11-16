@@ -7,6 +7,7 @@
 #include "RenderConfig.h"
 #include "ClipRecorder.h"
 #include "Cursor.h"
+#include "Resource.h"
 #ifdef _DEBUG
 #include "External/imgui/imgui.h"
 #include "External/imgui/backends/imgui_impl_win32.h"
@@ -177,6 +178,8 @@ bool InitWindow(HINSTANCE hInstance, int nCmdShow)
     wcex.lpfnWndProc = WndProc;
     wcex.hInstance = hInstance;
     wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    wcex.hIcon   = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_GAMEENGINE));   // タスクバー・Alt+Tab のアイコン（GameEngine.ico）
+    wcex.hIconSm = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_SMALL));        // タイトルバーの小さいアイコン（small.ico）
     wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     wcex.lpszClassName = L"GameEngineClass";
 
@@ -188,7 +191,7 @@ bool InitWindow(HINSTANCE hInstance, int nCmdShow)
 
     g_hWnd = CreateWindow(
         L"GameEngineClass",
-        L"2D Game Engine - DirectX11",
+        L"Think or Sink",
         WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME & ~WS_MAXIMIZEBOX,
         CW_USEDEFAULT, CW_USEDEFAULT,
         rc.right - rc.left, rc.bottom - rc.top,

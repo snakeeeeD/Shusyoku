@@ -118,6 +118,7 @@ bool Renderer3D::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     if (FAILED(m_device->CreateDepthStencilState(&dsDisabled, m_depthDisabledState.GetAddressOf())))
         return false;
 
+    if (!InitFx()) return false;
     return true;
 }
 
@@ -238,6 +239,14 @@ bool Renderer3D::CreateBuffers()
     bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     initData.pSysMem = billboardVertices;
     if (FAILED(m_device->CreateBuffer(&bd, &initData, m_billboardVertexBuffer.GetAddressOf())))
+        return false;
+
+    // 四隅を自由に決める板用（DrawQuad が描くたびに書き換える）
+    bd.Usage = D3D11_USAGE_DYNAMIC;
+    bd.ByteWidth = sizeof(Vertex3D) * 4;
+    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    if (FAILED(m_device->CreateBuffer(&bd, nullptr, m_quadVertexBuffer.GetAddressOf())))
         return false;
     return true;
 }
@@ -411,6 +420,73 @@ void Renderer3D::DrawShadow(ID3D11ShaderResourceView* texture,
     m_context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
 }
 
+void Renderer3D::DrawStreak(ID3D11ShaderResourceView* texture, const XMFLOAT3& head, const XMFLOAT3& dir,
+    float length, float width, const XMFLOAT4& color)
+{
+    XMMATRIX invView = XMMatrixInverse(nullptr, m_viewMatrix);
+    XMVECTOR fwd = invView.r[2];                                         // カメラの前
+    XMVECTOR d = XMLoadFloat3(&dir);
+    if (XMVectorGetX(XMVector3LengthSq(d)) < 1e-8f) d = invView.r[1];    // 止まっている時は画面の上向き
+    d = XMVector3Normalize(d);
+    XMVECTOR side = XMVector3Cross(d, fwd);                              // 伸ばす向きとカメラの前の両方に直角＝幅の向き
+    if (XMVectorGetX(XMVector3LengthSq(side)) < 1e-6f) side = invView.r[0];   // まっすぐカメラへ飛ぶ時はカメラの右
+    side = XMVector3Normalize(side);
+
+    XMMATRIX world;
+    world.r[0] = XMVectorScale(side, width);                             // ローカルx（-0.5..0.5）→ 幅
+    world.r[1] = XMVectorScale(d, length);                               // ローカルy（0=尾..1=頭）→ 長さ
+    world.r[2] = fwd;                                                    // ローカルz（使わない）
+    world.r[3] = XMVectorSetW(XMVectorSubtract(XMLoadFloat3(&head), world.r[1]), 1.0f);   // 尾を基点に
+
+    ConstantBuffer3D cb;
+    cb.World = XMMatrixTranspose(world);
+    cb.View = XMMatrixTranspose(m_viewMatrix);
+    cb.Projection = XMMatrixTranspose(m_projectionMatrix);
+    cb.Color = color;
+
+    m_context->UpdateSubresource(m_constantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+    m_context->VSSetConstantBuffers(0, 1, m_constantBuffer.GetAddressOf());
+    m_context->PSSetConstantBuffers(0, 1, m_constantBuffer.GetAddressOf());
+    m_context->PSSetShaderResources(0, 1, &texture);
+
+    UINT stride = sizeof(Vertex3D);
+    UINT offset = 0;
+    m_context->IASetVertexBuffers(0, 1, m_billboardVertexBuffer.GetAddressOf(), &stride, &offset);
+    m_context->DrawIndexed(6, 0, 0);
+    m_context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
+}
+
+void Renderer3D::DrawQuad(ID3D11ShaderResourceView* texture,
+    const XMFLOAT3& tl, const XMFLOAT3& tr, const XMFLOAT3& bl, const XMFLOAT3& br,
+    const XMFLOAT4& uv, const XMFLOAT4& color)
+{
+    D3D11_MAPPED_SUBRESOURCE ms;
+    if (FAILED(m_context->Map(m_quadVertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &ms))) return;
+    Vertex3D* v = (Vertex3D*)ms.pData;   // 並びは床・板と同じ（左上・右上・左下・右下）
+    v[0] = { tl, XMFLOAT2(uv.x, uv.y) };
+    v[1] = { tr, XMFLOAT2(uv.z, uv.y) };
+    v[2] = { bl, XMFLOAT2(uv.x, uv.w) };
+    v[3] = { br, XMFLOAT2(uv.z, uv.w) };
+    m_context->Unmap(m_quadVertexBuffer.Get(), 0);
+
+    ConstantBuffer3D cb;
+    cb.World = XMMatrixIdentity();   // 頂点がもうワールドの位置なので、動かさない
+    cb.View = XMMatrixTranspose(m_viewMatrix);
+    cb.Projection = XMMatrixTranspose(m_projectionMatrix);
+    cb.Color = color;
+
+    m_context->UpdateSubresource(m_constantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+    m_context->VSSetConstantBuffers(0, 1, m_constantBuffer.GetAddressOf());
+    m_context->PSSetConstantBuffers(0, 1, m_constantBuffer.GetAddressOf());
+    m_context->PSSetShaderResources(0, 1, &texture);
+
+    UINT stride = sizeof(Vertex3D);
+    UINT offset = 0;
+    m_context->IASetVertexBuffers(0, 1, m_quadVertexBuffer.GetAddressOf(), &stride, &offset);
+    m_context->DrawIndexed(6, 0, 0);
+    m_context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
+}
+
 bool Renderer3D::InitPostProcess()
 {
     D3D11_TEXTURE2D_DESC td = {};
@@ -508,4 +584,79 @@ void Renderer3D::EndOffscreenBlur(float radius)
     ID3D11ShaderResourceView* nullSRV = nullptr;   // 入力を外す
     m_context->PSSetShaderResources(0, 1, &nullSRV);
     if (m_savedRTV) { m_savedRTV->Release(); m_savedRTV = nullptr; }
+}
+
+// エフェクト用シェーダー・その定数バッファ・くり返しのサンプラーを作る
+bool Renderer3D::InitFx()
+{
+    ComPtr<ID3DBlob> ps, err;
+    if (FAILED(D3DCompileFromFile(L"Shaders/Fx_PS.hlsl", nullptr, nullptr, "main", "ps_5_0", 0, 0, ps.GetAddressOf(), err.GetAddressOf())))
+    {
+        if (err) OutputDebugStringA((char*)err->GetBufferPointer());
+        return false;
+    }
+    if (FAILED(m_device->CreatePixelShader(ps->GetBufferPointer(), ps->GetBufferSize(), nullptr, m_fxPS.GetAddressOf()))) return false;
+
+    D3D11_BUFFER_DESC bd = {};
+    bd.ByteWidth = sizeof(FxParams); bd.Usage = D3D11_USAGE_DEFAULT; bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    if (FAILED(m_device->CreateBuffer(&bd, nullptr, m_fxCB.GetAddressOf()))) return false;
+
+    D3D11_SAMPLER_DESC sd = {};
+    sd.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    sd.AddressU = sd.AddressV = sd.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;   // ノイズを流すため、端でくり返す
+    sd.ComparisonFunc = D3D11_COMPARISON_NEVER; sd.MaxLOD = D3D11_FLOAT32_MAX;
+    return SUCCEEDED(m_device->CreateSamplerState(&sd, m_samplerWrap.GetAddressOf()));
+}
+
+void Renderer3D::DrawFxBillboard(ID3D11ShaderResourceView* shape, ID3D11ShaderResourceView* noise, ID3D11ShaderResourceView* ramp,
+    const FxParams& fx, float x, float y, float z, float size, const XMFLOAT4& color)
+{
+    m_context->UpdateSubresource(m_fxCB.Get(), 0, nullptr, &fx, 0, 0);
+    m_context->PSSetConstantBuffers(1, 1, m_fxCB.GetAddressOf());
+    ID3D11ShaderResourceView* extra[2] = { noise, ramp };
+    m_context->PSSetShaderResources(1, 2, extra);
+    m_context->PSSetSamplers(1, 1, m_samplerWrap.GetAddressOf());
+    m_context->PSSetShader(m_fxPS.Get(), nullptr, 0);
+    DrawBillboard(shape, x, y, z, size, size, 0.0f, color);    // 板・行列・形の画像（t0）はいつもの板と同じ
+    m_context->PSSetShader(m_pixelShader.Get(), nullptr, 0);   // いつものシェーダーに戻す
+}
+
+void Renderer3D::DrawFxScreen(ID3D11ShaderResourceView* shape, ID3D11ShaderResourceView* noise, ID3D11ShaderResourceView* ramp,
+    const FxParams& fx, const XMFLOAT4& color)
+{
+    // 画面いっぱいの板：頂点を最初から画面の座標（左下 -1,-1 ～ 右上 1,1）に置いて、ビュー・射影は掛けない
+    D3D11_MAPPED_SUBRESOURCE ms;
+    if (FAILED(m_context->Map(m_quadVertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &ms))) return;
+    Vertex3D* v = (Vertex3D*)ms.pData;   // 並びは床・板と同じ（左上・右上・左下・右下）
+    v[0] = { XMFLOAT3(-1.0f,  1.0f, 0.0f), XMFLOAT2(0.0f, 0.0f) };
+    v[1] = { XMFLOAT3( 1.0f,  1.0f, 0.0f), XMFLOAT2(1.0f, 0.0f) };
+    v[2] = { XMFLOAT3(-1.0f, -1.0f, 0.0f), XMFLOAT2(0.0f, 1.0f) };
+    v[3] = { XMFLOAT3( 1.0f, -1.0f, 0.0f), XMFLOAT2(1.0f, 1.0f) };
+    m_context->Unmap(m_quadVertexBuffer.Get(), 0);
+
+    ConstantBuffer3D cb;
+    cb.World = XMMatrixIdentity();
+    cb.View = XMMatrixIdentity();
+    cb.Projection = XMMatrixIdentity();
+    cb.Color = color;
+    m_context->UpdateSubresource(m_constantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+    m_context->VSSetConstantBuffers(0, 1, m_constantBuffer.GetAddressOf());
+    m_context->PSSetConstantBuffers(0, 1, m_constantBuffer.GetAddressOf());
+
+    // エフェクト用シェーダーと、その数字・3枚の画像（DrawFxBillboard と同じ）
+    m_context->UpdateSubresource(m_fxCB.Get(), 0, nullptr, &fx, 0, 0);
+    m_context->PSSetConstantBuffers(1, 1, m_fxCB.GetAddressOf());
+    ID3D11ShaderResourceView* tex[3] = { shape, noise, ramp };
+    m_context->PSSetShaderResources(0, 3, tex);
+    m_context->PSSetSamplers(1, 1, m_samplerWrap.GetAddressOf());
+    m_context->PSSetShader(m_fxPS.Get(), nullptr, 0);
+
+    SetDepthEnabled(false);   // 画面に貼るだけなので、奥行きは見ない
+    UINT stride = sizeof(Vertex3D);
+    UINT offset = 0;
+    m_context->IASetVertexBuffers(0, 1, m_quadVertexBuffer.GetAddressOf(), &stride, &offset);
+    m_context->DrawIndexed(6, 0, 0);
+    m_context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
+    m_context->PSSetShader(m_pixelShader.Get(), nullptr, 0);   // いつものシェーダーに戻す
+    SetDepthEnabled(true);
 }

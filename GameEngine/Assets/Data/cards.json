@@ -1227,7 +1227,7 @@
       "cost": 1,
       "range": 0,
       "rangeType": "None",
-      "description": "ブロック{value} ／ 捨てられた時 ブロック{ondiscard}",
+      "description": "ブロック{value}\nこのカードが捨てられた時\nブロック{ondiscard}",
       "mainEffect": {
         "type": "Block",
         "value": 4
@@ -1414,7 +1414,7 @@
       "cost": 1,
       "range": 0,
       "rangeType": "None",
-      "description": "ナイフ{value}枚生成 ／ 捨てられた時 ナイフ1枚生成",
+      "description": "ナイフ{value}枚生成\nこのカードが捨てられた時\nナイフ1枚生成",
       "upgrade": {
         "mainValue": 1
       },
@@ -1539,7 +1539,7 @@
       "cost": 1,
       "range": 0,
       "rangeType": "None",
-      "description": "捨てられた時 {ondiscard}ドロー",
+      "description": "このカードが捨てられた時\n{ondiscard}ドロー",
       "mainEffect": {
         "type": "None",
         "value": 0
@@ -1563,7 +1563,7 @@
       "cost": 0,
       "range": 0,
       "rangeType": "None",
-      "description": "捨てられた時 エナジー+{ondiscard}",
+      "description": "このカードが捨てられた時\nエナジー+{ondiscard}",
       "mainEffect": {
         "type": "None",
         "value": 0
@@ -1588,7 +1588,7 @@
       "cost": 1,
       "range": 0,
       "rangeType": "None",
-      "description": "1枚選んで捨てる \n【捨てられた時】全敵に毒{ondiscard}",
+      "description": "1枚選んで捨てる\nこのカードが捨てられた時\n全敵に毒{ondiscard}",
       "mainEffect": {
         "type": "Discard",
         "value": 1
@@ -2002,6 +2002,7 @@
       "range": 0,
       "rangeType": "None",
       "description": "2ターンに一度全ての敵に毒{value}",
+      "vfx": "miasma_screen",
       "upgrade": {
         "mainValue": 1
       },

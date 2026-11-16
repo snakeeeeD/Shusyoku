@@ -205,9 +205,6 @@
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\50-ScreenShake">
       <UniqueIdentifier>{7db8b1e0-9f4e-406a-8822-4613c142907e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\01-描画関連\06-EffectManager">
-      <UniqueIdentifier>{8d8fe59b-92c0-4bc1-9f05-d5cf5aa697b5}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ソース ファイル\02-Scene\50-ShopScene">
       <UniqueIdentifier>{93302fb8-2984-41e2-ae65-6abf888fd064}</UniqueIdentifier>
     </Filter>
@@ -250,23 +247,11 @@
     <Filter Include="ソース ファイル\04-Game内関連\03-Audio">
       <UniqueIdentifier>{d4c1fc19-28df-4b44-8f3c-4caaf930cff0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\01-描画関連\07-EffectDataBase">
-      <UniqueIdentifier>{9c4915d8-ea49-4584-b966-c0696d8ed7ed}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\60-HitStop">
-      <UniqueIdentifier>{b2eb96a0-890c-4685-873e-7d23a431cca9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\70-TurnBanner">
       <UniqueIdentifier>{b922d39c-45eb-48ad-b184-b0eea29f2ec8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\01-描画関連\08-UIWindow">
-      <UniqueIdentifier>{80fe8206-7937-4588-b21e-c83966cf4bdf}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ソース ファイル\04-Game内関連\04-Setting">
       <UniqueIdentifier>{7ebfcc04-4021-4adc-ba6a-3f62015edf95}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ソース ファイル\01-描画関連\09-RenderConfig">
-      <UniqueIdentifier>{be36068d-b797-4727-aab3-1ec4bf083510}</UniqueIdentifier>
     </Filter>
     <Filter Include="ソース ファイル\03-Object関連\30-Card\07-CardTooltip">
       <UniqueIdentifier>{f62c356f-4236-4ef0-8477-9f25c480a845}</UniqueIdentifier>
@@ -279,12 +264,6 @@
     </Filter>
     <Filter Include="ソース ファイル\07-デバッグ用">
       <UniqueIdentifier>{8436a3cf-0b61-482a-b14d-e8be89b3bb9d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ソース ファイル\01-描画関連\10-AnimTune">
-      <UniqueIdentifier>{9fd637c0-8ffd-44cf-bef6-f5626bddafc9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ソース ファイル\01-描画関連\11-URect">
-      <UniqueIdentifier>{87c80f1b-836c-48a0-b991-fdceadec0941}</UniqueIdentifier>
     </Filter>
     <Filter Include="ソース ファイル\07-デバッグ用\01-Telemetry">
       <UniqueIdentifier>{56dfbee4-1cdc-4212-95e0-9cbbddf4d087}</UniqueIdentifier>
@@ -337,8 +316,74 @@
     <Filter Include="ソース ファイル\02-Scene\70-QuickPlay\01-QuickSelectScene">
       <UniqueIdentifier>{0def693b-c25a-4925-a8fc-7742db21d486}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\01-描画関連\12-HpBar">
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\02-BattleSceneDraw">
+      <UniqueIdentifier>{31cb6b11-6ee8-41b4-8d70-8420d3fcca90}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\03-BattleSceneInput">
+      <UniqueIdentifier>{4e5cf55e-ef0f-4146-ad1b-7a4dd2d9c647}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\50-ScreenShake\60-HitStop">
+      <UniqueIdentifier>{b2eb96a0-890c-4685-873e-7d23a431cca9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\04-BattleCamera">
+      <UniqueIdentifier>{3749e1a3-f483-4b55-bc97-62cf1569a766}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\20-Effect">
+      <UniqueIdentifier>{4778ce5c-04d1-4b9b-8e72-b9751ef455be}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\06-UIWindow">
+      <UniqueIdentifier>{80fe8206-7937-4588-b21e-c83966cf4bdf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\07-RenderConfig">
+      <UniqueIdentifier>{be36068d-b797-4727-aab3-1ec4bf083510}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\08-AnimTune">
+      <UniqueIdentifier>{9fd637c0-8ffd-44cf-bef6-f5626bddafc9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\09-URect">
+      <UniqueIdentifier>{87c80f1b-836c-48a0-b991-fdceadec0941}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\10-HpBar">
       <UniqueIdentifier>{31bb15d4-78e5-494a-b391-7b02f64c08c2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\11-Hint">
+      <UniqueIdentifier>{b219ebc0-0690-430e-a4a7-ad0e00af5677}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\20-Effect\10-種類">
+      <UniqueIdentifier>{f8ed9c4f-30e2-4eb7-8c34-693b00546fe8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\20-Effect\10-種類\01-ParticleBrust">
+      <UniqueIdentifier>{fe4210e0-e0d4-4a7b-913a-7c82504a4bca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\20-Effect\10-種類\02-SpriteSheet">
+      <UniqueIdentifier>{91af29fb-bb76-484d-b1e2-8c3b5985d1b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\20-Effect\10-種類\03-GroundRing">
+      <UniqueIdentifier>{b1919a49-8fa9-40b1-8301-14f37860a838}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\20-Effect\10-種類\05-ScreenOverlay">
+      <UniqueIdentifier>{6919a5f3-d902-4d45-8e1c-cad3ce11233d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\20-Effect\10-種類\04-ShockWall">
+      <UniqueIdentifier>{8c6a10c7-f08a-48e6-a3bd-f577a5fd2b66}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\20-Effect\10-種類\00-EffectKinds">
+      <UniqueIdentifier>{5b489708-7d1f-45d8-916e-567dcbaf6466}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\20-Effect\01-EffectManager">
+      <UniqueIdentifier>{8d8fe59b-92c0-4bc1-9f05-d5cf5aa697b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\20-Effect\30-ScreenFx">
+      <UniqueIdentifier>{44d47feb-6500-4064-aea0-312ec7479e18}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\20-Effect\20-MoveFeel">
+      <UniqueIdentifier>{dd824e83-b815-4fcc-9a75-34a295dd4f9a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\20-Effect\02-EffectDataBase">
+      <UniqueIdentifier>{9c4915d8-ea49-4584-b966-c0696d8ed7ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\20-Effect\00-EffectPath">
+      <UniqueIdentifier>{eca2b6f3-7eaa-493a-a63a-69f7bdd075e7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -370,7 +415,7 @@
       <Filter>ソース ファイル\04-Game内関連\20-GridMap</Filter>
     </ClInclude>
     <ClInclude Include="HoverLift.h">
-      <Filter>ソース ファイル\01-描画関連\08-UIWindow</Filter>
+      <Filter>ソース ファイル\01-描画関連\06-UIWindow</Filter>
     </ClInclude>
     <ClInclude Include="GameObject.h">
       <Filter>ソース ファイル\03-Object関連\01-GameObject</Filter>
@@ -501,9 +546,6 @@
     <ClInclude Include="CardEffect.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\05-CardEffect</Filter>
     </ClInclude>
-    <ClInclude Include="BattleCamera.h">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
-    </ClInclude>
     <ClInclude Include="BattleScene.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
     </ClInclude>
@@ -564,9 +606,6 @@
     <ClInclude Include="ScreenShake.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\50-ScreenShake</Filter>
     </ClInclude>
-    <ClInclude Include="EffectManager.h">
-      <Filter>ソース ファイル\01-描画関連\06-EffectManager</Filter>
-    </ClInclude>
     <ClInclude Include="DamageFeedBack.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -595,7 +634,7 @@
       <Filter>ソース ファイル\02-Scene\40-FieldScene\10-Event\01-EventData</Filter>
     </ClInclude>
     <ClInclude Include="EffectDataBase.h">
-      <Filter>ソース ファイル\01-描画関連\07-EffectDataBase</Filter>
+      <Filter>ソース ファイル\01-描画関連\20-Effect\02-EffectDataBase</Filter>
     </ClInclude>
     <ClInclude Include="EventDataBase.h">
       <Filter>ソース ファイル\02-Scene\40-FieldScene\10-Event\02-EventDataBase</Filter>
@@ -607,19 +646,19 @@
       <Filter>ソース ファイル\04-Game内関連\03-Audio</Filter>
     </ClInclude>
     <ClInclude Include="HitStop.h">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\60-HitStop</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\50-ScreenShake\60-HitStop</Filter>
     </ClInclude>
     <ClInclude Include="TurnBanner.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\70-TurnBanner</Filter>
     </ClInclude>
     <ClInclude Include="UIwindow.h">
-      <Filter>ソース ファイル\01-描画関連\08-UIWindow</Filter>
+      <Filter>ソース ファイル\01-描画関連\06-UIWindow</Filter>
     </ClInclude>
     <ClInclude Include="Settings.h">
       <Filter>ソース ファイル\04-Game内関連\04-Setting</Filter>
     </ClInclude>
     <ClInclude Include="RenderConfig.h">
-      <Filter>ソース ファイル\01-描画関連\09-RenderConfig</Filter>
+      <Filter>ソース ファイル\01-描画関連\07-RenderConfig</Filter>
     </ClInclude>
     <ClInclude Include="CardTooltip.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\07-CardTooltip</Filter>
@@ -628,10 +667,10 @@
       <Filter>ソース ファイル\03-Object関連\30-Card\50-ItemTooltip</Filter>
     </ClInclude>
     <ClInclude Include="AnimTune.h">
-      <Filter>ソース ファイル\01-描画関連\10-AnimTune</Filter>
+      <Filter>ソース ファイル\01-描画関連\08-AnimTune</Filter>
     </ClInclude>
     <ClInclude Include="URect.h">
-      <Filter>ソース ファイル\01-描画関連\11-URect</Filter>
+      <Filter>ソース ファイル\01-描画関連\09-URect</Filter>
     </ClInclude>
     <ClInclude Include="EncounterEditor.h">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\01-EncounterEditor</Filter>
@@ -682,7 +721,40 @@
       <Filter>ソース ファイル\02-Scene\70-QuickPlay\01-QuickSelectScene</Filter>
     </ClInclude>
     <ClInclude Include="HpBar.h">
-      <Filter>ソース ファイル\01-描画関連\12-HpBar</Filter>
+      <Filter>ソース ファイル\01-描画関連\10-HpBar</Filter>
+    </ClInclude>
+    <ClInclude Include="BattleCamera.h">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\04-BattleCamera</Filter>
+    </ClInclude>
+    <ClInclude Include="EffectManager.h">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\01-EffectManager</Filter>
+    </ClInclude>
+    <ClInclude Include="ScreenOverlay.h">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\05-ScreenOverlay</Filter>
+    </ClInclude>
+    <ClInclude Include="ScreenStatusFx.h">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\30-ScreenFx</Filter>
+    </ClInclude>
+    <ClInclude Include="MoveFeel.h">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\20-MoveFeel</Filter>
+    </ClInclude>
+    <ClInclude Include="ParticleBurst.h">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\01-ParticleBrust</Filter>
+    </ClInclude>
+    <ClInclude Include="SpriteSheet.h">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\02-SpriteSheet</Filter>
+    </ClInclude>
+    <ClInclude Include="GroundRing.h">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\03-GroundRing</Filter>
+    </ClInclude>
+    <ClInclude Include="ShockWall.h">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\04-ShockWall</Filter>
+    </ClInclude>
+    <ClInclude Include="EffectKinds.h">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\00-EffectKinds</Filter>
+    </ClInclude>
+    <ClInclude Include="EffectPart.h">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\00-EffectPath</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -791,12 +863,6 @@
     <ClCompile Include="BattleScene.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
     </ClCompile>
-    <ClCompile Include="BattleSceneDraw.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
-    </ClCompile>
-    <ClCompile Include="BattleSceneInput.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
-    </ClCompile>
     <ClCompile Include="Battlehighlighter.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\10-BattleHighlighter</Filter>
     </ClCompile>
@@ -852,7 +918,7 @@
       <Filter>ソース ファイル\02-Scene\40-FieldScene\10-Event\02-EventDataBase</Filter>
     </ClCompile>
     <ClCompile Include="EffectDataBase.cpp">
-      <Filter>ソース ファイル\01-描画関連\07-EffectDataBase</Filter>
+      <Filter>ソース ファイル\01-描画関連\20-Effect\02-EffectDataBase</Filter>
     </ClCompile>
     <ClCompile Include="Audio.cpp">
       <Filter>ソース ファイル\04-Game内関連\03-Audio</Filter>
@@ -890,9 +956,6 @@
     <ClCompile Include="RelicEditor.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\05-RericEditor</Filter>
     </ClCompile>
-    <ClCompile Include="Hint.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="RunSetup.cpp">
       <Filter>ソース ファイル\04-Game内関連\05-RunSetup</Filter>
     </ClCompile>
@@ -901,6 +964,42 @@
     </ClCompile>
     <ClCompile Include="QuickSelectScene.cpp">
       <Filter>ソース ファイル\02-Scene\70-QuickPlay\01-QuickSelectScene</Filter>
+    </ClCompile>
+    <ClCompile Include="Hint.cpp">
+      <Filter>ソース ファイル\01-描画関連\11-Hint</Filter>
+    </ClCompile>
+    <ClCompile Include="BattleSceneDraw.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\02-BattleSceneDraw</Filter>
+    </ClCompile>
+    <ClCompile Include="BattleSceneInput.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\03-BattleSceneInput</Filter>
+    </ClCompile>
+    <ClCompile Include="EffectManager.cpp">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\01-EffectManager</Filter>
+    </ClCompile>
+    <ClCompile Include="ScreenOverlay.cpp">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\05-ScreenOverlay</Filter>
+    </ClCompile>
+    <ClCompile Include="ScreenStatusFx.cpp">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\30-ScreenFx</Filter>
+    </ClCompile>
+    <ClCompile Include="MoveFeel.cpp">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\20-MoveFeel</Filter>
+    </ClCompile>
+    <ClCompile Include="ParticleBurst.cpp">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\01-ParticleBrust</Filter>
+    </ClCompile>
+    <ClCompile Include="SpriteSheet.cpp">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\02-SpriteSheet</Filter>
+    </ClCompile>
+    <ClCompile Include="GroundRing.cpp">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\03-GroundRing</Filter>
+    </ClCompile>
+    <ClCompile Include="ShockWall.cpp">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\04-ShockWall</Filter>
+    </ClCompile>
+    <ClCompile Include="EffectKinds.cpp">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\00-EffectKinds</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -933,6 +1032,9 @@
       <Filter>シェーダーファイル</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Blur_VS.hlsl">
+      <Filter>シェーダーファイル</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Fx_PS.hlsl">
       <Filter>シェーダーファイル</Filter>
     </FxCompile>
   </ItemGroup>

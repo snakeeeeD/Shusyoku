@@ -23,6 +23,21 @@ struct ConstantBuffer3D
     XMFLOAT4 Extra = { 0, 0, 0, 0 };   // x=白を混ぜる量（0～1）
 };
 
+// エフェクト用シェーダー（Fx_PS.hlsl）に渡す数字。シェーダーの FxParams と同じ並び（16バイト単位）
+struct FxParams
+{
+    float life = 0.0f;           // 寿命の進み具合（0→1）
+    float erodeStart = 0.5f;     // この進み具合から消え始める
+    float erodeEnd = 1.0f;       // ここで消えきる
+    float glow = 1.0f;           // 色を何倍に光らせるか
+    XMFLOAT2 scroll = { 0, 0 };  // ノイズを流す向きと速さ
+    float noiseScale = 1.0f;     // ノイズの細かさ
+    float time = 0.0f;           // 経過時間（秒）
+    float seed = 0.0f;           // 粒ごとの乱数
+    float appear = 0.0f;         // 出てくるのにかかる寿命の割合。0なら最初から全部出ている。0より大きいと、形の画像の G が小さい所から順に出てくる
+    float pad[2] = {};
+};
+
 class Renderer3D
 {
 public:
@@ -63,6 +78,22 @@ public:
         float baseX, float baseZ, float width, float lenX, float lenZ,
         const XMFLOAT4& color = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.3f));
 
+    // 速さの向きに伸ばした板（火花・しずく）。head＝頭（粒の位置）、尾は dir の逆へ length。板の面はカメラに向ける
+    void DrawStreak(ID3D11ShaderResourceView* texture, const XMFLOAT3& head, const XMFLOAT3& dir,
+        float length, float width, const XMFLOAT4& color);
+
+    // 四隅を自由に決めた板（台形など）。tl/tr/bl/br＝左上・右上・左下・右下（ワールド）、uv＝(左のu, 上のv, 右のu, 下のv)
+    void DrawQuad(ID3D11ShaderResourceView* texture,
+        const XMFLOAT3& tl, const XMFLOAT3& tr, const XMFLOAT3& bl, const XMFLOAT3& br,
+        const XMFLOAT4& uv, const XMFLOAT4& color);
+
+    // エフェクト用シェーダーで板を描く（t0=形 t1=ノイズ t2=色の帯）。位置の基準と傾きは DrawBillboard と同じ
+    void DrawFxBillboard(ID3D11ShaderResourceView* shape, ID3D11ShaderResourceView* noise, ID3D11ShaderResourceView* ramp,
+        const FxParams& fx, float x, float y, float z, float size, const XMFLOAT4& color);
+    // エフェクト用シェーダーで、画面いっぱいに1枚描く（Begin～End の間で呼ぶ。奥行きは見ない）
+    void DrawFxScreen(ID3D11ShaderResourceView* shape, ID3D11ShaderResourceView* noise, ID3D11ShaderResourceView* ramp,
+        const FxParams& fx, const XMFLOAT4& color);
+
     // HPバー用
     static constexpr float BILLBOARD_PITCH = -60.0f;        // ビルボードの傾き角度
     static float GetBillboardPitch() { return BILLBOARD_PITCH; }
@@ -79,6 +110,7 @@ public:
 private:
     bool CreateShaders();
     bool CreateBuffers();
+    bool InitFx();   // エフェクト用シェーダー・定数バッファ・くり返しのサンプラー
 
     ID3D11Device* m_device;
     ID3D11DeviceContext* m_context;
@@ -93,6 +125,9 @@ private:
     ComPtr<ID3D11BlendState> m_blendState;
     ComPtr<ID3D11BlendState> m_blendAdd;   // 加算合成
     float m_whiteMix = 0.0f;               // 白を混ぜる量
+    ComPtr<ID3D11PixelShader>  m_fxPS;     // エフェクト用のピクセルシェーダー（Fx_PS.hlsl）
+    ComPtr<ID3D11Buffer>       m_fxCB;     // その数字（FxParams）
+    ComPtr<ID3D11SamplerState> m_samplerWrap;   // 端でくり返す読み方（ノイズを流す用）
     ComPtr<ID3D11RasterizerState> m_rasterState;
     ComPtr<ID3D11DepthStencilState> m_depthStencilState;
     ComPtr<ID3D11DepthStencilView> m_depthStencilView;
@@ -100,6 +135,7 @@ private:
     ComPtr<ID3D11DepthStencilState> m_depthDisabledState;
 
     ComPtr<ID3D11Buffer> m_billboardVertexBuffer;
+    ComPtr<ID3D11Buffer> m_quadVertexBuffer;   // DrawQuad 用（描くたびに四隅を書き換える）
 
     // ポストプロセス（ブラー）
     ComPtr<ID3D11Texture2D>          m_ppTex;

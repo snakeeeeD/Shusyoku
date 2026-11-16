@@ -1,4 +1,5 @@
 #include "EffectDataBase.h"
+#include "EffectKinds.h"
 #include "Se.h"
 #include <fstream>
 #include <nlohmann/json.hpp>
@@ -6,6 +7,7 @@
 using json = nlohmann::json;
 
 std::unordered_map<std::string, EffectDef> EffectDataBase::s_effects;
+std::unordered_map<std::string, FxMaterial> EffectDataBase::s_materials;
 
 void EffectDataBase::Load(const std::string& path)
 {
@@ -25,64 +27,45 @@ void EffectDataBase::Load(const std::string& path)
         def.se = e.value("se", "");                     // sound effect file in Assets/Sound/se/
         def.seVol = e.value("seVol", 1.0f);
         if (!def.se.empty()) Audio::SetSeVolume(Se::Path(def.se), def.seVol);
-        for (auto& b : e["bursts"])
+        // 部品：今までの "bursts" "sheets" は、それぞれ "burst" "sheet" の種類の並び。新しい種類は "parts" に "type" を付けて書く
+        auto addParts = [&](const char* key, const std::string& fixedType)
         {
-            BurstDef bd;
-            bd.count = b.value("count", 10);
-            bd.speed = b.value("speed", 1.5f);
-            bd.life = b.value("life", 0.5f);
-            bd.scale = b.value("scale", 0.1f);
-            bd.gravity = b.value("gravity", 4.0f);
-            bd.drag = b.value("drag", 0.02f);
-            auto cs = b["colorStart"];
-            auto ce = b["colorEnd"];
-            bd.colorStart = XMFLOAT4(cs[0], cs[1], cs[2], cs[3]);
-            bd.colorEnd = XMFLOAT4(ce[0], ce[1], ce[2], ce[3]);
-            bd.texture = b.value("texture", "");
-            bd.center = b.value("center", false);
-            def.bursts.push_back(bd);
-        }
-        if (e.contains("sheets"))
-        {
-            for (auto& s : e["sheets"])
+            if (!e.contains(key)) return;
+            for (auto& p : e[key])
             {
-                SheetAnim sa;
-                sa.texture = s.value("texture", "");
-                sa.cols = s.value("cols", 1);
-                sa.rows = s.value("rows", 1);
-                sa.frames = s.value("frames", 0);
-                sa.fps = s.value("fps", 20.0f);
-                sa.scale = s.value("scale", 1.0f);
-                sa.yOffset = s.value("yOffset", 0.0f);
-                sa.loop = s.value("loop", false);
-                sa.startFrame = s.value("startFrame", 0);
-                sa.delay = s.value("delay", 0.0f);
-                sa.autoFlipX = s.value("autoFlipX", false);
-                sa.flipX = s.value("flipX", false);
-                sa.rotDeg = s.value("rotDeg", 0.0f);
-                sa.travel = s.value("travel", 0.0f);
-                if (s.contains("fromCamera"))
-                {
-                    auto f = s["fromCamera"];
-                    sa.fromCamera = XMFLOAT3(f[0], f[1], f[2]);
-                    sa.useCamera = true;
-                }
-                if (s.contains("offset")) { auto o = s["offset"]; sa.offset = XMFLOAT3(o[0], o[1], o[2]); }
-                if (s.contains("vel")) { auto v = s["vel"];    sa.vel = XMFLOAT3(v[0], v[1], v[2]); }
-                if (s.contains("color"))
-                {
-                    auto c = s["color"];
-                    sa.color = XMFLOAT4(c[0], c[1], c[2], c[3]);
-                }
-                def.sheets.push_back(sa);
+                std::string type = fixedType.empty() ? p.value("type", "") : fixedType;
+                if (auto d = EffectKinds::Load(type, p)) def.parts.push_back(std::move(d));
             }
-        }
-        s_effects[def.id] = def;
+        };
+        addParts("bursts", "burst");
+        addParts("sheets", "sheet");
+        addParts("parts", "");
+        std::string id = def.id;
+        s_effects[id] = std::move(def);
     }
+    // エフェクト用シェーダーの材質（形・ノイズ・色の帯と、消え方などの数字）
+    if (j.contains("materials"))
+        for (auto& [id, m] : j["materials"].items())
+        {
+            FxMaterial fm;
+            fm.shape = m.value("shape", ""); fm.noise = m.value("noise", ""); fm.ramp = m.value("ramp", "");
+            fm.erodeStart = m.value("erodeStart", 0.5f); fm.erodeEnd = m.value("erodeEnd", 1.0f);
+            fm.glow = m.value("glow", 1.0f); fm.noiseScale = m.value("noiseScale", 1.0f);
+            if (m.contains("scroll")) fm.scroll = XMFLOAT2(m["scroll"][0], m["scroll"][1]);
+            fm.additive = m.value("additive", false);
+            fm.appear = m.value("appear", 0.0f);
+            s_materials[id] = fm;
+        }
 }
 
 const EffectDef* EffectDataBase::Get(const std::string& id)
 {
     auto it = s_effects.find(id);
     return it != s_effects.end() ? &it->second : nullptr;
+}
+
+const FxMaterial* EffectDataBase::GetMaterial(const std::string& id)
+{
+    auto it = s_materials.find(id);
+    return it != s_materials.end() ? &it->second : nullptr;
 }

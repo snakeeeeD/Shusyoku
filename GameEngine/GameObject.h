@@ -1,6 +1,7 @@
 #pragma once
 #include "Se.h"
 #include "HpBar.h"
+#include "MoveFeel.h"
 
 #include <d3d11.h>
 #include <DirectXMath.h>
@@ -39,10 +40,13 @@ public:
     float m_moveDuration = 0.25f;
     bool m_isMoving = false;
     bool m_moveLinear = false;
+    MoveFeel m_feel;   // 移動の手応え（土ぼこり・跳ねる・残像・光る跡）
 
     void StartMove(float toX, float toZ, float duration = 0.3f, bool linear = false)
     {
         Se::Play(Se::StepFile(), 0.08f);   // 足音（同時に動いても間引く）
+        float planned = m_walkPoints.empty() ? 0.0f : (float)(m_walkPoints.size() - m_walkIndex);   // 歩きの経路なら残りのマス数
+        m_feel.OnMoveStart(worldX, worldZ, toX, toZ, planned);
         m_startWorldX = worldX;
         m_startWorldZ = worldZ;
         m_targetWorldX = toX;
@@ -55,13 +59,14 @@ public:
 
     void UpdateMove(float deltaTime)
     {
-        if (!m_isMoving) return;
+        if (!m_isMoving) { m_feel.Update(deltaTime, false, 1.0f, worldX, worldZ); return; }   // 止まっている間も、つぶれや残像は消えていく
         m_moveTimer += deltaTime;
         float t = m_moveTimer / m_moveDuration;
         if (t >= 1.0f) { t = 1.0f; m_isMoving = false; }
         float ease = m_moveLinear ? t : t * t * (3.0f - 2.0f * t);
         worldX = m_startWorldX + (m_targetWorldX - m_startWorldX) * ease;
         worldZ = m_startWorldZ + (m_targetWorldZ - m_startWorldZ) * ease;
+        m_feel.Update(deltaTime, true, ease, worldX, worldZ);   // 次のマスへ進む前に（着地をこのマスで数える）
 
         // 経路が残っていれば次のマスへ（空白フレーム無しで連続）
         if (!m_isMoving && !m_walkPoints.empty())

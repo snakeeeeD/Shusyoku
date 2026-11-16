@@ -25,4 +25,5 @@ struct EnemyData
     std::vector<EnemyAction> actions;
     std::vector<DropDef> drops;
     bool snake = false;
+    std::string moveStyle = "walk";   // ˆÚ“®‚Ì“®‚«•ûiwalk / hop / float / glideBMoveFeelj
 };

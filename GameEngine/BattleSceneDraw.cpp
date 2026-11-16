@@ -51,12 +51,17 @@ void BattleScene::Draw()
     DrawCells(th);                       // マス
     DrawFloorMarks();                    // 信仰・敵の範囲と外周線・自分の範囲
     DrawTraps();
+    DrawGroundEffects();                 // 地面の順番のエフェクト（衝撃波の輪、壁の奥半分など）。キャラより先に描いて、キャラの後ろに見せる
     DrawSnakes();
     DrawUnits();                         // 身代わり・×印・注目の枠・背水のオーラ・脅威のグロー・キャラ・聖地の光
     DrawOverlays();                      // エフェクト・必中のクロスヘア・移動先のゴースト・L字枠
     m_renderer3D->End();
 
     if (blurScene) DrawAwakenCinematic();   // 集中線・ブラー・ボスだけくっきり・円
+    m_renderer3D->Begin();                                   // 画面の順番のエフェクト（瘴気など）。3Dの上・UIの下
+    EffectManager::Draw(m_renderer3D, EffectLayer::Screen);
+    m_renderer3D->End();
+    m_screenFx.Draw(m_renderer3D, m_spriteRenderer, (float)m_screenWidth, (float)m_screenHeight);   // 画面の演出（3Dの上・UIの下）
     BattleUIContext ctx = MakeUIContext();
     m_battleUI->Draw(ctx);
     m_battleUI->DrawAddedCardsTop(ctx);
@@ -249,10 +254,10 @@ BattleScene::BattleTheme BattleScene::CurrentTheme() const
     if (m_category == EncCategory::Boss && m_battleEnemyId == "l3boss")
     {
         if (m_bossAwakened)
-            th = { "ground_void_awake", { "deco_rift","deco_debris","deco_throne" }, { 2.6f,2.4f,3.4f }, { 3.2f,2.2f,4.2f },
+            th = { "ground_void_awake", { "deco_rift","deco_debris","deco_throne" }, { 1.4f,1.9f,2.1f }, { 3.2f,2.2f,4.2f },
                    "cell_stone", 4, { 0.60f, 0.42f, 0.52f, 0.92f } };
         else
-            th = { "ground_void",       { "deco_rift","deco_debris","deco_throne" }, { 2.6f,2.4f,3.4f }, { 3.2f,2.2f,4.2f },
+            th = { "ground_void",       { "deco_rift","deco_debris","deco_throne" }, { 1.4f,1.9f,2.1f }, { 3.2f,2.2f,4.2f },
                    "cell_stone", 4, { 0.52f, 0.48f, 0.62f, 0.92f } };
     }
     else if (m_category == EncCategory::Boss && m_battleEnemyId == "l2boss")
@@ -502,6 +507,14 @@ void BattleScene::DrawTraps()
             }
         }
     }
+}
+
+// 地面の順番のエフェクト（衝撃波の輪、壁の奥半分など）。深度を見ずに地面の上へ重ねる。キャラはこの後に描くので、キャラの後ろに見える
+void BattleScene::DrawGroundEffects()
+{
+    m_renderer3D->SetDepthEnabled(false);
+    EffectManager::Draw(m_renderer3D, EffectLayer::Ground);
+    m_renderer3D->SetDepthWrite(false);   // 罠を描いたときと同じ（深度は見るが書かない）に戻す
 }
 
 // 大蛇の体（尾〜頭をつないで描く）と光るウロコ
@@ -758,7 +771,7 @@ void BattleScene::DrawUnits()
 void BattleScene::DrawOverlays()
 {
     m_renderer3D->SetDepthEnabled(false);
-    EffectManager::Draw(m_renderer3D, TextureManager::Get("particle"));
+    EffectManager::Draw(m_renderer3D, EffectLayer::Overlay);
     // 必中攻撃の対象にクロスヘア（デコイ優先）。対象の実座標に合わせて画面端でもズレないように
     bool showCross = false;
     for (auto enemy : m_enemies)

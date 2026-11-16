@@ -1027,6 +1027,13 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
         applySub(data.subEffect2);
         // パワーカードは捨て札に入れない
         ApplyAllEnemyEffect(data, enemies, gridMap);
+        {   // パワーカードの演出（画面の瘴気など）。自分にかけるカードなので、プレイヤーの位置で出す
+            XMFLOAT4 vcol(data.vfxColor[0], data.vfxColor[1], data.vfxColor[2], data.vfxColor[3]);
+            float px = (playerCol - gridMap->GetCols() / 2.0f) * 1.1f;
+            float pz = (playerRow - gridMap->GetRows() / 2.0f) * 1.1f;
+            for (const std::string& fx : data.vfx)
+                if (!fx.empty()) EffectManager::Play(fx, px, 0.5f, pz, 0.0f, 0.0f, vcol);
+        }
         hand.RemoveCard(cardIndex);
         result.success = true; result.cardUsed = true;
         result.pendingDiscard = pendingDiscard;   // 引いたカード・捨てる枚数もシーンへ渡す

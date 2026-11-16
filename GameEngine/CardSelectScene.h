@@ -50,7 +50,11 @@ private:
     bool m_readyForInput = false;
 
     static constexpr int   CHOICE_COUNT = 3;
-    static constexpr float SEL_SCALE = 1.4f;
+    static constexpr float SEL_GAP = 30.0f;    // カードの間
+    static constexpr float HOVER_UP = 20.0f;   // マウスを乗せたカードが浮く量
+    // i 枚目のカードを CardVisual に渡す基準（1倍のカードの左上）。拡大した並びが画面の真ん中に来るように直した位置
+    void CardBase(int i, float& bx, float& by) const;
+    static constexpr float SEL_SCALE = 2.0f;   // 報酬のカードの大きさ（1倍＝100x140）。手札より大きくして、説明と札を読みやすく
 
     RewardMode m_mode = RewardMode::Normal;
 

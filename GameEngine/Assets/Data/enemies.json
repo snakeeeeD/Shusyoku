@@ -2,6 +2,7 @@
   "enemies": [
     {
       "id": "slime",
+      "moveStyle": "hop",
       "texture": "enemy_slime",
       "hp": 26,
       "width": 1.0,
@@ -455,6 +456,7 @@
     },
     {
       "id": "dragon",
+      "moveStyle": "float",
       "texture": "enemy_dragon_red",
       "gridShape": [
         [
@@ -648,6 +650,7 @@
     },
     {
       "id": "brute",
+      "moveStyle": "hop",
       "drops": [
         {
           "id": "iron_shard",
@@ -659,7 +662,7 @@
         }
       ],
       "texture": "enemy_zako",
-      "hp": 58,
+      "hp": 56,
       "width": 1.2,
       "height": 1.2,
       "actions": [
@@ -867,6 +870,7 @@
     },
     {
       "id": "elite_tentacle",
+      "moveStyle": "hop",
       "texture": "enemy_tentacle",
       "hp": 156,
       "width": 1.4,
@@ -942,6 +946,7 @@
     },
     {
       "id": "elite_slimeking",
+      "moveStyle": "hop",
       "texture": "enemy_slimeking",
       "hp": 117,
       "width": 1.7,
@@ -1302,6 +1307,7 @@
     },
     {
       "id": "mimic",
+      "moveStyle": "hop",
       "texture": "enemy_mimic",
       "hp": 84,
       "width": 1.2,
@@ -1387,6 +1393,7 @@
     },
     {
       "id": "wraith",
+      "moveStyle": "float",
       "drops": [
         {
           "id": "holy_water_shard",
@@ -1618,6 +1625,7 @@
     },
     {
       "id": "firespore",
+      "moveStyle": "hop",
       "drops": [
         {
           "id": "venom_fang",
@@ -1774,6 +1782,7 @@
     },
     {
       "id": "bat",
+      "moveStyle": "float",
       "texture": "enemy_bat",
       "hp": 42,
       "width": 1.0,
@@ -1850,6 +1859,7 @@
     },
     {
       "id": "cave_slime",
+      "moveStyle": "hop",
       "texture": "enemy_caveslime",
       "hp": 56,
       "width": 1.0,
@@ -2207,6 +2217,7 @@
     },
     {
       "id": "myconid",
+      "moveStyle": "hop",
       "texture": "enemy_myconid",
       "hp": 78,
       "width": 1.0,
@@ -2839,6 +2850,7 @@
     },
     {
       "id": "elite_gloomwing",
+      "moveStyle": "float",
       "texture": "enemy_gloomwing",
       "hp": 180,
       "width": 1.5,
@@ -3247,6 +3259,7 @@
     },
     {
       "id": "plasma_wraith",
+      "moveStyle": "float",
       "texture": "enemy_plasma_wraith",
       "hp": 70,
       "width": 1.0,
@@ -3317,6 +3330,7 @@
     },
     {
       "id": "toxic_bloom",
+      "moveStyle": "hop",
       "texture": "enemy_toxic_bloom",
       "hp": 95,
       "width": 1.0,
@@ -3462,6 +3476,7 @@
     },
     {
       "id": "nanite_swarm",
+      "moveStyle": "float",
       "texture": "enemy_nanite_swarm",
       "hp": 60,
       "width": 1.0,
@@ -3540,6 +3555,7 @@
     },
     {
       "id": "psi_watcher",
+      "moveStyle": "float",
       "texture": "enemy_psi_watcher",
       "hp": 65,
       "width": 1.0,
@@ -3591,6 +3607,7 @@
     },
     {
       "id": "grav_anomaly",
+      "moveStyle": "float",
       "texture": "enemy_grav_anomaly",
       "hp": 110,
       "width": 1.0,
@@ -3729,6 +3746,7 @@
     },
     {
       "id": "glitch_phantom",
+      "moveStyle": "float",
       "texture": "enemy_glitch_phantom",
       "hp": 90,
       "width": 1.0,
@@ -3957,6 +3975,7 @@
     },
     {
       "id": "elite_void_weaver",
+      "moveStyle": "hop",
       "texture": "enemy_void_weaver",
       "hp": 265,
       "width": 1.0,
@@ -4034,6 +4053,7 @@
     },
     {
       "id": "wedge_sword",
+      "moveStyle": "glide",
       "texture": "enemy_boss3_piller1",
       "hp": 55,
       "width": 1.0,
@@ -4084,6 +4104,7 @@
     },
     {
       "id": "wedge_venom",
+      "moveStyle": "glide",
       "texture": "enemy_boss3_piller2",
       "hp": 50,
       "width": 1.0,
@@ -4146,6 +4167,7 @@
     },
     {
       "id": "wedge_hex",
+      "moveStyle": "glide",
       "texture": "enemy_boss3_piller3",
       "hp": 45,
       "width": 1.0,
@@ -4206,6 +4228,7 @@
     },
     {
       "id": "wedge_shield",
+      "moveStyle": "glide",
       "texture": "enemy_boss3_piller4",
       "hp": 70,
       "width": 1.0,

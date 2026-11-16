@@ -40,6 +40,7 @@ void Enemy::Init(const std::string& id)
     m_gridShape = data->gridShape;
     m_drawZ = data->drawZ;
     m_isSnake = data->snake;
+    m_feel.SetStyle(MoveFeel::StyleFromName(data->moveStyle));
 }
 
 void Enemy::Update(float delteTime)
@@ -63,16 +64,27 @@ void Enemy::Draw3D(Renderer3D* renderer)
         y += t * 0.3f;
     }
 
+    // 残像（2マス以上続けて動いた時。少し前の位置に、薄く）
+    for (auto& g : m_feel.Ghosts())
+    {
+        XMFLOAT4 gc = drawColor; gc.w *= g.alpha;
+        renderer->DrawBillboard(TextureManager::Get(m_textureName),
+            g.x, y, g.z + m_drawZ, width * s, height * s, 0.0f, gc, FacingUV());
+    }
+
+    // 移動の手応え：跳ねて浮く高さと、伸び・つぶれ（板の基準は足元なので、足は地面についたまま）
+    y += m_feel.Lift(height);
+    float w = width * s * m_feel.ScaleX(), h = height * s * m_feel.ScaleY();
     renderer->DrawBillboard(
         TextureManager::Get(m_textureName),
         worldX, y, worldZ + m_drawZ,
-        width * s, height * s, 0.0f, drawColor, FacingUV());
+        w, h, 0.0f, drawColor, FacingUV());
 
     // 重ねる絵は本体とまったく同じ位置・大きさ（絵の中で配置済み）
     for (auto& o : m_overlays)
         renderer->DrawBillboard(TextureManager::Get(o),
             worldX, y, worldZ + m_drawZ,
-            width * s, height * s, 0.0f, drawColor, FacingUV());
+            w, h, 0.0f, drawColor, FacingUV());
 }
 
 bool Enemy::RemoveOverlay(const std::string& t)
@@ -302,6 +314,7 @@ void Enemy::MoveAlongPlanned(GridMap* gridMap)
         float wx, wz; CenterWorld(gridCol, gridRow, gridMap, wx, wz);
         StartMove(wx, wz);
     }
+    m_plannedMovePath.clear();   // 使い終わった矢印は消す（途中が埋まって手前で止まっても、矢印が残らないように）
 }
 
 void Enemy::AlignToTarget(int playerCol, int playerRow, GridMap* gridMap, int steps)
@@ -751,7 +764,10 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
     {
         switch (e.kind)
         {
-        case EffectKind::MoveToward: MoveToward(mtC, mtR, gridMap, e.value); break;
+        case EffectKind::MoveToward:   // ボスの「＋移動」など。予告の矢印があれば、その通りに動く（矢印と動き先をそろえる）
+            if (!m_plannedMovePath.empty()) MoveAlongPlanned(gridMap);
+            else                            MoveToward(mtC, mtR, gridMap, e.value);
+            break;
         case EffectKind::Coil: GrowCoil(gridMap, e.value + m_coilBonus, player); break;
         case EffectKind::Lunge:   LungeTo(gridMap); break;
         case EffectKind::Retract: RetractNeck(gridMap); break;

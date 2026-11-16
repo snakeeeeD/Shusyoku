@@ -355,6 +355,7 @@ void BattleHighlighter::UpdateEnemyHighlight(
     std::map<std::pair<int, int>, std::pair<int, int>> cellOwner;  // マス -> (距離, 敵index)
     std::set<std::pair<int, int>> selCells;
     std::map<std::pair<int, int>, std::vector<int>> cellThreats;   // マス -> 脅威を出す敵index全部
+    std::map<int, std::set<std::pair<int, int>>> outlineCells;     // 敵index -> 外周線を引く範囲（敵のいるマスも含めた範囲そのまま）
 
     for (int ei = 0; ei < (int)enemies.size(); ei++)
     {
@@ -398,12 +399,14 @@ void BattleHighlighter::UpdateEnemyHighlight(
             int tc = (decoyCol >= 0) ? decoyCol : playerCol;
             int tr = (decoyCol >= 0) ? decoyRow : playerRow;
             mark(tc, tr, 1);
+            outlineCells[ei].insert({ tc, tr });
             if (tc == playerCol && tr == playerRow) enemy->hitsPlayer = true;
             continue;
         }
 
         for (auto& [c, r] : enemy->GetThreatCells(*action, gridMap))
         {
+            outlineCells[ei].insert({ c, r });   // 外周線は範囲そのまま（敵のいるマスで穴をあけない＝内側に線が出ない）
             auto& cell = gridMap->GetCell(c, r);
             if (cell.type == CellType::Enemy || cell.type == CellType::Boss) continue;
             if (c == playerCol && r == playerRow && harmful) enemy->hitsPlayer = true;   // 生成位置は「当たる」警告を出さない
@@ -446,13 +449,10 @@ void BattleHighlighter::UpdateEnemyHighlight(
     }
 
     // 敵ごとに範囲の外周線を引く（その敵の領土を一筆で囲う＝誰の範囲か一目で分かる）
-    std::map<int, std::set<std::pair<int, int>>> enemyCells;
-    for (auto& [pos, list] : cellThreats)
-        for (int ei : list) enemyCells[ei].insert(pos);
 
     const int dcol[4] = { 0, 0, -1, 1 };   // 上,下,左,右
     const int drow[4] = { -1, 1, 0, 0 };
-    for (auto& [ei, cells] : enemyCells)
+    for (auto& [ei, cells] : outlineCells)
     {
         XMFLOAT4 hue = enemies[ei]->hueColor;
         if (m_selectedEnemy >= 0 && ei != m_selectedEnemy) hue.w = 0.30f;   // 注目外の外周線は薄く

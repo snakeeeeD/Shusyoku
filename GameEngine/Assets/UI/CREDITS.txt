@@ -143,5 +143,16 @@ intent_coil.png  "Snake" by Lorc  https://game-icons.net/1x1/lorc/snake.html
 intent_curse.png  "Card burn" by Delapouite  https://game-icons.net/1x1/delapouite/card-burn.html
 intent_hazard.png  "Hazard sign" by Lorc  https://game-icons.net/1x1/lorc/hazard-sign.html
 intent_heal.png  "Healing" by Delapouite  https://game-icons.net/1x1/delapouite/healing.html
+intent_blockdamage.png  "Shield bash" by Delapouite  https://game-icons.net/1x1/delapouite/shield-bash.html
+intent_draw.png  "Card draw" by Faithtoken  https://game-icons.net/1x1/faithtoken/card-draw.html
+intent_discard.png  "Card discard" by Faithtoken  https://game-icons.net/1x1/faithtoken/card-discard.html
+intent_search.png  "Card pick" by Faithtoken  https://game-icons.net/1x1/faithtoken/card-pick.html
+intent_create.png  "Card play" by Quoting  https://game-icons.net/1x1/quoting/card-play.html
+intent_upgrade.png  "Up card" by Delapouite  https://game-icons.net/1x1/delapouite/up-card.html
+intent_ondiscard.png  "Card exchange" by Delapouite  https://game-icons.net/1x1/delapouite/card-exchange.html
+intent_energy.png  "Power lightning" by Lorc  https://game-icons.net/1x1/lorc/power-lightning.html
+intent_decoy.png  "Target dummy" by Lorc  https://game-icons.net/1x1/lorc/target-dummy.html
+intent_poison.png  "Poison bottle" by Lorc  https://game-icons.net/1x1/lorc/poison-bottle.html
+intent_selfdamage.png  "Bleeding wound" by Lorc  https://game-icons.net/1x1/lorc/bleeding-wound.html
 
 Video decoding: PL_MPEG by Dominic Szablewski (MIT License)  https://github.com/phoboslab/pl_mpeg

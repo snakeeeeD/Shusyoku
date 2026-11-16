@@ -20,6 +20,7 @@
 #include "EncounterDataBase.h"
 #include "BattleCamera.h"
 #include "TimedQueue.h"
+#include "ScreenStatusFx.h"
 
 #include <vector>
 #include <utility>
@@ -233,12 +234,15 @@ private:
     BattleHighlighter m_highlighter;
     CardExecutor      m_cardExecutor;
 
+    ScreenStatusFx m_screenFx;   // 状態に合わせて出し続ける画面の演出（HPが低いときの赤み など）
     BattleCamera m_camera;   // 位置・ズーム・手での操作・狙いカメラ・操作デモ
 
     // バフが付いた／増えた時のエフェクト（毎フレーム前の値と比べる＝どこで付いても拾える）
     std::unordered_map<const void*, std::map<int, int>> m_buffSnap;   // 持ち主 → バフ種類ごとの値（種類が増えても直さなくていいよう map）
     void UpdateBuffGainFx();
 
+    void PlayEnemyAreaFx(Enemy* enemy, const EnemyAction& a, int tC, int tR, int preCol, int preRow,
+        const std::vector<std::pair<int, int>>& preCells);   // 敵の攻撃が当たった範囲の演出
     void UpdateTrapsAtTurnStart();   // 自分の罠が育つ／敵が隣にいる間だけ導火線が進み、たまったら自分で起爆
     void  MaybeStartCamDemo();   // カメラ操作の自動デモを始めるか（条件はシーンの事情なので、ここで決める）
 
@@ -266,6 +270,7 @@ private:
     void DrawCells(const BattleTheme& th);
     void DrawFloorMarks();
     void DrawTraps();
+    void DrawGroundEffects();
     void DrawSnakes();
     void DrawUnits();
     void DrawOverlays();

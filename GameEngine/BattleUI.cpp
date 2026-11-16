@@ -903,11 +903,13 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         m_spriteRenderer->DrawSprite(TextureManager::Get("ui_turnend"), btnX, bey, btnW, btnH, 0.0f, teTint);
      
         if (hoverEnd) {
-            float tx = btnX - 40.0f, ty = btnY - 40.0f, tw = 180.0f, th = 28.0f;
+            const wchar_t* tip = L"ターンを終了して敵の番へ";
+            D2D1_SIZE_F ts = m_textRenderer->Measure(tip, 15.0f);   // 文字の実際の大きさで窓を作る
+            float tx = btnX - 40.0f, ty = btnY - 40.0f, tw = ts.width + 16.0f, th = ts.height + 8.0f;
             m_spriteRenderer->End();
             m_spriteRenderer->Begin();
             DrawWindow(tx - 4.0f, ty - 4.0f, tw + 8.0f, th + 8.0f);
-            m_textRenderer->DrawText(L"ターンを終了して敵の番へ", tx + 8.0f, ty + 5.0f, 15.0f, D2D1::ColorF(1, 1, 1));
+            m_textRenderer->DrawText(tip, tx + 8.0f, ty + 4.0f, 15.0f, D2D1::ColorF(1, 1, 1));
         }
     }
 
@@ -1014,9 +1016,11 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
         // ===== クリックで次へ（窓ピル）=====
         {
-            const float pw = 210.0f, ph = 36.0f, px = cx - pw / 2.0f, py = pillY;
+            const wchar_t* t = L"クリックで次へ";
+            const float ph = 36.0f, pw = m_textRenderer->Measure(t, 20.0f, FontRole::Heading).width + 48.0f;   // 文字の幅＋左右の余白
+            const float px = cx - pw / 2.0f, py = pillY;
             DrawWindow(px, py, pw, ph);
-            m_textRenderer->DrawOutlinedText(L"クリックで次へ", px + 34.0f, py + 8.0f, 20.0f,
+            m_textRenderer->DrawOutlinedTextInRect(t, px, py, pw, ph, 20.0f,
                 D2D1::ColorF(1, 1, 1), D2D1::ColorF(0.1f, 0.1f, 0.1f), 2.0f);
         }
     }
@@ -1026,13 +1030,15 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         m_spriteRenderer->End(); m_spriteRenderer->Begin();
         m_spriteRenderer->DrawSprite(TextureManager::Get("ui_banner"),
             cx - 190.0f, m_screenHeight / 2.0f - 40.0f, 380.0f, 78.0f, 0.0f, XMFLOAT4(0.75f, 0.5f, 0.5f, 1));
-        m_textRenderer->DrawOutlinedText(L"GAME OVER",
-            cx - 140.0f, m_screenHeight / 2.0f - 24.0f, 44.0f,
+        m_textRenderer->DrawOutlinedTextInRect(L"GAME OVER",
+            cx - 190.0f, m_screenHeight / 2.0f - 40.0f, 380.0f, 78.0f, 44.0f,   // 布の見出しと同じ四角
             D2D1::ColorF(1.0f, 0.42f, 0.42f), D2D1::ColorF(0.2f, 0.0f, 0.0f), 3.0f);
-        const float pw = 250.0f, ph = 36.0f, px = cx - pw / 2.0f, py = m_screenHeight - 74.0f;
+        const wchar_t* t = L"クリックでタイトルへ";
+        const float ph = 36.0f, pw = m_textRenderer->Measure(t, 20.0f, FontRole::Heading).width + 48.0f;
+        const float px = cx - pw / 2.0f, py = m_screenHeight - 74.0f;
         m_spriteRenderer->End(); m_spriteRenderer->Begin();
         DrawWindow(px, py, pw, ph);
-        m_textRenderer->DrawOutlinedText(L"クリックでタイトルへ", px + 26.0f, py + 8.0f, 20.0f,
+        m_textRenderer->DrawOutlinedTextInRect(t, px, py, pw, ph, 20.0f,
             D2D1::ColorF(1, 1, 1), D2D1::ColorF(0.1f, 0.1f, 0.1f), 2.0f);
     }
 

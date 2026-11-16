@@ -82,14 +82,18 @@ void QuickSelectScene::HandleInput()
     int prevHover = m_hoverCard;
     m_hoverCard = -1;
     const float cw = CardVisual::CARD_W * CARD_SCALE, ch = CardVisual::CARD_H * CARD_SCALE;
-    if (prevHover >= 0 && CardTooltip::MouseInHold())   // 拡大したカードと説明は一番手前：その上にいる間は隣に切り替えない
+    if (prevHover >= 0 && CardTooltip::MouseInPanel())   // 説明の窓の上：そのまま（用語をクリックしに行けるように）
         m_hoverCard = prevHover;
     else
-        for (int i = 0; i < (int)m_cards.size(); i++)
+    {
+        for (int i = 0; i < (int)m_cards.size(); i++)        // ほかのカードの上なら、そのカードに切り替える
         {
             float x, y; CardSlot(i, x, y);
             if (mp.x >= x && mp.x <= x + cw && mp.y >= y && mp.y <= y + ch) { m_hoverCard = i; break; }
         }
+        if (m_hoverCard < 0 && prevHover >= 0 && CardTooltip::MouseInHold())   // カードと窓のすき間：消さない
+            m_hoverCard = prevHover;
+    }
 
     // ボタン（ホバー音は乗ったボタンが変わった瞬間だけ）
     const int KEY_BACK = 100, KEY_START = 101;

@@ -163,6 +163,15 @@
     <ClInclude Include="EditorHub.h" />
     <ClInclude Include="EffectDataBase.h" />
     <ClInclude Include="EffectManager.h" />
+    <ClInclude Include="MoveFeel.h" />
+    <ClInclude Include="ScreenStatusFx.h" />
+    <ClInclude Include="ScreenOverlay.h" />
+    <ClInclude Include="EffectPart.h" />
+    <ClInclude Include="EffectKinds.h" />
+    <ClInclude Include="ParticleBurst.h" />
+    <ClInclude Include="SpriteSheet.h" />
+    <ClInclude Include="GroundRing.h" />
+    <ClInclude Include="ShockWall.h" />
     <ClInclude Include="EncounterData.h" />
     <ClInclude Include="EncounterDataBase.h" />
     <ClInclude Include="EncounterEditor.h" />
@@ -271,6 +280,15 @@
     <ClCompile Include="EditorCommon.cpp" />
     <ClCompile Include="EditorHub.cpp" />
     <ClCompile Include="EffectDataBase.cpp" />
+    <ClCompile Include="EffectManager.cpp" />
+    <ClCompile Include="MoveFeel.cpp" />
+    <ClCompile Include="ScreenStatusFx.cpp" />
+    <ClCompile Include="ScreenOverlay.cpp" />
+    <ClCompile Include="EffectKinds.cpp" />
+    <ClCompile Include="ParticleBurst.cpp" />
+    <ClCompile Include="SpriteSheet.cpp" />
+    <ClCompile Include="GroundRing.cpp" />
+    <ClCompile Include="ShockWall.cpp" />
     <ClCompile Include="EncounterDataBase.cpp" />
     <ClCompile Include="EncounterEditor.cpp" />
     <ClCompile Include="EnemyEditor.cpp" />
@@ -351,6 +369,10 @@
     <FxCompile Include="Shaders\Blur_VS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shaders\Fx_PS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="Shaders\Sprite2D_PS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
