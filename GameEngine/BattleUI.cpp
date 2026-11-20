@@ -1,5 +1,6 @@
 ﻿#include "BattleUI.h"
 #include "BuffInfo.h"
+#include "BuffPopup.h"
 #include "Faith.h"
 #include "CardExecutor.h"
 #include "CardVisual.h"
@@ -1217,6 +1218,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         m_textRenderer->Begin();
     }
 
+   DrawBuffPopups(ctx);     // 頭の上のアイコン（数字より下に）
    DrawFloatingTexts(ctx);
 
     // ターンバナー（最前面：全ステータスの後に描く）
@@ -2874,6 +2876,42 @@ void BattleUI::DrawFloatingTexts(const BattleUIContext& ctx)
                 D2D1::ColorF(0, 0, 0, alpha));
         m_textRenderer->DrawText(t.text.c_str(), sx, sy, size,
             D2D1::ColorF(t.color.x, t.color.y, t.color.z, alpha));
+    }
+}
+
+// バフ・デバフが付いた時の、頭の上のアイコン（文字を描いている途中で呼ばれるので、絵の間だけ切り替える）
+void BattleUI::DrawBuffPopups(const BattleUIContext& ctx)
+{
+    const auto& all = BuffPopupManager::GetAll();
+    if (all.empty()) return;
+    m_textRenderer->End();
+    m_spriteRenderer->Begin();
+    for (auto& p : all)
+    {
+        float rise, alpha, scale, sx, sy;
+        BuffPopupManager::GetVisual(p, rise, alpha, scale);
+        if (!WorldToScreen(p.worldX, p.worldY + rise, p.worldZ, ctx.renderer3D, sx, sy)) continue;
+        ID3D11ShaderResourceView* tex = TextureManager::Get(BuffInfo::Get(p.type).texture);
+        if (!tex) continue;
+        float s = BuffPopupManager::ICON * scale;
+        m_spriteRenderer->DrawSprite(tex, sx + p.offsetX - s * 0.5f, sy - s * 0.5f, s, s, 0.0f, XMFLOAT4(1, 1, 1, alpha));
+    }
+    m_spriteRenderer->End();
+    m_textRenderer->Begin();
+    for (auto& p : all)   // 増えた数（アイコンの右下に、ふちどりつき）
+    {
+        if (p.amount <= 0) continue;
+        float rise, alpha, scale, sx, sy;
+        BuffPopupManager::GetVisual(p, rise, alpha, scale);
+        if (!WorldToScreen(p.worldX, p.worldY + rise, p.worldZ, ctx.renderer3D, sx, sy)) continue;
+        std::wstring t = L"+" + std::to_wstring(p.amount);
+        float size = 20.0f * scale;
+        float tx = sx + p.offsetX + BuffPopupManager::ICON * 0.3f, ty = sy;
+        XMFLOAT4 c = BuffInfo::Get(p.type).color;
+        const float dir[4][2] = { {-1,0},{1,0},{0,-1},{0,1} };
+        for (auto& d : dir)
+            m_textRenderer->DrawText(t.c_str(), tx + d[0] * 1.5f, ty + d[1] * 1.5f, size, D2D1::ColorF(0, 0, 0, alpha));
+        m_textRenderer->DrawText(t.c_str(), tx, ty, size, D2D1::ColorF(c.x, c.y, c.z, alpha));
     }
 }
 

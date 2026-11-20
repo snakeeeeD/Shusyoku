@@ -991,12 +991,12 @@
         },
         {
           "group": "other",
-          "label": "鍛える（最大HP+8）",
+          "label": "鍛える（最大HP+5）",
           "result": "体が強くなった。",
           "outcomes": [
             {
               "type": "maxHp",
-              "value": 8
+              "value": 5
             }
           ]
         },
@@ -1084,7 +1084,7 @@
         },
         {
           "group": "deal",
-          "label": "傷を負う（HP-10 / ランダムなレアカード）",
+          "label": "傷を負う（HP-10 / レアカードを選ぶ）",
           "result": "痛みと引き換えに。",
           "outcomes": [
             {
@@ -1092,8 +1092,8 @@
               "value": -10
             },
             {
-              "type": "addCard",
-              "param": "randomRare"
+              "type": "pickCard",
+              "param": "rare"
             }
           ]
         },

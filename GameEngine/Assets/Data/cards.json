@@ -1850,7 +1850,7 @@
       "cost": 4,
       "range": 0,
       "rangeType": "None",
-      "description": "毎ターン、攻撃力が{value}上昇",
+      "description": "2ターンに一度、攻撃力が{value}上昇",
       "upgrade": {
         "cost": -1
       },
@@ -2285,7 +2285,7 @@
       "tags": [
         "Trap"
       ],
-      "cost": 3,
+      "cost": 2,
       "range": 2,
       "rangeType": "Diamond",
       "description": "踏むと{value}ダメージ（周囲にも）の罠を設置",

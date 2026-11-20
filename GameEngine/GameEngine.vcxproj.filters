@@ -97,6 +97,9 @@
     <Filter Include="ソース ファイル\03-Object関連\30-Card\03-CardType">
       <UniqueIdentifier>{d5e10f1c-4703-47e2-aef9-9caf4e1257c6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\07-CardDamage">
+      <UniqueIdentifier>{acbc5bca-033a-4801-b3c2-27ee8ad4f029}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ソース ファイル\03-Object関連\30-Card\10-Hand">
       <UniqueIdentifier>{ab75d25e-a784-4dad-8e66-6c8698bc9527}</UniqueIdentifier>
     </Filter>
@@ -549,6 +552,9 @@
     <ClInclude Include="BuffManager.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\30-Buff\10-BuffManager</Filter>
     </ClInclude>
+    <ClInclude Include="CardDamage.h">
+      <Filter>ソース ファイル\03-Object関連\30-Card\07-CardDamage</Filter>
+    </ClInclude>
     <ClInclude Include="CardVisual.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\04-CardVisual</Filter>
     </ClInclude>
@@ -613,6 +619,9 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="FloatingText.h">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\40-FloatingText</Filter>
+    </ClInclude>
+    <ClInclude Include="BuffPopup.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\40-FloatingText</Filter>
     </ClInclude>
     <ClInclude Include="ScreenShake.h">

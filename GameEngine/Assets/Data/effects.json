@@ -116,6 +116,14 @@
           "texture": "particle", "center": true }
       ]
     },
+    { "id": "aura_buff_attack", "parts": [ { "type": "screen", "material": "fx_aura_rise", "life": 1.2, "fadeIn": 0.12, "color": [ 1.0, 0.35, 0.2, 1.0 ] } ] },
+    { "id": "aura_buff_defense", "parts": [ { "type": "screen", "material": "fx_aura_rise", "life": 1.2, "fadeIn": 0.12, "color": [ 0.3, 0.6, 1.0, 1.0 ] } ] },
+    { "id": "aura_buff_up", "parts": [ { "type": "screen", "material": "fx_aura_rise", "life": 1.2, "fadeIn": 0.12, "color": [ 1.0, 0.8, 0.25, 1.0 ] } ] },
+    { "id": "aura_debuff_weak", "parts": [ { "type": "screen", "material": "fx_aura_fall", "life": 1.2, "fadeIn": 0.12, "color": [ 0.45, 0.5, 0.7, 0.8 ] } ] },
+    { "id": "aura_debuff_vuln", "parts": [ { "type": "screen", "material": "fx_aura_fall", "life": 1.2, "fadeIn": 0.12, "color": [ 0.75, 0.2, 0.5, 0.8 ] } ] },
+    { "id": "aura_debuff_bind", "parts": [ { "type": "screen", "material": "fx_aura_fall", "life": 1.2, "fadeIn": 0.12, "color": [ 0.4, 0.8, 0.9, 0.8 ] } ] },
+    { "id": "aura_debuff_poison", "parts": [ { "type": "screen", "material": "fx_aura_fall", "life": 1.2, "fadeIn": 0.12, "color": [ 0.4, 0.9, 0.3, 0.8 ] } ] },
+    { "id": "aura_debuff_burn", "parts": [ { "type": "screen", "material": "fx_aura_fall", "life": 1.2, "fadeIn": 0.12, "color": [ 1.0, 0.5, 0.15, 0.8 ] } ] },
     {
       "id": "miasma_screen",
       "parts": [
@@ -1532,6 +1540,10 @@
     }
   ],
   "materials": {
+    "fx_aura_rise": { "shape": "fx_shape_side_rise", "noise": "fx_noise", "ramp": "fx_ramp_aura", "erodeStart": 0.5, "erodeEnd": 1.0,
+                      "glow": 1.2, "noiseScale": 1.8, "scroll": [ 0.0, 0.8 ], "appear": 0.35 },
+    "fx_aura_fall": { "shape": "fx_shape_top_arch", "noise": "fx_noise", "ramp": "fx_ramp_aura", "erodeStart": 0.5, "erodeEnd": 1.0,
+                      "glow": 1.2, "noiseScale": 1.8, "scroll": [ 0.0, -0.45 ], "appear": 0.35 },
     "fx_explosion": { "shape": "fx_shape_blob", "noise": "fx_noise", "ramp": "fx_ramp_fire",
                       "erodeStart": 0.25, "erodeEnd": 0.9, "glow": 1.15, "noiseScale": 1.3, "scroll": [ 0.0, -0.35 ] },
     "fx_smoke": { "shape": "fx_shape_blob", "noise": "fx_noise", "ramp": "fx_ramp_smoke",

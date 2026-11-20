@@ -49,7 +49,8 @@ public:
         D2D1_COLOR_F color,
         D2D1_COLOR_F outline = D2D1::ColorF(D2D1::ColorF::Black),
         float thickness = 2.0f,
-        float rotation = 0.0f, float pivotX = 0.0f, float pivotY = 0.0f);   // 手札の傾き用
+        float rotation = 0.0f, float pivotX = 0.0f, float pivotY = 0.0f,   // 手札の傾き用
+        const std::vector<TextSpan>* spans = nullptr);                      // この範囲だけ色を変える（カードの上がった数字など）
 
     // 中央揃え：centerX を中心に幅 width の枠で描く（はみ出す行は折り返し、各行が中央に揃う）
     // height > 0 なら、y~y+height の縦の中央にも揃える

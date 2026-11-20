@@ -747,6 +747,7 @@ void FieldScene::HandleInput()
                             m_currentBattleTier = 1 + node.col * 3 / GRID_COLS; if (m_currentBattleTier > 3) m_currentBattleTier = 3;
                             m_currentBattleOverflow = (m_steps < 0) ? -m_steps : 0;
                             m_currentBattleCategory = EncCategory::Normal;
+                            AvoidConsecutive(idx, false);   // ?マスの戦闘も、直前と同じ敵を避ける（マスには書かない）
                             if (onChangeScene) onChangeScene(SceneType::Battle);
                             return;
                         }
@@ -781,7 +782,7 @@ void FieldScene::HandleInput()
     }
 }
 
-void FieldScene::AvoidConsecutive(int idx)
+void FieldScene::AvoidConsecutive(int idx, bool writeNode)
 {
     auto& pd = PlayerDataManager::GetData();
     std::string& last = (m_currentBattleCategory == EncCategory::Elite) ? pd.lastEliteEnemy : pd.lastNormalEnemy;
@@ -798,12 +799,13 @@ void FieldScene::AvoidConsecutive(int idx)
     bool fought = std::find(used.begin(), used.end(), m_currentEnemyId) != used.end();
 
     std::string curLead = leadOf(m_currentEnemyId);
-    if (fought || (!curLead.empty() && curLead == last))   // 戦ったことのある組み合わせ／直前と同じ敵 → 選び直す
+    // まだ決まっていない（?マス・イベントの戦闘）／戦ったことのある組み合わせ／直前と同じ敵 → 選び直す
+    if (m_currentEnemyId.empty() || fought || (!curLead.empty() && curLead == last))
     {
         const EncounterData* enc = EncounterDataBase::GetEncounterAvoiding(
             pd.layer, m_currentBattleCategory,
             m_currentBattleTier, (unsigned)idx * 2654435761u + 101u, last, used);
-        if (enc) { m_currentEnemyId = enc->id; m_nodes[idx].enemyId = enc->id; curLead = leadOf(enc->id); }
+        if (enc) { m_currentEnemyId = enc->id; if (writeNode) m_nodes[idx].enemyId = enc->id; curLead = leadOf(enc->id); }
     }
     last = curLead;   // PlayerDataに記録（次戦まで保持）
 }
@@ -838,6 +840,7 @@ void FieldScene::SetupEventBattle(EncCategory cat, const std::string& param)
     m_currentBattleTier = 1 + m_playerCol * 3 / GRID_COLS; if (m_currentBattleTier > 3) m_currentBattleTier = 3;
     m_currentBattleOverflow = (m_steps < 0) ? -m_steps : 0;
     m_currentBattleCategory = cat;
+    if (!specific) AvoidConsecutive(idx, false);   // 敵が決まっていないイベントの戦闘も、直前と同じ敵を避ける（マスには書かない）
 }
 
 void FieldScene::DrawImGui()

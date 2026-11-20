@@ -319,6 +319,7 @@ private:
     bool WorldToScreen(float wx, float wy, float wz, Renderer3D* renderer3D,
         float& outX, float& outY) const;
     void DrawFloatingTexts(const BattleUIContext& ctx);
+    void DrawBuffPopups(const BattleUIContext& ctx);   // バフ・デバフが付いた時の、頭の上のアイコン
 
     // 敵インテントアイコンのホバー説明
     bool m_intentHover = false;

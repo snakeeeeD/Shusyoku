@@ -220,13 +220,13 @@ void TextRenderer::DrawText(const wchar_t* text,
 void TextRenderer::DrawOutlinedText(const wchar_t* text,
     float x, float y, float size,
     D2D1_COLOR_F color, D2D1_COLOR_F outline, float thickness,
-    float rotation, float pivotX, float pivotY)
+    float rotation, float pivotX, float pivotY, const std::vector<TextSpan>* spans)
 {
     auto format = MakeFormat(size, false, false, m_role);
     m_brush->SetColor(Warm(color));
     m_outlineBrush->SetColor(outline);
     DrawLayout(text, format.Get(), D2D1::RectF(x, y, x + 500.0f, y + 200.0f),
-        m_brush.Get(), m_outlineBrush.Get(), thickness, rotation, pivotX, pivotY);
+        m_brush.Get(), m_outlineBrush.Get(), thickness, rotation, pivotX, pivotY, spans);
 }
 
 void TextRenderer::DrawTextSpans(const wchar_t* text, float x, float y, float width, float size,

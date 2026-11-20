@@ -82,22 +82,18 @@ void BuffManager::RemoveBuff(BuffType type)
     );
 }
 
-void BuffManager::OnTurnEnd(bool decrementPoison)
+void BuffManager::TickDurations(bool debuffs)
 {
-    if (decrementPoison)
-        for (auto& b : m_buffs)
-            if (b.type == BuffType::Poison) b.value--;
-
     for (auto& buff : m_buffs)
-        if (buff.type != BuffType::Poison && !buff.isPermanent())
+        if (buff.type != BuffType::Poison && !buff.isPermanent() && IsDebuff(buff.type) == debuffs)
             buff.duration--;
 
     m_buffs.erase(
         std::remove_if(m_buffs.begin(), m_buffs.end(),
-            [decrementPoison](const Buff& b)
+            [debuffs](const Buff& b)
             {
-                if (b.type == BuffType::Poison) return decrementPoison && b.value <= 0;
-                return !b.isPermanent() && b.duration <= 0;
+                if (b.type == BuffType::Poison) return false;   // “Å‚Í TickPoison ‚ÅŒ¸‚Á‚ÄÁ‚¦‚é
+                return IsDebuff(b.type) == debuffs && !b.isPermanent() && b.duration <= 0;
             }),
         m_buffs.end());
 }

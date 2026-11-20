@@ -74,3 +74,17 @@ enum class BuffType
     Berserker,      // 狂戦士：カードで自傷するたび、このターンの攻撃+value
     BloodFlash,     // 血の閃き：カードで自傷するたび、value枚引く
 };
+
+// デバフか（残りターンの減る時を分ける：デバフ＝持ち主のターンの終わり、バフ＝持ち主のターンの始め）
+inline bool IsDebuff(BuffType t)
+{
+    switch (t)
+    {
+    case BuffType::AttackDown: case BuffType::Weak: case BuffType::DefenseDown: case BuffType::Frail:
+    case BuffType::Vulnerable: case BuffType::Root: case BuffType::Slow: case BuffType::Burn:
+    case BuffType::Poison: case BuffType::Mire:
+        return true;
+    default:
+        return false;
+    }
+}

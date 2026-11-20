@@ -9,6 +9,7 @@
 #include "MaterialDataBase.h"
 #include "HighlightPalette.h"
 #include "FloatingText.h"
+#include "BuffPopup.h"
 #include "ScreenShake.h"
 #include "HitStop.h"
 #include "TurnBanner.h"
@@ -264,12 +265,13 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
                 if (m_player->GetBuffManager().HasBuff(BuffType::Barricade)) keep = block;  // 土手・要塞は全部
                 m_player->SetBlock(keep);
             }
-            m_player->GetBuffManager().OnTurnEnd();
+            m_player->GetBuffManager().TickDurations(false);   // プレイヤーのバフ：ターンの始めに減る（敵のターンの間も残る）
 
-            // 攻撃力成長：闘気（戦士の誓い）は毎ターン、巨人の篭手（turnBuffAtk）は2ターンに1回
+            // 攻撃力成長：闘気（戦士の誓い・成長石）と巨人の篭手（turnBuffAtk）は、どちらも2ターンに1回（偶数ターンの終わり）
             {
-                int grow = m_player->GetBuffManager().GetBuffValue(BuffType::AttackGrowth);
-                if ((m_turnCount % 2) == 0) grow += RelicManager::SumValue("turnBuffAtk");
+                int grow = 0;
+                if ((m_turnCount % 2) == 0)
+                    grow = m_player->GetBuffManager().GetBuffValue(BuffType::AttackGrowth) + RelicManager::SumValue("turnBuffAtk");
                 if (grow > 0)
                 {
                     Buff gb; gb.type = BuffType::AttackUp; gb.value = grow; gb.duration = -1;
@@ -306,10 +308,10 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
                         if (dc != 0 || dr != 0)
                             Faith::Engrave(m_gridMap, m_playerCol + dc, m_playerRow + dr, cat);
 
-            // デバフダメージ
-            auto dmg = m_player->GetBuffManager().GetTurnEndDamage();
-            if (dmg.total() > 0)
-                m_player->TakeDamage(dmg.total(), DamageFeel::Poison);
+            // 毒：今の値だけダメージを受けてから、1減る（敵と同じ TickPoison。HPバーの予告の数字と同じになる）
+            int poisonDmg = m_player->GetBuffManager().TickPoison();
+            if (poisonDmg > 0)
+                m_player->TakeDamage(poisonDmg, DamageFeel::Poison);
 
             m_turnCount++;
 
@@ -368,6 +370,10 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         };
     m_turnManager.onEnemyTurnStart = [this]()
         {
+            // 残りターン：プレイヤーのデバフはプレイヤーのターンの終わり、敵のバフは敵のターンの始めに減る
+            m_player->GetBuffManager().TickDurations(true);
+            for (auto enemy : m_enemies)
+                if (enemy->GetHp() > 0) enemy->GetBuffManager().TickDurations(false);
 
             // 時限床（ボスのやけど床など）の寿命：敵ターン開始時に1減らし、0で消滅
             for (int r = 0; r < m_gridMap->GetRows(); r++)
@@ -548,6 +554,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
      m_input.SetWindowHandle(hWnd);
 
      FloatingTextManager::Clear();
+     BuffPopupManager::Clear();
      UiNotice::Clear();
      EffectManager::Clear();
      ScreenShake::Clear();   // 前の戦闘の揺れを持ち越さない
@@ -893,6 +900,7 @@ void BattleScene::Update(float deltaTime)
         ScreenShake::Update(deltaTime);
         EffectManager::Update(deltaTime);
         FloatingTextManager::Update(deltaTime);
+        BuffPopupManager::Update(deltaTime);
         // 演出中：ボス付近にズームイン（揺れも乗せる。通常のカメラ更新はこの下でreturnされて通らない）
         if (m_awakenBoss)   // ズーム0.4（小さいほど寄る）
             BattleCamera::ApplyAt(m_renderer3D, m_awakenBoss->worldX, m_awakenBoss->worldZ - 1.5f, 0.4f);
@@ -908,6 +916,7 @@ void BattleScene::Update(float deltaTime)
     if (HitStop::IsActive()) { HitStop::Update(deltaTime); return; }   // ヒットストップ中はゲームを止める
 
     FloatingTextManager::Update(deltaTime);
+    BuffPopupManager::Update(deltaTime);
     // 時間を置いて1つずつ進める処理（どれも同じ形：1件処理して、返した秒数だけ待つ。中身は Step〜）
     m_playerHits.Update(deltaTime,  [&](PlayerHit& h) { return StepPlayerHit(h); });
     m_enemyHits.Update(deltaTime,   [&](EnemyHit& h)  { return StepEnemyHit(h); });
@@ -1705,7 +1714,7 @@ void BattleScene::Update(float deltaTime)
             case EnemyTurnPhase::EndTurn:
                 ProcessDeadEnemies();
                 for (auto enemy : m_enemies)
-                    enemy->GetBuffManager().OnTurnEnd(false);  
+                    enemy->GetBuffManager().TickDurations(true);   // 敵のデバフ：敵のターンの終わりに減る（今と同じ）
                 m_turnManager.EndTurn();
                 break;
             case EnemyTurnPhase::DashStep:
@@ -2275,51 +2284,84 @@ void BattleScene::UpdateTrapsAtTurnStart()
     if (!m_detonate.Empty()) m_detonate.Delay(0.3f);   // 少し間をおいて
 }
 
-// バフが付いた／増えた時のエフェクト。ここに無いバフ（デバフ・表示用）は出さない。増やす時は1行
-static const struct { BuffType type; const char* fx; } BUFF_GAIN_FX[] = {
-    // 攻撃が上がる
-    { BuffType::AttackUp, "buff_attack" },   { BuffType::AttackUpTurn, "buff_attack" }, { BuffType::AttackGrowth, "buff_attack" },
-    { BuffType::Frenzy, "buff_attack" },     { BuffType::LastStand, "buff_attack" },    { BuffType::DeepStand, "buff_attack" },
-    { BuffType::KnifePower, "buff_attack" }, { BuffType::HolyGround, "buff_attack" },   { BuffType::Charge, "buff_attack" },
-    { BuffType::TrapPower, "buff_attack" },  { BuffType::HalfCarry, "buff_defense" }, { BuffType::StandFirm, "buff_defense" },
-    { BuffType::BloodThirst, "buff_up" },   { BuffType::Berserker, "buff_attack" }, { BuffType::BloodFlash, "buff_up" },
-    // 守りが上がる
-    { BuffType::DefenseUp, "buff_defense" }, { BuffType::Barricade, "buff_defense" },   { BuffType::Thorns, "buff_defense" },
-    { BuffType::Momentum, "buff_defense" },  { BuffType::Riposte, "buff_defense" },     { BuffType::CardBlock, "buff_defense" },
-    { BuffType::Sanctuary, "buff_defense" }, { BuffType::GuardianVow, "buff_defense" }, { BuffType::Invincible, "buff_defense" },
-    // そのほかの強化
-    { BuffType::RangeUp, "buff_up" },      { BuffType::MoveUp, "buff_up" },       { BuffType::HitAndRun, "buff_up" },
-    { BuffType::Reposition, "buff_up" },   { BuffType::NoxiousFumes, "buff_up" }, { BuffType::ToxicRhythm, "buff_up" },
-    { BuffType::KnifeThrow, "buff_up" },   { BuffType::KnifeGen, "buff_up" },     { BuffType::EmberTrail, "buff_up" },
-    { BuffType::DrawPerTurn, "buff_up" },  { BuffType::Cathedral, "buff_up" },
+// バフ・デバフが付いた／増えた時の演出。増やす時は1行。ここに無いもの（表示用など）は何も出さない
+//   fx     ＝体の所の演出（プレイヤーも敵も。nullptr なら無し）
+//   screen ＝画面のふちのオーラ（プレイヤーだけ。バフは左右から立ちのぼる・デバフは上からアーチ状に落ちる）
+//   popup  ＝頭の上にアイコンを出すか（聖地のように、歩くたびに付いたり消えたりするものは false）
+static const struct { BuffType type; const char* fx; const char* screen; bool popup = true; } BUFF_GAIN_FX[] = {
+    // 攻撃が上がる（ふち：赤）
+    { BuffType::AttackUp, "buff_attack", "aura_buff_attack" },     { BuffType::AttackUpTurn, "buff_attack", "aura_buff_attack" },
+    { BuffType::AttackGrowth, "buff_attack", "aura_buff_attack" }, { BuffType::Frenzy, "buff_attack", "aura_buff_attack" },
+    { BuffType::LastStand, "buff_attack", "aura_buff_attack" },    { BuffType::DeepStand, "buff_attack", "aura_buff_attack" },
+    { BuffType::KnifePower, "buff_attack", "aura_buff_attack" },   { BuffType::HolyGround, "buff_attack", nullptr, false },
+    { BuffType::Charge, "buff_attack", "aura_buff_attack" },       { BuffType::TrapPower, "buff_attack", "aura_buff_attack" },
+    { BuffType::Berserker, "buff_attack", "aura_buff_attack" },
+    // 守りが上がる（ふち：青）
+    { BuffType::DefenseUp, "buff_defense", "aura_buff_defense" },  { BuffType::Barricade, "buff_defense", "aura_buff_defense" },
+    { BuffType::Thorns, "buff_defense", "aura_buff_defense" },     { BuffType::Momentum, "buff_defense", "aura_buff_defense" },
+    { BuffType::Riposte, "buff_defense", "aura_buff_defense" },    { BuffType::CardBlock, "buff_defense", "aura_buff_defense" },
+    { BuffType::Sanctuary, "buff_defense", "aura_buff_defense" },  { BuffType::GuardianVow, "buff_defense", "aura_buff_defense" },
+    { BuffType::Invincible, "buff_defense", "aura_buff_defense" }, { BuffType::HalfCarry, "buff_defense", "aura_buff_defense" },
+    { BuffType::StandFirm, "buff_defense", "aura_buff_defense" },
+    // そのほかの強化（ふち：金）
+    { BuffType::RangeUp, "buff_up", "aura_buff_up" },      { BuffType::MoveUp, "buff_up", "aura_buff_up" },
+    { BuffType::HitAndRun, "buff_up", "aura_buff_up" },    { BuffType::Reposition, "buff_up", "aura_buff_up" },
+    { BuffType::NoxiousFumes, "buff_up", "aura_buff_up" }, { BuffType::ToxicRhythm, "buff_up", "aura_buff_up" },
+    { BuffType::KnifeThrow, "buff_up", "aura_buff_up" },   { BuffType::KnifeGen, "buff_up", "aura_buff_up" },
+    { BuffType::EmberTrail, "buff_up", "aura_buff_up" },   { BuffType::DrawPerTurn, "buff_up", "aura_buff_up" },
+    { BuffType::Cathedral, "buff_up", "aura_buff_up" },    { BuffType::BloodThirst, "buff_up", "aura_buff_up" },
+    { BuffType::BloodFlash, "buff_up", "aura_buff_up" },
+    // デバフ（体の所の演出は、付けた側のカード・攻撃が出しているので無し）
+    { BuffType::Weak, nullptr, "aura_debuff_weak" },       { BuffType::AttackDown, nullptr, "aura_debuff_weak" },
+    { BuffType::Vulnerable, nullptr, "aura_debuff_vuln" }, { BuffType::Frail, nullptr, "aura_debuff_vuln" },
+    { BuffType::DefenseDown, nullptr, "aura_debuff_vuln" },
+    { BuffType::Root, nullptr, "aura_debuff_bind" },       { BuffType::Slow, nullptr, "aura_debuff_bind" },
+    { BuffType::Poison, nullptr, "aura_debuff_poison" },   { BuffType::Burn, nullptr, "aura_debuff_burn" },
 };
 
 // 毎フレーム、前のフレームのバフの値と比べて、付いた／増えたものにエフェクト（どこで付いても拾える）
 void BattleScene::UpdateBuffGainFx()
 {
-    std::unordered_map<const void*, std::map<int, int>> next;
-    auto check = [&](const void* key, const BuffManager& bm, float x, float y, float z) {
-        std::map<int, int> cur;
-        for (auto& b : bm.GetBuffs()) cur[(int)b.type] += (b.value > 0) ? b.value : 1;   // 値の無いバフも「付いた」で拾う
-        auto val = [](const std::map<int, int>& m, BuffType t) { auto f = m.find((int)t); return f == m.end() ? 0 : f->second; };
+    std::unordered_map<const void*, std::map<int, BuffSnap>> next;
+    // y＝体の真ん中（体の所の演出）、headY＝頭の上（アイコン）。画面のふちはプレイヤーだけ
+    auto check = [&](const void* key, const BuffManager& bm, float x, float y, float z, float headY, bool isPlayer) {
+        std::map<int, BuffSnap> cur;
+        for (auto& b : bm.GetBuffs())
+        {
+            BuffSnap& s = cur[(int)b.type];
+            s.value += (b.value > 0) ? b.value : 1;           // 値の無いバフも「付いた」で拾う
+            if (!b.isPermanent()) s.turns += b.duration;      // 重ねがけで残りターンだけ延びた時も拾う
+        }
+        auto get = [](const std::map<int, BuffSnap>& m, BuffType t) { auto f = m.find((int)t); return f == m.end() ? BuffSnap{} : f->second; };
         auto it = m_buffSnap.find(key);
         if (it != m_buffSnap.end())   // 初めて見た時（戦闘開始・召喚直後）は出さない
         {
-            std::vector<const char*> played;   // 同じフレームに同じエフェクトは1回
+            std::vector<const char*> played;   // 同じフレームに同じ演出は1回
+            auto playOnce = [&](const char* id, float px, float py, float pz) {
+                if (!id || std::find(played.begin(), played.end(), id) != played.end()) return;
+                EffectManager::Play(id, px, py, pz);
+                played.push_back(id);
+            };
             for (auto& e : BUFF_GAIN_FX)
-                if (val(cur, e.type) > val(it->second, e.type)
-                    && std::find(played.begin(), played.end(), e.fx) == played.end())
-                {
-                    EffectManager::Play(e.fx, x, y, z);
-                    played.push_back(e.fx);
-                }
+            {
+                BuffSnap now = get(cur, e.type), before = get(it->second, e.type);
+                bool more = now.value > before.value;         // 値が増えた（毒・攻撃UPなど）
+                bool longer = now.turns > before.turns;       // 残りターンが延びた（脱力・弱体の重ねがけなど）
+                if (!more && !longer) continue;
+                playOnce(e.fx, x, y, z);
+                if (isPlayer) playOnce(e.screen, 0.0f, 0.0f, 0.0f);   // 画面の演出なので、場所は使わない
+                if (e.popup)   // 頭の上にアイコン。値のあるもの（毒・攻撃UPなど）は増えた数も
+                    BuffPopupManager::Spawn(e.type, (more && bm.GetBuffValue(e.type) > 0) ? now.value - before.value : 0, x, headY, z);
+            }
         }
         next[key] = std::move(cur);
     };
-    check(m_player, m_player->GetBuffManager(), m_player->worldX, m_player->worldY + 0.5f, m_player->worldZ);
+    check(m_player, m_player->GetBuffManager(), m_player->worldX, m_player->worldY + 0.5f, m_player->worldZ,
+        m_player->worldY + m_player->height + 0.15f, true);
     for (auto e : m_enemies)
         if (e && e->GetHp() > 0)
-            check(e, e->GetBuffManager(), e->worldX, e->worldY + e->height * 0.5f, e->worldZ);
+            check(e, e->GetBuffManager(), e->worldX, e->worldY + e->height * 0.5f, e->worldZ,
+                e->worldY + e->height + 0.15f, false);
     m_buffSnap.swap(next);   // いなくなった敵の分は自然に消える
 }
 

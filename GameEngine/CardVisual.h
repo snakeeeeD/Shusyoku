@@ -10,11 +10,13 @@
 #include "TextureManager.h"
 #include "BuffInfo.h"
 #include "GameUtils.h" 
+#include "CardDamage.h"
 
 #include <DirectXMath.h>
 #include <string>
 #include <set>
 #include <algorithm>
+#include <climits>
 #include <unordered_map>
 
 using namespace DirectX;
@@ -54,30 +56,74 @@ public:
         return color;
     }
 
-    static bool IsCardBoosted(const CardData* data, const Player* player)
+    // カードの数字の色：元の値より上がった＝緑、下がった＝赤（バフ・デバフ・レリック、何で変わっても同じ）
+    static inline const D2D1_COLOR_F NUM_UP = { 0.4f, 1.0f, 0.4f, 1.0f };
+    static inline const D2D1_COLOR_F NUM_DOWN = { 1.0f, 0.4f, 0.3f, 1.0f };
+    static D2D1_COLOR_F NumColor(int shown, int base, const D2D1_COLOR_F& normal, float alpha)
     {
-        if (!data || !player) return false;
-        if (data->type == CardType::Attack)
-            return player->GetBuffManager().HasBuff(BuffType::AttackUp);
-        if (data->type == CardType::Skill)
-            return player->GetBuffManager().HasBuff(BuffType::DefenseUp);
-        return false;
+        D2D1_COLOR_F c = (shown > base) ? NUM_UP : (shown < base) ? NUM_DOWN : normal;
+        c.a = alpha;
+        return c;
     }
 
-    // N文字ごとに改行を差し込む（既存の\nはそのまま尊重）
-    static std::wstring WrapText(const std::wstring& s, int n)
+    // 説明の数字1つ：見せる値（バフ・レリック込み）と、元の値（カードに書いてある値）
+    struct ShownNum { int shown; int base; };
+    struct ShownValues { ShownNum value, sub, onhit, hits; };
+    // {value} {sub} {onhit} {hits} の見せる値と元の値。説明文と効果の札の両方がここを使う（同じ数字を出すため）
+    static ShownValues GetShownValues(const CardData* d, const Player* player)
+    {
+        ShownValues v;
+        v.value = { ActualMainValue(d, player), d->mainEffect.value };
+        int sub = d->subEffect.value;
+        v.sub = { sub + (d->subEffect.type == CardEffectType::Engrave ? Faith::EngraveBonus() : 0), sub };
+        int oh = d->onHitEffect.value, ohShown = oh;
+        if (d->onHitEffect.buffType == "Poison") ohShown += RelicManager::SumValue("poisonAdd");   // 毒の心得
+        if (d->onHitEffect.type == CardEffectType::Engrave) ohShown += Faith::EngraveBonus();     // 聖印
+        v.onhit = { ohShown, oh };
+        int hits = (std::max)(1, d->hits);
+        int hitsShown = (std::max)(1, d->hits + (d->type == CardType::Attack ? RelicManager::SumValue("multiHit") : 0));   // 連撃の刃など
+        v.hits = { hitsShown, hits };
+        return v;
+    }
+
+    // 説明の印（{value} など）を数字に置きかえる。元の値から変わった数字は、その範囲を覚える（上がった＝緑、下がった＝赤）
+    static void ReplaceNum(std::wstring& s, const wchar_t* ph, int shown, int base, std::vector<TextSpan>& spans)
+    {
+        size_t p = s.find(ph);
+        if (p == std::wstring::npos) return;
+        size_t phLen = wcslen(ph);
+        std::wstring num = std::to_wstring(shown);
+        s.replace(p, phLen, num);
+        int delta = (int)num.size() - (int)phLen;
+        for (auto& sp : spans) if (sp.start > p) sp.start = (UINT32)((int)sp.start + delta);   // 後ろの範囲は、ずれた分だけ動かす
+        if (shown != base)
+            spans.push_back({ (UINT32)p, (UINT32)num.size(), shown > base ? NUM_UP : NUM_DOWN });
+    }
+
+    // N文字ごとに改行を差し込む（既存の\nはそのまま尊重）。spans があれば、改行を入れてずれた分だけ範囲も動かす
+    static std::wstring WrapText(const std::wstring& s, int n, std::vector<TextSpan>* spans = nullptr)
     {
         if (n <= 0) return s;
         std::wstring out;
+        std::vector<UINT32> at(s.size() + 1);   // 元の i 文字目が、折り返した後の何文字目になったか
         int lineLen = 0;
-        for (wchar_t c : s)
+        for (size_t i = 0; i < s.size(); i++)
         {
-            if (c == L'\n') { out += c; lineLen = 0; continue; }
+            wchar_t c = s[i];
+            if (c == L'\n') { at[i] = (UINT32)out.size(); out += c; lineLen = 0; continue; }
             bool noLineHead = (c == L'、' || c == L'。');   // 行頭に来させない文字（前の行にぶら下げる）
             if (lineLen >= n && !noLineHead) { out += L'\n'; lineLen = 0; }
+            at[i] = (UINT32)out.size();
             out += c;
             lineLen++;
         }
+        at[s.size()] = (UINT32)out.size();
+        if (spans)
+            for (auto& sp : *spans)
+            {
+                UINT32 e = (std::min)((UINT32)s.size(), sp.start + sp.length);
+                sp.length = at[e] - at[sp.start]; sp.start = at[sp.start];
+            }
         return out;
     }
 
@@ -89,17 +135,9 @@ public:
         {
             if (data->type == CardType::Attack)
             {
-                actualValue = player->GetBuffManager().GetFinalAttack(data->mainEffect.value);
-                if (data->scaleByFaith) actualValue += player->GetFeetFaith();
-                actualValue += player->GetMoved() * data->movedBonus;
-                if (std::find(data->tags.begin(), data->tags.end(), "Knife") != data->tags.end())
-                    actualValue += player->GetBuffManager().GetBuffValue(BuffType::KnifePower)
-                    + RelicManager::SumValue("knifeBonus");
-
-                int hp = player->GetHp(), mhp = player->GetMaxHp();
-                actualValue += (mhp - hp) * data->missingHpPct / 100;   // 血刃：失ったHPの%
-                if (hp * 2 <= mhp) actualValue += player->GetBuffManager().GetBuffValue(BuffType::LastStand);
-                if (hp * 4 <= mhp) actualValue += player->GetBuffManager().GetBuffValue(BuffType::DeepStand);
+                // 罠の数を掛けるカードは、説明が「1つにつき」なので元の値のまま（上乗せは掛けた後の合計に1回だけ足す）
+                if (!data->scaleByTrapCount)
+                    actualValue = CardDamage::Compute(*data, *player, data->mainEffect.value);   // 実際の攻撃と同じ計算
             }
             else if (data->mainEffect.type == CardEffectType::Block)
                 actualValue = player->GetBuffManager().GetFinalBlock(data->mainEffect.value);
@@ -123,64 +161,32 @@ public:
         return actualValue;
     }
 
-    static std::wstring GetEffectText(const CardData* data, const Player* player = nullptr, int wrapChars = 8)
+    // outSpans があれば、元の値から変わった数字の範囲（色つき）を返す
+    static std::wstring GetEffectText(const CardData* data, const Player* player = nullptr, int wrapChars = 8,
+        std::vector<TextSpan>* outSpans = nullptr)
     {
         if (!data) return L"";
         if (data->description.empty()) return L"(no desc)";
 
-        int actualValue = ActualMainValue(data, player);
+        ShownValues sv = GetShownValues(data, player);
         std::wstring result = data->description;
-        std::wstring placeholder = L"{value}";
-        size_t pos = result.find(placeholder);
-        if (pos != std::wstring::npos)
-            result.replace(pos, placeholder.size(), std::to_wstring(actualValue));
-
-        size_t sp = result.find(L"{sub}");
-        if (sp != std::wstring::npos)
-            result.replace(sp, 5, std::to_wstring(data->subEffect.value
-                + (data->subEffect.type == CardEffectType::Engrave ? Faith::EngraveBonus() : 0)));
-
-        size_t op = result.find(L"{onhit}");
-        if (op != std::wstring::npos)
-        {
-            int ov = data->onHitEffect.value;
-            if (data->onHitEffect.buffType == "Poison")
-                ov += RelicManager::SumValue("poisonAdd");   // 毒の心得ぶんも表示
-            if (data->onHitEffect.type == CardEffectType::Engrave)
-                ov += Faith::EngraveBonus();                  // 聖印ぶんも表示
-            result.replace(op, 7, std::to_wstring(ov));
-        }
-
-        size_t odp = result.find(L"{onhitdur}");
-        if (odp != std::wstring::npos)
-            result.replace(odp, 10, std::to_wstring(data->onHitEffect.duration));
-
-        size_t o2v = result.find(L"{onhit2}");
-        if (o2v != std::wstring::npos)
-            result.replace(o2v, 8, std::to_wstring(data->onHitEffect2.value));
-
-        size_t o2d = result.find(L"{onhit2dur}");
-        if (o2d != std::wstring::npos)
-            result.replace(o2d, 11, std::to_wstring(data->onHitEffect2.duration));
-
-        size_t hp = result.find(L"{hits}");
-        if (hp != std::wstring::npos)
-        {
-            int hits = data->hits;
-            if (data->type == CardType::Attack)
-                hits += RelicManager::SumValue("multiHit");   // combo_blade等
-            if (hits < 1) hits = 1;
-            result.replace(hp, 6, std::to_wstring(hits));      // "{hits}"=6文字
-        }
-
-        size_t dp = result.find(L"{ondiscard}");
-        if (dp != std::wstring::npos)
-            result.replace(dp, 11, std::to_wstring(data->onDiscardEffect.value));
+        std::vector<TextSpan> spans;
+        auto put = [&](const wchar_t* ph, int shown, int base) { ReplaceNum(result, ph, shown, base, spans); };
+        put(L"{value}", sv.value.shown, sv.value.base);
+        put(L"{sub}", sv.sub.shown, sv.sub.base);
+        put(L"{onhit}", sv.onhit.shown, sv.onhit.base);
+        put(L"{onhitdur}", data->onHitEffect.duration, data->onHitEffect.duration);
+        put(L"{onhit2}", data->onHitEffect2.value, data->onHitEffect2.value);
+        put(L"{onhit2dur}", data->onHitEffect2.duration, data->onHitEffect2.duration);
+        put(L"{hits}", sv.hits.shown, sv.hits.base);
+        put(L"{ondiscard}", data->onDiscardEffect.value, data->onDiscardEffect.value);
 
         if (data->exhaust)
             result += L" \n[廃棄]";
 
-        return WrapText(result, wrapChars);
+        std::wstring wrapped = WrapText(result, wrapChars, &spans);
+        if (outSpans) *outSpans = spans;
+        return wrapped;
     }
 
     // 中心基準スケールの矩形
@@ -194,7 +200,8 @@ public:
 
     // ===== 効果の札（図の枠の左に縦に並べる。見た目が似たカードを見分けるため） =====
     // アイコンは敵の行動予告と同じ作り。value<0＝数字なし（hits>1 なら「×hits」だけ出す）
-    struct EffectBadge { const char* icon; int value; int hits; };
+    static constexpr int NO_BASE = INT_MIN;   // 札の「元の値」が無い（数字が変わらない札）
+    struct EffectBadge { const char* icon; int value; int hits; int base = NO_BASE; };   // base＝元の値（value と違えば、上がった＝緑・下がった＝赤）
     static constexpr float BADGE_X = 11.0f, BADGE_TOP = 35.0f, BADGE_AREA_H = 39.0f;   // 1倍のカードでの位置（図の枠の左側）
     static constexpr float BADGE_W = 25.0f, BADGE_H = 12.0f, BADGE_GAP = 1.5f;
     static float BadgeRowH(int n) { return n > 0 ? (std::min)(BADGE_H + BADGE_GAP, BADGE_AREA_H / (float)n) : 0.0f; }   // 多い時は縦に詰める
@@ -203,28 +210,29 @@ public:
     {
         std::vector<EffectBadge> v;
         if (!d || d->type == CardType::Status || d->type == CardType::Curse) return v;
-        auto add = [&](const CardEffectData& e, int value, int hits) {
+        auto add = [&](const CardEffectData& e, int value, int hits, int base) {   // base＝元の値（バフ・レリックを足す前）
             if (!e.hasEffect) return;
             switch (e.type)
             {
-            case CardEffectType::Damage:       v.push_back({ hits > 1 ? "intent_multihit" : "intent_attack", value, hits }); break;
-            case CardEffectType::Block:        v.push_back({ "intent_block", value, 1 }); break;
-            case CardEffectType::Heal:         v.push_back({ "intent_heal", value, 1 }); break;
+            case CardEffectType::Damage:       v.push_back({ hits > 1 ? "intent_multihit" : "intent_attack", value, hits, base }); break;
+            case CardEffectType::Block:        v.push_back({ "intent_block", value, 1, base }); break;
+            case CardEffectType::Heal:         v.push_back({ "intent_heal", value, 1, base }); break;
             case CardEffectType::ApplyBuff:
             case CardEffectType::ApplyDebuff:
             {
                 if (e.buffType.empty()) break;
                 BuffType bt = StringToBuffType(e.buffType);
                 int n = BuffInfo::IsDurationBased(bt) ? e.duration : value;      // 弱体・脱力などはターン数
+                int nb = BuffInfo::IsDurationBased(bt) ? e.duration : base;      // 元の値
                 const char* ic = (e.type == CardEffectType::ApplyBuff) ? "intent_buff" : "intent_debuff";
-                if (bt == BuffType::Poison) { ic = "intent_poison"; n += RelicManager::SumValue("poisonAdd"); }
-                v.push_back({ ic, BuffInfo::HidesValue(bt) ? -1 : n, 1 });
+                if (bt == BuffType::Poison) { ic = "intent_poison"; n += RelicManager::SumValue("poisonAdd"); }   // 毒の心得（元の値には足さない）
+                v.push_back({ ic, BuffInfo::HidesValue(bt) ? -1 : n, 1, BuffInfo::HidesValue(bt) ? NO_BASE : nb });
                 break;
             }
             // 毒を使う
             case CardEffectType::Catalyst:     v.push_back({ "intent_poison", -1, value }); break;   // 毒を×倍
             case CardEffectType::DrainPoison:  v.push_back({ "intent_poison", -1, 1 }); v.push_back({ "intent_heal", -1, 1 }); break;
-            case CardEffectType::PoisonBurst:  v.push_back({ "intent_poison", value + RelicManager::SumValue("poisonAdd"), 1 }); break;
+            case CardEffectType::PoisonBurst:  v.push_back({ "intent_poison", value + RelicManager::SumValue("poisonAdd"), 1, base }); break;
             // カードを動かす
             case CardEffectType::BlockDamage:  v.push_back({ "intent_blockdamage", -1, 1 }); break;
             case CardEffectType::Draw:         v.push_back({ "intent_draw", value, 1 }); break;
@@ -247,7 +255,7 @@ public:
             // 信仰
             case CardEffectType::Engrave:
             case CardEffectType::EngraveArea:
-            case CardEffectType::Purify:       v.push_back({ "intent_buff", value > 0 ? value : -1, 1 }); break;
+            case CardEffectType::Purify:       v.push_back({ "intent_buff", value > 0 ? value : -1, 1, value > 0 ? base : NO_BASE }); break;
             case CardEffectType::Judgement:
             case CardEffectType::Miracle:      v.push_back({ "intent_buff", -1, value }); break;   // 信仰×倍
             case CardEffectType::Knockback:    v.push_back({ "intent_knockback", -1, 1 }); break;
@@ -257,18 +265,19 @@ public:
         };
         auto addMove = [&]() { v.push_back({ "intent_move", d->range > 0 ? d->range : -1, 1 }); };   // 移動：何マスまで動けるか（敵の「移動」と同じ絵）
         if (d->type == CardType::Move) addMove();                // 移動カード：まず移動、その後ろにブロック・ドローなど
-        add(d->mainEffect, ActualMainValue(d, player), d->hits);
+        ShownValues sv = GetShownValues(d, player);
+        add(d->mainEffect, sv.value.shown, d->hits, sv.value.base);
         if (d->type != CardType::Move && d->dash) addMove();     // 突進する攻撃（突撃猛進・駆け抜け斬り）：攻撃の後ろに移動
-        add(d->onHitEffect, d->onHitEffect.value, 1);
-        add(d->onHitEffect2, d->onHitEffect2.value, 1);
-        add(d->subEffect, d->subEffect.value, 1);
-        add(d->subEffect2, d->subEffect2.value, 1);
-        add(d->allEnemyEffect, d->allEnemyEffect.value, 1);
+        add(d->onHitEffect, d->onHitEffect.value, 1, d->onHitEffect.value);   // 毒の心得は add の中で足す（元の値は足す前）
+        add(d->onHitEffect2, d->onHitEffect2.value, 1, d->onHitEffect2.value);
+        add(d->subEffect, sv.sub.shown, 1, sv.sub.base);
+        add(d->subEffect2, d->subEffect2.value, 1, d->subEffect2.value);
+        add(d->allEnemyEffect, d->allEnemyEffect.value, 1, d->allEnemyEffect.value);
         if (d->selfDamage > 0) v.push_back({ "intent_selfdamage", d->selfDamage, 1 });   // 自傷（代償なので効果の後ろ）
         if (d->onDiscardEffect.hasEffect)   // 捨てられた時：目印の後ろに、その効果の札
         {
             v.push_back({ "intent_ondiscard", -1, 1 });
-            add(d->onDiscardEffect, d->onDiscardEffect.value, 1);
+            add(d->onDiscardEffect, d->onDiscardEffect.value, 1, d->onDiscardEffect.value);
         }
         // 数値が0の札（毒塗りの「0ダメージ」など）は出さない。数字を出さない札（-1）は残す
         v.erase(std::remove_if(v.begin(), v.end(), [](const EffectBadge& b) { return b.value == 0; }), v.end());
@@ -496,12 +505,10 @@ public:
         float fh = 20.0f * s;
         D2D1_SIZE_F cs = tr->Measure(cost, fh, FontRole::Body);          // 実際の数字の大きさで中央に
         tr->DrawOutlinedText(cost, ocx - cs.width / 2.0f, ocy - cs.height / 2.0f, fh,
-            shownCost > data->cost ? D2D1::ColorF(1.0f, 0.4f, 0.3f, alpha) : D2D1::ColorF(1, 1, 1, alpha),
+            NumColor(data->cost, shownCost, D2D1::ColorF(1, 1, 1), alpha),   // コストは低い方が得：下がった＝緑・上がった＝赤（引数の順を逆にしている）
             ol, olT, rot, px, py);
 
-        D2D1_COLOR_F dc = IsCardBoosted(data, player)
-            ? D2D1::ColorF(0.4f, 1.0f, 0.4f, alpha)
-            : D2D1::ColorF(0.8f, 0.8f, 0.8f, alpha);
+        D2D1_COLOR_F dc = D2D1::ColorF(0.8f, 0.8f, 0.8f, alpha);   // 説明文はいつもの色。変わった数字だけ、下の範囲で緑・赤
         // 説明文：説明欄（幅約80・高さ約49、カード1倍の単位）に収まるまで文字を小さくする。
         // 小さくするたびに1行の文字数も増やして折り返し直す（行数そのものを減らす）
         const float DESC_W = 80.0f, DESC_H = 49.0f, LINE = 1.25f, MIN_FONT = 7.0f;
@@ -528,6 +535,9 @@ public:
             }
             s_fit[key] = df;
         }
+        std::vector<TextSpan> numSpans;   // 元の値から変わった数字（上がった＝緑・下がった＝赤）
+        GetEffectText(data, player, (int)(DESC_W / df), &numSpans);
+        for (auto& sp : numSpans) sp.color.a = alpha;
         float ty = y + 82 * s;
         if (perm)
         {
@@ -536,7 +546,7 @@ public:
             ty += tr->Measure(L"削除不可", df).height * s;
         }
         tr->DrawOutlinedText(desc.c_str(),
-            x + 12 * s, ty, df * s, dc, ol, olT, rot, px, py);
+            x + 12 * s, ty, df * s, dc, ol, olT, rot, px, py, &numSpans);
 
         // 効果の札の数値（アイコンの右）。主な効果が増えている時は説明と同じく緑
         {
@@ -547,7 +557,8 @@ public:
                 if (badges[i].value < 0 && badges[i].hits <= 1) continue;   // 数字なし
                 float bh = rowH - BADGE_GAP, fs = bh * 0.8f * s;
                 float tx = x + (BADGE_X + bh) * s, ty = y + (BADGE_TOP + i * rowH) * s + (bh * s - fs * 1.45f) / 2.0f;   // 行の高さ≒文字の1.45倍
-                D2D1_COLOR_F nc = (i == 0 && IsCardBoosted(data, player)) ? D2D1::ColorF(0.4f, 1.0f, 0.4f, alpha) : D2D1::ColorF(1.0f, 0.96f, 0.8f, alpha);
+                D2D1_COLOR_F nc = (badges[i].base == NO_BASE) ? D2D1::ColorF(1.0f, 0.96f, 0.8f, alpha)
+                    : NumColor(badges[i].value, badges[i].base, D2D1::ColorF(1.0f, 0.96f, 0.8f), alpha);   // 上がった＝緑・下がった＝赤
                 if (badges[i].value < 0)   // 「×倍」だけ（触媒・審判など）
                 {
                     std::wstring hx = L"×" + std::to_wstring(badges[i].hits);

@@ -9,7 +9,9 @@ public:
 
     void AddBuff(const Buff& buff);
     void RemoveBuff(BuffType type);
-    void OnTurnEnd(bool decrementPoison = true);
+    // 残りターンを1減らし、0になったものを消す。debuffs＝true ならデバフだけ、false ならバフだけ
+    //（デバフは持ち主のターンの終わり、バフは持ち主のターンの始めに呼ぶ。毒は値で減るので TickPoison で）
+    void TickDurations(bool debuffs);
 
     int  TickPoison();
 

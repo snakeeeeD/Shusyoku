@@ -443,7 +443,7 @@ void BattleScene::HandleReleaseToPlay()
     if (m_input.GetMouseButtonRelease(0) && m_selectedCardIndex >= 0 && m_selectedCardIndex < (int)cards.size())
     {
         POINT releasePos = m_input.GetMousePos();
-        if (releasePos.y < m_screenHeight - 190)
+        if (releasePos.y < m_screenHeight - CardVisual::PLAY_LINE_OFFSET)   // 使用ライン（見た目の線と同じ定数）
         {
             const Card* card = cards[m_selectedCardIndex];
             CardData dataCopy = *card->GetData();

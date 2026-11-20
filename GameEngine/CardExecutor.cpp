@@ -1,5 +1,6 @@
 #include "CardExecutor.h"
 #include "CardEffect.h"
+#include "CardDamage.h"
 #include "EffectManager.h"
 #include "BattleHighlighter.h"
 #include "TerrainDataBase.h"
@@ -256,9 +257,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             }
 
             int hits = EffectiveHits(data, player);
-            int dmg = player->GetBuffManager().GetFinalAttack(baseVal);
-            dmg += player->GetMoved() * data.movedBonus;   // 移動マス数で増える
-            dmg += (player->GetMaxHp() - player->GetHp()) * data.missingHpPct / 100;   // 血刃：失ったHPの%
+            int dmg = CardDamage::Compute(data, *player, baseVal);   // 表示と同じ計算（罠の数を掛けた後に上乗せ）
             for (auto enemy : targets)
             {
                 enemy->TakeDamage(dmg);
@@ -338,7 +337,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                     if (enemy)
                     {
                         for (int h = 0; h < EffectiveHits(data, player); h++)
-                            enemy->TakeDamage(player->GetBuffManager().GetFinalAttack(data.mainEffect.value));
+                            enemy->TakeDamage(CardDamage::Compute(data, *player, data.mainEffect.value));
 
                         if (enemy->GetBuffManager().HasBuff(BuffType::Thorns))
                             player->TakeDamage(enemy->GetBuffManager().GetBuffValue(BuffType::Thorns));
@@ -425,7 +424,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                     if (hitEnemy)
                     {
                         for (int h = 0; h < EffectiveHits(data, player); h++)
-                            hitEnemy->TakeDamage(player->GetBuffManager().GetFinalAttack(data.mainEffect.value));
+                            hitEnemy->TakeDamage(CardDamage::Compute(data, *player, data.mainEffect.value));
                         if (hitEnemy->GetBuffManager().HasBuff(BuffType::Thorns))
                             player->TakeDamage(hitEnemy->GetBuffManager().GetBuffValue(BuffType::Thorns));
                         CardEffect::ApplyOnHitEffect(data.onHitEffect, hitEnemy->GetBuffManager());
@@ -554,20 +553,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             }
             else
             {
-                dmg = player->GetBuffManager().GetFinalAttack(data.mainEffect.value);
-                if (data.scaleByFaith) dmg += player->GetFeetFaith();   // 聖なる刃
-                dmg += player->GetMoved() * data.movedBonus;            // 移動マス数で増える
-                dmg += (player->GetMaxHp() - player->GetHp()) * data.missingHpPct / 100;   // 血刃：失ったHPの%
-
-                // 背水：低HPで攻撃UP（Powerのバフ値ぶん・今のHPで判定）
-                int hp = player->GetHp(), mhp = player->GetMaxHp();
-                if (hp * 2 <= mhp) dmg += player->GetBuffManager().GetBuffValue(BuffType::LastStand);  // 半分以下
-                if (hp * 4 <= mhp) dmg += player->GetBuffManager().GetBuffValue(BuffType::DeepStand);  // 1/4以下
-
-                if (std::find(data.tags.begin(), data.tags.end(), "Knife") != data.tags.end())
-                    dmg += player->GetBuffManager().GetBuffValue(BuffType::KnifePower)
-                    + RelicManager::SumValue("knifeBonus");   // 研ぎ師
-
+                dmg = CardDamage::Compute(data, *player, data.mainEffect.value);   // 表示と同じ計算（CardDamage.h）
                 target->TakeDamage(dmg);
             }
 

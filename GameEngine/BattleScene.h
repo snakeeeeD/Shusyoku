@@ -238,7 +238,8 @@ private:
     BattleCamera m_camera;   // 位置・ズーム・手での操作・狙いカメラ・操作デモ
 
     // バフが付いた／増えた時のエフェクト（毎フレーム前の値と比べる＝どこで付いても拾える）
-    std::unordered_map<const void*, std::map<int, int>> m_buffSnap;   // 持ち主 → バフ種類ごとの値（種類が増えても直さなくていいよう map）
+    struct BuffSnap { int value = 0; int turns = 0; };   // 種類ごとの値の合計と、残りターンの合計（重ねがけでターンだけ延びたのも拾う）
+    std::unordered_map<const void*, std::map<int, BuffSnap>> m_buffSnap;   // 持ち主 → バフ種類ごと（種類が増えても直さなくていいよう map）
     void UpdateBuffGainFx();
 
     void PlayEnemyAreaFx(Enemy* enemy, const EnemyAction& a, int tC, int tR, int preCol, int preRow,

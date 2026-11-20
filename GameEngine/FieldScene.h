@@ -75,7 +75,7 @@ private:
     int m_maxSteps;
 
     std::string m_currentEnemyId;
-    void AvoidConsecutive(int idx);
+    void AvoidConsecutive(int idx, bool writeNode = true);   // 直前と同じ敵・この層で戦った組み合わせを避けて決める（writeNode＝マスに書き残す）
 
     float m_highlightTimer = 0.0f;
 

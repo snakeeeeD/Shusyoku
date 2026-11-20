@@ -1460,12 +1460,13 @@
           "effects": [
             {
               "kind": "Damage",
-              "value": 7
+              "value": 7,
+              "hits": 1
             },
             {
               "kind": "Debuff",
               "buff": "Weak",
-              "value": 1,
+              "value": 2,
               "duration": 2,
               "applyTo": "Player"
             }
@@ -1477,7 +1478,7 @@
         {
           "description": "毒の霧、毒{0}付与",
           "target": {
-            "rangeType": "Area",
+            "rangeType": "Grid",
             "range": 3,
             "minRange": 1
           },
@@ -1491,7 +1492,7 @@
             }
           ],
           "select": {
-            "chance": 30
+            "chance": 45
           }
         },
         {
