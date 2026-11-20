@@ -4,6 +4,7 @@
 #include "ScreenShake.h"
 #include "Se.h"
 #include <algorithm>
+#include <cstdlib>
 
 int EffectManager::Play(const std::string& id, float x, float y, float z, float rot, float delay, XMFLOAT4 tint, float scale)
 {
@@ -13,13 +14,31 @@ int EffectManager::Play(const std::string& id, float x, float y, float z, float 
         s_pending.push_back({ id, x, y, z, rot, tint, scale, delay });
         return handle;
     }
+    SpawnAt at = s_cam;
+    at.x = x; at.y = y; at.z = z; at.rot = rot; at.tint = tint; at.scale = scale;
+    SpawnParts(id, at, handle);
+    return handle;
+}
+
+int EffectManager::PlayFrom(const std::string& id, const XMFLOAT3& from, const XMFLOAT3& to)
+{
+    int handle = s_nextHandle++;
+    SpawnAt at = s_cam;
+    at.x = to.x; at.y = to.y; at.z = to.z;
+    at.hasFrom = true; at.from = from;
+    SpawnParts(id, at, handle);
+    return handle;
+}
+
+// 部品を全部出す（Play と PlayFrom の共通部分）
+void EffectManager::SpawnParts(const std::string& id, SpawnAt at, int handle)
+{
     const EffectDef* def = EffectDataBase::Get(id);
-    if (!def) return handle;
+    if (!def) return;
     Se::Play(def->se);   // effects.json の "se"（時間差のときは、出るときに鳴る＝見た目と同時）
     if (def->shake > 0.0f) ScreenShake::Add(def->shake);
 
-    SpawnAt at = s_cam;
-    at.x = x; at.y = y; at.z = z; at.rot = rot; at.tint = tint; at.scale = scale;
+    at.mirror = def->randomSide && (rand() & 1);   // 左右は1回だけ決めて、全部の部品に同じ向きを渡す
     for (auto& partDef : def->parts)   // 種類を気にせず、データに「出して」と頼む
     {
         std::unique_ptr<EffectPart> part = partDef->Spawn(at);
@@ -27,8 +46,7 @@ int EffectManager::Play(const std::string& id, float x, float y, float z, float 
         s_parts.push_back(std::move(part));
     }
     if (!def->then.empty())
-        Play(def->then, x, y, z, rot, def->thenDelay, tint, scale);   // 着弾後に連鎖
-    return handle;
+        Play(def->then, at.x, at.y, at.z, at.rot, def->thenDelay, at.tint, at.scale);   // 着弾後に連鎖（飛び始めは渡さない）
 }
 
 void EffectManager::Stop(int handle, float fadeSec)
@@ -36,6 +54,13 @@ void EffectManager::Stop(int handle, float fadeSec)
     if (handle == 0) return;
     for (auto& p : s_parts)
         if (p->handle == handle) p->Stop(fadeSec);
+}
+
+void EffectManager::SetEnds(int handle, const XMFLOAT3& from, const XMFLOAT3& to)
+{
+    if (handle == 0) return;
+    for (auto& p : s_parts)
+        if (p->handle == handle) p->SetEnds(from, to);
 }
 
 void EffectManager::Update(float dt)

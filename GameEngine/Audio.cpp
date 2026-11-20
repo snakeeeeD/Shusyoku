@@ -34,7 +34,7 @@ void Audio::Shutdown()
     g_inited = false;
 }
 
-void Audio::PlaySE(const std::string& path)
+void Audio::PlaySE(const std::string& path, float volume)
 {
     if (!g_inited) return;
     auto& pool = g_seCache[path];
@@ -51,7 +51,7 @@ void Audio::PlaySE(const std::string& path)
     ma_sound* s = pool.voices[pool.next];
     pool.next = (pool.next + 1) % (int)pool.voices.size();
 
-    float v = (g_seVol.count(path) ? g_seVol[path] : 1.0f) * g_seMaster;
+    float v = (g_seVol.count(path) ? g_seVol[path] : 1.0f) * g_seMaster * volume;
     ma_sound_set_volume(s, v);
     ma_sound_seek_to_pcm_frame(s, 0);
     ma_sound_start(s);

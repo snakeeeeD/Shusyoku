@@ -1,7 +1,7 @@
 {
   "aimCamera": false,
-  "bgmVolume": 0.550000011920929,
+  "bgmVolume": 0.5,
   "displayMode": "borderless",
   "screenShake": true,
-  "seVolume": 0.550000011920929
+  "seVolume": 0.5
 }

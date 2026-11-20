@@ -70,6 +70,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <TargetName>ThinkOrSink</TargetName>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -113,6 +116,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxgi.lib;windowscodecs.lib;user32.lib;ole32.lib</AdditionalDependencies>
     </Link>
+    <FxCompile>
+      <ObjectFileOutput>$(IntDir)%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -133,6 +139,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxgi.lib;windowscodecs.lib;user32.lib;ole32.lib</AdditionalDependencies>
     </Link>
+    <FxCompile>
+      <ObjectFileOutput>$(IntDir)%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AnimTune.h" />
@@ -167,6 +176,8 @@
     <ClInclude Include="ScreenStatusFx.h" />
     <ClInclude Include="ScreenOverlay.h" />
     <ClInclude Include="FlashSprite.h" />
+    <ClInclude Include="Projectile.h" />
+    <ClInclude Include="Tether.h" />
     <ClInclude Include="CardBurn.h" />
     <ClInclude Include="EffectPart.h" />
     <ClInclude Include="EffectKinds.h" />
@@ -287,6 +298,8 @@
     <ClCompile Include="ScreenStatusFx.cpp" />
     <ClCompile Include="ScreenOverlay.cpp" />
     <ClCompile Include="FlashSprite.cpp" />
+    <ClCompile Include="Projectile.cpp" />
+    <ClCompile Include="Tether.cpp" />
     <ClCompile Include="CardBurn.cpp" />
     <ClCompile Include="EffectKinds.cpp" />
     <ClCompile Include="ParticleBurst.cpp" />
@@ -377,6 +390,11 @@
     <FxCompile Include="Shaders\Dissolve_PS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shaders\MotionBlur_PS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel>5.0</ShaderModel>
     </FxCompile>
     <FxCompile Include="Shaders\Fx_PS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>

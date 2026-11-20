@@ -364,6 +364,12 @@
     <Filter Include="ソース ファイル\01-描画関連\20-Effect\10-種類\06-FlashSprite">
       <UniqueIdentifier>{e8796978-11ff-461b-81de-aa7dfff75ae3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\20-Effect\10-種類\07-Projectile">
+      <UniqueIdentifier>{ec8a42a6-d751-4fce-88a4-ed5d0da11358}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\20-Effect\10-種類\08-Tether">
+      <UniqueIdentifier>{248fe51f-feb6-4e70-95ac-178a22eaf691}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ソース ファイル\01-描画関連\20-Effect\10-種類\05-ScreenOverlay">
       <UniqueIdentifier>{6919a5f3-d902-4d45-8e1c-cad3ce11233d}</UniqueIdentifier>
     </Filter>
@@ -741,6 +747,12 @@
     <ClInclude Include="FlashSprite.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\06-FlashSprite</Filter>
     </ClInclude>
+    <ClInclude Include="Projectile.h">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\07-Projectile</Filter>
+    </ClInclude>
+    <ClInclude Include="Tether.h">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\08-Tether</Filter>
+    </ClInclude>
     <ClInclude Include="ScreenOverlay.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\05-ScreenOverlay</Filter>
     </ClInclude>
@@ -995,6 +1007,12 @@
     <ClCompile Include="FlashSprite.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\06-FlashSprite</Filter>
     </ClCompile>
+    <ClCompile Include="Projectile.cpp">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\07-Projectile</Filter>
+    </ClCompile>
+    <ClCompile Include="Tether.cpp">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\08-Tether</Filter>
+    </ClCompile>
     <ClCompile Include="ScreenOverlay.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\05-ScreenOverlay</Filter>
     </ClCompile>
@@ -1056,6 +1074,9 @@
       <Filter>シェーダーファイル</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Dissolve_PS.hlsl">
+      <Filter>シェーダーファイル</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\MotionBlur_PS.hlsl">
       <Filter>シェーダーファイル</Filter>
     </FxCompile>
   </ItemGroup>

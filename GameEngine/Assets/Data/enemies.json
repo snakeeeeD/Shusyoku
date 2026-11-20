@@ -514,8 +514,8 @@
             {
               "kind": "Debuff",
               "buff": "Burn",
-              "value": 1,
-              "duration": 1
+              "value": 2,
+              "duration": 2
             }
           ],
           "select": {
@@ -767,6 +767,9 @@
         },
         {
           "description": "狙撃、{0}ダメージ",
+          "windupVfx": "proj_arrow",
+          "windup": 0.3,
+          "hitVfx": "arrow_hit",
           "target": {
             "unavoidable": true
           },
@@ -879,6 +882,8 @@
       "actions": [
         {
           "description": "絡めとる、引き寄せ",
+          "windupVfx": "tether_tentacle",
+          "windup": 0.15,
           "target": {
             "unavoidable": true
           },
@@ -1182,6 +1187,9 @@
         },
         {
           "description": "岩投げ、{0}ダメージ",
+          "windupVfx": "proj_rock",
+          "windup": 0.3,
+          "hitVfx": "rock_hit",
           "target": {
             "unavoidable": true
           },
@@ -1315,6 +1323,8 @@
       "actions": [
         {
           "description": "引きずり込む、引き寄せ",
+          "windupVfx": "tether_tongue",
+          "windup": 0.15,
           "target": {
             "unavoidable": true
           },
@@ -2395,6 +2405,9 @@
       "actions": [
         {
           "description": "毒矢、{0}ダメージ、毒{1}付与",
+          "windupVfx": "proj_arrow_poison",
+          "windup": 0.3,
+          "hitVfx": "arrow_hit_poison",
           "target": {
             "unavoidable": true
           },
@@ -3615,6 +3628,8 @@
       "actions": [
         {
           "description": "重力崩壊、{0}ダメージ、引き寄せ",
+          "windupVfx": "tether_gravity",
+          "windup": 0.15,
           "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Area",
@@ -3755,6 +3770,7 @@
         {
           "description": "グリッチ斬、{0}ダメージ×3、脱力{1}付与",
           "areaVfx": "atk_slash",
+          "hitVfx": "glitch_slash",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -3983,6 +3999,8 @@
       "actions": [
         {
           "description": "次元の糸、{0}ダメージ、拘束{1}付与、引き寄せ",
+          "windupVfx": "tether_thread_weaver",
+          "windup": 0.15,
           "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Cross",
@@ -4176,6 +4194,8 @@
       "actions": [
         {
           "description": "引き寄せ、{0}ダメージ、引き寄せ",
+          "windupVfx": "tether_thread_hex",
+          "windup": 0.15,
           "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Diagonal",
@@ -4368,6 +4388,9 @@
         },
         {
           "description": "虚無の侵蝕、{0}ダメージ、弱体{1}付与",
+          "windupVfx": "void_strike",
+          "windup": 0.25,
+          "hitVfx": "void_strike_hit",
           "target": {
             "unavoidable": true
           },

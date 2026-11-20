@@ -28,6 +28,7 @@ struct EffectDef
     float shake = 0.0f;               // 再生時の画面振動の強さ(0~1)
     std::string se;                   // 再生時に鳴らすSE（Assets/Sound/se/ のファイル名）
     float seVol = 1.0f;               // そのSEの音量
+    bool randomSide = false;          // 出すたびに、左右を逆にするかをランダムで決める（全部の部品が同じ側にそろう）
 };
 
 class EffectDataBase

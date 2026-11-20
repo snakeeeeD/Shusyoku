@@ -19,6 +19,7 @@ namespace Se
     inline constexpr const char* Upgrade    = "upgrade.wav";       // カード強化
     inline constexpr const char* Engrave    = "faith_engrave.wav"; // 信仰を刻んだ
     inline constexpr const char* CoinGet    = "coin_get.wav";      // ゴールドを手に入れた
+    inline constexpr const char* Heartbeat  = "heartbeat.wav";     // HPが低くなった瞬間の鼓動（ドクドク1組。0.1秒と0.3秒あたりに音がある）
 
     // 足音は層ごとに違う（シーンの開始時に SetFloor で層を入れる）
     inline int g_floorLayer = 1;
@@ -30,7 +31,7 @@ namespace Se
 
     // 同じ音が同じ瞬間に何重にも鳴る（爆発が24個同時など）と割れるので、
     // 同じファイルは minInterval 秒以内の重複を間引く
-    inline void Play(const std::string& file, float minInterval = 0.06f)
+    inline void Play(const std::string& file, float minInterval = 0.06f, float volume = 1.0f)   // volume＝この1回だけの音量の倍率
     {
         if (file.empty()) return;
         using clock = std::chrono::steady_clock;
@@ -39,6 +40,6 @@ namespace Se
         auto it = s_last.find(file);
         if (it != s_last.end() && std::chrono::duration<float>(now - it->second).count() < minInterval) return;
         s_last[file] = now;
-        Audio::PlaySE(Path(file));
+        Audio::PlaySE(Path(file), volume);
     }
 }

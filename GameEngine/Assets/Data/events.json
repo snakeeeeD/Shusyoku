@@ -74,6 +74,38 @@
       "layer": 1
     },
     {
+      "id": "mimic_chest",
+      "title": "妖しい宝箱",
+      "desc": "豪華な宝箱だ。……かすかに、息づかいが聞こえる気がする。",
+      "choices": [
+        {
+          "label": "そのまま開ける",
+          "result": "蓋に手をかけた――",
+          "outcomes": [
+            { "type": "treasure", "chance": 50 },
+            { "type": "battle", "param": "enc21" }
+          ]
+        },
+        {
+          "label": "血で封印を解く（-15HP / 財宝）",
+          "result": "血を吸った箱が、静かに開いた。",
+          "outcomes": [
+            { "type": "hp", "value": -15 },
+            { "type": "treasure" }
+          ]
+        },
+        {
+          "label": "呪いを受け入れる（呪い・重荷 / 財宝）",
+          "result": "重たい何かが、背中にのしかかった。",
+          "outcomes": [
+            { "type": "addCard", "param": "cursed_burden" },
+            { "type": "treasure" }
+          ]
+        }
+      ],
+      "layer": 1
+    },
+    {
       "id": "spring",
       "title": "澄んだ泉",
       "desc": "飲めば癒されそうだが、何かが沈んでいる。",

@@ -30,6 +30,11 @@ public:
     float ScaleY() const;             // 縦の大きさの倍率（空中で伸び、着地でつぶれる）
     const std::vector<Ghost>& Ghosts() const { return m_ghosts; }
 
+    // 突進：on の間は、足もとから土煙を出し続け、速さに合わせて後ろへブラーを伸ばす（残像は出さない）。off で止まった所に土煙
+    void SetDash(bool on);
+    float BlurX() const { return m_blurX; }   // 後ろ（元いた方向）へ伸びるブラーの長さ（ワールド）
+    float BlurZ() const { return m_blurZ; }
+
 private:
     void Land(float x, float z);      // 着地：つぶれ始め＋左右へ土ぼこり
 
@@ -46,4 +51,10 @@ private:
     bool  m_ghostOn = false;
     float m_ghostTimer = 0.0f, m_trailTimer = 0.0f;
     std::vector<Ghost> m_ghosts;
+    // 突進
+    bool  m_dash = false;
+    float m_dustTimer = 0.0f;
+    float m_prevX = 0.0f, m_prevZ = 0.0f;   // 前のフレームの位置（速さを出す）
+    bool  m_hasPrev = false;
+    float m_blurX = 0.0f, m_blurZ = 0.0f;   // 今のブラー（目標へなめらかに近づく）
 };

@@ -1,6 +1,7 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
+#include <algorithm>
 #include "Renderer3D.h"
 #include "RenderConfig.h"   // 論理座標の大きさ（DrawDissolveScreen）
 #include "RenderConfig.h"
@@ -613,6 +614,17 @@ bool Renderer3D::InitFx()
     bd.ByteWidth = sizeof(DissolveParams);
     if (FAILED(m_device->CreateBuffer(&bd, nullptr, m_dissolveCB.GetAddressOf()))) return false;
 
+    // 動きのブラー（t0 の絵だけを使う）
+    ComPtr<ID3DBlob> mps;
+    if (FAILED(D3DCompileFromFile(L"Shaders/MotionBlur_PS.hlsl", nullptr, nullptr, "main", "ps_5_0", 0, 0, mps.GetAddressOf(), err.ReleaseAndGetAddressOf())))
+    {
+        if (err) OutputDebugStringA((char*)err->GetBufferPointer());
+        return false;
+    }
+    if (FAILED(m_device->CreatePixelShader(mps->GetBufferPointer(), mps->GetBufferSize(), nullptr, m_motionBlurPS.GetAddressOf()))) return false;
+    bd.ByteWidth = sizeof(MotionBlurParams);
+    if (FAILED(m_device->CreateBuffer(&bd, nullptr, m_motionBlurCB.GetAddressOf()))) return false;
+
     D3D11_SAMPLER_DESC sd = {};
     sd.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
     sd.AddressU = sd.AddressV = sd.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;   // ノイズを流すため、端でくり返す
@@ -644,6 +656,41 @@ void Renderer3D::DrawDissolveBillboard(ID3D11ShaderResourceView* texture, ID3D11
     m_context->PSSetSamplers(1, 1, m_samplerWrap.GetAddressOf());
     m_context->PSSetShader(m_dissolvePS.Get(), nullptr, 0);
     DrawBillboard(texture, x, y, z, width, height, rotation, color, uvRect);   // 板・行列・溶かす絵（t0）はいつもの板と同じ
+    m_context->PSSetShader(m_pixelShader.Get(), nullptr, 0);   // いつものシェーダーに戻す
+}
+
+// 動きのブラー：本来の絵と、後ろへ伸ばした先までを全部覆う大きい板を描く。uv も絵の外まで広げ、外はシェーダーで透明にする
+void Renderer3D::DrawMotionBlurBillboard(ID3D11ShaderResourceView* texture, float x, float y, float z, float width, float height,
+    float rotation, const XMFLOAT4& color, const XMFLOAT4& uvRect, float blurX, float blurZ, float strength)
+{
+    // 板の右（ax）と上（ay）の向き（DrawBillboard と同じ回し方）
+    XMMATRIX rot = XMMatrixRotationX(XMConvertToRadians(BILLBOARD_PITCH)) * XMMatrixRotationY(rotation);
+    XMFLOAT3 ax, ay;
+    XMStoreFloat3(&ax, XMVector3TransformNormal(XMVectorSet(1, 0, 0, 0), rot));
+    XMStoreFloat3(&ay, XMVector3TransformNormal(XMVectorSet(0, 1, 0, 0), rot));
+    // ワールドのブラーを、板の上の長さにする（右へ bx、上へ by）
+    float bx = blurX * ax.x + blurZ * ax.z;
+    float by = blurX * ay.x + blurZ * ay.z;
+    // 本来の絵（右：-w/2 から w/2、上：0 から h）と、ブラーの先までを全部覆う範囲
+    float x0 = (std::min)(-width * 0.5f, -width * 0.5f + bx), x1 = (std::max)(width * 0.5f, width * 0.5f + bx);
+    float y0 = (std::min)(0.0f, by), y1 = (std::max)(height, height + by);
+    // その範囲の uv（本来の絵が 0 から 1。上が v=0）
+    float u0 = (x0 + width * 0.5f) / width, u1 = (x1 + width * 0.5f) / width;
+    float v0 = 1.0f - y1 / height, v1 = 1.0f - y0 / height;
+    XMFLOAT4 uvBig(uvRect.x + uvRect.z * u0, uvRect.y + uvRect.w * v0, uvRect.z * (u1 - u0), uvRect.w * (v1 - v0));
+
+    MotionBlurParams mp;
+    mp.blurUv = XMFLOAT2(bx / width * uvRect.z, -by / height * uvRect.w);   // 左右反転の絵でも合うように uvRect を掛ける
+    mp.strength = strength;
+    mp.rect = XMFLOAT4((std::min)(uvRect.x, uvRect.x + uvRect.z), (std::min)(uvRect.y, uvRect.y + uvRect.w),
+                       (std::max)(uvRect.x, uvRect.x + uvRect.z), (std::max)(uvRect.y, uvRect.y + uvRect.w));
+    m_context->UpdateSubresource(m_motionBlurCB.Get(), 0, nullptr, &mp, 0, 0);
+    m_context->PSSetConstantBuffers(1, 1, m_motionBlurCB.GetAddressOf());
+    m_context->PSSetShader(m_motionBlurPS.Get(), nullptr, 0);
+    // 板の置き場所：真ん中を右へ (x0+x1)/2、足もとを上へ y0 だけずらす
+    float cx = (x0 + x1) * 0.5f;
+    DrawBillboard(texture, x + ax.x * cx + ay.x * y0, y + ax.y * cx + ay.y * y0, z + ax.z * cx + ay.z * y0,
+        x1 - x0, y1 - y0, rotation, color, uvBig);
     m_context->PSSetShader(m_pixelShader.Get(), nullptr, 0);   // いつものシェーダーに戻す
 }
 

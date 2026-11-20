@@ -324,7 +324,7 @@ namespace
             if (!cond.empty() && !EnumNames::Contains(EnumNames::Conditions, cond)) err.push_back(w + ": unknown condition " + cond);
             if (cond.empty()) uncondChance += sel.value("chance", 100);
 
-            for (const char* key : { "vfx", "selfVfx", "windupVfx", "areaVfx", "impactVfx" })
+            for (const char* key : { "vfx", "selfVfx", "windupVfx", "areaVfx", "impactVfx", "hitVfx" })
             {
                 std::string v = act.value(key, std::string());
                 if (!v.empty() && std::find(fx.begin(), fx.end(), v) == fx.end())
@@ -671,6 +671,7 @@ namespace
                 if (VfxRow(act, a, "vfx", "", u8"命中した時、プレイヤーの位置（未指定なら smash）")) s.dirty = true;
                 if (VfxRow(act, a, "selfVfx", "", u8"行動した時、敵自身の位置（バフ・構えなど）")) s.dirty = true;
                 if (VfxRow(act, a, "impactVfx", "", u8"着弾点（当たり外れに関係なし）")) s.dirty = true;
+                if (VfxRow(act, a, "hitVfx", "", u8"1発当たるたび、プレイヤーの位置（当たったら vfx・範囲の演出の代わり）")) s.dirty = true;
                 if (VfxRow(act, a, "areaVfx", "area_burst", u8"範囲の各マス（未指定なら area_burst）")) s.dirty = true;
                 if (VfxRow(act, a, "windupVfx", "", u8"着弾の前に飛ばす演出")) s.dirty = true;
                 if (act.contains("windupVfx"))

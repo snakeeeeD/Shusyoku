@@ -11,7 +11,8 @@ struct SheetDef : EffectPartDef
     int cols = 1, rows = 1;           // 縦横のコマ数
     int frames = 0;                   // 総コマ数（0ならcols*rows）
     float fps = 20.0f;                // 再生速度
-    float scale = 1.0f;               // 表示サイズ
+    float scale = 1.0f;               // 表示サイズ（幅）
+    float aspect = 1.0f;              // 高さ÷幅（1で正方形。裂け目からプレイヤーまで横に伸ばす時など）
     float yOffset = 0.0f;             // 発生位置のy補正
     XMFLOAT4 color = { 1, 1, 1, 1 };
     bool loop = false;                // falseで1周して消滅

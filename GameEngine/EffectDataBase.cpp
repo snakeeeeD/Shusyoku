@@ -24,6 +24,7 @@ void EffectDataBase::Load(const std::string& path)
         def.then = e.value("then", "");
         def.thenDelay = e.value("thenDelay", 0.0f);
         def.shake = e.value("shake", 0.0f);
+        def.randomSide = e.value("randomSide", false);
         def.se = e.value("se", "");                     // sound effect file in Assets/Sound/se/
         def.seVol = e.value("seVol", 1.0f);
         if (!def.se.empty()) Audio::SetSeVolume(Se::Path(def.se), def.seVol);

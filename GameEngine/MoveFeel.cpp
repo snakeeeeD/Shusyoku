@@ -17,6 +17,9 @@ namespace
     const float SQUASH_TIME = 0.12f;      // 着地でつぶれて戻るまでの秒数
     const float SQUASH_Y = 0.18f;         // 着地で縦につぶれる量
     const float SQUASH_X = 0.15f;         // 着地で横に広がる量
+    const float DASH_DUST_STEP = 0.035f;  // 突進中に土煙を出す間隔（秒）
+    const float BLUR_TIME = 0.10f;        // ブラーの長さ＝速さ×この秒数（この間に動いた分だけ後ろへ伸びる）
+    const float BLUR_FOLLOW = 12.0f;      // ブラーが目標の長さに近づく速さ（止まった後は、この速さで縮んで消える）
 }
 
 MoveStyle MoveFeel::StyleFromName(const std::string& name)
@@ -39,7 +42,7 @@ void MoveFeel::OnMoveStart(float fromX, float fromZ, float toX, float toZ, float
 
     if (m_idle > CHAIN_GAP) m_runCells = 0.0f;    // 前の移動から間があいた＝新しい移動
     m_runCells += cells;
-    m_ghostOn = (m_style != MoveStyle::Glide)
+    m_ghostOn = !m_dash && (m_style != MoveStyle::Glide)   // 突進中は残像の代わりにブラー
         && (std::max)(m_runCells, (std::max)(plannedCells, cells)) >= GHOST_MIN_CELLS;
 
     if (m_style == MoveStyle::Walk)               // 進む向きと反対へ土ぼこりを蹴り出す（粒の "forward" は (sin rot, 0, cos rot) へ飛ぶ）
@@ -49,6 +52,29 @@ void MoveFeel::OnMoveStart(float fromX, float fromZ, float toX, float toZ, float
 void MoveFeel::Update(float dt, bool moving, float progress, float x, float z)
 {
     m_idle = moving ? 0.0f : m_idle + dt;
+
+    // 速さ（前のフレームからの動き）
+    float vx = 0.0f, vz = 0.0f;
+    if (m_hasPrev && dt > 0.0f) { vx = (x - m_prevX) / dt; vz = (z - m_prevZ) / dt; }
+    m_prevX = x; m_prevZ = z; m_hasPrev = true;
+
+    // ブラー：突進中は「速さ×BLUR_TIME」だけ後ろ（元いた方向）へ。突進が終わったら、なめらかに縮んで消える
+    float tx = m_dash ? -vx * BLUR_TIME : 0.0f, tz = m_dash ? -vz * BLUR_TIME : 0.0f;
+    float k = (std::min)(1.0f, BLUR_FOLLOW * dt);
+    m_blurX += (tx - m_blurX) * k;
+    m_blurZ += (tz - m_blurZ) * k;
+
+    // 突進の土煙：動いている間、足もとから後ろへ蹴り出し続ける（足のあるキャラ・跳ねるキャラだけ）
+    bool grounded = (m_style == MoveStyle::Walk || m_style == MoveStyle::Hop);
+    if (m_dash && moving && grounded)
+    {
+        m_dustTimer += dt;
+        if (m_dustTimer >= DASH_DUST_STEP)
+        {
+            m_dustTimer = 0.0f;
+            EffectManager::Play("dash_dust", x, 0.05f, z, atan2f(-m_dirX, -m_dirZ));   // 進む向きと反対へ
+        }
+    }
 
     // 跳ねる（Hop）：1マスごとに山なり。k マス目を越えたら着地
     m_hop = 0.0f;
@@ -89,6 +115,16 @@ void MoveFeel::Update(float dt, bool moving, float progress, float x, float z)
         }
     }
     if (!moving && m_idle > CHAIN_GAP) m_ghostOn = false;
+}
+
+void MoveFeel::SetDash(bool on)
+{
+    bool grounded = (m_style == MoveStyle::Walk || m_style == MoveStyle::Hop);
+    if (m_dash && !on && grounded && m_hasPrev)   // 止まった所で、前へぶわっと土煙
+        EffectManager::Play("dash_stop", m_prevX, 0.05f, m_prevZ, atan2f(m_dirX, m_dirZ));
+    m_dash = on;
+    m_dustTimer = DASH_DUST_STEP;   // 始まってすぐ1つ目を出す
+    if (on) m_ghostOn = false;
 }
 
 void MoveFeel::Land(float x, float z)

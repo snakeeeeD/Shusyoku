@@ -5,6 +5,8 @@
 #include "ShockWall.h"
 #include "ScreenOverlay.h"
 #include "FlashSprite.h"
+#include "Projectile.h"
+#include "Tether.h"
 #include <unordered_map>
 #include <Windows.h>
 
@@ -18,6 +20,8 @@ std::unique_ptr<EffectPartDef> EffectKinds::Load(const std::string& type, const 
         { "wall",  &ShockWallDef::Load },    // 輪から立ち上がる衝撃波の壁（ShockWall.cpp）
         { "screen", &ScreenOverlayDef::Load },   // 画面いっぱいの演出（ScreenOverlay.cpp）
         { "flash", &FlashSpriteDef::Load },      // カメラに向いた絵1枚（FlashSprite.cpp）
+        { "projectile", &ProjectileDef::Load },  // 飛び道具（Projectile.cpp）
+        { "tether", &TetherDef::Load },          // 敵とプレイヤーをつなぐ物（Tether.cpp）
     };
     auto it = KINDS.find(type);
     if (it == KINDS.end())

@@ -20,6 +20,7 @@ std::unique_ptr<EffectPartDef> SheetDef::Load(const nlohmann::json& s)
     d->frames = s.value("frames", 0);
     d->fps = s.value("fps", 20.0f);
     d->scale = s.value("scale", 1.0f);
+    d->aspect = s.value("aspect", 1.0f);
     d->yOffset = s.value("yOffset", 0.0f);
     d->loop = s.value("loop", false);
     d->startFrame = s.value("startFrame", 0);
@@ -47,7 +48,7 @@ std::unique_ptr<EffectPart> SheetDef::Spawn(const SpawnAt& at) const
 // ---------- 出す ----------
 SpriteSheet::SpriteSheet(const SheetDef& s, const SpawnAt& at) : m_def(s)
 {
-    bool mir = s.autoFlipX && (at.x > 0.0f);          // 盤面右半分なら反転
+    bool mir = (s.autoFlipX && (at.x > 0.0f)) != at.mirror;   // 盤面右半分なら反転。左右を逆にする演出なら、さらに逆
     float ox = mir ? -s.offset.x : s.offset.x;
     m_pos = XMFLOAT3(at.x + ox, at.y + s.yOffset + s.offset.y, at.z + s.offset.z);   // 既定(ワールド指定)
     m_vel = s.vel; if (mir) m_vel.x = -m_vel.x;
@@ -124,15 +125,16 @@ void SpriteSheet::Draw(Renderer3D* r, EffectLayer layer)
 
     // 中心アンカー：基準点にスプライト中心が来るよう、上方向ベクトルの半分だけ戻す
     float size = m_def.scale;
+    float h = size * m_def.aspect;           // 高さ（aspect で縦横の比を変える）
     float pitch = XMConvertToRadians(Renderer3D::GetBillboardPitch());
     float sp = sinf(pitch), cp = cosf(pitch);
-    float upx = size * sp * sinf(m_rot);
-    float upy = size * cp;
-    float upz = size * sp * cosf(m_rot);
+    float upx = h * sp * sinf(m_rot);
+    float upy = h * cp;
+    float upz = h * sp * cosf(m_rot);
 
     r->DrawBillboard(m_tex,
         m_pos.x - 0.5f * upx,
         m_pos.y - 0.5f * upy,
         m_pos.z - 0.5f * upz,
-        size, size, m_rot, c, uv);
+        size, h, m_rot, c, uv);
 }

@@ -72,16 +72,22 @@ void Enemy::Draw3D(Renderer3D* renderer)
     // 移動の手応え：跳ねて浮く高さと、伸び・つぶれ（板の基準は足元なので、足は地面についたまま）
     y += m_feel.Lift(height);
     float w = width * s * m_feel.ScaleX(), h = height * s * m_feel.ScaleY();
-    renderer->DrawBillboard(
-        TextureManager::Get(m_textureName),
-        worldX, y, worldZ + m_drawZ,
-        w, h, 0.0f, drawColor, FacingUV());
 
-    // 重ねる絵は本体とまったく同じ位置・大きさ（絵の中で配置済み）
-    for (auto& o : m_overlays)
-        renderer->DrawBillboard(TextureManager::Get(o),
-            worldX, y, worldZ + m_drawZ,
-            w, h, 0.0f, drawColor, FacingUV());
+    // 突進のブラー：少しでも伸びている間は、ブラーのシェーダーで描く（重ねる絵も同じだけ伸ばす）
+    const float BLUR_MIN = 0.02f;        // これより短いブラーは描かない
+    const float BLUR_STRENGTH = 1.0f;    // ブラーの濃さ
+    float bx = m_feel.BlurX(), bz = m_feel.BlurZ();
+    bool blur = (bx * bx + bz * bz) > BLUR_MIN * BLUR_MIN;
+    auto drawBody = [&](const std::string& tex) {
+        if (blur)
+            renderer->DrawMotionBlurBillboard(TextureManager::Get(tex), worldX, y, worldZ + m_drawZ,
+                w, h, 0.0f, drawColor, FacingUV(), bx, bz, BLUR_STRENGTH);
+        else
+            renderer->DrawBillboard(TextureManager::Get(tex), worldX, y, worldZ + m_drawZ,
+                w, h, 0.0f, drawColor, FacingUV());
+    };
+    drawBody(m_textureName);
+    for (auto& o : m_overlays) drawBody(o);   // 重ねる絵は本体とまったく同じ位置・大きさ（絵の中で配置済み）
 }
 
 // 倒れていく途中：とどめの瞬間は白く光って少し大きく、その後ノイズに沿って焼けるように溶ける（Dissolve_PS）
@@ -535,7 +541,11 @@ void Enemy::PullPlayer(int playerCol, int playerRow, GridMap* gridMap, Player* p
 
     player->gridCol = pc;
     player->gridRow = pr;
-    if (!pts.empty()) player->StartWalk(pts, 0.1f);
+    if (!pts.empty())
+    {
+        player->StartWalk(pts, 0.1f);
+        player->StartHurt();   // 引っぱられている間は、ダメージが無くても被弾のアニメ（よろけながら引きずられる）
+    }
 }
 
 void Enemy::KnockbackPlayer(int playerCol, int playerRow, GridMap* gridMap, Player* player, int steps)
@@ -912,8 +922,8 @@ int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
 
     }
 
-    // 命中したらエフェクトを命中点で再生（未指定ならスマッシュ）
-    if (hitPlayer && player)
+    // 命中したらエフェクトを命中点で再生（未指定ならスマッシュ）。hitVfx がある攻撃は、BattleScene が1発ごとに出す
+    if (hitPlayer && player && act.hitVfx.empty())
     {
         std::string fx = act.vfx.empty() ? "smash" : act.vfx;
         EffectManager::Play(fx, player->worldX, player->worldY + 0.5f, player->worldZ);

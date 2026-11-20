@@ -171,7 +171,7 @@ private:
 
     // 時間を置いて1つずつ進める処理（TimedQueue）。1件ごとのデータはその件の中に持つ
     struct PlayerHit { std::vector<Enemy*> targets; int damage = 0; CardEffectData onHit, onHit2; };   // 自分の連撃の追撃1発
-    struct EnemyHit  { Enemy* enemy = nullptr; int damage = 0; bool last = false; };   // 敵の多段の1発（last＝最後の1発の後に状態異常）
+    struct EnemyHit  { Enemy* enemy = nullptr; int damage = 0; bool last = false; std::string vfx; };   // 敵の多段の1発（last＝最後の1発の後に状態異常）
     struct CoilTrap  { int c = 0, r = 0; Enemy* enemy = nullptr; };                      // 大蛇のとぐろが通ったマスの罠
     struct TrapFire  { int c = 0, r = 0; bool full = false; };                           // 起爆する罠（full＝周りにもそのまま）
     struct ChainWave { std::vector<std::pair<int, int>> cells; bool full = false; };     // 連鎖起爆の1つの波
@@ -243,6 +243,7 @@ private:
 
     void PlayEnemyAreaFx(Enemy* enemy, const EnemyAction& a, int tC, int tR, int preCol, int preRow,
         const std::vector<std::pair<int, int>>& preCells);   // 敵の攻撃が当たった範囲の演出
+    void PlayEnemyHitFx(const std::string& id);           // 敵の攻撃が1発当たるたびの演出（hitVfx）。位置と傾きを少しずつ変える
     void UpdateTrapsAtTurnStart();   // 自分の罠が育つ／敵が隣にいる間だけ導火線が進み、たまったら自分で起爆
     void  MaybeStartCamDemo();   // カメラ操作の自動デモを始めるか（条件はシーンの事情なので、ここで決める）
 
@@ -338,6 +339,10 @@ private:
 
     float m_windupTimer = 0.0f;     // メテオ落下待ち
     bool  m_windupPlayed = false;   // この行動の落下演出を出したか
+    int    m_windupHandle = 0;        // 予備動作の演出の番号（引き寄せの「つなぐ物」を、実行後も動かすため）
+    int    m_tetherHandle = 0;        // 引っぱっている間の「つなぐ物」の番号（0＝無し）
+    Enemy* m_tetherEnemy = nullptr;   // その根元の敵
+    void UpdatePullTether();          // 引っぱっている間は両端を敵とプレイヤーに合わせ、止まったら戻す
 
     // 狙いの確定：離したマスに少し止まっていた時だけ使う（ドラッグ途中で通り過ぎたマスでの誤使用を防ぐ）
     static constexpr unsigned long long AIM_SETTLE_MS = 200;

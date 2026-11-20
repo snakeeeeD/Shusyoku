@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <string>
 #include <d3d11.h>
 #include <dxgi.h>
 #include "Game.h"
@@ -40,6 +41,21 @@ bool InitD3D();
 void CleanupDevice();
 void Render();
 
+// 配るときは「exe ＋ GameData フォルダ」の形にする。exe の隣に GameData/Assets があれば、
+// そこを作業フォルダにして、Assets/... や Shaders/... をそこから読む（ログ・設定の保存先もそこになる）。
+// 無ければ（Visual Studio から起動したときなど）作業フォルダはそのまま
+static void UseGameDataFolder()
+{
+    wchar_t path[MAX_PATH];
+    DWORD n = GetModuleFileNameW(nullptr, path, MAX_PATH);   // exe の場所
+    if (n == 0 || n >= MAX_PATH) return;
+    std::wstring dir(path, n);
+    dir = dir.substr(0, dir.find_last_of(L"\\/") + 1) + L"GameData";
+    DWORD attr = GetFileAttributesW((dir + L"\\Assets").c_str());
+    if (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY))
+        SetCurrentDirectoryW(dir.c_str());
+}
+
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
 {
@@ -47,6 +63,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     SetProcessDPIAware();
+    UseGameDataFolder();   // 設定やアセットを読む前に
 
     Settings::Load();
 

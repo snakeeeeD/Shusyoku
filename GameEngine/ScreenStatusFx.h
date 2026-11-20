@@ -30,6 +30,7 @@ private:
     float m_lowHp = 0.0f;   // HPが低いときの赤みの濃さ（0～1。目標へ少しずつ近づける）
     bool  m_wasLow = false; // 前のフレームでHPが低かったか（入った瞬間を見つける用）
     float m_beatLeft = 0.0f;   // 鼓動の残り秒数（入った瞬間に3回分を入れて、0になったら明滅をやめる）
+    void PlayBeatSe(float from, float to) const;   // 入ってからの時間が from→to の間に来た鼓動の音を鳴らす
 
     // 毒
     struct Drip { float x, age, grow, size; };   // しずく1つ（横の位置 0～1、出てからの秒数、ふくらむ秒数、大きさの倍率）

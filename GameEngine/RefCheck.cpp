@@ -94,6 +94,7 @@ namespace
         { "enemies.json", "enemies[].actions[].windupVfx", "effect" },
         { "enemies.json", "enemies[].actions[].areaVfx",   "effect" },
         { "enemies.json", "enemies[].actions[].impactVfx", "effect" },
+        { "enemies.json", "enemies[].actions[].hitVfx",    "effect" },
         { "enemies.json", "enemies[].actions[].effects[].kind",     "enemyEffectKind" },
         { "enemies.json", "enemies[].actions[].effects[].applyTo",  "applyTo" },
         { "enemies.json", "enemies[].actions[].effects[].buff",     "buff",          "kind", "Buff" },

@@ -922,6 +922,7 @@ void BattleScene::Update(float deltaTime)
     ScreenShake::Update(deltaTime);
     TurnBanner::Update(deltaTime);
     EffectManager::Update(deltaTime);
+    UpdatePullTether();   // 引き寄せの「つなぐ物」をプレイヤーに付いていかせる
     UpdateBuffGainFx();   // バフが付いた／増えたらエフェクト
 
     // オロチの脱皮：ターンは使わず、その瞬間に演出だけ出す
@@ -1469,17 +1470,22 @@ void BattleScene::Update(float deltaTime)
 
                 // 予備動作：落下演出を出して、着弾まで実行を待つ
                 const EnemyAction* wa = enemy->GetNextAction();
-                if (wa && !wa->windupVfx.empty() && wa->windup > 0.0f && !m_windupPlayed)
+                if (wa && !wa->windupVfx.empty() && wa->windup > 0.0f && !m_windupPlayed
+                    && (!wa->HasEffect(EffectKind::PullPlayer) || wa->target.unavoidable
+                        || enemy->IsThreateningCell(m_playerCol, m_playerRow, *wa)))   // 引き寄せは、当たる時だけ伸ばす
                 {
                     int ac, ar; enemy->GetAnchorCell(*wa, tC, tR, ac, ar);
                     float wx = (ac - m_gridMap->GetCols() / 2.0f) * 1.1f;
                     float wz = (ar - m_gridMap->GetRows() / 2.0f) * 1.1f;
-                    EffectManager::Play(wa->windupVfx, wx, 0.5f, wz);
+                    // 飛び道具は敵の体の真ん中から飛ばす（飛び始めを使わない演出は、今までどおり wx,0.5,wz に出る）
+                    XMFLOAT3 from(enemy->worldX, enemy->worldY + enemy->height * 0.5f, enemy->worldZ);
+                    m_windupHandle = EffectManager::PlayFrom(wa->windupVfx, from, XMFLOAT3(wx, 0.5f, wz));
                     m_windupPlayed = true;
                     m_windupTimer = wa->windup;
                     break;
                 }
                 m_windupPlayed = false;
+                int windupHandle = m_windupHandle; m_windupHandle = 0;   // この行動の予備動作の演出（引き寄せならこの後も使う）
 
                 int preCol = enemy->gridCol, preRow = enemy->gridRow;   // 実行前の位置（予告の範囲の中心。移動する攻撃でも演出は予告どおりの所に出す）
                 // 実行前の攻撃範囲を控える（移動を伴う攻撃でも予告と一致させる）
@@ -1515,6 +1521,8 @@ void BattleScene::Update(float deltaTime)
                 else
                 {
                     damage = enemy->ExecuteAction(ai, m_playerCol, m_playerRow, m_gridMap, m_player, m_enemies, tC, tR, &atk);
+                    if (wa && windupHandle != 0 && wa->HasEffect(EffectKind::PullPlayer))   // 引き寄せ：伸ばした物を、引っぱる間くっつけておく
+                    { m_tetherHandle = windupHandle; m_tetherEnemy = enemy; }
                 }
                 // 着弾点の演出（避けられても出す）
                 if (wa && !wa->impactVfx.empty())
@@ -1526,8 +1534,8 @@ void BattleScene::Update(float deltaTime)
                     ScreenShake::Add(0.35f);
                 }
 
-                // 攻撃範囲に演出（当たり外れに関わらず出す）
-                if (wa) PlayEnemyAreaFx(enemy, *wa, tC, tR, preCol, preRow, preCells);
+                // 攻撃範囲に演出（当たり外れに関わらず出す）。hitVfx がある攻撃は、当たったら命中の演出（1発ごと）に任せる
+                if (wa && !(damage > 0 && !wa->hitVfx.empty())) PlayEnemyAreaFx(enemy, *wa, tC, tR, preCol, preRow, preCells);
 
                 for (auto& pc : enemy->PendingCurses())
                 {
@@ -1555,7 +1563,7 @@ void BattleScene::Update(float deltaTime)
                     if (enemy->GetLastHitCount() > 1)
                     {
                         // 多段：1発ずつ時間差で適用（状態異常は最後の1発の後）
-                        std::vector<EnemyHit> hits(enemy->GetLastHitCount(), EnemyHit{ enemy, enemy->GetLastHitDamage(), false });
+                        std::vector<EnemyHit> hits(enemy->GetLastHitCount(), EnemyHit{ enemy, enemy->GetLastHitDamage(), false, wa ? wa->hitVfx : std::string() });
                         hits.back().last = true;
                         m_enemyHits.Start(std::move(hits));
                         multiHit = true;
@@ -1565,6 +1573,7 @@ void BattleScene::Update(float deltaTime)
                         int hpBefore = m_player->GetHp(), blockBefore = m_player->GetBlock();
                         XMFLOAT3 from(enemy->worldX, 0.0f, enemy->worldZ);   // ブロックの盾を、この敵の方に向ける
                         m_player->TakeDamage(damage, DamageFeel::Hit, &from);
+                        if (wa && !wa->hitVfx.empty()) PlayEnemyHitFx(wa->hitVfx);
                         fullyBlocked = (m_player->GetHp() == hpBefore);
                         int blocked = blockBefore - m_player->GetBlock();   // ブロックで防いだ量
                         int th = m_player->GetBuffManager().GetBuffValue(BuffType::Thorns);
@@ -1622,6 +1631,7 @@ void BattleScene::Update(float deltaTime)
                         m_dashStops.push_back(path.back());   // 最終マスは必ず終点
 
                     m_dashStopIdx = 0;
+                    m_dashEnemy->m_feel.SetDash(true);   // 土煙を出し続け、ブラーを伸ばす
                     DashGlideTo(m_dashStops[0].first, m_dashStops[0].second);
                     m_enemyPhase = EnemyTurnPhase::DashStep;
                     break;
@@ -1714,6 +1724,7 @@ void BattleScene::Update(float deltaTime)
                 // 罠で倒れたら終了
                 if (m_dashEnemy->GetHp() <= 0)
                 {
+                    m_dashEnemy->m_feel.SetDash(false);   // 突進おわり：止まった所に土煙、ブラーは縮んで消える
                     m_dashEnemy = nullptr;
                     m_enemyPhase = EnemyTurnPhase::WaitAction; m_enemyActionDelay = ENEMY_ACTION_PAUSE;
                     break;
@@ -1724,6 +1735,7 @@ void BattleScene::Update(float deltaTime)
                     DashGlideTo(m_dashStops[m_dashStopIdx].first, m_dashStops[m_dashStopIdx].second);
                 else
                 {
+                    m_dashEnemy->m_feel.SetDash(false);   // 突進おわり：止まった所に土煙、ブラーは縮んで消える
                     m_dashEnemy = nullptr;
                     m_enemyPhase = EnemyTurnPhase::WaitAction; m_enemyActionDelay = ENEMY_ACTION_PAUSE;
                 }
@@ -1820,6 +1832,32 @@ void BattleScene::PlayEnemyAreaFx(Enemy* enemy, const EnemyAction& a, int tC, in
     }
 }
 
+// 敵の攻撃が1発当たるたびの演出（hitVfx）。同じ所に重ならないよう、横の位置と傾きを少しずつ変える
+void BattleScene::PlayEnemyHitFx(const std::string& id)
+{
+    auto rnd = []() { return (float)rand() / RAND_MAX * 2.0f - 1.0f; };   // -1〜1
+    const float POS_JITTER = 0.15f;   // 横にずらす幅（ワールド）
+    const float ROT_JITTER = 0.14f;   // 傾ける幅（ラジアン。約8度。flash の絵は rot の分だけ画面の中で回る）
+    EffectManager::Play(id, m_player->worldX + rnd() * POS_JITTER, m_player->worldY + m_player->height * 0.5f,
+        m_player->worldZ, rnd() * ROT_JITTER);
+}
+
+// 引き寄せの「つなぐ物」：プレイヤーが引っぱられて動いている間は、両端を敵とプレイヤーに合わせる。止まったら敵の方へ戻す
+// （踏ん張りで動かなかった時は、すぐ戻る＝耐えたのが見える）
+void BattleScene::UpdatePullTether()
+{
+    if (m_tetherHandle == 0) return;
+    if (m_tetherEnemy && m_player->IsMoving())
+    {
+        EffectManager::SetEnds(m_tetherHandle,
+            XMFLOAT3(m_tetherEnemy->worldX, m_tetherEnemy->worldY + m_tetherEnemy->height * 0.5f, m_tetherEnemy->worldZ),
+            XMFLOAT3(m_player->worldX, m_player->worldY + 0.5f, m_player->worldZ));   // 着く高さは予備動作と同じ 0.5
+        return;
+    }
+    EffectManager::Stop(m_tetherHandle, 0.15f);
+    m_tetherHandle = 0; m_tetherEnemy = nullptr;
+}
+
 // Draw（描画）は BattleSceneDraw.cpp
 
 // HandleInput（入力）は BattleSceneInput.cpp
@@ -1842,6 +1880,9 @@ void BattleScene::ProcessDeadEnemies()
             if (d == selected) { selected = nullptr; break; }
     }
 
+
+    for (auto d : toDelete)   // 引き寄せの「つなぐ物」の根元の敵が消えるなら、先に戻しておく
+        if (d == m_tetherEnemy) { EffectManager::Stop(m_tetherHandle, 0.15f); m_tetherHandle = 0; m_tetherEnemy = nullptr; }
 
     for (auto enemy : toDelete)
     {
@@ -2118,6 +2159,7 @@ float BattleScene::StepEnemyHit(EnemyHit& h)
     int hpBefore = m_player->GetHp(), blockBefore = m_player->GetBlock();
     XMFLOAT3 from = h.enemy ? XMFLOAT3(h.enemy->worldX, 0.0f, h.enemy->worldZ) : XMFLOAT3(m_player->worldX, 0.0f, m_player->worldZ + 1.0f);
     m_player->TakeDamage(h.damage, DamageFeel::Hit, &from);   // 1発（数字はTakeDamage内で出る）。盾は攻撃してきた敵の方へ
+    if (!h.vfx.empty()) PlayEnemyHitFx(h.vfx);
     bool fullyBlocked = (m_player->GetHp() == hpBefore);
     int blocked = blockBefore - m_player->GetBlock();   // ブロックで防いだ量
     if (h.enemy && h.enemy->GetHp() > 0)

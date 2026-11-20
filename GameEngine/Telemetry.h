@@ -37,28 +37,36 @@ using TFields = std::vector<std::pair<std::string, TVal>>;
 
 // ゲーム内データ収集ロガー。JSONL＋人間可読テキストを logs/ に同時出力
 class Telemetry {
+#ifdef _DEBUG
+    static constexpr bool WRITE_FILES = true;    // 開発中だけ、手元にもログ（exe の隣の logs/）を書く
+#else
+    static constexpr bool WRITE_FILES = false;   // 配る版は書かない（exe の隣に logs を作らない）。送信はする
+#endif
 public:
     static Telemetry& Instance() { static Telemetry t; return t; }
 
     void Init(const std::string& build) {
         m_build = build;
 
-        // exeのあるフォルダを基準にする（起動元に依存しない）
-        char exePath[MAX_PATH];
-        GetModuleFileNameA(nullptr, exePath, MAX_PATH);
-        std::string dir(exePath);
-        size_t slash = dir.find_last_of("\\/");
-        std::string logDir = (slash != std::string::npos ? dir.substr(0, slash + 1) : "") + "logs";
-        CreateDirectoryA(logDir.c_str(), nullptr);
-
         std::string ts = TimeStamp("%Y%m%d_%H%M%S");
         std::srand((unsigned)GetTickCount());
         char suf[8]; sprintf_s(suf, "_%04X", std::rand() & 0xFFFF);
         m_sessionId = ts + suf;                       // 例 20260828_010203_9F3A
-        std::string base = logDir + "/session_" + m_sessionId;
-        m_jsonl.open(base + ".jsonl", std::ios::app);
-        m_txt.open(base + ".txt", std::ios::app);
-        m_open = m_jsonl.is_open();
+
+        if (WRITE_FILES)
+        {
+            // exeのあるフォルダを基準にする（起動元に依存しない）
+            char exePath[MAX_PATH];
+            GetModuleFileNameA(nullptr, exePath, MAX_PATH);
+            std::string dir(exePath);
+            size_t slash = dir.find_last_of("\\/");
+            std::string logDir = (slash != std::string::npos ? dir.substr(0, slash + 1) : "") + "logs";
+            CreateDirectoryA(logDir.c_str(), nullptr);
+            std::string base = logDir + "/session_" + m_sessionId;
+            m_jsonl.open(base + ".jsonl", std::ios::app);
+            m_txt.open(base + ".txt", std::ios::app);
+        }
+        m_open = true;   // ファイルを書かなくても、送信用にはためる
         Log("session_start", { {"build", build} });
     }
 
@@ -96,7 +104,7 @@ public:
             << ",\"scene\":\"" << Esc(m_scene) << "\"";
         for (auto& [k, v] : fields) j << ",\"" << Esc(k) << "\":" << JsonVal(v);
         j << "}";
-        m_jsonl << j.str() << "\n"; m_jsonl.flush();
+        if (m_jsonl.is_open()) { m_jsonl << j.str() << "\n"; m_jsonl.flush(); }
         m_payload += j.str(); m_payload += "\n";       // ← 送信用バッファ
 
         // 人間可読
@@ -104,7 +112,7 @@ public:
         h << "[" << clock << "] L" << m_layer << "-" << m_floor
             << " " << m_scene << " | " << event;
         for (auto& [k, v] : fields) h << "  " << k << "=" << PlainVal(v);
-        m_txt << h.str() << "\n"; m_txt.flush();
+        if (m_txt.is_open()) { m_txt << h.str() << "\n"; m_txt.flush(); }
     }
 
     // async=true: 裏スレッドで送信（ゲームを止めない）／false: 同期（終了時に使う）

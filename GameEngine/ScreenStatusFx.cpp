@@ -4,6 +4,7 @@
 #include "TextureManager.h"
 #include "EffectDataBase.h"   // 毒のもやの材質（FxMaterial）
 #include "UiContext.h"        // 上の帯の高さ（しずくが出てくる所）
+#include "Se.h"               // 鼓動の音
 #include <DirectXMath.h>
 #include <algorithm>
 #include <cmath>
@@ -15,10 +16,15 @@ namespace
 {
     const float LOW_HP_RATIO = 0.3f;     // HPがこの割合以下で赤くする
     const float FADE_TIME = 0.5f;        // 出る・消えるのにかかる秒数
-    const float BEAT_PERIOD = 1.1f;      // 鼓動1回の秒数（ドクン・ドクンの2回で1組）
+    const float BEAT_PERIOD = 0.7f;      // 鼓動1回の秒数（ドクン・ドクンの2回で1組）。音のファイル（0.6秒）より短くしない
     const float BASE_ALPHA = 0.32f;      // ふだんの濃さ（画面の端で）
-    const float BEAT_ALPHA = 0.45f;      // 鼓動で足す濃さ（入った直後だけなので大きめ）
-    const int   BEAT_SETS = 3;           // 入った直後に鼓動する回数（ドクン・ドクンで1回）。その後は明滅しない（考える邪魔にならないように）
+    const float BEAT_ALPHA = 0.5f;       // 鼓動で足す濃さ（1セット目。入った直後だけなので大きめ）
+    const int   BEAT_SETS = 3;           // 入った直後に鼓動する回数（ドクン・ドクンで1セット）。その後は明滅しない（考える邪魔にならないように）
+    const float SET_STRENGTH[BEAT_SETS] = { 1.0f, 0.6f, 0.3f };   // セットごとの強さ（強→中→弱。光と音の両方に掛ける）
+    const float BEAT1_AT = 0.10f, BEAT2_AT = 0.32f;   // 1セットの中で、ドクン（強）とドクン（弱）が来る時刻
+    const float BEAT2_WEIGHT = 0.6f;     // 2つ目のドクンの強さ（1つ目に対して）
+    const float BEAT_DELAY = 0.35f;      // 3割を切ってから鼓動が始まるまでの秒数（被弾の音と重ならないように）
+    int BeatSet(float t) { return (std::min)(BEAT_SETS - 1, (std::max)(0, (int)(t / BEAT_PERIOD))); }   // 入ってから t 秒が何セット目か
     const XMFLOAT3 COLOR = { 0.75f, 0.02f, 0.04f };
 
     // 毒：端のもや（effects.json の材質 fx_poison_edge。形・ノイズ・色の帯）
@@ -49,12 +55,12 @@ namespace
     float Rand(float lo, float hi) { return lo + (hi - lo) * (float)rand() / RAND_MAX; }
     float Approach(float v, float target, float step) { return v + (std::max)(-step, (std::min)(step, target - v)); }   // 目標へ一定の速さで近づける
 
-    // 鼓動の強さ（0～約1）。1周期の中で、ドクン（強）・ドクン（弱）と2回ふくらむ
+    // 鼓動の強さ（0～約1）。1セットの中で、ドクン（強）・ドクン（弱）と2回ふくらむ。セットが進むほど弱くなる
     float Heartbeat(float t)
     {
         float p = fmodf(t, BEAT_PERIOD);
         auto beat = [p](float center) { float d = (p - center) / 0.06f; return expf(-d * d); };
-        return beat(0.10f) + 0.6f * beat(0.32f);
+        return (beat(BEAT1_AT) + BEAT2_WEIGHT * beat(BEAT2_AT)) * SET_STRENGTH[BeatSet(t)];
     }
 }
 
@@ -62,10 +68,13 @@ void ScreenStatusFx::Update(float dt, const ScreenStatus& s)
 {
     // HPが低いとき
     bool low = (s.maxHp > 0 && s.hp > 0 && s.hp <= s.maxHp * LOW_HP_RATIO);
-    if (low && !m_wasLow) m_beatLeft = BEAT_PERIOD * BEAT_SETS;   // 3割以下に入った瞬間：鼓動を最初から
+    if (low && !m_wasLow) m_beatLeft = BEAT_PERIOD * BEAT_SETS + BEAT_DELAY;   // 3割以下に入った瞬間：少し待ってから鼓動を最初から
     if (!low) m_beatLeft = 0.0f;                                   // 回復したら鼓動もやめる
     m_wasLow = low;
+    const float total = BEAT_PERIOD * BEAT_SETS;
+    float before = total - m_beatLeft;                 // 入ってからの時間（このフレームの前）
     m_beatLeft = (std::max)(0.0f, m_beatLeft - dt);
+    if (before < total) PlayBeatSe(before, total - m_beatLeft);
     m_lowHp = Approach(m_lowHp, low ? 1.0f : 0.0f, dt / FADE_TIME);
 
     // 毒のとき
@@ -76,6 +85,17 @@ void ScreenStatusFx::Update(float dt, const ScreenStatus& s)
     // やけどのとき
     m_burn = Approach(m_burn, s.burning ? 1.0f : 0.0f, dt / FADE_TIME);
     UpdateEmbers(dt, s.burning);
+}
+
+void ScreenStatusFx::PlayBeatSe(float from, float to) const
+{
+    // 音のファイルは「ドクドク」1組で、1つ目の音が 0.1 秒あたり（光の1つ目の山 BEAT1_AT と同じ）。
+    // なので、各セットの始まりに1回鳴らせば、光の2つの山と音の2つの音がそろう
+    for (int k = 0; k < BEAT_SETS; k++)
+    {
+        float at = k * BEAT_PERIOD;
+        if (from <= at && at < to) Se::Play(Se::Heartbeat, 0.0f, SET_STRENGTH[k]);
+    }
 }
 
 void ScreenStatusFx::UpdateEmbers(float dt, bool spawn)
@@ -115,7 +135,8 @@ void ScreenStatusFx::Draw(Renderer3D* r, SpriteRenderer* sr, float screenW, floa
     DrawEmbers(sr, screenW, screenH);
     if (m_lowHp > 0.0f || m_beatLeft > 0.0f)
     {
-        float beat = (m_beatLeft > 0.0f) ? Heartbeat(BEAT_PERIOD * BEAT_SETS - m_beatLeft) : 0.0f;   // 入ってからの時間で鼓動
+        float elapsed = BEAT_PERIOD * BEAT_SETS - m_beatLeft;   // 鼓動が始まってからの時間（待っている間はマイナス）
+        float beat = (m_beatLeft > 0.0f && elapsed >= 0.0f) ? Heartbeat(elapsed) : 0.0f;
         float a = m_lowHp * BASE_ALPHA + BEAT_ALPHA * beat;   // 鼓動は出始めの薄さに関係なく、1回目から大きく
         // fx_vignette：白で、端ほど不透明・真ん中は透明の画像。色はここで掛ける
         sr->DrawSprite(TextureManager::Get("fx_vignette"), 0.0f, 0.0f, screenW, screenH,

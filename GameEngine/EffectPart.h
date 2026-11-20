@@ -20,6 +20,9 @@ struct SpawnAt
     float rot = 0.0f;                    // 向き（ラジアン。コマ送りの絵の回転に使う）
     XMFLOAT4 tint = { 1, 1, 1, 1 };      // 呼んだ側が掛ける色
     float scale = 1.0f;                  // 呼んだ側が掛ける大きさの倍率（範囲に合わせる時など。使うかどうかは種類が決める）
+    bool mirror = false;                 // 左右を逆にする（画面の右へずらす部品は左へ、飛ぶ向きも逆。randomSide の演出で使う）
+    bool hasFrom = false;                // 飛び始めがあるか（飛び道具。EffectManager::PlayFrom で出した時だけ）
+    XMFLOAT3 from = { 0, 0, 0 };         // 飛び始め（ワールド）。x,y,z が着く所
     bool hasCam = false;                 // 下のカメラの向きが入っているか（最初の1フレームは無い）
     XMFLOAT3 camRight = { 1, 0, 0 }, camUp = { 0, 1, 0 }, camFwd = { 0, 0, 1 }, camPos = { 0, 0, 0 };
 };
@@ -34,6 +37,7 @@ public:
     virtual void Draw(Renderer3D* r, EffectLayer layer) = 0;   // 描く。毎フレーム、地面の順番と上の順番の2回呼ばれるので、その順番で描く分だけ描く
     virtual bool IsDone() const = 0;            // 終わったか（true なら EffectManager が消す）
     virtual void Stop(float fadeSec) {}         // 途中で止める（止め方がある種類だけ書く）
+    virtual void SetEnds(const XMFLOAT3& from, const XMFLOAT3& to) {}   // 両端を後から動かす（つなぐ物だけ。ほかの種類は何もしない）
     int handle = 0;                             // Play が返した番号（Stop で探す用）
 };
 

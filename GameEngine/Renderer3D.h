@@ -51,6 +51,15 @@ struct DissolveParams
     float premultiplied = 0.0f;  // 1＝絵の色に透明度がもう掛かっている（オフスクリーンにまとめた絵）
 };
 
+// 動きのブラー（MotionBlur_PS.hlsl）に渡す数字。シェーダーの MotionBlurParams と同じ並び（32バイト）
+struct MotionBlurParams
+{
+    XMFLOAT2 blurUv = { 0, 0 };  // 後ろへ伸ばす向きと長さ（絵の uv で）
+    float strength = 1.0f;       // ブラーの濃さ
+    float pad0 = 0.0f;
+    XMFLOAT4 rect = { 0, 0, 1, 1 };   // 本来の絵の uv の範囲（xy＝小さい方、zw＝大きい方）
+};
+
 class Renderer3D
 {
 public:
@@ -111,6 +120,9 @@ public:
     // UI を描いている途中でも呼べるように、必要な設定はこの中で全部する
     void DrawDissolveScreen(ID3D11ShaderResourceView* texture, ID3D11ShaderResourceView* noise, ID3D11ShaderResourceView* ramp,
         const DissolveParams& dp, float x, float y, float w, float h, const XMFLOAT4& color);
+    // 動きのブラーで板を描く。位置・大きさ・uv は DrawBillboard と同じ。(blurX, blurZ)＝後ろへ伸ばすワールドの向きと長さ
+    void DrawMotionBlurBillboard(ID3D11ShaderResourceView* texture, float x, float y, float z, float width, float height,
+        float rotation, const XMFLOAT4& color, const XMFLOAT4& uvRect, float blurX, float blurZ, float strength);
     // エフェクト用シェーダーで、画面いっぱいに1枚描く（Begin～End の間で呼ぶ。奥行きは見ない）
     void DrawFxScreen(ID3D11ShaderResourceView* shape, ID3D11ShaderResourceView* noise, ID3D11ShaderResourceView* ramp,
         const FxParams& fx, const XMFLOAT4& color);
@@ -150,6 +162,8 @@ private:
     ComPtr<ID3D11Buffer>       m_fxCB;     // その数字（FxParams）
     ComPtr<ID3D11PixelShader>  m_dissolvePS;   // 溶けるシェーダー（Dissolve_PS.hlsl）
     ComPtr<ID3D11Buffer>       m_dissolveCB;   // その数字（DissolveParams）
+    ComPtr<ID3D11PixelShader>  m_motionBlurPS; // 動きのブラー（MotionBlur_PS.hlsl）
+    ComPtr<ID3D11Buffer>       m_motionBlurCB; // その数字（MotionBlurParams）
     ComPtr<ID3D11SamplerState> m_samplerWrap;   // 端でくり返す読み方（ノイズを流す用）
     ComPtr<ID3D11RasterizerState> m_rasterState;
     ComPtr<ID3D11DepthStencilState> m_depthStencilState;

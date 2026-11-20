@@ -69,6 +69,7 @@ static EnemyAction ParseAction(const json& a)
     act.windup = a.value("windup", 0.0f);
     act.areaVfx = a.value("areaVfx", std::string(""));
     act.impactVfx = a.value("impactVfx", std::string(""));
+    act.hitVfx = a.value("hitVfx", std::string(""));
     act.selfVfx = a.value("selfVfx", std::string(""));
     if (a.contains("target")) act.target = ParseTarget(a["target"]);
     if (a.contains("extraTargets") && a["extraTargets"].is_array())

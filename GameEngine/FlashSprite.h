@@ -18,6 +18,13 @@ struct FlashSpriteDef : EffectPartDef
     XMFLOAT4 color = { 1, 1, 1, 1 };
     bool additive = false;             // 加算合成で光らせる
     bool faceRot = false;              // 絵の右側を rot の向きに向ける
+    float delay = 0.0f;                // この絵だけ遅らせる秒数
+    float roll = 0.0f;                 // 画面の中で回す角度（度。90で縦長の絵が横長になる）。faceRot でない時は Play の rot（ラジアン）も足す
+    float openTime = 0.0f;             // 0より大きいと「幅だけ開いて閉じる」動き（裂け目など）。開く秒数
+    float holdTime = 0.0f;             // 開いたまま止まる秒数
+    float closeTime = 0.0f;            // 閉じる秒数（この動きの時、寿命は 開く＋止まる＋閉じる）
+    float glitch = 0.0f;               // 0より大きいと、水色と赤紫のコピーを左右にぶらして重ねる（グリッチ。ずらす幅＝ワールド）
+    float offsetX = 0.0f, offsetY = 0.0f;   // 出す所を、画面の右・上へずらす（ワールド。プレイヤーの横に裂け目を開く時など）
 
     static std::unique_ptr<EffectPartDef> Load(const nlohmann::json& j);   // 種類の表から呼ばれる
     std::unique_ptr<EffectPart> Spawn(const SpawnAt& at) const override;
@@ -32,6 +39,9 @@ public:
     void Draw(Renderer3D* r, EffectLayer layer) override;   // 出した所の手前側なら上の順番（キャラの前）、奥側なら地面の順番（キャラの後ろ）
     bool IsDone() const override { return m_elapsed >= m_def.life; }
 private:
+    void Roll(float angle);              // 絵の右と上を、画面の中で angle（ラジアン）だけ回す
+    float OpenAmount() const;            // 幅だけ開閉する時の開き具合（0→1→0）
+    void DrawQuadAt(Renderer3D* r, float ox, float w, float h, const XMFLOAT4& c);   // 右へ ox ずらした所に、幅 w・高さ h で1枚
     const FlashSpriteDef& m_def;         // 寿命・大きさなどはデータを見に行く（データは起動中ずっと残る）
     ID3D11ShaderResourceView* m_tex = nullptr;
     XMFLOAT3 m_pos = { 0, 0, 0 };
