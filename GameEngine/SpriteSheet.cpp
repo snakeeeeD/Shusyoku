@@ -2,6 +2,8 @@
 #include "Renderer3D.h"
 #include "TextureManager.h"
 #include <cmath>
+#include <cstdlib>
+#include <utility>
 
 // ---------- データ：effects.json の "sheets" の1つを読む ----------
 std::unique_ptr<EffectPartDef> SheetDef::Load(const nlohmann::json& s)
@@ -28,6 +30,7 @@ std::unique_ptr<EffectPartDef> SheetDef::Load(const nlohmann::json& s)
     d->autoFlipX = s.value("autoFlipX", false);
     d->flipX = s.value("flipX", false);
     d->rotDeg = s.value("rotDeg", 0.0f);
+    d->rollJitter = s.value("rollJitter", 0.0f);
     d->travel = s.value("travel", 0.0f);
     d->useCamera = vec3("fromCamera", d->fromCamera);
     vec3("offset", d->offset);
@@ -75,6 +78,15 @@ SpriteSheet::SpriteSheet(const SheetDef& s, const SpawnAt& at) : m_def(s)
     m_elapsed = -s.delay;
     m_rot = at.rot + XMConvertToRadians(s.rotDeg);
     m_flipX = (s.flipX != mir);
+    if (s.rollJitter > 0.0f && at.hasCam)   // 画面の中でランダムに傾ける（flash と同じく、カメラの右と上を回して描く）
+    {
+        float a = XMConvertToRadians(s.rollJitter) * ((float)rand() / RAND_MAX * 2.0f - 1.0f);
+        float c = cosf(a), sn = sinf(a);
+        const XMFLOAT3& rt = at.camRight; const XMFLOAT3& up = at.camUp;
+        m_right = XMFLOAT3(rt.x * c + up.x * sn, rt.y * c + up.y * sn, rt.z * c + up.z * sn);
+        m_up = XMFLOAT3(-rt.x * sn + up.x * c, -rt.y * sn + up.y * c, -rt.z * sn + up.z * c);
+        m_rolled = true;
+    }
 }
 
 // ---------- 動かす ----------
@@ -123,6 +135,20 @@ void SpriteSheet::Draw(Renderer3D* r, EffectLayer layer)
     if (a < 0.0f) a = 0.0f;
     XMFLOAT4 c = m_color; c.w *= a;
 
+    if (m_rolled)   // 傾けて描く：絵の中心を m_pos に、右と上は出した時に決めた向き
+    {
+        float w = m_def.scale * 0.5f, hh = m_def.scale * m_def.aspect * 0.5f;
+        auto at = [&](float sx, float sy) {
+            return XMFLOAT3(m_pos.x + m_right.x * sx * w + m_up.x * sy * hh,
+                            m_pos.y + m_right.y * sx * w + m_up.y * sy * hh,
+                            m_pos.z + m_right.z * sx * w + m_up.z * sy * hh);
+        };
+        float u0 = (float)col / cols, u1 = (float)(col + 1) / cols;   // 画面の右＝絵の右（左右反転なら逆）
+        if (m_flipX) std::swap(u0, u1);
+        XMFLOAT4 quv(u0, (float)row / rows, u1, (float)(row + 1) / rows);
+        r->DrawQuad(m_tex, at(-1, 1), at(1, 1), at(-1, -1), at(1, -1), quv, c);
+        return;
+    }
     // 中心アンカー：基準点にスプライト中心が来るよう、上方向ベクトルの半分だけ戻す
     float size = m_def.scale;
     float h = size * m_def.aspect;           // 高さ（aspect で縦横の比を変える）

@@ -25,6 +25,7 @@ struct FlashSpriteDef : EffectPartDef
     float closeTime = 0.0f;            // 閉じる秒数（この動きの時、寿命は 開く＋止まる＋閉じる）
     float glitch = 0.0f;               // 0より大きいと、水色と赤紫のコピーを左右にぶらして重ねる（グリッチ。ずらす幅＝ワールド）
     float offsetX = 0.0f, offsetY = 0.0f;   // 出す所を、画面の右・上へずらす（ワールド。プレイヤーの横に裂け目を開く時など）
+    float spin = 0.0f;                 // 出ている間、画面の中で回し続ける速さ（度/秒。渦など。0＝回さない）
 
     static std::unique_ptr<EffectPartDef> Load(const nlohmann::json& j);   // 種類の表から呼ばれる
     std::unique_ptr<EffectPart> Spawn(const SpawnAt& at) const override;
@@ -35,7 +36,11 @@ class FlashSprite : public EffectPart
 {
 public:
     FlashSprite(const FlashSpriteDef& def, const SpawnAt& at);
-    void Update(float dt) override { m_elapsed += dt; }
+    void Update(float dt) override
+    {
+        m_elapsed += dt;
+        if (m_def.spin != 0.0f && m_elapsed > 0.0f) Roll(XMConvertToRadians(m_def.spin) * dt);   // 回し続ける（遅らせている間は回さない）
+    }
     void Draw(Renderer3D* r, EffectLayer layer) override;   // 出した所の手前側なら上の順番（キャラの前）、奥側なら地面の順番（キャラの後ろ）
     bool IsDone() const override { return m_elapsed >= m_def.life; }
 private:

@@ -23,6 +23,7 @@ struct SheetDef : EffectPartDef
     bool  autoFlipX = false;          // 発生位置(x<0)なら左右反転して反対側から出す
     bool  flipX = false;              // 常に左右反転（autoFlipX とは独立）
     float rotDeg = 0.0f;              // このシート自体の回転(度)
+    float rollJitter = 0.0f;          // 0より大きいと、出すたびに画面の中で ±この角度(度) のランダムに傾ける（噛みつきが何発も重なる時など）
     XMFLOAT3 fromCamera = { 0, 0, 0 };   // カメラ基準の発生位置(右, 上, 前)
     bool  useCamera = false;             // fromCamera を使うか
     float travel = 0.0f;                 // 着弾までの秒数(>0で速度を自動計算)
@@ -46,6 +47,8 @@ private:
     XMFLOAT3 m_pos = { 0, 0, 0 }, m_vel = { 0, 0, 0 };
     XMFLOAT4 m_color = { 1, 1, 1, 1 };   // データの色×呼んだ側の色
     float m_rot = 0.0f;
+    bool m_rolled = false;               // 画面の中で傾けて描くか（rollJitter）
+    XMFLOAT3 m_right = { 1, 0, 0 }, m_up = { 0, 1, 0 };   // 傾けて描く時の、絵の右と上（カメラの右と上を回したもの）
     bool m_flipX = false;
     int m_frames = 1;
     float m_elapsed = 0.0f;           // マイナスの間は待ち（このシートだけの遅延）

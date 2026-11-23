@@ -348,6 +348,8 @@ private:
     int    m_tetherHandle = 0;        // 引っぱっている間の「つなぐ物」の番号（0＝無し）
     Enemy* m_tetherEnemy = nullptr;   // その根元の敵
     void UpdatePullTether();          // 引っぱっている間は両端を敵とプレイヤーに合わせ、止まったら戻す
+    void UpdateFloorStepFx();         // 敵の床を踏んだら、足がマスに着いた瞬間に床の演出
+    int m_floorFxCol = -1, m_floorFxRow = -1;   // 床の演出を最後に確かめたマス（同じマスで2回出さない）
 
     // 狙いの確定：離したマスに少し止まっていた時だけ使う（ドラッグ途中で通り過ぎたマスでの誤使用を防ぐ）
     static constexpr unsigned long long AIM_SETTLE_MS = 200;

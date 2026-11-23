@@ -934,6 +934,7 @@ void BattleScene::Update(float deltaTime)
     TurnBanner::Update(deltaTime);
     EffectManager::Update(deltaTime);
     UpdatePullTether();   // 引き寄せの「つなぐ物」をプレイヤーに付いていかせる
+    UpdateFloorStepFx();  // 敵の床を踏んだら、足が着いた瞬間に床の演出
     m_tileDrop.Update(deltaTime, m_gridMap);   // 床・罠が新しく置かれたら、上から落とす
     if (m_fuseBeep.left > 0 && m_highlightTimer >= m_fuseBeep.next)   // 導火線の「ピッ」：光る瞬間に1回ずつ
     {
@@ -1512,7 +1513,7 @@ void BattleScene::Update(float deltaTime)
                 if (wa && !wa->target.unavoidable && wa->target.approach != ApproachType::Dash)
                 {
                     for (auto& ef : wa->effects)
-                        if (ef.kind == EffectKind::Damage)
+                        if (ef.kind == EffectKind::Damage || (ef.kind == EffectKind::Debuff && ef.applyTo == ApplyTo::Player))   // デバフだけの行動も範囲に演出を出す
                         {
                             preCells = enemy->GetThreatCells(*wa, m_gridMap);
                             break;
@@ -1807,6 +1808,15 @@ void BattleScene::Update(float deltaTime)
     }
 }
 
+// ダメージの無い、プレイヤーへのデバフだけの行動：範囲のマスに出す「しみこむ」演出（色は画面のふちのデバフと同じ）
+static const struct { BuffType type; const char* fx; } DEBUFF_AREA_FX[] = {
+    { BuffType::Poison, "debuff_area_poison" },
+    { BuffType::Slow, "debuff_area_bind" },       { BuffType::Root, "debuff_area_bind" },
+    { BuffType::Vulnerable, "debuff_area_vuln" }, { BuffType::Frail, "debuff_area_vuln" }, { BuffType::DefenseDown, "debuff_area_vuln" },
+    { BuffType::Weak, "debuff_area_weak" },       { BuffType::AttackDown, "debuff_area_weak" },
+    { BuffType::Burn, "debuff_area_burn" },
+};
+
 // 敵の攻撃が当たった範囲の演出（当たり外れに関わらず出す）
 //  中心から広がる形（周り・正方形・ひし形）：衝撃波を範囲のマス数ぶん、外へ重ねて出す（敵の識別色）
 //  それ以外（十字・直線・突進・市松など）：マスごとに、敵から近い順に時間差で出す
@@ -1815,8 +1825,20 @@ void BattleScene::PlayEnemyAreaFx(Enemy* enemy, const EnemyAction& a, int tC, in
 {
     if (a.target.unavoidable) return;
     bool isAtkAction = false;
+    const char* debuffFx = nullptr;   // ダメージが無くデバフだけの行動なら、そのデバフの「しみこむ」演出
     for (auto& ef : a.effects)
-        if (ef.kind == EffectKind::Damage) { isAtkAction = true; break; }
+    {
+        if (ef.kind == EffectKind::Damage) isAtkAction = true;
+        else if (ef.kind == EffectKind::Debuff && ef.applyTo == ApplyTo::Player && !debuffFx)
+            for (auto& d : DEBUFF_AREA_FX)
+                if (d.type == StringToBuffType(ef.buff)) { debuffFx = d.fx; break; }
+    }
+    if (!isAtkAction && debuffFx)   // デバフだけ：範囲のマスごとに、敵から近い順に（輪がしみこみ、粒が降る。粒を上から降らせるので高さ1で出す）
+    {
+        for (auto& [c, r] : preCells)
+            EffectManager::Play(debuffFx, CellWX(c), 1.0f, CellWZ(r), 0.0f, 0.04f * (abs(c - preCol) + abs(r - preRow)));
+        return;
+    }
     if (!isAtkAction) return;
 
     bool isDash = (a.target.approach == ApproachType::Dash);
@@ -1884,6 +1906,25 @@ void BattleScene::UpdatePullTether()
     }
     EffectManager::Stop(m_tetherHandle, 0.15f);
     m_tetherHandle = 0; m_tetherEnemy = nullptr;
+}
+
+// 敵の床を踏んだ演出：プレイヤーの見た目が新しいマスの真ん中に着いた時、そのマスの床の vfx を出す
+// （歩く・突進・氷で滑る・引き寄せ、のどれでも、足が着いた瞬間に合う。床の効果そのものは TriggerTerrain のまま）
+void BattleScene::UpdateFloorStepFx()
+{
+    if (!m_player || !m_gridMap) return;
+    const int cols = m_gridMap->GetCols(), rows = m_gridMap->GetRows();
+    const float px = m_player->worldX, pz = m_player->worldZ;
+    int c = (int)floorf(px / 1.1f + cols / 2.0f + 0.5f);   // 見た目の位置に一番近いマス
+    int r = (int)floorf(pz / 1.1f + rows / 2.0f + 0.5f);
+    if (c < 0 || r < 0 || c >= cols || r >= rows || (c == m_floorFxCol && r == m_floorFxRow)) return;
+    float cx = (c - cols / 2.0f) * 1.1f, cz = (r - rows / 2.0f) * 1.1f;
+    if (fabsf(px - cx) >= 0.25f || fabsf(pz - cz) >= 0.25f) return;   // マスの真ん中まで来たら（すれ違うだけでは出さない）
+    m_floorFxCol = c; m_floorFxRow = r;
+    const auto& tile = m_gridMap->GetCell(c, r).tileEffect;
+    const TerrainDef* def = (tile.active && tile.persistent) ? TerrainDataBase::Get(tile.id) : nullptr;
+    if (def && !def->vfx.empty() && !RelicManager::HasKind("floorImmune"))
+        EffectManager::Play(def->vfx, cx, 0.05f, cz);
 }
 
 // Draw（描画）は BattleSceneDraw.cpp

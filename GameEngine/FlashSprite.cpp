@@ -25,6 +25,7 @@ std::unique_ptr<EffectPartDef> FlashSpriteDef::Load(const nlohmann::json& j)
     d->glitch = j.value("glitch", d->glitch);
     d->offsetX = j.value("offsetX", d->offsetX);
     d->offsetY = j.value("offsetY", d->offsetY);
+    d->spin = j.value("spin", d->spin);
     if (d->openTime > 0.0f) d->life = (std::max)(0.01f, d->openTime + d->holdTime + d->closeTime);   // ŠJ•Â‚Ì“®‚«‚ÍA‚»‚Ì‡Œv‚ªõ–½
     if (j.contains("color"))
     {
