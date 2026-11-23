@@ -21,6 +21,7 @@
 #include "BattleCamera.h"
 #include "TimedQueue.h"
 #include "ScreenStatusFx.h"
+#include "TileDropFx.h"
 
 #include <vector>
 #include <utility>
@@ -234,6 +235,9 @@ private:
     BattleHighlighter m_highlighter;
     CardExecutor      m_cardExecutor;
 
+    TileDropFx m_tileDrop;   // 床・罠が置かれた時に、上から落とす見せ方
+    struct FuseBeep { int left = 0; float period = 1.0f; float next = 0.0f; };
+    FuseBeep m_fuseBeep;   // 導火線が進んだ時の「ピッ」（点滅に合わせて数回だけ）
     ScreenStatusFx m_screenFx;   // 状態に合わせて出し続ける画面の演出（HPが低いときの赤み など）
     BattleCamera m_camera;   // 位置・ズーム・手での操作・狙いカメラ・操作デモ
 

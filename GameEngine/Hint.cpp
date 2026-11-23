@@ -6,12 +6,13 @@
 // ヒント一覧。増やす時はここに1行足して、状況が起きる所で Hint::Request(id) を呼ぶ
 static const HintDef DEFS[] = {
     { "threat",  L"頭上に赤い警告 ＝ 今の位置に攻撃が当たる\n移動カードで色付きマスの外へ逃げよう" },
-    { "endTurn", L"エナジー（左下）を使い切った\nターンエンドで敵の番へ。次のターンに回復する", 1072, 636, 196, 72 },
+    { "endTurn", L"エナジー（左下）を使い切った\nターンエンドで敵の番へ。次のターンに回復する", 1072, 536, 196, 72 },
     { "focus",   L"敵や右上の窓にマウスを乗せると\nその敵の攻撃範囲が点滅する" },
     { "camera",  L"ホイール：ズーム　右ドラッグ：カメラ移動\nホイールクリック：自分の位置に戻す" },
     { "steps",   L"歩数が0になった\nここから先は進むほど敵が強くなる", 130, 5, 110, 28 },
     { "snakeWeak", L"頭と光るウロコを殴ると2倍ダメージ\n体は硬く、カードの攻撃は半分になる" },
     { "molt",    L"カードの攻撃を受けるほど脱皮して、巻きつきと攻撃力が上がる\n残りは敵のバフの数字で確認できる。毒・罠・聖地では脱皮しない" },
+    { "fuse",    L"敵が隣にいる罠は、導火線が進む（ピッピッと点滅）\n3たまった次のターン、まだ敵が隣にいたら自分で爆発する" },
 };
 static constexpr float SHOW_TIME = 9.0f;   // 自動で閉じるまで（秒）
 static constexpr float FADE = 0.3f;
@@ -30,7 +31,7 @@ void Hint::Request(const char* id)
     if (PlayerDataManager::GetData().seenHints.count(id)) return;
     if (std::find(s_queue.begin(), s_queue.end(), d) != s_queue.end()) return;
     s_queue.push_back(d);
-    if (!s_cur) Next();
+    if (!s_cur && !s_hold) Next();   // 待たせている間は、順番待ちに入れるだけ
 }
 
 void Hint::Resolve(const char* id)
@@ -39,6 +40,12 @@ void Hint::Resolve(const char* id)
     if (!d) return;
     s_queue.erase(std::remove(s_queue.begin(), s_queue.end(), d), s_queue.end());
     if (s_cur == d && s_time < SHOW_TIME - FADE) s_time = SHOW_TIME - FADE;   // 解消したらフェードして閉じる
+}
+
+void Hint::Hold(bool on)
+{
+    s_hold = on;
+    if (!on && !s_cur) Next();   // 待たせていたヒントを出す
 }
 
 void Hint::Update(float dt)
@@ -51,7 +58,7 @@ void Hint::Update(float dt)
 void Hint::Next()
 {
     s_cur = nullptr;
-    if (s_queue.empty()) return;
+    if (s_queue.empty() || s_hold) return;   // 待たせている間は次を出さない
     s_cur = s_queue.front();
     s_queue.erase(s_queue.begin());
     s_time = 0.0f;
@@ -65,6 +72,7 @@ void Hint::Clear()
         PlayerDataManager::GetData().seenHints.erase(s_cur->id);
     s_cur = nullptr;
     s_queue.clear();
+    s_hold = false;   // シーンが変わったら待たせるのもやめる（デモ前に戦闘が終わっても、次の画面のヒントが止まらないように）
 }
 
 void Hint::MarkAllSeen()

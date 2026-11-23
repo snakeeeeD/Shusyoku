@@ -846,7 +846,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             cell.tileEffect.duration = data.mainEffect.duration;
             const TerrainDef* tDef = TerrainDataBase::Get(data.mainEffect.trapType);
             if (tDef) cell.tileEffect.persistent = tDef->persistent;
-            Se::Play(Se::TrapSet);
+            // 罠を置いた音は、着地の時に鳴らす（TileDropFx → effects.json の tile_land）
             for (int i = 0; i < RelicManager::SumValue("trapDraw"); i++)   // 設置成功時のみ
             {
                 std::string did = deck.DrawCard();
@@ -872,7 +872,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                     if (tDef) cell.tileEffect.persistent = tDef->persistent;
                     placed++;
                 }
-            if (placed > 0) Se::Play(Se::TrapSet);
+            // 罠を置いた音は、1マスずつの着地の時に鳴らす（TileDropFx → effects.json の tile_land）
             if (placed > 0)   // 1マスでも新規設置できた時だけ1回ぶん
                 for (int i = 0; i < RelicManager::SumValue("trapDraw"); i++)
                 {
@@ -1393,6 +1393,7 @@ void CardExecutor::ApplyKnockback(Enemy* target, int playerCol, int playerRow,
         path.push_back({ fin.first + dirC * os * 1.1f, fin.second + dirR * os * 1.1f }); // 行き過ぎ
         path.push_back(fin);                                                             // 戻って着地
         target->StartWalk(path, 0.05f);   // 速く（吹っ飛び）
+        target->m_feel.SetDash(true, true);   // 飛ばされる間は土煙とブラー（止まったら自動で終わる）
         ScreenShake::Add(0.4f);           // 手応え
     }
 }
@@ -1475,6 +1476,7 @@ void CardExecutor::ApplyPull(Enemy* target, int playerCol, int playerRow,
         yank.push_back({ fin.first + dirC * os * 1.1f, fin.second + dirR * os * 1.1f }); 
         yank.push_back(fin);           
         target->StartWalk(yank, 0.06f);  
+        target->m_feel.SetDash(true, true);   // 引き寄せられる間も土煙とブラー
         ScreenShake::Add(0.4f);
     }
 }

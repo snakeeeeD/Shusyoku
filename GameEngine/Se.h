@@ -20,6 +20,7 @@ namespace Se
     inline constexpr const char* Engrave    = "faith_engrave.wav"; // 信仰を刻んだ
     inline constexpr const char* CoinGet    = "coin_get.wav";      // ゴールドを手に入れた
     inline constexpr const char* Heartbeat  = "heartbeat.wav";     // HPが低くなった瞬間の鼓動（ドクドク1組。0.1秒と0.3秒あたりに音がある）
+    inline constexpr const char* FuseBeep   = "fuse_beep.wav";     // 罠の導火線が進んだ（点滅に合わせて数回だけ）
 
     // 足音は層ごとに違う（シーンの開始時に SetFloor で層を入れる）
     inline int g_floorLayer = 1;

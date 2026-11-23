@@ -18,6 +18,7 @@
 #include "Cursor.h"
 #include "Audio.h"
 #include "Hint.h"
+#include "PileFx.h"
 #include "Telemetry.h"
 #include "EnemyIntentVisual.h"
 #include "Faith.h"
@@ -116,15 +117,17 @@ void BattleScene::HandleDiscardSelectInput()
     {
         if (click)
         {
-            bool onPileBtn = (mp.y >= m_screenHeight - 60 && mp.y <= m_screenHeight - 20)
-                && ((mp.x >= 20 && mp.x <= 70) || (mp.x >= 80 && mp.x <= 130)
-                    || (mp.x >= 140 && mp.x <= 190));
+            const float pileSW = (float)m_screenWidth, pileSH = (float)m_screenHeight;
+            bool onDraw = PileFx::OnPile(PileFx::Pile::Draw, pileSW, pileSH, (float)mp.x, (float)mp.y);
+            bool onDiscard = PileFx::OnPile(PileFx::Pile::Discard, pileSW, pileSH, (float)mp.x, (float)mp.y);
+            bool onExhaust = PileFx::OnPile(PileFx::Pile::Exhaust, pileSW, pileSH, (float)mp.x, (float)mp.y);
+            bool onPileBtn = onDraw || onDiscard || onExhaust;
 
             if (onPileBtn)
             {
-                if (mp.x >= 20 && mp.x <= 70)   m_showDrawPile = !m_showDrawPile;
-                if (mp.x >= 80 && mp.x <= 130)  m_showDiscardPile = !m_showDiscardPile;
-                if (mp.x >= 140 && mp.x <= 190) m_showExhaustPile = !m_showExhaustPile;
+                if (onDraw)    m_showDrawPile = !m_showDrawPile;
+                if (onDiscard) m_showDiscardPile = !m_showDiscardPile;
+                if (onExhaust) m_showExhaustPile = !m_showExhaustPile;
             }
             else if (m_showDrawPile || m_showDiscardPile || m_showExhaustPile)
             {
@@ -745,11 +748,8 @@ void BattleScene::HandleClickInput()
 {
     if (!m_input.GetMouseButtonTrigger(0)) return;
 
-    // 山札・捨て札ボタンの位置
-    float drawPileX = 20.0f;
-    float drawPileY = m_screenHeight - 60.0f;
-    float discardX = 80.0f;
-    float discardY = m_screenHeight - 60.0f;
+    // 山札・捨て札ボタンの位置（PileFx：描く所と同じ）
+    const float pileSW = (float)m_screenWidth, pileSH = (float)m_screenHeight;
 
     POINT mousePos = m_input.GetMousePos();
 
@@ -768,8 +768,7 @@ void BattleScene::HandleClickInput()
     );
 
     // 山札ボタン
-    if (mousePos.x >= drawPileX && mousePos.x <= drawPileX + 50.0f
-        && mousePos.y >= drawPileY && mousePos.y <= drawPileY + 40.0f)
+    if (PileFx::OnPile(PileFx::Pile::Draw, pileSW, pileSH, (float)mousePos.x, (float)mousePos.y))
     {
         m_showDrawPile = !m_showDrawPile;
         Audio::PlaySE("Assets/Sound/se/click.mp3");
@@ -777,8 +776,7 @@ void BattleScene::HandleClickInput()
     }
 
     // 捨て札ボタン
-    else if (mousePos.x >= discardX && mousePos.x <= discardX + 50.0f
-        && mousePos.y >= discardY && mousePos.y <= discardY + 40.0f)
+    else if (PileFx::OnPile(PileFx::Pile::Discard, pileSW, pileSH, (float)mousePos.x, (float)mousePos.y))
     {
         m_showDiscardPile = !m_showDiscardPile;
         Audio::PlaySE("Assets/Sound/se/click.mp3");
@@ -787,8 +785,7 @@ void BattleScene::HandleClickInput()
 
     // 廃棄札ボタン
     else if (m_deck.GetExhaustPileCount() > 0
-        && mousePos.x >= 140.0f && mousePos.x <= 190.0f
-        && mousePos.y >= discardY && mousePos.y <= discardY + 40.0f)
+        && PileFx::OnPile(PileFx::Pile::Exhaust, pileSW, pileSH, (float)mousePos.x, (float)mousePos.y))
     {
         m_showExhaustPile = !m_showExhaustPile;
         Audio::PlaySE("Assets/Sound/se/click.mp3");
@@ -892,10 +889,8 @@ void BattleScene::HandleTurnEndAndPanel()
     // ターンエンドボタン（右下）
     if (m_battleResult == BattleResult::None)
     {
-        float btnW = 180.0f;
-        float btnH = 56.0f;
-        float btnX = m_screenWidth - btnW - 20.0f;
-        float btnY = m_screenHeight - btnH - 20.0f;
+        XMFLOAT4 er = PileFx::EndTurnRect((float)m_screenWidth, (float)m_screenHeight);   // 描く所と同じ
+        float btnW = er.z, btnH = er.w, btnX = er.x, btnY = er.y;
 
         if (m_input.GetMouseButtonTrigger(0))
         {

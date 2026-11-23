@@ -19,6 +19,7 @@
 #include "Audio.h"
 #include "AnimTune.h"
 #include "URect.h"
+#include "PileFx.h"
 #include <algorithm>
 #include <cmath>
 
@@ -568,47 +569,57 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         DrawPlayerHud(ctx);
 
         m_spriteRenderer->Begin();
-        float drawPileX = 20.0f;
-        float drawPileY = m_screenHeight - 60.0f;
-        float drawPileW = 50.0f;
-        float drawPileH = 40.0f;
+        using PileFx::Pile;
+        const float pileSW = (float)m_screenWidth, pileSH = (float)m_screenHeight;
+        // 山のアイコン：弾む時は真ん中を中心に大きくする
+        auto pileIcon = [&](const char* tex, float x, float y, float w, float h, Pile p, const XMFLOAT4& tint) {
+            float k = PileFx::IconScale(p);
+            m_spriteRenderer->DrawSprite(TextureManager::Get(tex), x - w * (k - 1) * 0.5f, y - h * (k - 1) * 0.5f, w * k, h * k, 0.0f, tint);
+        };
+        XMFLOAT2 dpPos = PileFx::PilePos(Pile::Draw, pileSW, pileSH);   // 左下
+        float drawPileX = dpPos.x;
+        float drawPileY = dpPos.y;
+        float drawPileW = PileFx::PILE_W;
+        float drawPileH = PileFx::PILE_H;
         bool hoverDrawPile = UiHover(drawPileX, drawPileY, drawPileW, drawPileH, ctx.mousePos, "drawpile", s_hoverKey);
         float dpy = hoverDrawPile ? drawPileY - 6.0f : drawPileY;
         XMFLOAT4 drawPileColor = hoverDrawPile ? XMFLOAT4(0.3f, 0.3f, 0.9f, 1.0f) : XMFLOAT4(0.2f, 0.2f, 0.6f, 1.0f);
         XMFLOAT4 dpTint = hoverDrawPile ? XMFLOAT4(1, 1, 1, 1) : XMFLOAT4(0.82f, 0.82f, 0.82f, 1);
-        m_spriteRenderer->DrawSprite(TextureManager::Get("ui_draw"), drawPileX, dpy, drawPileW, drawPileH, 0.0f, dpTint);
+        pileIcon("ui_draw", drawPileX, dpy, drawPileW, drawPileH, Pile::Draw, dpTint);
         // 山札バッジ（209の直後）
         m_spriteRenderer->DrawSprite(TextureManager::Get("particle"),
             drawPileX + drawPileW - 24.0f, dpy + drawPileH - 22.0f, 24.0f, 24.0f, 0.0f, XMFLOAT4(0.10f, 0.09f, 0.13f, 1.0f));
 
-        float discardX = 80.0f;
-        float discardY = m_screenHeight - 60.0f;
-        float discardW = 50.0f;
-        float discardH = 40.0f;
+        XMFLOAT2 dcPos = PileFx::PilePos(Pile::Discard, pileSW, pileSH);   // 右下
+        float discardX = dcPos.x;
+        float discardY = dcPos.y;
+        float discardW = PileFx::PILE_W;
+        float discardH = PileFx::PILE_H;
         bool hoverDiscard = UiHover(discardX, discardY, discardW, discardH, ctx.mousePos, "discardpile", s_hoverKey);
         float ddy = hoverDiscard ? discardY - 6.0f : discardY;
         XMFLOAT4 discardColor = hoverDiscard ? XMFLOAT4(0.8f, 0.3f, 0.3f, 1.0f) : XMFLOAT4(0.5f, 0.2f, 0.2f, 1.0f);
         XMFLOAT4 dcTint = hoverDiscard ? XMFLOAT4(1, 1, 1, 1) : XMFLOAT4(0.82f, 0.82f, 0.82f, 1);
-        m_spriteRenderer->DrawSprite(TextureManager::Get("ui_discard"), discardX, ddy, discardW, discardH, 0.0f, dcTint);
+        pileIcon("ui_discard", discardX, ddy, discardW, discardH, Pile::Discard, dcTint);
         m_spriteRenderer->DrawSprite(TextureManager::Get("particle"),
             discardX + discardW - 24.0f, ddy + discardH - 22.0f, 24.0f, 24.0f, 0.0f, XMFLOAT4(0.10f, 0.09f, 0.13f, 1.0f));
 
         if (ctx.deck->GetExhaustPileCount() > 0)
         {
-            float exhaustX = 140.0f;
-            float exhaustY = m_screenHeight - 60.0f;
-            float exhaustW = 50.0f;
-            float exhaustH = 40.0f;
+            XMFLOAT2 exPos = PileFx::PilePos(Pile::Exhaust, pileSW, pileSH);   // 右下（捨て札の左）
+            float exhaustX = exPos.x;
+            float exhaustY = exPos.y;
+            float exhaustW = PileFx::PILE_W;
+            float exhaustH = PileFx::PILE_H;
             bool hoverExhaust = UiHover(exhaustX, exhaustY, exhaustW, exhaustH, ctx.mousePos, "exhaustpile", s_hoverKey);
             float epy = hoverExhaust ? exhaustY - 6.0f : exhaustY;
             XMFLOAT4 exhaustColor = hoverExhaust ? XMFLOAT4(0.6f, 0.6f, 0.3f, 1.0f) : XMFLOAT4(0.4f, 0.4f, 0.2f, 1.0f);
             XMFLOAT4 exTint = hoverExhaust ? XMFLOAT4(1, 1, 1, 1) : XMFLOAT4(0.82f, 0.82f, 0.82f, 1);
-            m_spriteRenderer->DrawSprite(TextureManager::Get("ui_exhaust"), exhaustX, epy, exhaustW, exhaustH, 0.0f, exTint);
+            pileIcon("ui_exhaust", exhaustX, epy, exhaustW, exhaustH, Pile::Exhaust, exTint);
             m_spriteRenderer->DrawSprite(TextureManager::Get("particle"),
                 exhaustX + exhaustW - 24.0f, epy + exhaustH - 22.0f, 24.0f, 24.0f, 0.0f, XMFLOAT4(0.10f, 0.09f, 0.13f, 1.0f));
         }
 
-        DrawReshuffleEffect();
+        PileFx::Draw(m_spriteRenderer, pileSW, pileSH);   // 光の帯と、着いた山の光の輪
         m_spriteRenderer->End();
         m_textRenderer->Begin();
 
@@ -630,9 +641,9 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
         if (ctx.deck->GetExhaustPileCount() > 0)
         {
-            float ex2 = 140.0f, ey2 = m_screenHeight - 60.0f;
-            bool he = ctx.mousePos.x >= ex2 && ctx.mousePos.x <= ex2 + 50.0f
-                && ctx.mousePos.y >= ey2 && ctx.mousePos.y <= ey2 + 40.0f;
+            XMFLOAT2 ep = PileFx::PilePos(Pile::Exhaust, pileSW, pileSH);
+            float ex2 = ep.x, ey2 = ep.y;
+            bool he = PileFx::OnPile(Pile::Exhaust, pileSW, pileSH, (float)ctx.mousePos.x, (float)ctx.mousePos.y);
             float ty = he ? ey2 - 6.0f : ey2;                       // ホバーで浮く分
             wchar_t t[16]; swprintf_s(t, L"%d", ctx.deck->GetExhaustPileCount());   // ← 廃棄札の枚数
             m_textRenderer->DrawOutlinedText(t, ex2 + 50.0f - 18.0f, ty + 40.0f - 20.0f, 17.0f,
@@ -644,13 +655,14 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         if (hoverDrawPile) pileTip = L"山札：これから引くカード";
         else if (hoverDiscard)  pileTip = L"捨て札：使ったカード（尽きたら戻る）";
         else if (ctx.deck->GetExhaustPileCount() > 0
-            && ctx.mousePos.x >= 140.0f && ctx.mousePos.x <= 190.0f
-            && ctx.mousePos.y >= m_screenHeight - 60.0f && ctx.mousePos.y <= m_screenHeight - 20.0f)
+            && PileFx::OnPile(Pile::Exhaust, pileSW, pileSH, (float)ctx.mousePos.x, (float)ctx.mousePos.y))
             pileTip = L"廃棄：このバトル中は戻らない";
 
         if (pileTip)
         {
-            float tw = 320.0f, th = 28.0f, tx = 20.0f, ty = m_screenHeight - 100.0f;
+            // 説明は、その山の上に出す（右下の山なら右に寄せる）
+            float tw = 320.0f, th = 28.0f, ty = m_screenHeight - 100.0f;
+            float tx = hoverDrawPile ? 20.0f : pileSW - tw - 20.0f;
             m_textRenderer->End();                                  
             m_spriteRenderer->Begin();
             DrawWindow(tx - 6, ty - 6, tw + 12, th + 12);   // 枠分だけ広げてパディング確保
@@ -885,10 +897,11 @@ void BattleUI::Draw(const BattleUIContext& ctx)
     // ターンエンドボタン
     if (ctx.battleResult == BattleResult::None && ctx.isPlayerTurn)
     {
-        float btnW = 180.0f;
-        float btnH = 56.0f;
-        float btnX = ctx.screenWidth - btnW - 20.0f;
-        float btnY = ctx.screenHeight - btnH - 20.0f;
+        XMFLOAT4 er = PileFx::EndTurnRect((float)ctx.screenWidth, (float)ctx.screenHeight);   // 右下の捨て札の上
+        float btnW = er.z;
+        float btnH = er.w;
+        float btnX = er.x;
+        float btnY = er.y;
 
         bool hoverEnd = UiHover(btnX, btnY, btnW, btnH, ctx.mousePos, "turnend", s_hoverKey);
         float bey = hoverEnd ? btnY - 6.0f : btnY;
@@ -1775,12 +1788,20 @@ void BattleUI::DrawPileViewer(const BattleUIContext& ctx)
         }
 }
 
+// 光の帯の色：カードの種類の色を、少し白に寄せて明るく
+static XMFLOAT4 StreakColor(CardType t)
+{
+    XMFLOAT4 c = CardVisual::GetCardColor(t, false);
+    return XMFLOAT4(c.x * 0.6f + 0.4f, c.y * 0.6f + 0.4f, c.z * 0.6f + 0.4f, 0.9f);
+}
+
 void BattleUI::StartDrawCardEffect(const std::string& cardId)
 {
     DrawCardEffect effect;   // 引く音は動き出した時に鳴らす（UpdateDrawCardEffects）
     effect.cardId = cardId;
-    effect.x = 20.0f;
-    effect.y = m_screenHeight - 60.0f;
+    XMFLOAT2 dp = PileFx::PilePos(PileFx::Pile::Draw, (float)m_screenWidth, (float)m_screenHeight);
+    effect.x = dp.x;
+    effect.y = dp.y;
     effect.targetX = m_screenWidth / 2.0f;
     effect.targetY = m_screenHeight - CardVisual::CARD_HIDE_Y_OFFSET;
     effect.alpha = 1.0f;
@@ -1789,10 +1810,9 @@ void BattleUI::StartDrawCardEffect(const std::string& cardId)
     m_drawCardEffects.push_back(effect);
 }
 
-void BattleUI::StartReshuffleEffect()
+void BattleUI::StartReshuffleEffect(int count)
 {
-    m_reshuffleFx.active = true;
-    m_reshuffleFx.timer = 0.0f;
+    PileFx::Shuffle(count, (float)m_screenWidth, (float)m_screenHeight);   // 右下の捨て札から左下の山札へ、枚数分の光の帯
 }
 
 void BattleUI::HoldNewestDraws(int n, float t, float step)
@@ -1814,46 +1834,26 @@ void BattleUI::StartEffectDraws(const std::vector<std::string>& ids)
     HoldNewestDraws((int)ids.size(), EFFECT_DRAW_DELAY, EFFECT_DRAW_STEP);
 }
 
-void BattleUI::UpdateReshuffleEffect(float deltaTime)
-{
-    if (!m_reshuffleFx.active) return;
-    m_reshuffleFx.timer += deltaTime;
-    if (m_reshuffleFx.timer >= CardVisual::RESHUFFLE_FX_DUR) m_reshuffleFx.active = false;
-}
-
-void BattleUI::DrawReshuffleEffect()
-{
-    if (!m_reshuffleFx.active) return;
-    float t = m_reshuffleFx.timer / CardVisual::RESHUFFLE_FX_DUR;   // 0→1
-    float fade = 1.0f - fabsf(0.5f - t) * 2.0f;            // 中盤で最大
-    float baseX = 60.0f, baseY = m_screenHeight - 90.0f;   // 山札あたり（左下）
-    const int N = 5;
-    for (int i = 0; i < N; i++)
-    {
-        float ph = t * 6.2831853f + i * (6.2831853f / N);
-        float r = 26.0f * fade;
-        float x = baseX + cosf(ph) * r;
-        float y = baseY + sinf(ph) * r * 0.5f;
-        XMFLOAT4 c(0.30f, 0.35f, 0.55f, fade);             // カード裏っぽい色
-        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, x, y, 0.5f, ph, c, nullptr, 0.0f);
-    }
-}
-
 void BattleUI::UpdateDrawCardEffects(float deltaTime)
 {
     for (auto& effect : m_drawCardEffects)
     {
         if (effect.done) continue;
         if (effect.delay > 0.0f) { effect.delay -= deltaTime; continue; }
-        if (!effect.started) { effect.started = true; Audio::PlaySE("Assets/Sound/se/draw.mp3"); }
+        if (!effect.started)
+        {
+            effect.started = true; Audio::PlaySE("Assets/Sound/se/draw.mp3");
+            effect.startX = effect.x; effect.startY = effect.y;   // 動き出す位置（山札）
+            PileFx::Bounce(PileFx::Pile::Draw);                    // 山札が弾む（ドローは光の帯を出さない）
+        }
 
         effect.timer += deltaTime;
         float t = min(1.0f, effect.timer / DRAW_EFFECT_DURATION);
 
         float ease = 1.0f - (1.0f - t) * (1.0f - t);
 
-        effect.x = 20.0f + (effect.targetX - 20.0f) * ease;
-        effect.y = m_screenHeight - 60.0f + (effect.targetY - (m_screenHeight - 60.0f)) * ease;
+        effect.x = effect.startX + (effect.targetX - effect.startX) * ease;
+        effect.y = effect.startY + (effect.targetY - effect.startY) * ease;
         effect.alpha = 1.0f - t;
 
         if (t >= 1.0f) effect.done = true;
@@ -1912,6 +1912,13 @@ void BattleUI::UpdateDiscardEffects(float deltaTime)
     {
         if (e.done) continue;
         if (e.delay > 0.0f) { e.delay -= deltaTime; continue; }   // 遅延中は待機
+        if (!e.exhaust && !e.streaked)   // 捨て札へ：カードと同じ道で光の帯
+        {
+            XMFLOAT2 from = { e.startX + CardVisual::CARD_W * 0.5f, e.startY + CardVisual::CARD_H * 0.5f };
+            PileFx::AddStreak(from, PileFx::PileCenter(PileFx::Pile::Discard, (float)m_screenWidth, (float)m_screenHeight),
+                DISCARD_ARC, EXHAUST_FADE_DUR, 0.0f, StreakColor(e.cardType), PileFx::Pile::Discard, false, 4.0f);
+            e.streaked = true;
+        }
         if (e.exhaust && !e.sparked)
         {
             SpawnExhaustEmbers(e.startX + CardVisual::CARD_W * 0.5f, e.startY + CardVisual::CARD_H * 0.5f,
@@ -1928,44 +1935,6 @@ void BattleUI::UpdateDiscardEffects(float deltaTime)
         std::remove_if(m_discardCardEffects.begin(), m_discardCardEffects.end(),
             [](const DiscardCardEffect& e) { return e.done; }),
         m_discardCardEffects.end());
-}
-
-void BattleUI::DrawDiscardEffects()
-{
-    float targetX = 80.0f, targetY = (float)(m_screenHeight - 60);
-    for (auto& e : m_discardCardEffects)
-    {
-        XMFLOAT4 c = CardVisual::GetCardColor(e.cardType, false);
-        if (e.delay > 0.0f) {   // 待機中：手札そのままの見た目
-            CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, e.startX, e.startY, e.startScale, e.startRot, c, e.data, 0.0f);
-            continue;
-        }
-        float t = min(1.0f, e.timer / DISCARD_EFFECT_DUR);
-        float ease = t * t;
-        float x = e.startX + (targetX - e.startX) * ease;
-        float y = e.startY + (targetY - e.startY) * ease - sinf(t * 3.14159f) * 70.0f;
-        float s = e.startScale;            // ← 手札と同じサイズを維持（縮小しない）
-        c.w = e.alpha;
-        CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, x, y, s, e.startRot, c, e.data, 0.0f);
-    }
-}
-
-void BattleUI::DrawDiscardEffectTexts(const BattleUIContext& ctx)
-{
-    float targetX = 80.0f, targetY = (float)(m_screenHeight - 60);
-    for (auto& e : m_discardCardEffects)
-    {
-        if (e.delay > 0.0f) {
-            CardVisual::DrawTexts(m_textRenderer, e.data, ctx.player, e.startX, e.startY, e.startScale, e.startRot, 1.0f);
-            continue;
-        }
-        float t = min(1.0f, e.timer / DISCARD_EFFECT_DUR);
-        float ease = t * t;
-        float x = e.startX + (targetX - e.startX) * ease;
-        float y = e.startY + (targetY - e.startY) * ease - sinf(t * 3.14159f) * 70.0f;
-        float s = e.startScale;            // ← 縮小しない
-        CardVisual::DrawTexts(m_textRenderer, e.data, ctx.player, x, y, s, e.startRot, e.alpha);
-    }
 }
 
 void BattleUI::DrawCardBurning(const BattleUIContext& ctx, const CardData* data, CardType type,
@@ -1995,7 +1964,8 @@ void BattleUI::DrawCardBurning(const BattleUIContext& ctx, const CardData* data,
 void BattleUI::DrawDiscardEffectsFull(const BattleUIContext& ctx)
 {
     // 呼び出し時はスプライトパス中
-    float targetX = 80.0f, targetY = (float)(m_screenHeight - 60);
+    XMFLOAT2 dc = PileFx::PileCenter(PileFx::Pile::Discard, (float)m_screenWidth, (float)m_screenHeight);
+    float targetX = dc.x - CardVisual::CARD_W * 0.5f, targetY = dc.y - CardVisual::CARD_H * 0.5f;   // 捨て札の真ん中にカードの真ん中が着く
     for (auto& e : m_discardCardEffects)
     {
         float s = e.startScale, rot = e.startRot, x, y;
@@ -2009,9 +1979,9 @@ void BattleUI::DrawDiscardEffectsFull(const BattleUIContext& ctx)
         }
         else {                                // 通常：捨て札へスライド
             float t = min(1.0f, e.timer / EXHAUST_FADE_DUR);
-            float ease = t * t;
-            x = e.startX + (targetX - e.startX) * ease;
-            y = e.startY + (targetY - e.startY) * ease - sinf(t * 3.14159f) * 70.0f;
+            XMFLOAT2 p = PileFx::PathAt({ e.startX, e.startY }, { targetX, targetY }, DISCARD_ARC, t);   // 光の帯と同じ道
+            x = p.x; y = p.y;
+            s = e.startScale * (1.0f - 0.6f * t);   // 小さくなりながら
         }
         c.w = e.alpha;
         CardVisual::DrawBase(m_spriteRenderer, m_whiteTexture, x, y, s, rot, c, e.data, 0.0f);
@@ -2036,6 +2006,14 @@ void BattleUI::UpdatePlayCardEffects(float deltaTime)
         }
         else
         {
+            // 捨て札へ：飛び始め（GetPlayEffectTransform と同じ時刻）に、カードと同じ道で光の帯
+            if (!e.exhaust && !e.streaked && et >= g_animTune.playHold * PLAY_EFFECT_DUR)
+            {
+                float cx = m_screenWidth / 2.0f, cy = m_screenHeight / 2.0f + g_animTune.playCenterY;   // カードの真ん中
+                PileFx::AddStreak({ cx, cy }, PileFx::PileCenter(PileFx::Pile::Discard, (float)m_screenWidth, (float)m_screenHeight),
+                    g_animTune.playArc, DISCARD_EFFECT_DUR, 0.0f, StreakColor(e.cardType), PileFx::Pile::Discard);
+                e.streaked = true;
+            }
             float holdEnd = 0.72f * PLAY_EFFECT_DUR;
             if (et < holdEnd)
                 e.alpha = 1.0f;
@@ -2074,8 +2052,9 @@ void BattleUI::UpdateCardAnimations(float deltaTime, int handSize, int hoveredIn
     while ((int)m_cardAnims.size() < handSize)
     {
         CardAnimState anim;
-        anim.currentX = 20.0f;
-        anim.currentY = (float)(m_screenHeight - 60);
+        XMFLOAT2 dp = PileFx::PilePos(PileFx::Pile::Draw, (float)m_screenWidth, (float)m_screenHeight);
+        anim.currentX = dp.x;
+        anim.currentY = dp.y;
         m_cardAnims.push_back(anim);
     }
     while ((int)m_cardAnims.size() > handSize)
@@ -2211,6 +2190,19 @@ void BattleUI::OnCardRemoved(int index)
 {
     if (index >= 0 && index < (int)m_cardAnims.size())
         m_cardAnims.erase(m_cardAnims.begin() + index);
+}
+
+// 手札の一番左にカードが入った（敵に入れられたお邪魔カード）。真ん中に少し小さく出して、保留の呪いと同じく中央で見せてから、
+// 通常の動きで一番左の場所へ滑らせる。何枚も入った時は delay 秒ずつ隠して待たせ、1枚ずつ見せる
+void BattleUI::OnCardInsertedFront(float delay)
+{
+    CardAnimState anim;
+    anim.currentX = m_screenWidth / 2.0f - CardVisual::CARD_W / 2.0f;
+    anim.currentY = m_screenHeight / 2.0f - CardVisual::CARD_H / 2.0f + g_animTune.playCenterY;
+    anim.currentScale = 0.8f;     // 少し小さい所から、中央でふわっと大きく
+    anim.holdTimer = delay;       // 待っている間は隠す（押せない）
+    anim.peekTimer = 0.0f;        // 隠し終わったら中央で見せてから手札へ
+    m_cardAnims.insert(m_cardAnims.begin(), anim);
 }
 
 void BattleUI::StartHandCardPeek(int index, float delay)
@@ -2796,7 +2788,8 @@ void BattleUI::GetPlayEffectTransform(const PlayCardEffect& e, float& x, float& 
 
     // 通常カード：接近＋タメ(PLAY_EFFECT_DUR) → 退場はターン終了と同じ時間/軌道
     float holdEnd = g_animTune.playHold * PLAY_EFFECT_DUR;         // 接近+タメの終わり
-    float dtx = 80.0f, dty = (float)(m_screenHeight - 60);  // 捨て札パイル（ターン終了と同座標）
+    XMFLOAT2 dc = PileFx::PileCenter(PileFx::Pile::Discard, (float)m_screenWidth, (float)m_screenHeight);
+    float dtx = dc.x - CardVisual::CARD_W * 0.5f, dty = dc.y - CardVisual::CARD_H * 0.5f;   // 捨て札の真ん中にカードの真ん中が着く
     float bx, by, scl; float outRot = 0.0f;
     if (et < holdEnd) {
         float t = et / PLAY_EFFECT_DUR;
@@ -2815,11 +2808,10 @@ void BattleUI::GetPlayEffectTransform(const PlayCardEffect& e, float& x, float& 
             bx = tx; by = ty;
             scl = g_animTune.playScale;
         }
-        else {                                  // 通常：捨て札パイルへ
-            float ease = u * u;
-            bx = tx + (dtx - tx) * ease;
-            by = ty + (dty - ty) * ease - sinf(u * 3.14159f) * g_animTune.playArc;
-            scl = g_animTune.playScale + (e.startScale - g_animTune.playScale) * u;
+        else {                                  // 通常：小さくなって光に溶けながら捨て札へ（光の帯と同じ道）
+            XMFLOAT2 p = PileFx::PathAt({ tx, ty }, { dtx, dty }, g_animTune.playArc, u);
+            bx = p.x; by = p.y;
+            scl = g_animTune.playScale * (1.0f - 0.75f * u);
         }
     }
     float w = CardVisual::CARD_W * scl, h = CardVisual::CARD_H * scl;
@@ -3212,10 +3204,10 @@ void BattleUI::StartAddedCardEffect(const CardData* data, const std::string& tar
     e.sx = cx - totalW / 2.0f + idx * spacing;
     e.sy = m_screenHeight * 0.40f;
 
-    float py = m_screenHeight - 60.0f;                  // 各パイルの位置
-    if (target == "deck") { e.tx = 20.0f; e.ty = py; }   // 山札
-    else if (target == "discard") { e.tx = 80.0f; e.ty = py; }   // 捨て札
-    else { e.tx = cx;    e.ty = py; }   // hand(保険)
+    float sw = (float)m_screenWidth, sh = (float)m_screenHeight;
+    if (target == "deck")         { XMFLOAT2 p = PileFx::PilePos(PileFx::Pile::Draw, sw, sh);    e.tx = p.x; e.ty = p.y; }   // 山札
+    else if (target == "discard") { XMFLOAT2 p = PileFx::PilePos(PileFx::Pile::Discard, sw, sh); e.tx = p.x; e.ty = p.y; }   // 捨て札
+    else { e.tx = cx; e.ty = sh - 60.0f; }   // hand(保険)
 
     m_addedCardEffects.push_back(e);
 }

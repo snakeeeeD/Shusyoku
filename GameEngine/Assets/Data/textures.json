@@ -184,6 +184,7 @@
       { "key": "ui_card", "path": "Assets/UI/ui_card.png" },
       { "key": "ui_cost", "path": "Assets/UI/ui_cost.png" },
       { "key": "ui_hazard", "path": "Assets/UI/ui_hazard.png" },
+      { "key": "ui_hazard_line", "path": "Assets/UI/ui_hazard_line.png" },
       { "key": "faith_1", "path": "Assets/UI/faith_1.png" },
       { "key": "faith_2", "path": "Assets/UI/faith_2.png" },
       { "key": "faith_3", "path": "Assets/UI/faith_3.png" },

@@ -10,6 +10,7 @@
 #include "HighlightPalette.h"
 #include "FloatingText.h"
 #include "BuffPopup.h"
+#include "PileFx.h"
 #include "ScreenShake.h"
 #include "HitStop.h"
 #include "TurnBanner.h"
@@ -555,6 +556,7 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
 
      FloatingTextManager::Clear();
      BuffPopupManager::Clear();
+     PileFx::Clear();
      UiNotice::Clear();
      EffectManager::Clear();
      ScreenShake::Clear();   // 前の戦闘の揺れを持ち越さない
@@ -932,6 +934,13 @@ void BattleScene::Update(float deltaTime)
     TurnBanner::Update(deltaTime);
     EffectManager::Update(deltaTime);
     UpdatePullTether();   // 引き寄せの「つなぐ物」をプレイヤーに付いていかせる
+    m_tileDrop.Update(deltaTime, m_gridMap);   // 床・罠が新しく置かれたら、上から落とす
+    if (m_fuseBeep.left > 0 && m_highlightTimer >= m_fuseBeep.next)   // 導火線の「ピッ」：光る瞬間に1回ずつ
+    {
+        Se::Play(Se::FuseBeep, 0.03f, 0.7f);
+        m_fuseBeep.left--;
+        m_fuseBeep.next += m_fuseBeep.period;
+    }
     UpdateBuffGainFx();   // バフが付いた／増えたらエフェクト
 
     // オロチの脱皮：ターンは使わず、その瞬間に演出だけ出す
@@ -1055,7 +1064,7 @@ void BattleScene::Update(float deltaTime)
     }
     else m_camera.AimEnd();
 
-    MaybeStartCamDemo();   // カメラ操作の自動デモ（初回の2ターン目）
+    MaybeStartCamDemo();   // カメラ操作の自動デモ（初回の1ターン目から。どのヒントよりも先）
     m_camera.Update(deltaTime, m_gridMap->GetCols(), m_gridMap->GetRows(), m_player->worldX, m_player->worldZ);
 
     // カメラ更新
@@ -1116,7 +1125,7 @@ void BattleScene::Update(float deltaTime)
             m_battleUI->UpdatePlayCardEffects(deltaTime);
             m_battleUI->UpdateDiscardEffects(deltaTime);
             m_battleUI->UpdateAddedCardEffects(deltaTime);
-            m_battleUI->UpdateReshuffleEffect(deltaTime);
+            PileFx::Update(deltaTime);   // 山札・捨て札の光の帯と弾み
             return;
         }
 
@@ -1138,14 +1147,14 @@ void BattleScene::Update(float deltaTime)
                     Hint::Request("snakeWeak");
                     Hint::Request("molt");
                 }
-            if (m_turnManager.GetTurnCount() >= 2 && !m_camera.DemoActive() && PlayerDataManager::GetData().tutorialCamera)   // カメラのデモを見た後に（デモの後ろに重ねない）
+            if (!m_camera.DemoActive() && PlayerDataManager::GetData().tutorialCamera)   // カメラのデモを見た後に（デモの後ろに重ねない）
             { Hint::Request("focus"); Hint::Request("camera"); }
         }
         else Hint::Resolve("endTurn");
 
         if (int n = m_deck.ConsumeReshuffled())   // 手番中のドローで山札を戻した時：戻す演出 → 終わってから引いたカードを出す
         {
-            m_battleUI->StartReshuffleEffect();
+            m_battleUI->StartReshuffleEffect(m_deck.GetDrawPileCount() + n);   // 戻した枚数（今の山札＋引いた分）
             m_battleUI->HoldNewestDraws(n, CardVisual::RESHUFFLE_FX_DUR);
             Audio::PlaySE("Assets/Sound/se/card.mp3");
         }
@@ -1163,8 +1172,9 @@ void BattleScene::Update(float deltaTime)
                 if (m_deck.GetDrawPileCount() == 0 && m_deck.GetDiscardPileCount() > 0)
                 {
                     // 山札が尽きた → 捨て札を山札へ戻す演出を挟む
+                    int back = m_deck.GetDiscardPileCount();   // 山札へ戻す枚数
                     m_deck.Reset();
-                    m_battleUI->StartReshuffleEffect();
+                    m_battleUI->StartReshuffleEffect(back);
                     Audio::PlaySE("Assets/Sound/se/card.mp3");
                     m_reshuffleFxTimer = CardVisual::RESHUFFLE_FX_DUR;
                 }
@@ -1178,7 +1188,7 @@ void BattleScene::Update(float deltaTime)
                 }
             }
         }
-        m_battleUI->UpdateReshuffleEffect(deltaTime);
+        PileFx::Update(deltaTime);   // 山札・捨て札の光の帯と弾み
         m_battleUI->UpdatePlayCardEffects(deltaTime);
         if (!m_burnHits.empty())
         {
@@ -1551,7 +1561,16 @@ void BattleScene::Update(float deltaTime)
                     const CardData* cd = CardDataBase::Get(pc.cardId);
                     for (int k = 0; k < pc.count; k++)
                     {
-                        if (pc.target == "hand")         { m_hand.AddCard(pc.cardId); m_enemyAddedToHand++; }
+                        if (pc.target == "hand")   // 手札の一番左へ：真ん中で見せてから、すっと入る（何枚もなら1枚ずつ）
+                        {
+                            if (m_hand.AddCardFront(pc.cardId))
+                            {
+                                m_battleUI->OnCardInsertedFront(k * 0.25f);
+                                m_enemyAddedToHand++;
+                                m_hoveredCardIndex = -1;                            // 左に入って番号がずれるので、マウスの所は選び直す
+                                if (m_selectedCardIndex >= 0) m_selectedCardIndex++;   // 選んでいたカードは同じカードのまま
+                            }
+                        }
                         else if (pc.target == "discard")  m_deck.DiscardCard(pc.cardId);
                         else                              m_deck.AddCardRandom(pc.cardId);
                         if (pc.target != "hand")          // 山札/捨て札は見せてから飛ばす
@@ -2112,11 +2131,13 @@ int BattleScene::FocusEnemy() const
 // カメラ操作の自動デモ（初回の2ターン目に1回）を始めるか。手順・動きは BattleCamera
 void BattleScene::MaybeStartCamDemo()
 {
-    if (m_camera.DemoActive() || m_camera.Homing()) return;
-    // 始める条件：2ターン目以降の自分の番、ターン表示が消えて、カードを持っていない
     auto& pd = PlayerDataManager::GetData();
-    if (pd.tutorialCamera || m_battleResult != BattleResult::None || !m_turnManager.IsPlayerTurn()
-        || m_turnManager.GetTurnCount() < 2 || TurnBanner::IsActive() || m_selectedCardIndex >= 0) return;
+    if (pd.tutorialCamera) { Hint::Hold(false); return; }   // 見終わった：ヒントを出してよい
+    Hint::Hold(true);                                        // まだ見ていない：デモを先に見せるため、新しいヒントは待たせる
+    if (m_camera.DemoActive() || m_camera.Homing()) return;
+    // 始める条件：自分の番（1ターン目から）、ターン表示が消えて、カードを持っていない、出ているヒントが閉じた
+    if (m_battleResult != BattleResult::None || !m_turnManager.IsPlayerTurn()
+        || TurnBanner::IsActive() || m_selectedCardIndex >= 0 || Hint::Current()) return;
     pd.tutorialCamera = true;
     pd.seenHints.insert("camera");   // 同じことをヒントでもう一度言わない
     PlayerDataManager::Save();
@@ -2256,10 +2277,11 @@ float BattleScene::StepDetonate(TrapFire& f)
 }
 
 // 自分の罠：自分のターンの始め（＝敵のターンが終わった所）に育つ（上限3回）。
-// 周り1マスに敵がいる間だけ導火線が進み、3たまったら自分で起爆する（周りは半分）。敵がいない罠はそのまま残る（回収できる）
+// 周り1マスに敵がいる間だけ導火線が進み、3たまった次のターン、まだ敵が隣にいたら自分で起爆する（周りは半分）。敵がいない罠はそのまま残る（回収できる）
 static constexpr int TRAP_GROW_MAX = 3, TRAP_FUSE = 3;
 void BattleScene::UpdateTrapsAtTurnStart()
 {
+    int maxFuse = 0;   // このターンに進んだ導火線の、一番大きい数（「ピッ」の回数を決める）
     for (int r = 0; r < m_gridMap->GetRows(); r++)
         for (int c = 0; c < m_gridMap->GetCols(); c++)
         {
@@ -2277,11 +2299,33 @@ void BattleScene::UpdateTrapsAtTurnStart()
                     int ei = EnemyIndexAt(nc, nr);   // 大きい敵・蛇の体も含む
                     nearEnemy = (ei >= 0 && m_enemies[ei]->GetHp() > 0);
                 }
-            if (nearEnemy && ++t.fuse >= TRAP_FUSE
-                && !m_detonate.Any([&](const TrapFire& f) { return f.c == c && f.r == r; }))
-                m_detonate.Push({ c, r, false });   // 起爆カードと同じ順番待ちで1個ずつ（周りは半分）
+            if (nearEnemy)
+            {
+                if (t.fuse < TRAP_FUSE)
+                {
+                    t.fuse++;   // 導火線が進む（3になってもすぐには爆発しない＝3の間に敵に踏ませることもできる）
+                    maxFuse = (std::max)(maxFuse, t.fuse);
+                    // 進んだのが分かるように、罠の上に数を出す（3は「次のターンに爆発」）。初めての時はヒントで仕組みを説明
+                    bool last = (t.fuse >= TRAP_FUSE);
+                    FloatingTextManager::Spawn(CellWX(c), 0.6f, CellWZ(r),
+                        last ? std::wstring(L"次のターンに爆発！") : L"導火線 " + std::to_wstring(t.fuse) + L"/3",
+                        last ? XMFLOAT4(1.0f, 0.3f, 0.2f, 1.0f) : XMFLOAT4(1.0f, 0.6f, 0.2f, 1.0f), 24.0f);
+                    Hint::Request("fuse");
+                }
+                else if (!m_detonate.Any([&](const TrapFire& f) { return f.c == c && f.r == r; }))
+                    m_detonate.Push({ c, r, false });   // 3たまった次のターン、まだ敵が隣にいたら自分で起爆（起爆カードと同じ順番待ち。周りは半分）
+            }
         }
     if (!m_detonate.Empty()) m_detonate.Delay(0.3f);   // 少し間をおいて
+
+    // 導火線が進んだら、点滅に合わせて「ピッ」を数回だけ（低HPの鼓動と同じく、鳴り続けて考える邪魔をしないように）
+    if (maxFuse > 0)
+    {
+        static const int BEEPS[TRAP_FUSE + 1] = { 0, 2, 3, 4 };   // 導火線1は点滅が遅いので2回、2は3回、3は4回
+        m_fuseBeep.period = 1.0f / (float)(1 << (maxFuse - 1));   // 点滅と同じ間隔（BattleSceneDraw）
+        m_fuseBeep.left = BEEPS[maxFuse];
+        m_fuseBeep.next = ceilf(m_highlightTimer / m_fuseBeep.period) * m_fuseBeep.period;   // 次に光る瞬間にそろえる
+    }
 }
 
 // バフ・デバフが付いた／増えた時の演出。増やす時は1行。ここに無いもの（表示用など）は何も出さない

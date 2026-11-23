@@ -150,6 +150,7 @@
     <ClInclude Include="BattleCamera.h" />
     <ClInclude Include="BattleScene.h" />
     <ClInclude Include="BattleUI.h" />
+    <ClInclude Include="PileFx.h" />
     <ClInclude Include="Buff.h" />
     <ClInclude Include="BuffInfo.h" />
     <ClInclude Include="BuffManager.h" />
@@ -175,6 +176,7 @@
     <ClInclude Include="EffectManager.h" />
     <ClInclude Include="MoveFeel.h" />
     <ClInclude Include="ScreenStatusFx.h" />
+    <ClInclude Include="TileDropFx.h" />
     <ClInclude Include="ScreenOverlay.h" />
     <ClInclude Include="FlashSprite.h" />
     <ClInclude Include="Projectile.h" />
@@ -283,6 +285,7 @@
     <ClCompile Include="BattleSceneInput.cpp" />
     <ClCompile Include="BattleSceneDebug.cpp" />
     <ClCompile Include="BattleUI.cpp" />
+    <ClCompile Include="PileFx.cpp" />
     <ClCompile Include="BuffManager.cpp" />
     <ClCompile Include="Card.cpp" />
     <ClCompile Include="CardDataBase.cpp" />
@@ -298,6 +301,7 @@
     <ClCompile Include="EffectManager.cpp" />
     <ClCompile Include="MoveFeel.cpp" />
     <ClCompile Include="ScreenStatusFx.cpp" />
+    <ClCompile Include="TileDropFx.cpp" />
     <ClCompile Include="ScreenOverlay.cpp" />
     <ClCompile Include="FlashSprite.cpp" />
     <ClCompile Include="Projectile.cpp" />

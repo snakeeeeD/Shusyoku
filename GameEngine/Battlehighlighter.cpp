@@ -421,8 +421,8 @@ void BattleHighlighter::UpdateEnemyHighlight(
         bool sel = selCells.count(pos) > 0;
         auto& threats = cellThreats[pos];
         // 注目中の敵の範囲は点滅、それ以外は控えめ（注目が無ければ全部ふつう）
-        float a = sel ? 0.55f + 0.30f * sinf(timer * 12.0f)
-            : (m_selectedEnemy >= 0 ? 0.20f : 0.50f);
+        float a = sel ? 0.45f + 0.25f * sinf(timer * 12.0f)
+            : (m_selectedEnemy >= 0 ? 0.16f : 0.40f);
 
         XMFLOAT4 h;
         if ((int)threats.size() <= 1 || sel)
@@ -444,7 +444,12 @@ void BattleHighlighter::UpdateEnemyHighlight(
                 ca.y + (cb.y - ca.y) * t,
                 ca.z + (cb.z - ca.z) * t, 1.0f);
         }
-        m_enemyThreatMarks.push_back({ pos.first, pos.second, XMFLOAT4(h.x, h.y, h.z, a) });
+        // しましまの模様：このマスを狙う敵全員の模様を重ねる（識別色の番号で、1体目＼・2体目／・3体目─・4体目│・5体目×）
+        auto patternBit = [&](int ei) { int ci = enemies[ei]->colorIndex >= 0 ? enemies[ei]->colorIndex : ei; return 1 << (ci % 5); };
+        int patterns = 0;
+        for (int ei : threats) patterns |= patternBit(ei);
+        if (patterns == 0) patterns = patternBit(info.second);
+        m_enemyThreatMarks.push_back({ pos.first, pos.second, XMFLOAT4(h.x, h.y, h.z, a), patterns });
         m_enemyHighlightCells.push_back(pos);
     }
 

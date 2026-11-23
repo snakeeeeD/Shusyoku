@@ -284,10 +284,10 @@
       "kind": "maxHp",
       "value": 30,
       "rarity": "boss",
-      "desc": "最大HP+30\n代償：歩数-5",
+      "desc": "最大HP+30\n代償：毎層の歩数-5",
       "extra": [
         {
-          "kind": "steps",
+          "kind": "stepsPerLayer",
           "value": -5
         }
       ]

@@ -74,10 +74,9 @@ void Enemy::Draw3D(Renderer3D* renderer)
     float w = width * s * m_feel.ScaleX(), h = height * s * m_feel.ScaleY();
 
     // 突進のブラー：少しでも伸びている間は、ブラーのシェーダーで描く（重ねる絵も同じだけ伸ばす）
-    const float BLUR_MIN = 0.02f;        // これより短いブラーは描かない
-    const float BLUR_STRENGTH = 1.0f;    // ブラーの濃さ
+    const float BLUR_STRENGTH = MoveFeel::BLUR_STRENGTH;   // 数字は MoveFeel にまとめた（プレイヤーと共通）
     float bx = m_feel.BlurX(), bz = m_feel.BlurZ();
-    bool blur = (bx * bx + bz * bz) > BLUR_MIN * BLUR_MIN;
+    bool blur = (bx * bx + bz * bz) > MoveFeel::BLUR_MIN * MoveFeel::BLUR_MIN;
     auto drawBody = [&](const std::string& tex) {
         if (blur)
             renderer->DrawMotionBlurBillboard(TextureManager::Get(tex), worldX, y, worldZ + m_drawZ,
@@ -544,6 +543,7 @@ void Enemy::PullPlayer(int playerCol, int playerRow, GridMap* gridMap, Player* p
     if (!pts.empty())
     {
         player->StartWalk(pts, 0.1f);
+        player->m_feel.SetDash(true, true);  // 引きずられる間も土煙とブラー
         player->StartHurt();   // 引っぱられている間は、ダメージが無くても被弾のアニメ（よろけながら引きずられる）
     }
 }
@@ -576,7 +576,12 @@ void Enemy::KnockbackPlayer(int playerCol, int playerRow, GridMap* gridMap, Play
 
     player->gridCol = pc;
     player->gridRow = pr;
-    if (!pts.empty()) player->StartWalk(pts, 0.08f);   // 速めで吹き飛ばす感
+    if (!pts.empty())
+    {
+        player->StartWalk(pts, 0.08f);       // 速めで吹き飛ばす感
+        player->m_feel.SetDash(true, true);  // 飛ばされる間は土煙とブラー（止まったら自動で終わる）
+        player->StartHurt();                 // ダメージをブロックで防いでも、よろけながら飛ばされる
+    }
 }
 
 bool Enemy::ConditionMet(const EnemyAction& a, int playerCol, int playerRow, int turn) const

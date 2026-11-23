@@ -45,7 +45,7 @@ public:
 
     void SetSelectedEnemy(int i) { m_selectedEnemy = i; }
 
-    struct ThreatMark { int col, row; DirectX::XMFLOAT4 color; };
+    struct ThreatMark { int col, row; DirectX::XMFLOAT4 color; int patterns = 1; };   // patterns＝しましまの模様のビット（1体目＝1、2体目＝2、3体目＝4…。重なるマスは全員分）
     std::vector<ThreatMark> m_enemyThreatMarks;
     const std::vector<ThreatMark>& GetThreatMarks() const { return m_enemyThreatMarks; }
 

@@ -118,8 +118,10 @@ void FieldScene::GenerateMap()
     m_nodes.clear();
     m_nodes.resize(GRID_COLS * GRID_ROWS);
 
-    m_steps = INITIAL_STEPS;
-    m_maxSteps = INITIAL_STEPS;
+    // 歩数：基本の20に、毎層効く歩数のレリック（巨人の血の代償など）を足す。
+    //（旅人の地図・羅針盤の "steps" は、手に入れた層だけ＝取得時に1回足すので、ここでは足さない）
+    m_steps = INITIAL_STEPS + RelicManager::SumValue("stepsPerLayer");
+    m_maxSteps = m_steps;
 
     srand((unsigned int)time(nullptr));
 

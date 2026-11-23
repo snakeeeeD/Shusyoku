@@ -31,7 +31,10 @@ public:
     const std::vector<Ghost>& Ghosts() const { return m_ghosts; }
 
     // 突進：on の間は、足もとから土煙を出し続け、速さに合わせて後ろへブラーを伸ばす（残像は出さない）。off で止まった所に土煙
-    void SetDash(bool on);
+    void SetDash(bool on, bool untilStop = false);   // untilStop＝動きが止まったら自動で終わる（ノックバック・引き寄せ：飛ばす側は始めに1回呼ぶだけ）
+    bool Dashing() const { return m_dash; }          // 突進・飛ばされ中（この間は向きを変えない、など）
+    static constexpr float BLUR_MIN = 0.02f;         // これより短いブラーは描かない（敵・プレイヤー共通）
+    static constexpr float BLUR_STRENGTH = 1.0f;     // ブラーの濃さ（敵・プレイヤー共通）
     float BlurX() const { return m_blurX; }   // 後ろ（元いた方向）へ伸びるブラーの長さ（ワールド）
     float BlurZ() const { return m_blurZ; }
 
@@ -53,6 +56,7 @@ private:
     std::vector<Ghost> m_ghosts;
     // 突進
     bool  m_dash = false;
+    bool  m_dashUntilStop = false;   // 止まったら自動で突進を終える
     float m_dustTimer = 0.0f;
     float m_prevX = 0.0f, m_prevZ = 0.0f;   // 前のフレームの位置（速さを出す）
     bool  m_hasPrev = false;

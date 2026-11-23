@@ -38,6 +38,7 @@ struct DrawCardEffect
     bool  done;
     float delay = 0.0f;      // >0 の間は待つ（リシャッフル演出の後に飛ばす）
     bool  started = false;   // 動き出した（音を鳴らした）か
+    float startX = 0.0f, startY = 0.0f;   // 動き出した位置（山札）
 };
 
 struct DiscardCardEffect {
@@ -53,6 +54,7 @@ struct DiscardCardEffect {
     bool  fromCenter = false;               // 中央スタート（過負荷）
     bool exhaust = false;
     bool sparked = false;
+    bool streaked = false;   // 捨て札への光の帯を出したか
 };
 
 
@@ -77,6 +79,7 @@ struct PlayCardEffect {
     bool isBurn = false;
     bool exhaust = false;
     bool sparked = false;
+    bool streaked = false;   // 捨て札への光の帯を出したか
 };
 
 struct DropShown 
@@ -144,11 +147,9 @@ public:
 
     void UpdateDrawCardEffects(float deltaTime);
     void StartDrawCardEffect(const std::string& cardId);
-    void StartReshuffleEffect();
+    void StartReshuffleEffect(int count);   // シャッフル：右下の捨て札から左下の山札へ、枚数分の光の帯（PileFx）
     void HoldNewestDraws(int n, float t, float step = 0.0f);   // 最後に引いた n 枚を待たせる（1枚目は t 秒、以降 step 秒ずつ遅らせる）
     void StartEffectDraws(const std::vector<std::string>& ids); // カードの効果で引いた分：使ったカードが出てから1枚ずつ引く
-    void UpdateReshuffleEffect(float deltaTime);
-    void DrawReshuffleEffect();
     void StartDiscardEffects();
     void StartOverflowDiscardEffect();
     void UpdateDiscardEffects(float deltaTime);
@@ -156,6 +157,7 @@ public:
         int selectedIndex, POINT mousePos, bool selectedNeedsTarget,
         const std::vector<int>* discardSelected = nullptr);
     void OnCardRemoved(int index);
+    void OnCardInsertedFront(float delay);   // 手札の一番左にカードが入った：真ん中で見せてから、すっと左端へ（delay 秒は隠して待つ）
     void StartHandCardPeek(int index, float delay);   // 保留カードを中央へ往復させて手札に戻す
     void UpdatePlayCardEffects(float deltaTime);
 
@@ -236,8 +238,6 @@ private:
     std::vector<DrawCardEffect> m_drawCardEffects;
     std::vector<PlayCardEffect> m_playCardEffects;
 
-    struct ReshuffleFx { bool active = false; float timer = 0.0f; };
-    ReshuffleFx m_reshuffleFx;
     std::vector<float> m_pendingHolds;                   // 手札側の待機の予約（次の UpdateCardAnimations で最後の数枚に当てる。古い順）
     static constexpr float EFFECT_DRAW_DELAY = 0.40f;   // 効果のドロー：使ったカードが中央から離れてから引き始める（中央で止まるのは PLAY_EFFECT_DUR*0.72≒0.32秒）
     static constexpr float EFFECT_DRAW_STEP  = 0.12f;   // 1枚ごとの間隔
@@ -261,7 +261,6 @@ private:
     std::vector<CardAnimState> m_cardAnims;
     std::vector<DiscardCardEffect> m_discardCardEffects;
     void DrawPlayCardEffects();
-    void DrawDiscardEffects();
     void DrawPlayerOffScreenIndicator(const BattleUIContext& ctx);
     void DrawWindow(float x, float y, float w, float h,
         const DirectX::XMFLOAT4& tint = DirectX::XMFLOAT4(1, 1, 1, 1));
@@ -288,7 +287,6 @@ private:
     static void GridToWorld(GridMap* gridMap, int col, int row, float& outX, float& outZ);
     void GetPlayEffectTransform(const PlayCardEffect& e, float& x, float& y, float& scale, float& rot);
     void DrawPlayCardEffectsFull(const BattleUIContext& ctx);
-    void DrawDiscardEffectTexts(const BattleUIContext& ctx);
     void DrawDiscardEffectsFull(const BattleUIContext& ctx);
     // 廃棄：カードを1枚の絵にまとめてから、文字ごと焼けるように溶かす（スプライトを描いている途中で呼ぶ）
     void DrawCardBurning(const BattleUIContext& ctx, const CardData* data, CardType type,
@@ -313,6 +311,7 @@ private:
 
     static constexpr float PLAY_EFFECT_DUR = 0.45f;
     static constexpr float DISCARD_EFFECT_DUR = 0.55f;
+    static constexpr float DISCARD_ARC = 70.0f;   // 捨てたカードが捨て札へ飛ぶ弧の高さ
     static constexpr float EXHAUST_FADE_DUR = 0.3f;   // 廃棄フェード時間（大=遅い）
     static constexpr float EXHAUST_BURN_DUR = 0.55f;  // 廃棄：カードが焼けて溶けきるまでの秒数
 

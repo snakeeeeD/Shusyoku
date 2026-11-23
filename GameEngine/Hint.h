@@ -20,6 +20,7 @@ public:
     static void Clear();                   // シーン切替・戦闘終了時
     static const HintDef* Current() { return s_cur; }
     static float Alpha();
+    static void Hold(bool on);   // on の間は新しいヒントを出さずに待たせる（カメラのデモを先に見せるため）。off で待っていた分を出す
     static void MarkAllSeen();   // 全ヒントを既読にする（デバッグ・録画用）
 private:
     static const HintDef* Find(const char* id);
@@ -27,4 +28,5 @@ private:
     static inline const HintDef* s_cur = nullptr;
     static inline float s_time = 0.0f;
     static inline std::vector<const HintDef*> s_queue;
+    static inline bool s_hold = false;   // 待たせている間（Hold）
 };

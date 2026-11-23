@@ -169,6 +169,9 @@
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\11-BattleUI">
       <UniqueIdentifier>{434ce89c-361e-402c-995f-dc1aa0b969ec}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\12-PileFx">
+      <UniqueIdentifier>{22591d74-b6ad-4bc9-a6ca-be772f816ca0}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\01-BattleSceneDebug">
       <UniqueIdentifier>{b5716a26-0561-4416-b19d-44770a85ae46}</UniqueIdentifier>
     </Filter>
@@ -388,6 +391,9 @@
     <Filter Include="ソース ファイル\01-描画関連\20-Effect\30-ScreenFx">
       <UniqueIdentifier>{44d47feb-6500-4064-aea0-312ec7479e18}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\20-Effect\50-TileDrop">
+      <UniqueIdentifier>{e45c0774-f069-4602-9f5e-1d764c63d89d}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ソース ファイル\01-描画関連\20-Effect\40-CardBurn">
       <UniqueIdentifier>{92e8d46a-e014-470b-850f-546cdc8e40e6}</UniqueIdentifier>
     </Filter>
@@ -585,6 +591,9 @@
     <ClInclude Include="FieldMapConfig.h">
       <Filter>ソース ファイル\02-Scene\40-FieldScene\03-FieldMapConfig</Filter>
     </ClInclude>
+    <ClInclude Include="PileFx.h">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\12-PileFx</Filter>
+    </ClInclude>
     <ClInclude Include="BattleUI.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\11-BattleUI</Filter>
     </ClInclude>
@@ -765,6 +774,9 @@
     <ClInclude Include="ScreenOverlay.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\05-ScreenOverlay</Filter>
     </ClInclude>
+    <ClInclude Include="TileDropFx.h">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\50-TileDrop</Filter>
+    </ClInclude>
     <ClInclude Include="ScreenStatusFx.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\30-ScreenFx</Filter>
     </ClInclude>
@@ -905,6 +917,9 @@
     <ClCompile Include="FieldScene.cpp">
       <Filter>ソース ファイル\02-Scene\40-FieldScene\00-FieldScene</Filter>
     </ClCompile>
+    <ClCompile Include="PileFx.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\12-PileFx</Filter>
+    </ClCompile>
     <ClCompile Include="BattleUI.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\11-BattleUI</Filter>
     </ClCompile>
@@ -1024,6 +1039,9 @@
     </ClCompile>
     <ClCompile Include="ScreenOverlay.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\05-ScreenOverlay</Filter>
+    </ClCompile>
+    <ClCompile Include="TileDropFx.cpp">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\50-TileDrop</Filter>
     </ClCompile>
     <ClCompile Include="ScreenStatusFx.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\30-ScreenFx</Filter>

@@ -23,6 +23,19 @@ void Hand::AddCard(const std::string& id)
 	m_cards.push_back(new Card(id));
 }
 
+bool Hand::AddCardFront(const std::string& id)
+{
+	if (!CardDataBase::Get(id)) return false;
+	if ((int)m_cards.size() - (m_reserved ? 1 : 0) >= MAX_CARDS)
+	{
+		if (m_deck) m_deck->DiscardCard(id);   // èDãŒÀ‚ğ’´‚¦‚½•ª‚ÍÌ‚ÄD‚ÖiAddCard ‚Æ“¯‚¶j
+		UiNotice::Show(NoticeType::HandFull);
+		return false;
+	}
+	m_cards.insert(m_cards.begin(), new Card(id));
+	return true;
+}
+
 void Hand::RemoveCard(int index)
 {
 	if (index < 0 || index >= (int) m_cards.size()) return;

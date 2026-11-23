@@ -254,7 +254,8 @@ namespace EnumNames
         { "eliteMaterial", false, u8"エリート撃破時 素材をvalue個" },
         // 戦闘外
         { "maxHp",         false, u8"取得時 最大HP+value" },
-        { "steps",         false, u8"取得時 歩数+value" },
+        { "steps",         false, u8"取得時 歩数+value（手に入れた層だけ）" },
+        { "stepsPerLayer", false, u8"毎層の歩数+value（次の層のマップから、毎層ずっと）" },
         { "addCard",       false, u8"取得時 paramのカードをvalue枚デッキに加える（代償用）" },
         { "restHeal",      false, u8"休憩の回復+value" },
         { "shopDiscount",  false, u8"ショップ価格 -value%" },

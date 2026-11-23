@@ -88,7 +88,7 @@ void Player::Update(float deltaTime)
 
     // 移動の差分から向きを更新（動いている間だけ）
     float dx = worldX - m_prevX, dz = worldZ - m_prevZ;
-    if (fabsf(dx) > 0.0015f || fabsf(dz) > 0.0015f)
+    if ((fabsf(dx) > 0.0015f || fabsf(dz) > 0.0015f) && !m_feel.Dashing())   // 飛ばされ・引きずられの間は向きを変えない（敵の方を向いたまま）
     {
         if (fabsf(dx) >= fabsf(dz)) { m_faceDx = (dx > 0.0f) ? 1 : -1; m_faceDz = 0; }
         else { m_faceDx = 0; m_faceDz = (dz > 0.0f) ? 1 : -1; }
@@ -105,7 +105,12 @@ void Player::Draw3D(Renderer3D* renderer)
         XMFLOAT4 gc = GetDrawColor(); gc.w *= g.alpha;
         renderer->DrawBillboard(f.tex, f.x + (g.x - worldX), f.y, f.z + (g.z - worldZ), f.w, f.h, f.rot, gc, f.uv);
     }
-    renderer->DrawBillboard(f.tex, f.x, f.y, f.z, f.w, f.h, f.rot, GetDrawColor(), f.uv);
+    // 飛ばされ・引きずられの間は、敵の突進と同じブラー（元いた方向へ伸びて薄れる）
+    float bx = m_feel.BlurX(), bz = m_feel.BlurZ();
+    if (bx * bx + bz * bz > MoveFeel::BLUR_MIN * MoveFeel::BLUR_MIN)
+        renderer->DrawMotionBlurBillboard(f.tex, f.x, f.y, f.z, f.w, f.h, f.rot, GetDrawColor(), f.uv, bx, bz, MoveFeel::BLUR_STRENGTH);
+    else
+        renderer->DrawBillboard(f.tex, f.x, f.y, f.z, f.w, f.h, f.rot, GetDrawColor(), f.uv);
 }
 
 // 今の向き・アニメのコマの絵と置き場所。scale は残像などで大きくする時（足元の位置は合わせたまま）

@@ -13,6 +13,7 @@ public:
 	void SetDeck(Deck* deck) { m_deck = deck; }   // 溢れた分の行き先
 
 	void AddCard(const std::string& id);          // 満杯なら捨て札へ
+	bool AddCardFront(const std::string& id);     // 一番左に入れる（敵に入れられたお邪魔カード）。満杯なら捨て札へ行き false
 	void RemoveCard(int index);
 	void Clear();
 	void UpgradeAll();

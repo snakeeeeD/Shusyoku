@@ -52,6 +52,7 @@ void MoveFeel::OnMoveStart(float fromX, float fromZ, float toX, float toZ, float
 void MoveFeel::Update(float dt, bool moving, float progress, float x, float z)
 {
     m_idle = moving ? 0.0f : m_idle + dt;
+    if (m_dash && m_dashUntilStop && !moving && m_idle > CHAIN_GAP) SetDash(false);   // 飛ばされ終わった：止まった所に土煙
 
     // 速さ（前のフレームからの動き）
     float vx = 0.0f, vz = 0.0f;
@@ -117,8 +118,9 @@ void MoveFeel::Update(float dt, bool moving, float progress, float x, float z)
     if (!moving && m_idle > CHAIN_GAP) m_ghostOn = false;
 }
 
-void MoveFeel::SetDash(bool on)
+void MoveFeel::SetDash(bool on, bool untilStop)
 {
+    m_dashUntilStop = on && untilStop;
     bool grounded = (m_style == MoveStyle::Walk || m_style == MoveStyle::Hop);
     if (m_dash && !on && grounded && m_hasPrev)   // 止まった所で、前へぶわっと土煙
         EffectManager::Play("dash_stop", m_prevX, 0.05f, m_prevZ, atan2f(m_dirX, m_dirZ));

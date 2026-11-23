@@ -876,8 +876,26 @@
       "moveStyle": "hop",
       "texture": "enemy_tentacle",
       "hp": 156,
-      "width": 1.4,
-      "height": 1.4,
+      "width": 1.7,
+      "height": 1.7,
+      "gridShape": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
       "sequential": true,
       "actions": [
         {

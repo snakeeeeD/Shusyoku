@@ -109,6 +109,15 @@
       ]
     },
     {
+      "id": "tile_land",
+      "se": "trap_set.wav",
+      "bursts": [
+        { "count": 8, "speed": 1.6, "life": 0.45, "scale": 0.15, "gravity": -0.3, "drag": 0.1, "dragY": 0.1,
+          "colorStart": [ 0.85, 0.8, 0.7, 0.75 ], "colorEnd": [ 0.7, 0.65, 0.56, 0.0 ],
+          "texture": "smoke", "center": true }
+      ]
+    },
+    {
       "id": "move_trail",
       "bursts": [
         { "count": 1, "speed": 0.0, "life": 0.6, "scale": 0.22, "gravity": 0.0, "drag": 0.0,

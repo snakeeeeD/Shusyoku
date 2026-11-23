@@ -349,13 +349,7 @@ void PlayerDataManager::RemoveRelic(const std::string& id)
 	auto& v = m_data.relics;
 	auto it = std::find(v.begin(), v.end(), id);
 	if (it == v.end()) return;
-	if (auto d = RelicManager::Get(id))
-	{
-		int mh = d->ValueOf("maxHp");
-		m_data.maxHp -= mh; if (m_data.maxHp < 1) m_data.maxHp = 1;
-		if (m_data.hp > m_data.maxHp) m_data.hp = m_data.maxHp;
-		m_data.fieldSteps -= d->ValueOf("steps");
-	}
+	// 無くなっても、取得時に増えた最大HP・HP・歩数は戻さない（そのまま）。毎層の歩数は持っているレリックだけで数えるので、次の層から自然に効かなくなる
 	v.erase(it);
 	Save();
 }

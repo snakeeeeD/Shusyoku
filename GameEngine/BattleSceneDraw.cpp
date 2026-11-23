@@ -379,14 +379,38 @@ void BattleScene::DrawFloorMarks()
                 XMFLOAT4(1.0f, 0.82f, 0.3f, 0.10f + 0.025f * f + 0.10f * pulse), wy + 0.008f);   // 下地（範囲の下）
         }
 
-    // 敵の攻撃範囲：所有敵の色でハザード模様を薄く塗る
-    ID3D11ShaderResourceView* rangeTex = TextureManager::Get("ui_hazard");
+    // 敵の攻撃範囲：所有敵の色で、敵ごとに違う模様のしましまを薄く塗る（どの敵の範囲か、色が近くても模様で分かる）
+    //   絵：ui_hazard＝／の斜線、ui_hazard_line＝横じま。90度回すと＼・縦になる。×は斜線を2枚重ねる
+    static const struct { const char* tex; float rot; bool cross; } STRIPES[5] = {
+        { "ui_hazard",      XM_PIDIV2, false },   // 1体目 ＼
+        { "ui_hazard",      0.0f,      false },   // 2体目 ／
+        { "ui_hazard_line", 0.0f,      false },   // 3体目 ─
+        { "ui_hazard_line", XM_PIDIV2, false },   // 4体目 │
+        { "ui_hazard",      0.0f,      true  },   // 5体目 ×
+    };
     for (auto& mk : m_highlighter.GetThreatMarks())
     {
         float x = CellWX(mk.col);
         float z = CellWZ(mk.row);
         float wy = m_gridMap->GetCell(mk.col, mk.row).gameObject.worldY + 0.02f;
-        m_renderer3D->DrawTile(rangeTex, x, z, 0.94f, mk.color, wy);
+        int layers = 0;
+        for (int k = 0; k < 5; k++) if (mk.patterns & (1 << k)) layers++;
+        XMFLOAT4 col = mk.color;
+        if (layers >= 2) col.w *= 0.7f;   // 重なるマスは全員の模様を重ねる。濃くなりすぎないよう1枚ずつ少し薄く
+        for (int k = 0; k < 5; k++)
+        {
+            if (!(mk.patterns & (1 << k))) continue;
+            const auto& st = STRIPES[k];
+            ID3D11ShaderResourceView* tex = TextureManager::Get(st.tex);
+            if (st.cross)   // 格子：＼と／を少し薄くして重ねる
+            {
+                XMFLOAT4 c = col; c.w *= 0.6f;
+                m_renderer3D->DrawTileEx(tex, x, z, 0.94f, 0.94f, 0.0f, c, wy);
+                m_renderer3D->DrawTileEx(tex, x, z, 0.94f, 0.94f, XM_PIDIV2, c, wy);
+            }
+            else
+                m_renderer3D->DrawTileEx(tex, x, z, 0.94f, 0.94f, st.rot, col, wy);
+        }
     }
 
     // 敵ごとの色で範囲の外周線（内側の線ほど短く。重なる辺はずらして両方見せる）
@@ -458,6 +482,8 @@ void BattleScene::DrawTraps()
             {
                 float x = CellWX(col);
                 float z = CellWZ(row);
+                TileDropFx::Look drop = m_tileDrop.Get(col, row, cell.tileEffect.id);   // 置かれたばかりなら、上から落ちてくる途中
+                if (drop.hidden) continue;                           // まだ落ち始めていない
 
                 float t = cell.gameObject.worldY / 0.10f;
 
@@ -472,37 +498,42 @@ void BattleScene::DrawTraps()
 
                 const TerrainDef* def = TerrainDataBase::Get(cell.tileEffect.id);
                 XMFLOAT4 terrainColor = def ? def->color : XMFLOAT4(1, 1, 1, 0.5f);
-                float sz = (0.8f + 0.064f * t) * pulseScale;
+                float sz = (0.8f + 0.064f * t) * pulseScale * drop.scale;
+                float lift = cell.gameObject.worldY + drop.lift;   // 床・罠を描く高さ（落ちてくる途中は上）
+                if (drop.shadow > 0.0f)   // 落ちてくる間、マスに影（だんだん濃く大きく）
+                    m_renderer3D->DrawTile(TextureManager::Get("particle"), x, z, sz * (0.5f + 0.5f * drop.shadow),
+                        XMFLOAT4(0, 0, 0, 0.35f * drop.shadow), cell.gameObject.worldY + 0.03f);
                 if (!cell.tileEffect.enemyOwned)   // 育った罠は少し大きく・明るく
                 {
                     sz *= 1.0f + 0.05f * cell.tileEffect.grown;
                     bright += 0.12f * cell.tileEffect.grown;
                 }
 
-                // 設置者を示す下地（自分=水色 / 敵=赤）。罠の少し下・少し大きめでフチのように出す
-                XMFLOAT4 ownerCol = cell.tileEffect.enemyOwned
-                    ? XMFLOAT4(1.0f, 0.30f, 0.20f, 0.55f)    // 敵＝赤
-                    : XMFLOAT4(0.30f, 0.75f, 1.0f, 0.55f);   // 自分＝水色
-                m_renderer3D->DrawTile(m_whiteTexture, x, z, sz * 1.14f, ownerCol,
-                    cell.gameObject.worldY + 0.035f);
+                // 導火線：たまった数ほど速く、ピッピッと点滅（1つ＝1秒ごと、2つ＝0.5秒、3つ＝0.25秒）。光る瞬間は罠の絵も赤く
+                float beep = 0.0f;
+                if (!cell.tileEffect.enemyOwned && cell.tileEffect.fuse > 0)
+                {
+                    float period = 1.0f / (float)(1 << (cell.tileEffect.fuse - 1));   // 1, 0.5, 0.25
+                    beep = (fmodf(m_highlightTimer, period) / period < 0.35f) ? 1.0f : 0.0f;   // 1回の間隔の最初の35%だけ光る
+                }
 
                 if (def && !def->texture.empty())
                     m_renderer3D->DrawTileEx(TextureManager::Get(def->texture), x, z, sz, sz, XM_PI,   // カメラが逆向きなので回す
-                        XMFLOAT4(bright, bright, bright, 1.0f), cell.gameObject.worldY + 0.04f);
+                        XMFLOAT4(bright, bright * (1.0f - 0.45f * beep), bright * (1.0f - 0.55f * beep), drop.alpha), lift + 0.04f);
                 else
                     m_renderer3D->DrawTile(m_whiteTexture, x, z, sz,
-                        XMFLOAT4(terrainColor.x * bright, terrainColor.y * bright, terrainColor.z * bright, terrainColor.w),
-                        cell.gameObject.worldY + 0.04f);
+                        XMFLOAT4(terrainColor.x * bright, terrainColor.y * bright, terrainColor.z * bright, terrainColor.w * drop.alpha),
+                        lift + 0.04f);
 
                 // 導火線：手前の縁に点を3つ。たまった数だけ赤橙に灯す（敵が隣にいる間だけ進む）
                 if (!cell.tileEffect.enemyOwned && cell.tileEffect.fuse > 0)
                     for (int k = 0; k < 3; k++)
                     {
                         bool lit = k < cell.tileEffect.fuse;
-                        float fl = lit ? 0.75f + 0.25f * sinf(m_highlightTimer * 10.0f) : 1.0f;
+                        float fl = lit ? (beep > 0.0f ? 1.3f : 0.55f) : 1.0f;   // 灯った点は、ピッで明るく・それ以外は暗めに
                         m_renderer3D->DrawTile(m_whiteTexture, x + (k - 1) * 0.16f, z + sz * 0.42f, 0.1f,
                             lit ? XMFLOAT4(1.0f * fl, 0.45f * fl, 0.1f, 1.0f) : XMFLOAT4(0.15f, 0.12f, 0.1f, 0.9f),
-                            cell.gameObject.worldY + 0.05f);
+                            lift + 0.05f);
                     }
             }
         }
