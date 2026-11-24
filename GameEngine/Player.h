@@ -32,6 +32,8 @@ public:
     void SetBlock(int block) { m_block = block; }
     void SetFeetFaith(int f) { m_feetFaith = f; }     // 足元の信仰（毎フレーム BattleScene が入れる）
     int  GetFeetFaith() const { return m_feetFaith; }
+    void SetExhaustCount(int n) { m_exhaustCount = n; }   // 廃棄札の枚数（毎フレーム BattleScene が入れる。灰燼撃）
+    int  GetExhaustCount() const { return m_exhaustCount; }
     void AddMoved(int n) { m_movedThisTurn += n; }    // このターンに移動したマス数
     int  GetMoved() const { return m_movedThisTurn; }
     void ResetMoved() { m_movedThisTurn = 0; }
@@ -44,7 +46,7 @@ public:
     void AddEnergy(int amount) { m_energy += amount; }
 
     void RestoreEnergy();          // ターン開始時に回復
-    int  CostOf(const CardData& d) const;   // 実際のコスト（沼の上は移動カード+N）
+    int  CostOf(const CardData& d, int costOverride = -1) const;   // 実際のコスト（沼の上は移動カード+N）。costOverride＝手札のこの1枚のこのターンのコスト（-1＝いつも）
     bool UseEnergy(int cost);      // エネルギー消費（足りなければfalse）
 
     void ResetBlock() { if (!m_buffManager.HasBuff(BuffType::Barricade)) m_block = 0; }
@@ -84,6 +86,7 @@ private:
     int m_maxEnergy;
     int m_block;
     int m_feetFaith = 0;
+    int m_exhaustCount = 0;
     int m_movedThisTurn = 0;
     float m_BillboardRotation = 0.0;
 

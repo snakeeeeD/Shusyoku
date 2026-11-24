@@ -240,9 +240,10 @@ void Player::RestoreEnergy()
     m_energy = m_maxEnergy;
 }
 
-int Player::CostOf(const CardData& d) const
+int Player::CostOf(const CardData& d, int costOverride) const
 {
-    return d.cost + (d.type == CardType::Move ? m_buffManager.GetBuffValue(BuffType::Mire) : 0);
+    int base = costOverride >= 0 ? costOverride : d.cost;   // ‚±‚Ì1–‡‚¾‚¯ã‘‚«iŠD‚©‚ç‚ÌÄ¶‚È‚Çj
+    return base + (d.type == CardType::Move ? m_buffManager.GetBuffValue(BuffType::Mire) : 0);
 }
 
 bool Player::UseEnergy(int cost)

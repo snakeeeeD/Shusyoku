@@ -16,6 +16,7 @@ namespace CardDamage
         v += p.GetMoved() * d.movedBonus;                                    // 移動マス数で増える
         int hp = p.GetHp(), mhp = p.GetMaxHp();
         v += (mhp - hp) * d.missingHpPct / 100;                              // 血刃：失ったHPの%
+        v += p.GetExhaustCount() * d.perExhaust;                             // 灰燼撃：廃棄札1枚につき
         if (hp * 2 <= mhp) v += p.GetBuffManager().GetBuffValue(BuffType::LastStand);   // 背水：半分以下
         if (hp * 4 <= mhp) v += p.GetBuffManager().GetBuffValue(BuffType::DeepStand);   // 1/4以下
         if (std::find(d.tags.begin(), d.tags.end(), "Knife") != d.tags.end())

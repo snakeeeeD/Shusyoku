@@ -14,6 +14,7 @@ public:
     std::string DrawCard();
     std::string DrawSpecificCard(const std::string& id);
     std::string SalvageCard(const std::string& id);
+    std::string ReclaimCard(const std::string& id);   // ”pŠüD‚©‚çæ‚èo‚·iŠD‚©‚ç‚ÌÄ¶j
     void DiscardCard(const std::string& id);
     void ExhaustCard(const std::string& id);
     void ShuffleDrawPile();

@@ -24,6 +24,7 @@ void RelicManager::Load(const std::string& path) {
             RelicDef d;
             d.id = r["id"]; d.name = r.value("name", "");
             d.desc = r.value("desc", ""); d.kind = r.value("kind", "");
+            d.param = r.value("param", "");
             d.value = r.value("value", 0);
             d.count = r.value("count", 0);
             d.effect = r.value("effect", "block");

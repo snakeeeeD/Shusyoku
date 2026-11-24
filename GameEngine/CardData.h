@@ -39,6 +39,11 @@ enum class CardEffectType
     Miracle,     // 自分のマスの信仰を全て払い、範囲の敵に 払った信仰×value のダメージ
     Purify,      // 自分のマスの信仰を value 払い、手札の呪いを全て廃棄
     ClearFloors, // 敵の床を消す（範囲なし＝盤面の全部）。value>0 なら1つにつきブロック+value
+    Incinerate,  // 手札を燃やす（value 枚。random なら勝手に、そうでなければ選ぶ）。燃やす＝手札から効果で廃棄
+    DamageByCost, // 燃やしたカードのコスト×value を、カードで狙った敵へ（生贄の刃。burnEffect 用）
+    ByCardType,   // 燃やしたカードの種類で分かれる（焼き直し。burnEffect 用。value＝攻撃・スキルの数字）
+    Reclaim,      // 廃棄札から1枚選んで手札に戻す。このターンコスト0（灰からの再生）
+    Transform,    // ランダムなカード（種類も問わない）を手札に（変容。burnEffect 用。value>0 なら強化済み）
 };
 
 // カードレアリティ
@@ -58,6 +63,7 @@ struct CardEffectData
     std::string    buffType = "";     // "Poison", "AttackUp"など
     std::string    cardId = "";       // CreateCard用
     std::string trapType = "";  // "Explosion", "Root", "Poison"
+    bool           random = false;    // Incinerate：true ならランダムに燃やす（false なら選ぶ）
     bool           hasEffect = false;
 };
 
@@ -79,6 +85,8 @@ struct CardData
     CardEffectData   onHitEffect;  // ヒット時効果（攻撃カードのみ）
     CardEffectData onHitEffect2;   // 2つ目のonHit（複数デバフ攻撃用）
     CardEffectData onDiscardEffect;
+    CardEffectData onBurnEffect;   // 燃やされた時（手札から効果で廃棄された時）に発動。使って廃棄では発動しない
+    CardEffectData burnEffect;     // このカードで燃やした1枚ごとに出す効果（燃やした後）。引く・ブロック・DamageByCost・ByCardType など
     CardEffectData   subEffect;    // サブ効果（ドロー/エネルギー/回復/自己バフ）
     CardEffectData  subEffect2;    // 2つ目のサブ効果（合成で種類の違うサブ素材を付けた時）
     CardEffectData allEnemyEffect; // 使用時に全敵へ付与（バフ/デバフ共用）
@@ -92,6 +100,7 @@ struct CardData
     int selfDamage = 0;     // 自傷ダメージ
     int preBlock = 0;       // 効果の前に得るブロック（盾打ち：先にブロックを得てから、ブロック分で殴る）
     int missingHpPct = 0;   // 失ったHPの何%をダメージに足すか（血刃）
+    int perExhaust = 0;     // 廃棄札1枚につきダメージ+（灰燼撃）
     std::string requireTag; // このタグのカードがデッキに requireCount 枚以上ないと報酬・ショップに出ない（吸血斬＝自傷軸だけ）
     int requireCount = 1;
     int hits = 1;         // 攻撃回数（マルチヒット）

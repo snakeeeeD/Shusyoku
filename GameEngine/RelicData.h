@@ -11,6 +11,7 @@ struct RelicDef {
     bool perTurn = false;   // true=毎ターン0リセット / false=引き継ぎ
 
     std::vector<RelicEffect> extra;   // 追加効果（同じフックに合算。ボスレリックの代償など）
+    std::string param;   // カードIDなど（種火の灯の startCard）
 
     // この効果の種類を持っているか（本体か追加効果のどちらか）
     bool Has(const std::string& k) const

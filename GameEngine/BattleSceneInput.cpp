@@ -164,6 +164,14 @@ void BattleScene::HandleDiscardSelectInput()
         if (m_battleUI->IsOnDiscardConfirm(mp)
             && (int)m_discardSelected.size() == m_discardSelectCount)
         {
+            if (m_selectBurn)   // 燃やす画面：捨てる代わりに燃やす
+            {
+                std::vector<int> sel = m_discardSelected;
+                CancelDiscardSelect();
+                ApplyBurnEffect(m_burnSource, BurnHandCards(sel), m_burnTarget);
+                m_hoveredCardIndex = -1;
+                return;
+            }
             std::sort(m_discardSelected.rbegin(), m_discardSelected.rend());
             std::vector<CardEffectData> effects;
             float playDelay = 0.0f;
@@ -623,6 +631,12 @@ bool BattleScene::PlayCard(int targetCol, int targetRow, const std::vector<std::
                 m_showDrawPile = true;
             else if (m_selectingType == CardEffectType::Salvage)
                 m_showDiscardPile = true;
+            else if (m_selectingType == CardEffectType::Reclaim)   // 灰からの再生：廃棄札の一覧（使ったばかりの1枚は出さない。ほかに無ければ開かない）
+            {
+                m_reclaimHideIdx = m_deck.GetExhaustPileCount() - 1;   // 使ったカードは廃棄札の一番後ろ
+                if (m_deck.GetExhaustPileCount() > 1) m_showExhaustPile = true;
+                else { m_cardSelecting = false; m_selectingType = CardEffectType::None; m_reclaimHideIdx = -1; }
+            }
         }
 
         m_camera.SetAimKeep(dataPtr->type == CardType::Move);   // 移動したらカメラは寄せた位置のまま
@@ -630,9 +644,17 @@ bool BattleScene::PlayCard(int targetCol, int targetRow, const std::vector<std::
         m_selectedCardIndex = -1;
         if (execResult.purgeHandCurses) PurgeHandCurses();   // 浄化：使ったカードのアニメを外してから（先にやると選択が-1になり、アニメの並びがずれる）
         OnCardPlayed(dataPtr);
+        if (dataCopy.exhaust) OnCardBurned(dataPtr);   // 使って廃棄も「廃棄」として数える（炉心・レリックが発動）
 
         if (execResult.pendingDiscard > 0)
             OpenDiscardSelect(execResult.pendingDiscard);
+        if (execResult.pendingBurn > 0)   // 手札を燃やす：ランダムならすぐ、選ぶなら画面を開く。燃やした後に、このカードの「燃やした後の効果」
+        {
+            m_burnSource = dataPtr;
+            m_burnTarget = execResult.hitTarget;
+            if (execResult.burnRandom) ApplyBurnEffect(m_burnSource, BurnRandomCards(execResult.pendingBurn), m_burnTarget);
+            else                       OpenBurnSelect(execResult.pendingBurn);
+        }
     }
     return execResult.cardUsed;
 }
@@ -793,10 +815,10 @@ void BattleScene::HandleClickInput()
         m_showDiscardPile = false;
     }
 
-    // 一覧から選ぶ（山札から探す・捨て札から回収）
-    else if (m_cardSelecting && (m_showDrawPile || m_showDiscardPile))
+    // 一覧から選ぶ（山札から探す・捨て札から回収・廃棄札から戻す）
+    else if (m_cardSelecting && (m_showDrawPile || m_showDiscardPile || m_showExhaustPile))
     {
-        auto displayPile = BattleUI::PileForView(&m_deck, m_showDrawPile, m_showDiscardPile);
+        auto displayPile = BattleUI::PileForView(&m_deck, m_showDrawPile, m_showDiscardPile, m_reclaimHideIdx);
         int i = m_battleUI->PileCardAt(mousePos, (int)displayPile.size());   // 描画と同じ矩形で判定
         if (i >= 0)
         {
@@ -806,11 +828,17 @@ void BattleScene::HandleClickInput()
                 result = m_deck.DrawSpecificCard(selectedId);
             else if (m_selectingType == CardEffectType::Salvage)
                 result = m_deck.SalvageCard(selectedId);
+            else if (m_selectingType == CardEffectType::Reclaim)
+                result = m_deck.ReclaimCard(selectedId);   // 同じカードが2枚でも前から取る（一番後ろの使ったばかりの1枚は取らない）
 
             if (!result.empty())
             {
-                m_hand.AddCard(result);
-                m_battleUI->StartDrawCardEffect(result);
+                if (m_selectingType == CardEffectType::Reclaim) AddToHand(result, 0);   // 灰からの再生：このターンコスト0
+                else
+                {
+                    m_hand.AddCard(result);
+                    m_battleUI->StartDrawCardEffect(result);
+                }
             }
         }
         if (i >= 0 || !m_battleUI->PileViewerRect().has(mousePos))   // 選んだ／枠の外＝取りやめ
@@ -819,6 +847,8 @@ void BattleScene::HandleClickInput()
             m_selectingType = CardEffectType::None;
             m_showDrawPile = false;
             m_showDiscardPile = false;
+            m_showExhaustPile = false;
+            m_reclaimHideIdx = -1;
         }
     }
     // 見るだけの一覧：枠の外で閉じる
@@ -857,7 +887,7 @@ void BattleScene::HandleHandInput()
         }
         else
         {
-            int cost = m_player->CostOf(*m_hand.GetCards()[cardUnder]->GetData());
+            int cost = m_player->CostOf(*m_hand.GetCards()[cardUnder]->GetData(), m_hand.GetCards()[cardUnder]->CostThisTurn());
             if (m_player->GetEnergy() < cost)
             {
                 // エナジー不足：アウトライン付き浮遊テキストで通知し、自動で選択解除

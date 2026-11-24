@@ -1199,6 +1199,17 @@
               "param": "start_notebook"
             }
           ]
+        },
+        {
+          "group": "axis",
+          "label": "種火の灯（戦闘開始時、薪を手札に1枚）",
+          "result": "種火の灯を受け取った。",
+          "outcomes": [
+            {
+              "type": "relic",
+              "param": "start_tinder"
+            }
+          ]
         }
       ]
     }

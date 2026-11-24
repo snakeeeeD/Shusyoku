@@ -129,6 +129,8 @@ namespace EnumNames
         { BuffType::BloodThirst,  "BloodThirst" },
         { BuffType::Berserker,    "Berserker" },
         { BuffType::BloodFlash,   "BloodFlash" },
+        { BuffType::BurnStrike,   "BurnStrike" },
+        { BuffType::BurnGuard,    "BurnGuard" },
     };
 
     // ---- カード：効果の種類 ----
@@ -165,6 +167,11 @@ namespace EnumNames
         { CardEffectType::Miracle,       "Miracle" },
         { CardEffectType::Purify,        "Purify" },
         { CardEffectType::ClearFloors,   "ClearFloors" },
+        { CardEffectType::Incinerate,    "Incinerate" },     // 手札を燃やす
+        { CardEffectType::DamageByCost,  "DamageByCost" },   // 燃やしたカードのコスト×N の追撃（burnEffect）
+        { CardEffectType::ByCardType,    "ByCardType" },     // 燃やしたカードの種類で分かれる（burnEffect）
+        { CardEffectType::Reclaim,       "Reclaim" },        // 廃棄札から手札へ（このターンコスト0）
+        { CardEffectType::Transform,     "Transform" },      // ランダムなカード（種類も問わない）を手札に（burnEffect）
     };
 
     // ---- カード：種類 ----
@@ -224,12 +231,14 @@ namespace EnumNames
         { "startBuffAtkTurn", false, u8"戦闘開始時 最初のターンだけ攻撃UP+value" },
         { "startDraw",     false, u8"戦闘開始時 追加でvalue枚引く" },
         { "startPoison",   false, u8"戦闘開始時 全ての敵に毒value" },
+        { "startCard",     false, u8"戦闘開始時 paramのカードをvalue枚手札に加える" },
         // 毎ターン
         { "turnEnergy",    false, u8"毎ターン エナジー+value" },
         { "turnBuffAtk",   false, u8"毎ターン 攻撃UP+value" },
         { "turnCycle",     false, u8"毎ターン 追加でvalue枚引く" },
         { "blockRetain",   false, u8"ターン開始時 ブロックをvalue%残す" },
         { "blockCarry",    false, u8"ターン開始時 ブロックをvalueだけ減らして持ち越す" },
+        { "turnBurn",      false, u8"ターン開始時（引いた後） 手札をランダムにvalue枚廃棄（代償用）" },
         // 戦闘中
         { "firstAttack",   false, u8"各戦闘の最初の攻撃 ダメージ+value" },
         { "multiHit",      false, u8"連撃攻撃のヒット数+value" },
@@ -244,6 +253,10 @@ namespace EnumNames
         { "trapDebuff",    false, u8"罠のデバフ+value" },
         { "trapDraw",      false, u8"罠を置くとvalue枚引く" },
         { "discardBlock",  false, u8"カードを選んで捨てるたび ブロック+value" },
+        { "burnBlock",     false, u8"カードを廃棄するたび ブロック+value" },
+        { "burnFirstDraw", false, u8"毎ターン 最初にカードを廃棄した時 value枚引く" },
+        { "burnStatusEnergy", false, u8"状態異常・呪いを廃棄した時 エナジー+value（1ターンに1回）" },
+        { "revive",        false, u8"HPが0になった時 1度だけ復活（HP＝廃棄札1枚につきvalue、最大HPの半分まで）" },
         { "floorImmune",   false, u8"床の効果を受けない（value不使用）" },
         // 撃破・勝利
         { "killGold",      false, u8"敵を倒すと ゴールド+value" },
@@ -267,6 +280,7 @@ namespace EnumNames
         { "skill",         true,  u8"スキルカードをcount回使うたび" },
         { "move",          true,  u8"移動カードをcount回使うたび" },
         { "card",          true,  u8"カードをcount回使うたび" },
+        { "burn",          true,  u8"カードをcount枚廃棄するたび" },
     };
 
     // レリックのレアリティ（RelicManager::RandomDrop / ShopPool / RandomUnowned と一致させる）

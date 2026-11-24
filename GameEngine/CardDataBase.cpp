@@ -66,6 +66,7 @@ static void ParseCard(const json& c, CardData& data, CardData& up, bool& hasUp)
     data.selfDamage = c.value("selfDamage", 0);
     data.preBlock = c.value("preBlock", 0);
     data.missingHpPct = c.value("missingHpPct", 0);
+    data.perExhaust = c.value("perExhaust", 0);
     data.requireTag = c.value("requireTag", "");
     data.requireCount = c.value("requireCount", 1);
     data.hits = c.value("hits", 1);
@@ -78,6 +79,7 @@ static void ParseCard(const json& c, CardData& data, CardData& up, bool& hasUp)
     data.mainEffect.buffType = c["mainEffect"].value("buffType", "");
     data.mainEffect.cardId = c["mainEffect"].value("cardId", "");
     data.mainEffect.trapType = c["mainEffect"].value("trapType", "");
+    data.mainEffect.random = c["mainEffect"].value("random", false);
 
 
     if (c.contains("onHitEffect"))
@@ -114,6 +116,27 @@ static void ParseCard(const json& c, CardData& data, CardData& up, bool& hasUp)
     }
     else data.onDiscardEffect.hasEffect = false;
 
+    if (c.contains("onBurnEffect"))
+    {
+        data.onBurnEffect.hasEffect = true;
+        data.onBurnEffect.type = StringToCardEffectType(c["onBurnEffect"]["type"]);
+        data.onBurnEffect.value = c["onBurnEffect"]["value"];
+        data.onBurnEffect.cardId = c["onBurnEffect"].value("cardId", "");
+        data.onBurnEffect.buffType = c["onBurnEffect"].value("buffType", "");
+    }
+    else data.onBurnEffect.hasEffect = false;
+
+    if (c.contains("burnEffect"))   // このカードで燃やした1枚ごとの効果
+    {
+        data.burnEffect.hasEffect = true;
+        data.burnEffect.type = StringToCardEffectType(c["burnEffect"]["type"]);
+        data.burnEffect.value = c["burnEffect"]["value"];
+        data.burnEffect.duration = c["burnEffect"].value("duration", 0);
+        data.burnEffect.cardId = c["burnEffect"].value("cardId", "");
+        data.burnEffect.buffType = c["burnEffect"].value("buffType", "");
+    }
+    else data.burnEffect.hasEffect = false;
+
     if (c.contains("subEffect"))
     {
         data.subEffect.hasEffect = true;
@@ -122,6 +145,7 @@ static void ParseCard(const json& c, CardData& data, CardData& up, bool& hasUp)
         data.subEffect.duration = c["subEffect"].value("duration", 0);
         data.subEffect.buffType = c["subEffect"].value("buffType", "");
         data.subEffect.cardId = c["subEffect"].value("cardId", "");
+        data.subEffect.random = c["subEffect"].value("random", false);
     }
     else
     {
@@ -155,6 +179,7 @@ static void ParseCard(const json& c, CardData& data, CardData& up, bool& hasUp)
         up.range += u.value("range", 0);
         up.preBlock += u.value("preBlock", 0);
         up.missingHpPct += u.value("missingHpPct", 0);
+        up.perExhaust += u.value("perExhaust", 0);
         up.mainEffect.value += u.value("mainValue", 0);
         up.mainEffect.duration += u.value("duration", 0);
         if (up.onHitEffect.hasEffect) up.onHitEffect.value += u.value("onHitValue", 0);
@@ -168,6 +193,9 @@ static void ParseCard(const json& c, CardData& data, CardData& up, bool& hasUp)
         if (u.contains("description"))
             up.description = ToWString(u["description"]);
         if (up.onDiscardEffect.hasEffect) up.onDiscardEffect.value += u.value("onDiscardValue", 0);
+        if (u.contains("mainRandom")) up.mainEffect.random = u["mainRandom"];   // 焼却：強化でランダム→選べる
+        if (up.onBurnEffect.hasEffect) up.onBurnEffect.value += u.value("onBurnValue", 0);
+        if (up.burnEffect.hasEffect) up.burnEffect.value += u.value("burnValue", 0);
     }
 }
 
@@ -193,37 +221,8 @@ void CardDataBase::Init()
             bool hasUp = false;
             ParseCard(c, data, up, hasUp);
             m_data[data.id] = data;
-            if (hasUp) m_data[up.id] = up;
+            if (hasUp) m_data[up.id] = up;   // 強化版（id + "+"）は ParseCard が作る
 
-            // アップグレード版を自動生成（id + "+"）
-            if (c.contains("upgrade"))
-            {
-                const auto& u = c["upgrade"];
-                CardData up = data;
-                up.id = data.id + "+";
-                up.name = data.name + L"+";
-
-                up.cost += u.value("cost", 0);
-                up.hits += u.value("hits", 0);
-                up.range += u.value("range", 0);
-                up.preBlock += u.value("preBlock", 0);
-                up.missingHpPct += u.value("missingHpPct", 0);
-                up.mainEffect.value += u.value("mainValue", 0);
-                up.mainEffect.duration += u.value("duration", 0);
-                if (up.onHitEffect.hasEffect) up.onHitEffect.value += u.value("onHitValue", 0);
-                if (up.onHitEffect.hasEffect)  up.onHitEffect.duration += u.value("onHitDuration", 0);
-                if (up.onHitEffect2.hasEffect) up.onHitEffect2.duration += u.value("onHitDuration", 0);
-                if (up.subEffect.hasEffect)   up.subEffect.value += u.value("subValue", 0);
-                if (up.allEnemyEffect.hasEffect) up.allEnemyEffect.duration += u.value("allEnemyDuration", 0);   // 全敵への効果の持続
-                if (up.cost < 0) up.cost = 0;
-                if (u.contains("rangeType"))
-                    up.rangeType = StringToRangeType(u["rangeType"]);
-                if (u.contains("description"))
-                    up.description = ToWString(u["description"]);
-                if (up.onDiscardEffect.hasEffect) up.onDiscardEffect.value += u.value("onDiscardValue", 0);
-
-                m_data[up.id] = up;
-            }
 
             wchar_t buf[256];
             swprintf_s(buf, L"★ カード読み込み: %s\n", data.name.c_str());
@@ -450,6 +449,24 @@ std::vector<std::string> CardDataBase::RewardPool()
     }
 
     return v;
+}
+
+// 変容：報酬に出るカードからランダムに1枚（種類も問わない。exclude と同じカード・状態異常・呪い・初期カードは除く）
+std::string CardDataBase::RandomTransformCard(const std::string& exclude)
+{
+    std::string ex = exclude;
+    if (!ex.empty() && ex.back() == '+') ex.pop_back();
+    std::vector<std::string> v;
+    for (auto& id : RewardPool())
+    {
+        const CardData* c = Get(id);
+        if (!c || id == ex) continue;                                                  // 元と同じカードは出さない
+        if (c->type == CardType::Status || c->type == CardType::Curse) continue;      // 状態異常・呪いは出さない
+        if (c->starter) continue;                                                      // 初期カード（基本の移動など）は出さない
+        v.push_back(id);
+    }
+    if (v.empty()) return "";
+    return v[rand() % (int)v.size()];
 }
 
 std::string CardDataBase::RandomCard()

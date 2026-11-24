@@ -930,6 +930,7 @@ BattleUIContext BattleScene::MakeUIContext()
     ctx.cardSelecting = m_cardSelecting;
     ctx.showDiscardPile = m_showDiscardPile;
     ctx.showExhaustPile = m_showExhaustPile;
+    ctx.pileHideIndex = m_reclaimHideIdx;
     ctx.screenWidth = m_screenWidth;
     ctx.screenHeight = m_screenHeight;
     ctx.cameraZoom = m_camera.Zoom();
@@ -943,6 +944,7 @@ BattleUIContext BattleScene::MakeUIContext()
     ctx.discardSelectCount = m_discardSelectCount;
     ctx.discardSelected = &m_discardSelected;
     ctx.discardViewMode = m_discardViewMode;
+    ctx.burnSelect = m_selectBurn;
     ctx.rewardRelic = &m_rewardRelic;
     return ctx;
 }

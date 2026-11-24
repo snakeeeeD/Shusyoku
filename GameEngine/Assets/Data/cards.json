@@ -2497,6 +2497,207 @@
       }
     },
     {
+      "id": "SKL_kindle",
+      "name": "焚き付け",
+      "type": "Skill",
+      "rarity": "Common",
+      "tags": [
+        "Incinerate"
+      ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "手札を1枚選んで廃棄\n廃棄したら2枚引く",
+      "upgrade": {
+        "burnValue": 1,
+        "description": "手札を1枚選んで廃棄\n廃棄したら3枚引く"
+      },
+      "mainEffect": {
+        "type": "Incinerate",
+        "value": 1
+      },
+      "burnEffect": {
+        "type": "Draw",
+        "value": 2
+      }
+    },
+    {
+      "id": "SKL_incinerate",
+      "name": "焼却",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "tags": [
+        "Incinerate"
+      ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "手札をランダムに2枚廃棄\n1枚につきブロック5",
+      "upgrade": {
+        "mainRandom": false,
+        "description": "手札を2枚選んで廃棄\n1枚につきブロック5"
+      },
+      "mainEffect": {
+        "type": "Incinerate",
+        "value": 2,
+        "random": true
+      },
+      "burnEffect": {
+        "type": "Block",
+        "value": 5
+      }
+    },
+    {
+      "id": "ATK_sacrifice_blade",
+      "name": "生贄の刃",
+      "type": "Attack",
+      "rarity": "Common",
+      "tags": [
+        "Incinerate"
+      ],
+      "vfx": "slash",
+      "cost": 1,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "description": "{value}ダメージ\n手札をランダムに1枚廃棄し\nそのコスト×6の追撃",
+      "upgrade": {
+        "burnValue": 2,
+        "description": "{value}ダメージ\n手札をランダムに1枚廃棄し\nそのコスト×8の追撃"
+      },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 5
+      },
+      "subEffect": {
+        "type": "Incinerate",
+        "value": 1,
+        "random": true
+      },
+      "burnEffect": {
+        "type": "DamageByCost",
+        "value": 6
+      }
+    },
+    {
+      "id": "SKL_firewood",
+      "name": "薪",
+      "type": "Skill",
+      "rarity": "Common",
+      "tags": [
+        "Incinerate"
+      ],
+      "cost": 0,
+      "range": 0,
+      "rangeType": "None",
+      "description": "1枚引く\n廃棄された時：エナジー+2",
+      "upgrade": {
+        "onBurnValue": 1,
+        "description": "1枚引く\n廃棄された時：エナジー+3"
+      },
+      "mainEffect": {
+        "type": "Draw",
+        "value": 1
+      },
+      "onBurnEffect": {
+        "type": "AddEnergy",
+        "value": 2
+      }
+    },
+    {
+      "id": "SKL_reforge",
+      "name": "焼き直し",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "tags": [
+        "Incinerate"
+      ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "手札を1枚選んで廃棄\n攻撃→攻撃+8\nスキル→ブロック8\nパワー→エナジー+2\n他→1枚引く",
+      "upgrade": {
+        "cost": -1
+      },
+      "mainEffect": {
+        "type": "Incinerate",
+        "value": 1
+      },
+      "burnEffect": {
+        "type": "ByCardType",
+        "value": 8
+      }
+    },
+    {
+      "id": "ATK_ash_strike",
+      "name": "灰燼撃",
+      "type": "Attack",
+      "rarity": "Uncommon",
+      "tags": [
+        "Incinerate"
+      ],
+      "vfx": "smash",
+      "cost": 2,
+      "range": 1,
+      "rangeType": "Adjacent",
+      "perExhaust": 2,
+      "description": "{value}ダメージ\n廃棄札1枚につき+2",
+      "upgrade": {
+        "mainValue": 3,
+        "perExhaust": 1,
+        "description": "{value}ダメージ\n廃棄札1枚につき+3"
+      },
+      "mainEffect": {
+        "type": "Damage",
+        "value": 10
+      }
+    },
+    {
+      "id": "SKL_ash_rebirth",
+      "name": "灰からの再生",
+      "type": "Skill",
+      "rarity": "Rare",
+      "tags": [
+        "Incinerate"
+      ],
+      "cost": 2,
+      "range": 0,
+      "rangeType": "None",
+      "exhaust": true,
+      "description": "廃棄札から1枚選んで\n手札に戻す\nこのターンコスト0",
+      "upgrade": {
+        "cost": -1
+      },
+      "mainEffect": {
+        "type": "Reclaim",
+        "value": 1
+      }
+    },
+    {
+      "id": "SKL_transmute",
+      "name": "変容",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "tags": [
+        "Incinerate"
+      ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "手札を1枚選んで廃棄し\nランダムなカードを\n手札に",
+      "upgrade": {
+        "burnValue": 1,
+        "description": "手札を1枚選んで廃棄し\nランダムな強化済み\nカードを手札に"
+      },
+      "mainEffect": {
+        "type": "Incinerate",
+        "value": 1
+      },
+      "burnEffect": {
+        "type": "Transform",
+        "value": 0
+      }
+    },
+    {
       "id": "status_junk",
       "name": "ガラクタ",
       "type": "Status",
@@ -3406,6 +3607,50 @@
         "value": 1,
         "duration": -1,
         "buffType": "BloodFlash"
+      }
+    },
+    {
+      "id": "POW_furnace_heart",
+      "name": "炉心",
+      "type": "Power",
+      "rarity": "Rare",
+      "tags": [
+        "Incinerate"
+      ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "カードを廃棄するたび ランダムな敵に{value}ダメージ",
+      "upgrade": {
+        "mainValue": 2
+      },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 4,
+        "duration": -1,
+        "buffType": "BurnStrike"
+      }
+    },
+    {
+      "id": "POW_ember_guard",
+      "name": "残り火の盾",
+      "type": "Power",
+      "rarity": "Uncommon",
+      "tags": [
+        "Incinerate"
+      ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "description": "カードを廃棄するたび ブロック{value}",
+      "upgrade": {
+        "mainValue": 1
+      },
+      "mainEffect": {
+        "type": "ApplyBuff",
+        "value": 3,
+        "duration": -1,
+        "buffType": "BurnGuard"
       }
     }
   ]

@@ -130,7 +130,8 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     ExecuteResult result = { false, false };    
 
     // ƒGƒlƒ‹ƒM[‚ª‘«‚è‚é‚©‚ðæ‚ÉŠm”F
-    int payCost = player->CostOf(data);
+    int costOverride = (cardIndex >= 0 && cardIndex < (int)hand.GetCards().size()) ? hand.GetCards()[cardIndex]->CostThisTurn() : -1;
+    int payCost = player->CostOf(data, costOverride);   // ‚±‚Ì1–‡‚Ì‚±‚Ìƒ^[ƒ“‚ÌƒRƒXƒg‚ª‚ ‚ê‚Î‚»‚ê
     if (player->GetEnergy() < payCost)
         return result;
 
@@ -189,6 +190,10 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             break;
         case CardEffectType::Discard:
             pendingDiscard += sub.value;
+            break;
+        case CardEffectType::Incinerate:   // UŒ‚‚ÌŒã‚ÉŽèŽD‚ð”R‚â‚·i¶æÑ‚Ìnj
+            result.pendingBurn += sub.value;
+            result.burnRandom = sub.random;
             break;
         default:
             break;
@@ -352,6 +357,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             }
 
             Enemy* target = GetEnemyAt(targetCol, targetRow, enemies);
+            result.hitTarget = target;   // ”R‚â‚µ‚½Œã‚Ì’ÇŒ‚i¶æÑ‚Ìnj‚ÉŽg‚¤
             int range = data.range;
             if (player->GetBuffManager().HasBuff(BuffType::Reposition))
                 range += player->GetBuffManager().GetBuffValue(BuffType::Reposition);
@@ -836,6 +842,10 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
         case CardEffectType::Discard:
             pendingDiscard += data.mainEffect.value;
             break;
+        case CardEffectType::Incinerate:   // ŽèŽD‚ð”R‚â‚·F–‡”‚Æ‘I‚Ñ•û‚¾‚¯ƒV[ƒ“‚Ö“n‚·
+            result.pendingBurn += data.mainEffect.value;
+            result.burnRandom = data.mainEffect.random;
+            break;
         case CardEffectType::PlaceTrap:
         {
             auto& cell = gridMap->GetCell(targetCol, targetRow);
@@ -998,6 +1008,7 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
             break;
         case CardEffectType::Search:
         case CardEffectType::Salvage:
+        case CardEffectType::Reclaim:
             result.pendingSelection = data.mainEffect.type;
             break;
         default:

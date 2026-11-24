@@ -428,6 +428,14 @@
       ]
     },
     {
+      "id": "fire_bolt",
+      "then": "atk_fire", "thenDelay": 0.25,
+      "parts": [
+        { "type": "projectile", "texture": "fire", "life": 0.25, "size": 0.45, "arc": 0.15, "spin": 360, "trailWidth": 0.12, "trailLen": 0.5,
+          "color": [ 1.0, 0.6, 0.2, 1.0 ], "trailColor": [ 1.0, 0.5, 0.15, 0.8 ] }
+      ]
+    },
+    {
       "id": "charge_fire",
       "parts": [
         { "type": "flash", "texture": "fx_ring", "life": 0.45, "sizeStart": 3.0, "sizeEnd": 0.2, "ease": 2.0, "fadeFrom": 0.6,

@@ -459,7 +459,7 @@ public:
 
     // テキストパスで呼ぶ
     static void DrawTexts(TextRenderer* tr, const CardData* data, const Player* player,
-        float baseX, float baseY, float scale, float rot, float alpha = 1.0f)
+        float baseX, float baseY, float scale, float rot, float alpha = 1.0f, int costOverride = -1)   // costOverride＝手札のこの1枚のこのターンのコスト
     {
         if (!data) return;
         float x, y, w, h; GetRect(baseX, baseY, scale, x, y, w, h);
@@ -498,7 +498,7 @@ public:
 
         // コストは左上オーブの上に「数字だけ」
         wchar_t cost[16];
-        int shownCost = player ? player->CostOf(*data) : data->cost;   // 沼の上は増える
+        int shownCost = player ? player->CostOf(*data, costOverride) : (costOverride >= 0 ? costOverride : data->cost);   // 沼の上は増える
         swprintf_s(cost, L"%d", shownCost);
         float os = 30.0f * s;
         float ocx = x + 4.0f * s + os / 2.0f;

@@ -10,17 +10,18 @@ Hand::~Hand()
 	Clear();
 }
 
-void Hand::AddCard(const std::string& id)
+Card* Hand::AddCard(const std::string& id)
 {
-	if (!CardDataBase::Get(id)) return;
+	if (!CardDataBase::Get(id)) return nullptr;
 
 	if ((int)m_cards.size() - (m_reserved ? 1 : 0) >= MAX_CARDS)
 	{
 		if (m_deck) m_deck->DiscardCard(id);   // èDãŒÀ‚ğ’´‚¦‚½•ª‚ÍÌ‚ÄD‚Ö
 		UiNotice::Show(NoticeType::HandFull);
-		return;
+		return nullptr;
 	}
 	m_cards.push_back(new Card(id));
+	return m_cards.back();
 }
 
 bool Hand::AddCardFront(const std::string& id)

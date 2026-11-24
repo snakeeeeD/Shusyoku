@@ -22,7 +22,7 @@ public:
     static int PlayAround(const std::string& id, float x, float y, float z, float radiusCells, float rot = 0.0f, float delay = 0.0f,
         XMFLOAT4 tint = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
     // from から to へ飛ぶ演出（飛び道具）。飛び始めを使わない部品は、今までどおり to に出る
-    static int PlayFrom(const std::string& id, const XMFLOAT3& from, const XMFLOAT3& to);
+    static int PlayFrom(const std::string& id, const XMFLOAT3& from, const XMFLOAT3& to, float delay = 0.0f);
     static void Stop(int handle, float fadeSec = 0.3f);   // 指定番号の演出を止める（フェードできる種類はフェード）
     static void SetEnds(int handle, const XMFLOAT3& from, const XMFLOAT3& to);   // 指定番号の演出の両端を動かす（引っぱる間の「つなぐ物」）
     static void Update(float dt);
@@ -30,7 +30,8 @@ public:
     static void Clear();   // 全部消す（時間差の予約も。次の戦闘へ持ち越さない）
 private:
     static void SpawnParts(const std::string& id, SpawnAt at, int handle);   // 部品を全部出す（Play と PlayFrom の共通部分）
-    struct PendingPlay { std::string id; float x, y, z, rot; XMFLOAT4 tint; float scale; float delay; };
+    struct PendingPlay { std::string id; float x, y, z, rot; XMFLOAT4 tint; float scale; float delay;
+                         bool hasFrom = false; XMFLOAT3 from = { 0, 0, 0 }; };   // hasFrom：PlayFrom の予約（飛び道具）
     static inline std::vector<std::unique_ptr<EffectPart>> s_parts;   // 出ている演出（種類はばらばら）
     static inline std::vector<PendingPlay> s_pending;                 // 時間差で出す予約
     static inline SpawnAt s_cam;                                      // 最後に描いたときのカメラの向き（出すときに渡す）

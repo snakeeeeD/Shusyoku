@@ -94,6 +94,16 @@ public:
     void OnPlayerMoved(int fromCol, int fromRow, int moveDist);   // 移動時のレリック（from=移動前のマス）
     void OpenDiscardSelect(int n);                  // 「選んで捨てる」を開く（敵が全員倒れていたら開かない）
     void CancelDiscardSelect();                     // 開いていれば閉じる（勝敗が決まった時）
+    std::vector<const CardData*> BurnHandCards(std::vector<int> idx);       // 手札を燃やす（燃やしたカードを返す。燃える演出で消して廃棄）。燃やす経路は全部ここ
+    void OnCardBurned(const CardData* dd, int slot = 0);          // 1枚燃やした時：燃やされた時の効果・燃やした数（燃やすと得をする物はここに足す）
+    std::vector<const CardData*> BurnRandomCards(int n);   // 手札をランダムに n 枚燃やす（燃やしたカードを返す）
+    void ApplyBurnEffect(const CardData* src, const std::vector<const CardData*>& burned, Enemy* target);   // このカードで燃やした1枚ごとの効果（燃やした後）
+    void OpenBurnSelect(int n);                     // 燃やすカードを選ぶ画面（捨てる画面を使い回す）
+    void FireBolt(Enemy* target, int dmg, float extraDelay);   // 燃えたカードの火の玉を敵へ飛ばし、着いたら dmg の追撃（生贄の刃・炉心）
+    Enemy* RandomAliveEnemy();                      // 生きている敵からランダムに1体（いなければ nullptr）
+    void TickCountRelics(const char* kind);         // カウント系レリックを1つ進める（attack/skill/move/card/burn）
+    Card* AddToHand(const std::string& id, int costThisTurn = -1, float delay = 0.0f);   // 手札に加える（真ん中で見せてから右端へ）。costThisTurn>=0 ならこのターンだけそのコスト
+    bool TryPhoenixRevive();                        // 不死鳥の尾羽：HPが0なら1度だけ復活（したら true）
 
     std::vector<DropShown> m_dropResult;
 
@@ -205,6 +215,13 @@ private:
     int m_discardSelectCount = 0;
     std::vector<int> m_discardSelected;   // 選択中のカードindex
     bool m_discardViewMode = false;
+    bool m_selectBurn = false;            // 選ぶ画面が「燃やす」用か（false なら捨てる）
+    int  m_burnedThisCombat = 0;          // この戦闘で燃やした枚数
+    int  m_burnedThisTurn = 0;            // このターンに燃やした枚数（煤けた火打石）
+    bool m_burnStatusEnergyUsed = false;  // 煤けた手袋をこのターン使ったか（1ターンに1回）
+    int m_reclaimHideIdx = -1;            // 灰からの再生で選んでいる時、一覧から外す廃棄札の番号（使ったばかりの1枚）
+    const CardData* m_burnSource = nullptr;   // 燃やす元のカード（燃やした後の効果を持つ）
+    Enemy* m_burnTarget = nullptr;            // そのカードで狙った敵（生贄の刃の追撃）
 
     std::vector<std::pair<int, int>> m_dashStops;   // 止まるマス（罠マス＋最終マス）
     int    m_dashStopIdx = 0;

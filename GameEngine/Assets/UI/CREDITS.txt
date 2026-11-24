@@ -73,6 +73,13 @@ relic_start_pocket_stone.png  "Flint spark" by Delapouite  https://game-icons.ne
 relic_start_trap_pouch.png  "Caltrops" by Delapouite  https://game-icons.net/1x1/delapouite/caltrops.html
 relic_start_prayer_beads.png  "Prayer beads" by Delapouite  https://game-icons.net/1x1/delapouite/prayer-beads.html
 relic_start_notebook.png  "Notebook" by Delapouite  https://game-icons.net/1x1/delapouite/notebook.html
+relic_burn_flint.png  "Match tip" by Lorc  https://game-icons.net/1x1/lorc/match-tip.html
+relic_ember_ring.png  "Fire ring" by Lorc  https://game-icons.net/1x1/lorc/fire-ring.html
+relic_sooty_glove.png  "Fire punch" by Lorc  https://game-icons.net/1x1/lorc/fire-punch.html
+relic_ash_hourglass.png  "Sands of time" by Lorc  https://game-icons.net/1x1/lorc/sands-of-time.html
+relic_boss_ash_crown.png  "Crown" by Lorc  https://game-icons.net/1x1/lorc/crown.html
+relic_start_tinder.png  "Candle light" by Lorc  https://game-icons.net/1x1/lorc/candle-light.html
+relic_phoenix_feather.png  "Feather" by Lorc  https://game-icons.net/1x1/lorc/feather.html
 
 Fonts (SIL Open Font License 1.1, Assets/Font/OFL.txt):
   Noto Serif JP - Copyright 2017 Adobe (https://fonts.google.com/specimen/Noto+Serif+JP)
@@ -128,6 +135,8 @@ buff_standfirm.png  "Shield bash" by Delapouite  https://game-icons.net/1x1/dela
 buff_bloodthirst.png  "Bleeding heart" by Lorc  https://game-icons.net/1x1/lorc/bleeding-heart.html
 buff_berserker.png  "Barbarian" by Delapouite  https://game-icons.net/1x1/delapouite/barbarian.html
 buff_bloodflash.png  "Bleeding eye" by Lorc  https://game-icons.net/1x1/lorc/bleeding-eye.html
+buff_burnstrike.png  "Fireball" by Lorc  https://game-icons.net/1x1/lorc/fireball.html
+buff_burnguard.png  "Fire shield" by Lorc  https://game-icons.net/1x1/lorc/fire-shield.html
 
 Enemy intent icons (intent_<id>.png), same license (CC BY 3.0), white glyph on a drawn badge, 128x128:
 intent_attack.png  "Crossed swords" by Lorc  https://game-icons.net/1x1/lorc/crossed-swords.html

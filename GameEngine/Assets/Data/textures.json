@@ -331,7 +331,9 @@
       { "key": "buff_standfirm", "path": "Assets/UI/buff_standfirm.png" },
       { "key": "buff_bloodthirst", "path": "Assets/UI/buff_bloodthirst.png" },
       { "key": "buff_berserker", "path": "Assets/UI/buff_berserker.png" },
-      { "key": "buff_bloodflash", "path": "Assets/UI/buff_bloodflash.png" }
+      { "key": "buff_bloodflash", "path": "Assets/UI/buff_bloodflash.png" },
+      { "key": "buff_burnstrike", "path": "Assets/UI/buff_burnstrike.png" },
+      { "key": "buff_burnguard", "path": "Assets/UI/buff_burnguard.png" }
     ] }
   ]
 }

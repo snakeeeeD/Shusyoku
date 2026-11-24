@@ -33,6 +33,9 @@ public:
         bool placeDecoy = false;
         int  decoyCol = 0, decoyRow = 0;
         bool purgeHandCurses = false;   // 浄化：手札の呪いを廃棄してほしい（演出があるのでシーン側で行う）
+        int  pendingBurn = 0;           // 手札を燃やす枚数（燃やす演出・選ぶ画面はシーン側）
+        bool burnRandom = false;        // true ならランダムに燃やす（false なら選ぶ画面を開く）
+        Enemy* hitTarget = nullptr;     // 単体攻撃で狙った敵（燃やした後の追撃に使う）
     };
 
     struct MovePreview 

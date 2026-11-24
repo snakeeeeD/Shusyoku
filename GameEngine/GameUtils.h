@@ -71,6 +71,11 @@ inline CardEffectType StringToCardEffectType(const std::string& str)
     if (str == "PlaceDecoy")  return CardEffectType::PlaceDecoy;
     if (str == "UpgradeHand") return CardEffectType::UpgradeHand;
     if (str == "Discard")     return CardEffectType::Discard;
+    if (str == "Incinerate")  return CardEffectType::Incinerate;
+    if (str == "DamageByCost") return CardEffectType::DamageByCost;
+    if (str == "ByCardType")  return CardEffectType::ByCardType;
+    if (str == "Reclaim")     return CardEffectType::Reclaim;
+    if (str == "Transform")   return CardEffectType::Transform;
     if (str == "Catalyst") return CardEffectType::Catalyst;
     if (str == "DrainPoison") return CardEffectType::DrainPoison;
     if (str == "PoisonBurst") return CardEffectType::PoisonBurst;
@@ -136,6 +141,8 @@ inline BuffType StringToBuffType(const std::string& str)
     if (str == "BloodThirst") return BuffType::BloodThirst;
     if (str == "Berserker")   return BuffType::Berserker;
     if (str == "BloodFlash")  return BuffType::BloodFlash;
+    if (str == "BurnStrike")  return BuffType::BurnStrike;
+    if (str == "BurnGuard")   return BuffType::BurnGuard;
 
     return BuffType::AttackUp;
 }

@@ -331,7 +331,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         if (ctx.discardSelectCount > 0) return;   // 捨て選択中は使用可グローを出さない
         if (i < 0 || i >= (int)m_cardAnims.size()) return;
         if (m_cardAnims[i].holdTimer > 0.0f) return;   // 山札で待機中
-        if (ctx.player->CostOf(*cards[i]->GetData()) > ctx.player->GetEnergy()) return;
+        if (ctx.player->CostOf(*cards[i]->GetData(), cards[i]->CostThisTurn()) > ctx.player->GetEnergy()) return;
         float gx, gy, gw, gh;
         CardVisual::GetRect(m_cardAnims[i].currentX, m_cardAnims[i].currentY,
             m_cardAnims[i].currentScale, gx, gy, gw, gh);
@@ -353,7 +353,8 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         if (ctx.discardSelectCount <= 0) return;
         if (i < 0 || i >= (int)m_cardAnims.size()) return;
         if (m_cardAnims[i].holdTimer > 0.0f) return;   // 山札で待機中
-        if (!cards[i]->GetData()->onDiscardEffect.hasEffect) return;
+        const CardData* gd = cards[i]->GetData();
+        if (!(ctx.burnSelect ? gd->onBurnEffect.hasEffect : gd->onDiscardEffect.hasEffect)) return;   // 燃やす時は「燃やされた時」の効果があるカード
         float gx, gy, gw, gh;
         CardVisual::GetRect(m_cardAnims[i].currentX, m_cardAnims[i].currentY,
             m_cardAnims[i].currentScale, gx, gy, gw, gh);
@@ -362,7 +363,8 @@ void BattleUI::Draw(const BattleUIContext& ctx)
         {
             float pad = 3.0f + k * 4.0f + 4.0f * pulse;             // 内3 → 外〜23＋脈動
             float a = (0.80f + 0.20f * pulse) * (1.0f - k * 0.18f); // 濃いめ
-            XMFLOAT4 glow(0.0f, 0.95f, 0.85f, a);                   // ティール（4種と非かぶり）
+            XMFLOAT4 glow = ctx.burnSelect ? XMFLOAT4(1.0f, 0.55f, 0.15f, a)   // 燃やす時は炎の橙
+                                           : XMFLOAT4(0.0f, 0.95f, 0.85f, a);  // 捨てる時はティール（4種と非かぶり）
             m_spriteRenderer->DrawSprite(m_whiteTexture, gx - pad, gy - pad,
                 gw + pad * 2, gh + pad * 2, m_cardAnims[i].currentRot, glow);
         }
@@ -715,7 +717,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
             int sel = ctx.discardSelected ? (int)ctx.discardSelected->size() : 0;
             bool ready = (sel == ctx.discardSelectCount);
             wchar_t msg[64];
-            swprintf_s(msg, L"捨てるカードを選ぶ（%d/%d）", sel, ctx.discardSelectCount);
+            swprintf_s(msg, ctx.burnSelect ? L"廃棄するカードを選ぶ（%d/%d）" : L"捨てるカードを選ぶ（%d/%d）", sel, ctx.discardSelectCount);
             m_textRenderer->DrawOutlinedTextCentered(msg, m_screenWidth / 2.0f, m_screenHeight - 410.0f, 440.0f, 76.0f,
                 22.0f, D2D1::ColorF(1.0f, 0.95f, 0.8f), D2D1::ColorF(0.25f, 0.04f, 0.06f), 3.0f);
 
@@ -766,7 +768,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
             CardVisual::DrawTexts(m_textRenderer, cards[i]->GetData(), ctx.player,
                 m_cardAnims[i].currentX, m_cardAnims[i].currentY,
-                m_cardAnims[i].currentScale, m_cardAnims[i].currentRot);
+                m_cardAnims[i].currentScale, m_cardAnims[i].currentRot, 1.0f, cards[i]->CostThisTurn());
         }
 
 
@@ -799,7 +801,7 @@ void BattleUI::Draw(const BattleUIContext& ctx)
 
             CardVisual::DrawTexts(m_textRenderer, cards[topIdx]->GetData(), ctx.player,
                 m_cardAnims[topIdx].currentX, m_cardAnims[topIdx].currentY,
-                m_cardAnims[topIdx].currentScale, m_cardAnims[topIdx].currentRot);
+                m_cardAnims[topIdx].currentScale, m_cardAnims[topIdx].currentRot, 1.0f, cards[topIdx]->CostThisTurn());
         }
         const auto& buffs = ctx.player->GetBuffManager().GetBuffsSummed();
         float buffY = 90.0f + oy;
@@ -1686,23 +1688,24 @@ int BattleUI::PileCardAt(POINT p, int count) const
     return -1;
 }
 
-std::vector<std::string> BattleUI::PileForView(Deck* deck, bool showDraw, bool showDiscard)
+std::vector<std::string> BattleUI::PileForView(Deck* deck, bool showDraw, bool showDiscard, int hideIndex)
 {
     std::vector<std::string> v = showDraw ? deck->GetDrawPile()
         : showDiscard ? deck->GetDiscardPile() : deck->GetExhaustPile();
+    if (hideIndex >= 0 && hideIndex < (int)v.size()) v.erase(v.begin() + hideIndex);   // 出さない1枚（並べ替えの前に消す）
     if (showDraw) std::sort(v.begin(), v.end());   // 山札は引く順が分からないように並べ替える
     return v;
 }
 
 void BattleUI::DrawPileViewer(const BattleUIContext& ctx)
 {
-    auto pile = PileForView(ctx.deck, ctx.showDrawPile, ctx.showDiscardPile);
+    auto pile = PileForView(ctx.deck, ctx.showDrawPile, ctx.showDiscardPile, ctx.pileHideIndex);
     int n = (int)pile.size();
     URect v = PileViewerRect();
     int hover = PileCardAt(ctx.mousePos, n);
 
     const wchar_t* name = ctx.cardSelecting
-        ? (ctx.showDrawPile ? L"山札から選ぶ" : L"捨て札から選ぶ")
+        ? (ctx.showDrawPile ? L"山札から選ぶ" : ctx.showDiscardPile ? L"捨て札から選ぶ" : L"廃棄札から選ぶ")
         : (ctx.showDrawPile ? L"山札" : ctx.showDiscardPile ? L"捨て札" : L"廃棄");
     wchar_t title[48]; swprintf_s(title, L"%s（%d枚）", name, n);
     const float bnW = 400.0f, bnH = 80.0f, bnX = v.x + v.w / 2.0f - bnW / 2.0f, bnY = v.y - 40.0f;
@@ -2177,7 +2180,7 @@ void BattleUI::OnCardRemoved(int index)
 
 // 手札の一番左にカードが入った（敵に入れられたお邪魔カード）。真ん中に少し小さく出して、保留の呪いと同じく中央で見せてから、
 // 通常の動きで一番左の場所へ滑らせる。何枚も入った時は delay 秒ずつ隠して待たせ、1枚ずつ見せる
-void BattleUI::OnCardInsertedFront(float delay)
+void BattleUI::OnCardInserted(bool front, float delay)
 {
     CardAnimState anim;
     anim.currentX = m_screenWidth / 2.0f - CardVisual::CARD_W / 2.0f;
@@ -2185,7 +2188,8 @@ void BattleUI::OnCardInsertedFront(float delay)
     anim.currentScale = 0.8f;     // 少し小さい所から、中央でふわっと大きく
     anim.holdTimer = delay;       // 待っている間は隠す（押せない）
     anim.peekTimer = 0.0f;        // 隠し終わったら中央で見せてから手札へ
-    m_cardAnims.insert(m_cardAnims.begin(), anim);
+    if (front) m_cardAnims.insert(m_cardAnims.begin(), anim);   // 敵に入れられた状態異常は左端
+    else       m_cardAnims.push_back(anim);                     // 効果で加わったカードは右端
 }
 
 void BattleUI::StartHandCardPeek(int index, float delay)
@@ -2757,9 +2761,24 @@ void BattleUI::StartPlayCardEffectFromHand(const CardData* data, int cardIndex, 
     m_playCardEffects.push_back(e);
 }
 
+// 燃やしたカード：使ったカードと同じく手札から真ん中へ大きく飛び、そこで燃える。使ったカードと重ならないよう右に並べる
+void BattleUI::StartBurnFromHand(const CardData* data, int cardIndex, int slot)
+{
+    StartPlayCardEffectFromHand(data, cardIndex, 0.0f, false);
+    PlayCardEffect& e = m_playCardEffects.back();
+    e.exhaust = true;                                                            // 真ん中に止まって燃える
+    e.offsetX = (slot + 1) * CardVisual::CARD_W * g_animTune.playScale * 1.05f;   // 使ったカードの右から順に
+}
+
+// 燃やしたカードが真ん中で燃え上がるまで（真ん中で止まる＋燃え始めて半分）
+float BattleUI::BurnShowTime()
+{
+    return PLAY_EFFECT_DUR * 0.72f + EXHAUST_BURN_DUR * 0.5f;
+}
+
 void BattleUI::GetPlayEffectTransform(const PlayCardEffect& e, float& x, float& y, float& scale, float& rot)
 {
-    float tx = m_screenWidth / 2.0f - CardVisual::CARD_W / 2.0f;
+    float tx = m_screenWidth / 2.0f - CardVisual::CARD_W / 2.0f + e.offsetX;   // 燃やしたカードは右に並ぶ
     float ty = m_screenHeight / 2.0f - CardVisual::CARD_H / 2.0f + g_animTune.playCenterY;
 
     float et = e.timer - e.delay;   // 遅延を反映した実時間

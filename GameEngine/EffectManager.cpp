@@ -25,8 +25,15 @@ int EffectManager::PlayAround(const std::string& id, float x, float y, float z, 
     return Play(id, x, y, z, rot, delay, tint, radiusCells / AROUND_BASE_CELLS);
 }
 
-int EffectManager::PlayFrom(const std::string& id, const XMFLOAT3& from, const XMFLOAT3& to)
+int EffectManager::PlayFrom(const std::string& id, const XMFLOAT3& from, const XMFLOAT3& to, float delay)
 {
+    if (delay > 0.0f)   // ŠÔ·F—\–ñ‚µ‚ÄAŠÔ‚ª—ˆ‚½‚ç”ò‚Î‚·
+    {
+        PendingPlay p{ id, to.x, to.y, to.z, 0.0f, XMFLOAT4(1, 1, 1, 1), 1.0f, delay };
+        p.hasFrom = true; p.from = from;
+        s_pending.push_back(p);
+        return 0;
+    }
     int handle = s_nextHandle++;
     SpawnAt at = s_cam;
     at.x = to.x; at.y = to.y; at.z = to.z;
@@ -77,7 +84,8 @@ void EffectManager::Update(float dt)
         {
             PendingPlay p = s_pending[i];
             s_pending[i] = s_pending.back(); s_pending.pop_back();
-            Play(p.id, p.x, p.y, p.z, p.rot, 0.0f, p.tint, p.scale);
+            if (p.hasFrom) PlayFrom(p.id, p.from, XMFLOAT3(p.x, p.y, p.z));
+            else           Play(p.id, p.x, p.y, p.z, p.rot, 0.0f, p.tint, p.scale);
         }
         else ++i;
     }

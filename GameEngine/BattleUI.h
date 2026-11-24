@@ -80,6 +80,7 @@ struct PlayCardEffect {
     bool exhaust = false;
     bool sparked = false;
     bool streaked = false;   // 捨て札への光の帯を出したか
+    float offsetX = 0.0f;    // 真ん中から右へずらす（燃やしたカードを、使ったカードの横に並べる）
 };
 
 struct DropShown 
@@ -113,6 +114,7 @@ struct BattleUIContext
     bool isPlayerTurn;
     bool showMoveArrows = true;
     bool cardSelecting = false;
+    int pileHideIndex = -1;   // 一覧から外す番号（灰からの再生：使ったばかりの1枚）
     float cameraZoom;
 
     int screenWidth, screenHeight;
@@ -125,6 +127,7 @@ struct BattleUIContext
     int discardSelectCount = 0;
     const std::vector<int>* discardSelected = nullptr;
     bool discardViewMode = false;
+    bool burnSelect = false;        // 選ぶ画面が「燃やす」用か（案内の文と、光らせるカードが変わる）
 
     const std::vector<DropShown>* drops = nullptr;
 
@@ -157,7 +160,7 @@ public:
         int selectedIndex, POINT mousePos, bool selectedNeedsTarget,
         const std::vector<int>* discardSelected = nullptr);
     void OnCardRemoved(int index);
-    void OnCardInsertedFront(float delay);   // 手札の一番左にカードが入った：真ん中で見せてから、すっと左端へ（delay 秒は隠して待つ）
+    void OnCardInserted(bool front, float delay);   // 手札にカードが加わった：真ん中で見せてから手札へ（front＝左端／false＝右端。delay 秒は隠して待つ）
     void StartHandCardPeek(int index, float delay);   // 保留カードを中央へ往復させて手札に戻す
     void UpdatePlayCardEffects(float deltaTime);
 
@@ -202,6 +205,8 @@ public:
     void StartDiscardEffectAt(int cardIndex, const CardData* data = nullptr, float delay = 0.0f, bool exhaust = false);
     void StartBurnDiscard(const CardData* data, float delay);
     void StartPlayCardEffectFromHand(const CardData* data, int cardIndex, float delay = 0.0f, bool isBurn = false);
+    void StartBurnFromHand(const CardData* data, int cardIndex, int slot);   // 燃やしたカード：手札から真ん中の右（slot 番目）へ飛んで、そこで燃える
+    static float BurnShowTime();   // 燃やしたカードが真ん中で燃え上がるまでの秒数（追撃の火の玉はここから）
 
     void StartAddedCardEffect(const CardData* data, const std::string& target, int idx, int count);
     void UpdateAddedCardEffects(float dt);
@@ -224,7 +229,7 @@ public:
     URect PileViewerRect() const;
     URect PileCardRect(int i, int count) const;   // i枚目の見た目どおりの矩形
     int   PileCardAt(POINT p, int count) const;   // 無ければ-1
-    static std::vector<std::string> PileForView(Deck* deck, bool showDraw, bool showDiscard);   // 表示順の一覧
+    static std::vector<std::string> PileForView(Deck* deck, bool showDraw, bool showDiscard, int hideIndex = -1);   // 表示順の一覧
 
 private:
     SpriteRenderer* m_spriteRenderer = nullptr;

@@ -25,6 +25,7 @@
 #include "Faith.h"
 
 #include <algorithm>
+#include <random>
 #include <cstdio>
 #include <queue>
 #include <map>
@@ -236,6 +237,8 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
         std::string id = m_deck.DrawCard();
         if (!id.empty()) m_hand.AddCard(id);
     }
+    for (auto* r : RelicManager::OwnedByKind("startCard"))   // 種火の灯：戦闘開始時、決まったカードを手札に
+        for (int i = 0; i < r->value; i++) m_hand.AddCard(r->param);
 
     // 戦闘開始時：1ターン用(perTurn)カウントレリックを0に
     // ※リセットはStartPlayerTurn（ターン2以降）でしか走らないため、
@@ -248,6 +251,9 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
     m_turnManager.onPlayerTurnStart = [this]()
         {
             m_player->ResetMoved();
+            m_burnedThisTurn = 0;              // このターンに燃やした枚数（煤けた火打石）
+            m_burnStatusEnergyUsed = false;    // 煤けた手袋（1ターンに1回）
+            for (auto* c : m_hand.GetCards()) c->SetCostThisTurn(-1);   // 「このターンだけのコスト」を戻す
             for (auto& id : PlayerDataManager::GetData().relics)
                 if (auto def = RelicManager::Get(id); def && def->perTurn)
                     PlayerDataManager::GetData().relicCounters[id] = 0;
@@ -470,16 +476,18 @@ bool BattleScene::Init(ID3D11Device* device, ID3D11DeviceContext* context,
             }
 
             // 非保留カードだけ手札から取り除く（保留はスロット/アニメ状態を維持）
+            std::vector<const CardData*> etherealBurned;   // ターン終わりに燃えたエセリアル（全部片付けてから OnCardBurned）
             for (int i = (int)m_hand.GetCards().size() - 1; i >= 0; i--)
             {
                 const CardData* dd = CardDataBase::Get(m_hand.GetCards()[i]->GetId());
                 if (dd && dd->retain) continue;                               // 保留：残す
-                if (dd && dd->ethereal) m_deck.ExhaustCard(m_hand.GetCards()[i]->GetId());
+                if (dd && dd->ethereal) { m_deck.ExhaustCard(m_hand.GetCards()[i]->GetId()); etherealBurned.push_back(dd); }
                 else                    m_deck.DiscardCard(m_hand.GetCards()[i]->GetId());
                 m_hand.RemoveCard(i);
                 m_battleUI->OnCardRemoved(i);                                 // アニメ側も同indexを除去
             }
             m_selectedCardIndex = -1;   // 手札が消えたので選択も無効化
+            for (auto* dd : etherealBurned) OnCardBurned(dd);
             m_hoveredCardIndex = -1;    // ホバーも無効化
             m_cardSelecting = false;
            // m_battleUI->ClearCardAnimations();
@@ -722,6 +730,181 @@ void BattleScene::CancelDiscardSelect()
     m_discardSelectCount = 0;
     m_discardSelected.clear();
     m_discardViewMode = false;
+    m_selectBurn = false;
+}
+
+// 手札を燃やす（index は何個でも、順番は問わない）。燃える演出で消して廃棄置き場へ。全部燃やしてから効果を発動（途中で引くと index がずれる）
+std::vector<const CardData*> BattleScene::BurnHandCards(std::vector<int> idx)
+{
+    std::sort(idx.rbegin(), idx.rend());
+    std::vector<const CardData*> burned;
+    for (int i : idx)
+    {
+        if (i < 0 || i >= (int)m_hand.GetCards().size()) continue;
+        const CardData* dd = m_hand.GetCards()[i]->GetData();
+        m_battleUI->StartBurnFromHand(dd, i, (int)burned.size());   // 真ん中へ飛んで燃える（どのカードが燃えたか見せる）
+        m_deck.ExhaustCard(m_hand.GetCards()[i]->GetId());
+        m_hand.RemoveCard(i);
+        m_battleUI->OnCardRemoved(i);
+        burned.push_back(dd);
+    }
+    m_selectedCardIndex = -1;   // 手札が減ったので、選択とホバーは無効に（index のずれ対策）
+    m_hoveredCardIndex = -1;
+    for (int k = 0; k < (int)burned.size(); k++) OnCardBurned(burned[k], k);   // k＝燃やした順番（火の玉を少しずつずらす）
+    return burned;
+}
+
+// カードを1枚燃やした時（燃やす経路は全部ここを通る）。燃やされた時の効果と、燃やした数。燃やすと得をするパワー・レリックはここに足す
+// 効果を1つ作る（燃やした時のパワー・レリックの「引く」「ブロック」を、捨てた時の効果の処理に渡す）
+static CardEffectData MakeEffect(CardEffectType t, int v)
+{
+    CardEffectData e; e.hasEffect = true; e.type = t; e.value = v;
+    return e;
+}
+
+void BattleScene::OnCardBurned(const CardData* dd, int slot)
+{
+    m_burnedThisCombat++;
+    m_burnedThisTurn++;
+    if (dd && dd->onBurnEffect.hasEffect) ApplyDiscardEffect(dd->onBurnEffect);   // 効果の中身は「捨てた時」と同じ物を使う
+
+    // パワー：炉心（ランダムな敵へ火の玉）・残り火の盾（ブロック）
+    auto& bm = m_player->GetBuffManager();
+    if (int v = bm.GetBuffValue(BuffType::BurnStrike); v > 0)
+        if (Enemy* en = RandomAliveEnemy()) FireBolt(en, v, slot * 0.1f);
+    if (int v = bm.GetBuffValue(BuffType::BurnGuard); v > 0) ApplyDiscardEffect(MakeEffect(CardEffectType::Block, v));
+
+    // レリック（光らせるのは、発動したレリックだけ）
+    auto fired = [](const char* kind) { for (auto* r : RelicManager::OwnedByKind(kind)) RelicManager::NotifyFired(r->id); };
+    if (int v = RelicManager::SumValue("burnBlock"); v > 0)   // 燃え残りの指輪
+    {
+        ApplyDiscardEffect(MakeEffect(CardEffectType::Block, v)); fired("burnBlock");
+    }
+    if (m_burnedThisTurn == 1)                                 // 煤けた火打石：このターン初めて燃やした時
+        if (int v = RelicManager::SumValue("burnFirstDraw"); v > 0)
+        {
+            ApplyDiscardEffect(MakeEffect(CardEffectType::Draw, v)); fired("burnFirstDraw");
+        }
+    if (dd && (dd->type == CardType::Status || dd->type == CardType::Curse) && !m_burnStatusEnergyUsed)   // 煤けた手袋：1ターンに1回
+        if (int v = RelicManager::SumValue("burnStatusEnergy"); v > 0)
+        {
+            m_player->AddEnergy(v); m_burnStatusEnergyUsed = true; fired("burnStatusEnergy");
+        }
+    TickCountRelics("burn");   // 灰の砂時計（カウント系：count 枚燃やすごとに effect）
+}
+
+// 焼き直し：燃やしたカードの種類 → 効果（攻撃＝このターンの攻撃+v／スキル・移動＝ブロックv／パワー＝エナジー+2／状態異常・呪い＝1枚引く）
+static CardEffectData BurnTypeEffect(CardType t, int v)
+{
+    CardEffectData e; e.hasEffect = true;
+    switch (t)
+    {
+    case CardType::Attack: e.type = CardEffectType::ApplyBuff; e.buffType = "AttackUpTurn"; e.value = v; e.duration = 1; break;
+    case CardType::Power:  e.type = CardEffectType::AddEnergy; e.value = 2; break;
+    case CardType::Status: case CardType::Curse: e.type = CardEffectType::Draw; e.value = 1; break;
+    default:               e.type = CardEffectType::Block; e.value = v; break;   // スキル・移動
+    }
+    return e;
+}
+
+// このカードで燃やした1枚ごとの効果（燃やした後）。焚き付け＝引く、焼却＝ブロック、生贄の刃＝コスト×N を狙った敵へ、焼き直し＝種類で分かれる
+void BattleScene::ApplyBurnEffect(const CardData* src, const std::vector<const CardData*>& burned, Enemy* target)
+{
+    if (!src || !src->burnEffect.hasEffect) return;
+    const CardEffectData& e = src->burnEffect;
+    bool targetAlive = false;   // 選んでいる間に倒れて消えた敵には触らない
+    for (auto* en : m_enemies) if (en == target && en->GetHp() > 0) targetAlive = true;
+    float delay = 0.0f;
+    for (auto* b : burned)
+    {
+        if (!b) continue;
+        if (e.type == CardEffectType::DamageByCost)   // 燃えたカードの火の玉が飛んで、コスト×value の追撃
+        {
+            int dmg = (std::max)(0, b->cost) * e.value;
+            if (!targetAlive || dmg <= 0) continue;
+            FireBolt(target, dmg, delay);
+            delay += 0.1f;
+        }
+        else if (e.type == CardEffectType::Transform)    // 変容：ランダムなカード（種類も問わない）に入れ替える（value>0 なら強化済み）
+        {
+            std::string id = CardDataBase::RandomTransformCard(b->id);
+            if (!id.empty() && e.value > 0 && CardDataBase::Get(id + "+")) id += "+";
+            if (!id.empty()) AddToHand(id, -1, BattleUI::BurnShowTime() + 0.15f);   // 廃棄したカードが燃え上がってから見せる
+        }
+        else if (e.type == CardEffectType::ByCardType)   // 燃やしたカードの種類で分かれる
+            ApplyDiscardEffect(BurnTypeEffect(b->type, e.value));
+        else
+            ApplyDiscardEffect(e);   // 引く・ブロック・エナジーなど（「捨てた時」と同じ物を使う）
+    }
+}
+
+// 燃えたカードの火の玉を敵へ飛ばし、着いたら dmg の追撃（カードが真ん中で燃え上がってから）。生贄の刃・炉心で共通
+void BattleScene::FireBolt(Enemy* target, int dmg, float extraDelay)
+{
+    if (!target || dmg <= 0) return;
+    const float FLY = 0.25f;   // 火の玉が着くまで（effects.json の fire_bolt の life と同じ）
+    float at = BattleUI::BurnShowTime() + extraDelay;
+    EffectManager::PlayFrom("fire_bolt", XMFLOAT3(m_player->worldX, m_player->worldY + m_player->height * 0.5f, m_player->worldZ),
+        target->SpritePoint(0.0f, 0.5f), at);
+    PlayerHit h{ { target }, dmg };
+    if (m_playerHits.Empty()) m_playerHits.Start({ h }, at + FLY); else m_playerHits.Push(h);
+}
+
+// 生きている敵からランダムに1体（炉心の的）
+Enemy* BattleScene::RandomAliveEnemy()
+{
+    std::vector<Enemy*> alive;
+    for (auto* en : m_enemies) if (en && en->GetHp() > 0) alive.push_back(en);
+    if (alive.empty()) return nullptr;
+    static std::mt19937 rng(std::random_device{}());
+    return alive[std::uniform_int_distribution<int>(0, (int)alive.size() - 1)(rng)];
+}
+
+// 手札にカードを加える（山札からではなく、真ん中で見せてから右端へ。状態異常を入れられた時と同じ見せ方）
+// costThisTurn>=0 ならこのターンだけそのコスト（灰からの再生など）。delay 秒は隠して待つ。満杯で捨て札へ行ったら nullptr
+Card* BattleScene::AddToHand(const std::string& id, int costThisTurn, float delay)
+{
+    Card* c = m_hand.AddCard(id);
+    if (!c) return nullptr;
+    m_battleUI->OnCardInserted(false, delay);
+    if (costThisTurn >= 0) c->SetCostThisTurn(costThisTurn);
+    return c;
+}
+
+// 不死鳥の尾羽：HPが0になったら1度だけ復活（HP＝廃棄札1枚につき value、最大HPの半分まで。最低1）。使ったかは relicCounters に1（セーブされる）
+bool BattleScene::TryPhoenixRevive()
+{
+    auto& pd = PlayerDataManager::GetData();
+    for (auto* r : RelicManager::OwnedByKind("revive"))
+    {
+        if (pd.relicCounters[r->id] > 0) continue;   // 使用済み
+        int hp = std::clamp(m_deck.GetExhaustPileCount() * r->value, 1, (std::max)(1, m_player->GetMaxHp() / 2));
+        m_player->SetHp(hp);
+        pd.relicCounters[r->id] = 1;
+        RelicManager::NotifyFired(r->id);
+        EffectManager::Play("nova_fire", m_player->worldX, m_player->worldY + 0.4f, m_player->worldZ);   // 炎が広がって
+        EffectManager::Play("heal", m_player->worldX, m_player->worldY + 0.4f, m_player->worldZ);        // 回復
+        return true;
+    }
+    return false;
+}
+
+// 手札をランダムに n 枚燃やす
+std::vector<const CardData*> BattleScene::BurnRandomCards(int n)
+{
+    std::vector<int> all;
+    for (int i = 0; i < (int)m_hand.GetCards().size(); i++) all.push_back(i);
+    std::shuffle(all.begin(), all.end(), std::mt19937(std::random_device{}()));
+    if ((int)all.size() > n) all.resize(n);
+    return BurnHandCards(all);
+}
+
+// 燃やすカードを選ぶ画面（捨てる画面を使い回す）。手札が n 枚以下なら、選ばずに全部燃やす
+void BattleScene::OpenBurnSelect(int n)
+{
+    if ((int)m_hand.GetCards().size() <= n) { ApplyBurnEffect(m_burnSource, BurnRandomCards(n), m_burnTarget); return; }   // 選ぶまでもない時は全部
+    OpenDiscardSelect(n);
+    m_selectBurn = true;
 }
 
 void BattleScene::UpdateBossGimmick()
@@ -1375,6 +1558,7 @@ void BattleScene::Update(float deltaTime)
             return;
         }
 
+        if (m_player->GetHp() <= 0) TryPhoenixRevive();   // 不死鳥の尾羽
         // 敗北判定
         if (m_player->GetHp() <= 0)
         {
@@ -1597,7 +1781,7 @@ void BattleScene::Update(float deltaTime)
                         {
                             if (m_hand.AddCardFront(pc.cardId))
                             {
-                                m_battleUI->OnCardInsertedFront(k * 0.25f);
+                                m_battleUI->OnCardInserted(true, k * 0.25f);
                                 m_enemyAddedToHand++;
                                 m_hoveredCardIndex = -1;                            // 左に入って番号がずれるので、マウスの所は選び直す
                                 if (m_selectedCardIndex >= 0) m_selectedCardIndex++;   // 選んでいたカードは同じカードのまま
@@ -2148,7 +2332,11 @@ void BattleScene::ApplyDiscardEffect(const CardEffectData& e)
         }
         break;
     case CardEffectType::AddEnergy: m_player->AddEnergy(e.value); break;
-    case CardEffectType::Block:     m_player->AddBlock(m_player->GetBuffManager().GetFinalBlock(e.value)); break;
+    case CardEffectType::ApplyBuff: CardEffect::ApplyEffectToPlayer(e, m_player); break;   // 自分へのバフ（焼き直しの「このターンの攻撃+」）
+    case CardEffectType::Block:
+        m_player->AddBlock(m_player->GetBuffManager().GetFinalBlock(e.value));
+        EffectManager::Play("block_gain", m_player->worldX, m_player->worldY + 0.4f, m_player->worldZ);   // 青い盾の光
+        break;
     case CardEffectType::CreateCard: for (int i = 0; i < e.value; i++) { m_hand.AddCard(e.cardId); m_battleUI->StartDrawCardEffect(e.cardId); } break;
     case CardEffectType::ApplyDebuff:   // 捨てたら全敵にデバフ（毒など）
     {
@@ -2225,6 +2413,8 @@ void BattleScene::OnDrawSequenceComplete()
         m_hand.AddCard("ATK_knife");
         m_battleUI->StartDrawCardEffect("ATK_knife");
     }
+    // 灰の王冠（代償）：引き終わったら、手札をランダムに n 枚燃やす（燃やすと得をする物もここで発動）
+    if (int n = RelicManager::SumValue("turnBurn"); n > 0) BurnRandomCards(n);
     RunTurnCycle();
 }
 
@@ -2510,7 +2700,7 @@ static const struct { BuffType type; const char* fx; const char* screen; bool po
     { BuffType::Riposte, "buff_defense", "aura_buff_defense" },    { BuffType::CardBlock, "buff_defense", "aura_buff_defense" },
     { BuffType::Sanctuary, "buff_defense", "aura_buff_defense" },  { BuffType::GuardianVow, "buff_defense", "aura_buff_defense" },
     { BuffType::Invincible, "buff_defense", "aura_buff_defense" }, { BuffType::HalfCarry, "buff_defense", "aura_buff_defense" },
-    { BuffType::StandFirm, "buff_defense", "aura_buff_defense" },
+    { BuffType::StandFirm, "buff_defense", "aura_buff_defense" },  { BuffType::BurnGuard, "buff_defense", "aura_buff_defense" },
     // そのほかの強化（ふち：金）
     { BuffType::RangeUp, "buff_up", "aura_buff_up" },      { BuffType::MoveUp, "buff_up", "aura_buff_up" },
     { BuffType::HitAndRun, "buff_up", "aura_buff_up" },    { BuffType::Reposition, "buff_up", "aura_buff_up" },
@@ -2518,7 +2708,7 @@ static const struct { BuffType type; const char* fx; const char* screen; bool po
     { BuffType::KnifeThrow, "buff_up", "aura_buff_up" },   { BuffType::KnifeGen, "buff_up", "aura_buff_up" },
     { BuffType::EmberTrail, "buff_up", "aura_buff_up" },   { BuffType::DrawPerTurn, "buff_up", "aura_buff_up" },
     { BuffType::Cathedral, "buff_up", "aura_buff_up" },    { BuffType::BloodThirst, "buff_up", "aura_buff_up" },
-    { BuffType::BloodFlash, "buff_up", "aura_buff_up" },
+    { BuffType::BloodFlash, "buff_up", "aura_buff_up" },   { BuffType::BurnStrike, "buff_up", "aura_buff_up" },
     // デバフ（体の所の演出は、付けた側のカード・攻撃が出しているので無し）
     { BuffType::Weak, nullptr, "aura_debuff_weak" },       { BuffType::AttackDown, nullptr, "aura_debuff_weak" },
     { BuffType::Vulnerable, nullptr, "aura_debuff_vuln" }, { BuffType::Frail, nullptr, "aura_debuff_vuln" },
@@ -2693,30 +2883,32 @@ bool BattleScene::GetEnemyPanelRect(float& x, float& y, float& w, float& h) cons
     return true;
 }
 
+// カウント系レリックを1つ進める（kind＝attack/skill/move/card/burn）。しきい値に達したら effect を発動して0に戻す
+void BattleScene::TickCountRelics(const char* kind)
+{
+    auto& pd = PlayerDataManager::GetData();
+    for (auto* r : RelicManager::OwnedByKind(kind))
+    {
+        if (r->count <= 0) continue;
+        int& c = pd.relicCounters[r->id];
+        if (++c >= r->count)                 // 進んで、しきい値に達したら
+        {
+            c = 0;                           // 0に戻す
+            if (r->effect == "energy") m_player->AddEnergy(r->value);
+            else                       m_player->AddBlock(r->value);   // 既定=ブロック
+            RelicManager::NotifyFired(r->id);
+        }
+    }
+}
+
 void BattleScene::OnCardPlayed(const CardData* d)
 {
     if (!d) return;
-    auto& pd = PlayerDataManager::GetData();
-    auto tick = [&](const char* kind)
-        {
-            for (auto* r : RelicManager::OwnedByKind(kind))
-            {
-                if (r->count <= 0) continue;
-                int& c = pd.relicCounters[r->id];
-                if (++c >= r->count)                 // 進んで、しきい値に達したら
-                {
-                    c = 0;                           // 0に戻す
-                    if (r->effect == "energy") m_player->AddEnergy(r->value);
-                    else                       m_player->AddBlock(r->value);   // 既定=ブロック
-                    RelicManager::NotifyFired(r->id);
-                }
-            }
-        };
     const char* k = (d->type == CardType::Attack) ? "attack" :
         (d->type == CardType::Skill) ? "skill" :
         (d->type == CardType::Move) ? "move" : "";
-    if (k[0]) tick(k);   // その種別
-    tick("card");        // 全カード共通
+    if (k[0]) TickCountRelics(k);   // その種別
+    TickCountRelics("card");        // 全カード共通
 }
 
 bool BattleScene::IsRelicSpent(const std::string& id) const
@@ -2726,9 +2918,16 @@ bool BattleScene::IsRelicSpent(const std::string& id) const
     const std::string& k = def->kind;
     // 戦闘開始で発動する系（最初のターン）＝戦闘中は常に使用済み
     if (k == "startBlock" || k == "startHeal" || k == "startDraw"
-        || k == "startBuffAtk" || k == "startBuffAtkTurn" || k == "startPoison") return true;
+        || k == "startBuffAtk" || k == "startBuffAtkTurn" || k == "startPoison" || k == "startCard") return true;
     // 最初の攻撃
     if (k == "firstAttack") return m_firstAttackDone;
+    if (k == "burnStatusEnergy") return m_burnStatusEnergyUsed;   // 煤けた手袋：このターンはもう使った
+    if (k == "revive")   // 不死鳥の尾羽：1度使ったら暗く
+    {
+        const auto& rc = PlayerDataManager::GetData().relicCounters;
+        auto it = rc.find(id);
+        return it != rc.end() && it->second > 0;
+    }
     return false;
 }
 
@@ -2737,6 +2936,7 @@ bool BattleScene::IsRelicSpent(const std::string& id) const
 void BattleScene::SyncFaithBuffs()
 {
     if (!m_player) return;
+    m_player->SetExhaustCount(m_deck.GetExhaustPileCount());   // 灰燼撃のダメージ（表示と実際）
     auto& bm = m_player->GetBuffManager();
     bm.RemoveBuff(BuffType::HolyGround);
     bm.RemoveBuff(BuffType::Sanctuary);
@@ -2761,15 +2961,11 @@ void BattleScene::SyncFaithBuffs()
 // 浄化：手札の呪いを全て廃棄する（ターン終了のエセリアルと同じく、その場で溶かす）
 void BattleScene::PurgeHandCurses()
 {
-    for (int i = (int)m_hand.GetCards().size() - 1; i >= 0; i--)
+    std::vector<int> curses;
+    for (int i = 0; i < (int)m_hand.GetCards().size(); i++)
     {
         const CardData* dd = m_hand.GetCards()[i]->GetData();
-        if (!dd || dd->type != CardType::Curse) continue;
-        m_battleUI->StartDiscardEffectAt(i, dd, 0.0f, true);
-        m_deck.ExhaustCard(m_hand.GetCards()[i]->GetId());
-        m_hand.RemoveCard(i);
-        m_battleUI->OnCardRemoved(i);
+        if (dd && dd->type == CardType::Curse) curses.push_back(i);
     }
-    m_selectedCardIndex = -1;   // 手札が減ったので、選択とホバーは無効に（index のずれ対策）
-    m_hoveredCardIndex = -1;
+    BurnHandCards(curses);   // 燃やす入り口は1か所（燃える演出・燃やした時の効果も同じ）
 }

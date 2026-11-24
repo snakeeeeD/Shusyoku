@@ -73,6 +73,8 @@ enum class BuffType
     BloodThirst,    // 血の渇望：敵を倒すたびHP+value
     Berserker,      // 狂戦士：カードで自傷するたび、このターンの攻撃+value
     BloodFlash,     // 血の閃き：カードで自傷するたび、value枚引く
+    BurnStrike,     // 炉心：カードを燃やすたび、ランダムな敵に value ダメージ
+    BurnGuard,      // 残り火の盾：カードを燃やすたび、ブロック+value
 };
 
 // デバフか（残りターンの減る時を分ける：デバフ＝持ち主のターンの終わり、バフ＝持ち主のターンの始め）

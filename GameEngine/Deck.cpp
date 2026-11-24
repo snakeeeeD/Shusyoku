@@ -87,3 +87,15 @@ std::string Deck::SalvageCard(const std::string& id)
     }
     return "";
 }
+
+// ŠD‚©‚ç‚ÌÄ¶F”pŠüD‚©‚çæ‚èo‚·
+std::string Deck::ReclaimCard(const std::string& id)
+{
+    auto it = std::find(m_exhaustPile.begin(), m_exhaustPile.end(), id);
+    if (it != m_exhaustPile.end())
+    {
+        m_exhaustPile.erase(it);
+        return id;
+    }
+    return "";
+}

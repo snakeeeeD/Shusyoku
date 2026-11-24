@@ -68,6 +68,8 @@ struct BuffInfo
             { L"血の渇望",            L"敵を倒すたびHP+{value}",                                 {0.85f, 0.2f, 0.25f, 1.0f},  "buff_bloodthirst" },   // BloodThirst
             { L"狂戦士",              L"カードで自傷するたび、このターンの攻撃+{value}",         {0.95f, 0.3f, 0.2f, 1.0f},   "buff_berserker" },     // Berserker
             { L"血の閃き",            L"カードで自傷するたび、カードを{value}枚引く",            {0.9f, 0.45f, 0.55f, 1.0f},  "buff_bloodflash" },    // BloodFlash
+            { L"炉心",                L"カードを廃棄するたび、ランダムな敵に{value}ダメージ",       {1.0f, 0.5f, 0.15f, 1.0f},   "buff_burnstrike" },    // BurnStrike
+            { L"残り火の盾",          L"カードを廃棄するたび、ブロック+{value}",                    {1.0f, 0.6f, 0.3f, 1.0f},    "buff_burnguard" },     // BurnGuard
         };
         return infos[static_cast<int>(type)];
     }

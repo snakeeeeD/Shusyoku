@@ -660,6 +660,100 @@
         "Discard"
       ],
       "desc": "カードを選んで捨てるたび、ブロック+2"
+    },
+    {
+      "id": "burn_flint",
+      "icon": "relic_burn_flint",
+      "name": "煤けた火打石",
+      "kind": "burnFirstDraw",
+      "value": 1,
+      "rarity": "common",
+      "tags": [
+        "Incinerate"
+      ],
+      "desc": "毎ターン、最初にカードを廃棄した時、1枚引く"
+    },
+    {
+      "id": "ember_ring",
+      "icon": "relic_ember_ring",
+      "name": "燃え残りの指輪",
+      "kind": "burnBlock",
+      "value": 2,
+      "rarity": "uncommon",
+      "tags": [
+        "Incinerate"
+      ],
+      "desc": "カードを廃棄するたび、ブロック+2"
+    },
+    {
+      "id": "sooty_glove",
+      "icon": "relic_sooty_glove",
+      "name": "煤けた手袋",
+      "kind": "burnStatusEnergy",
+      "value": 1,
+      "rarity": "uncommon",
+      "tags": [
+        "Incinerate"
+      ],
+      "desc": "状態異常・呪いを廃棄した時、エナジー+1（1ターンに1回）"
+    },
+    {
+      "id": "ash_hourglass",
+      "icon": "relic_ash_hourglass",
+      "name": "灰の砂時計",
+      "kind": "burn",
+      "perTurn": false,
+      "effect": "energy",
+      "count": 5,
+      "value": 1,
+      "rarity": "uncommon",
+      "tags": [
+        "Incinerate"
+      ],
+      "desc": "カードを累計5枚廃棄するごとに、エナジー+1"
+    },
+    {
+      "id": "boss_ash_crown",
+      "icon": "relic_boss_ash_crown",
+      "name": "灰の王冠",
+      "kind": "turnEnergy",
+      "value": 1,
+      "rarity": "boss",
+      "tags": [
+        "Incinerate"
+      ],
+      "desc": "毎ターン、エナジー+1\n代償：ターン開始時、手札をランダムに1枚廃棄",
+      "extra": [
+        {
+          "kind": "turnBurn",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "start_tinder",
+      "icon": "relic_start_tinder",
+      "name": "種火の灯",
+      "kind": "startCard",
+      "param": "SKL_firewood",
+      "value": 1,
+      "rarity": "starter",
+      "tags": [
+        "Incinerate"
+      ],
+      "desc": "戦闘開始時、薪を1枚手札に加える"
+    },
+    {
+      "id": "phoenix_feather",
+      "icon": "relic_phoenix_feather",
+      "name": "不死鳥の尾羽",
+      "kind": "revive",
+      "value": 2,
+      "rarity": "rare",
+      "tags": [
+        "Incinerate"
+      ],
+      "desc": "HPが0になった時、1度だけ復活する\n（HP＝廃棄札1枚につき2、最大HPの半分まで）"
     }
   ]
 }
