@@ -18,6 +18,7 @@ struct EnemyData
     float width;
     float height;
     float drawZ = 0.4f;   // 描画のZオフセット（大型キャラの足元合わせ用）
+    float mouthX = 0.3f, mouthY = 0.5f;   // 口の位置（絵の真ん中から顔の向きへ絵の幅の何割／足元から絵の高さの何割）。enemies.json の "mouth": [x, y]
     bool isBoss;
     bool immovable;
     bool sequential = false;   // trueなら行動を定義順に1つずつ回す

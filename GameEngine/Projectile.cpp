@@ -63,10 +63,8 @@ void Projectile::Draw(Renderer3D* r, EffectLayer layer)
     if (layer != EffectLayer::Overlay) return;
     if (m_elapsed < 0.0f) return;
     float u = (std::min)(m_elapsed / m_def.life, 1.0f);
-    r->SetDepthEnabled(false);   // 体に食い込んでも隠れないように（flash と同じ）
     DrawTrail(r, u);
     DrawHead(r, u);
-    r->SetDepthEnabled(true);
 }
 
 // 軌跡：頭から後ろへ「距離×trailLen」ぶん。短い帯をつないで描き、後ろほど細く薄く

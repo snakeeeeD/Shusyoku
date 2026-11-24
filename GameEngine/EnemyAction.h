@@ -17,6 +17,7 @@ enum class EffectKind {
 
 // 誰に効くか
 enum class ApplyTo { Self, Player, Allies };
+enum class WindupAt { Target, Mouth, Line, Self };   // 予備動作の演出を出す所：狙った所／口／列の端から端へ／敵自身
 
 // 誰を狙うか
 struct TargetSpec
@@ -65,6 +66,11 @@ struct EnemyAction
     std::string  impactVfx;               // 着弾点に出す演出（当たり外れに関わらず）
     std::string  hitVfx;                  // 1発当たるたびにプレイヤーの所に出す演出（多段は1発ごと）。当たった時は vfx と範囲の演出を出さない
     std::string  selfVfx;                 // 行動した時に敵自身の位置で出す演出（バフ・構えなど。命中に関係なし）
+    std::string  originVfx;               // 敵の口から攻撃の向きへ出す演出（ブレス・吐く攻撃。扇は扇の向き、ほかは狙ったマスの向き）
+    std::string  aroundVfx;               // 周り全体の攻撃で、衝撃波の代わりに1つだけ出す演出（なぎ払いなど。範囲の大きさに合わせて拡大）
+    std::string  allyVfx;                 // 行動した時、自分から味方の1体ずつへ飛ばす演出（楔を強化する。PlayFrom）
+    WindupAt     windupAt = WindupAt::Target;   // "windupAt": "mouth" / "line" / "self"（書かなければ狙った所）
+    float        waveTime = 0.0f;         // aroundVfx の波が範囲の外の縁まで届く秒数。0より大きいと、ダメージは波がプレイヤーに届いた時に入る
 
     // この効果を持っているか（引き寄せの行動か、などを調べる）
     bool HasEffect(EffectKind k) const

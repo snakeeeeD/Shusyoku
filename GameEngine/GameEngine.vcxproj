@@ -178,6 +178,8 @@
     <ClInclude Include="ScreenStatusFx.h" />
     <ClInclude Include="TileDropFx.h" />
     <ClInclude Include="ScreenOverlay.h" />
+    <ClInclude Include="ScreenImage.h" />
+    <ClInclude Include="Helix.h" />
     <ClInclude Include="FlashSprite.h" />
     <ClInclude Include="Projectile.h" />
     <ClInclude Include="Tether.h" />
@@ -303,6 +305,8 @@
     <ClCompile Include="ScreenStatusFx.cpp" />
     <ClCompile Include="TileDropFx.cpp" />
     <ClCompile Include="ScreenOverlay.cpp" />
+    <ClCompile Include="ScreenImage.cpp" />
+    <ClCompile Include="Helix.cpp" />
     <ClCompile Include="FlashSprite.cpp" />
     <ClCompile Include="Projectile.cpp" />
     <ClCompile Include="Tether.cpp" />

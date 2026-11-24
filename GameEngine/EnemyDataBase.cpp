@@ -71,6 +71,12 @@ static EnemyAction ParseAction(const json& a)
     act.impactVfx = a.value("impactVfx", std::string(""));
     act.hitVfx = a.value("hitVfx", std::string(""));
     act.selfVfx = a.value("selfVfx", std::string(""));
+    act.originVfx = a.value("originVfx", std::string(""));
+    act.aroundVfx = a.value("aroundVfx", std::string(""));
+    act.allyVfx = a.value("allyVfx", std::string(""));
+    std::string wat = a.value("windupAt", std::string(""));
+    act.windupAt = (wat == "mouth") ? WindupAt::Mouth : (wat == "line") ? WindupAt::Line : (wat == "self") ? WindupAt::Self : WindupAt::Target;
+    act.waveTime = a.value("waveTime", 0.0f);
     if (a.contains("target")) act.target = ParseTarget(a["target"]);
     if (a.contains("extraTargets") && a["extraTargets"].is_array())
         for (const auto& t : a["extraTargets"])
@@ -133,6 +139,7 @@ void EnemyDataBase::Init()
                 data.width = e["width"];
                 data.height = e["height"];
                 data.drawZ = e.contains("drawZ") ? (float)e["drawZ"] : 0.4f;
+                if (e.contains("mouth")) { data.mouthX = (float)e["mouth"][0]; data.mouthY = (float)e["mouth"][1]; }
                 data.isBoss = e.value("isBoss", false);
                 data.immovable = e.value("immovable", false);
                 data.sequential = e.value("sequential", false);

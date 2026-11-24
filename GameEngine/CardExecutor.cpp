@@ -1075,10 +1075,11 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
     {
         if (fx.empty()) continue;
 
-        if (fx == "slash_spin")
+        if (fx == "slash_spin")   // ‰ñ“]Ø‚èF’n–Ê‚ÌŽaŒ‚‚ÌŒÊ‚ªŽü‚è‚ð1Žüi“G‚Ì‚È‚¬•¥‚¢‚Æ“¯‚¶j{Žü‚è‚ÉŽaŒ‚‚ð6‚ÂA­‚µ‚¸‚Â‚¸‚ç‚µ‚Ä
         {
             float px = (playerCol - gridMap->GetCols() / 2.0f) * 1.1f;
             float pz = (playerRow - gridMap->GetRows() / 2.0f) * 1.1f;
+            EffectManager::PlayAround("sweep", px, 0.5f, pz, data.range + 0.5f, (float)rand() / RAND_MAX * 6.2831853f, 0.0f, vcol);
             const int N = 6;
             for (int i = 0; i < N; i++)
             {

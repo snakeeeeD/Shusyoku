@@ -17,6 +17,10 @@ public:
     // 名前でエフェクトを再生（effects.json のプリセット）。delay 秒後に出す。tint＝色、scale＝大きさの倍率。戻り値は Stop 用の番号
     static int Play(const std::string& id, float x, float y, float z, float rot = 0.0f, float delay = 0.0f,
         XMFLOAT4 tint = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), float scale = 1.0f);
+    // 周り全体に1つ出す演出（なぎ払い・衝撃波など）。演出は「中心から AROUND_BASE_CELLS マス」の大きさで作り、半径 radiusCells マスに合わせて大きくする
+    static constexpr float AROUND_BASE_CELLS = 1.5f;
+    static int PlayAround(const std::string& id, float x, float y, float z, float radiusCells, float rot = 0.0f, float delay = 0.0f,
+        XMFLOAT4 tint = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
     // from から to へ飛ぶ演出（飛び道具）。飛び始めを使わない部品は、今までどおり to に出る
     static int PlayFrom(const std::string& id, const XMFLOAT3& from, const XMFLOAT3& to);
     static void Stop(int handle, float fadeSec = 0.3f);   // 指定番号の演出を止める（フェードできる種類はフェード）

@@ -1039,23 +1039,6 @@ void BattleUI::Draw(const BattleUIContext& ctx)
                 D2D1::ColorF(1, 1, 1), D2D1::ColorF(0.1f, 0.1f, 0.1f), 2.0f);
         }
     }
-    else if (ctx.battleResult == BattleResult::Lose)
-    {
-        const float cx = m_screenWidth / 2.0f;
-        m_spriteRenderer->End(); m_spriteRenderer->Begin();
-        m_spriteRenderer->DrawSprite(TextureManager::Get("ui_banner"),
-            cx - 190.0f, m_screenHeight / 2.0f - 40.0f, 380.0f, 78.0f, 0.0f, XMFLOAT4(0.75f, 0.5f, 0.5f, 1));
-        m_textRenderer->DrawOutlinedTextInRect(L"GAME OVER",
-            cx - 190.0f, m_screenHeight / 2.0f - 40.0f, 380.0f, 78.0f, 44.0f,   // 布の見出しと同じ四角
-            D2D1::ColorF(1.0f, 0.42f, 0.42f), D2D1::ColorF(0.2f, 0.0f, 0.0f), 3.0f);
-        const wchar_t* t = L"クリックでタイトルへ";
-        const float ph = 36.0f, pw = m_textRenderer->Measure(t, 20.0f, FontRole::Heading).width + 48.0f;
-        const float px = cx - pw / 2.0f, py = m_screenHeight - 74.0f;
-        m_spriteRenderer->End(); m_spriteRenderer->Begin();
-        DrawWindow(px, py, pw, ph);
-        m_textRenderer->DrawOutlinedTextInRect(t, px, py, pw, ph, 20.0f,
-            D2D1::ColorF(1, 1, 1), D2D1::ColorF(0.1f, 0.1f, 0.1f), 2.0f);
-    }
 
     if (m_hasHoveredBuff && !CardTooltip::s_debugHide)
     {
@@ -2660,6 +2643,29 @@ void BattleUI::DrawCardKeywords(const BattleUIContext& ctx, int idx)
         m_textRenderer->DrawText(desc.c_str(), px + 12.0f, y + 20.0f, 12.0f, D2D1::ColorF(0.9f, 0.9f, 0.9f));
         y += rowH;
     }
+}
+
+// 負けた時の「GAME OVER」と「クリックでタイトルへ」。UI より上の演出（まるのみの顎）の、さらに上に出すため、Draw とは別に呼ぶ
+void BattleUI::DrawLoseBanner()
+{
+    m_textRenderer->Begin();   // 文字は Begin〜End の間でしか描けない（Draw の外から呼ぶので、自分で囲む）
+    m_spriteRenderer->Begin();
+    const float cx = m_screenWidth / 2.0f;
+    m_spriteRenderer->End(); m_spriteRenderer->Begin();
+    m_spriteRenderer->DrawSprite(TextureManager::Get("ui_banner"),
+        cx - 190.0f, m_screenHeight / 2.0f - 40.0f, 380.0f, 78.0f, 0.0f, XMFLOAT4(0.75f, 0.5f, 0.5f, 1));
+    m_textRenderer->DrawOutlinedTextInRect(L"GAME OVER",
+        cx - 190.0f, m_screenHeight / 2.0f - 40.0f, 380.0f, 78.0f, 44.0f,   // 布の見出しと同じ四角
+        D2D1::ColorF(1.0f, 0.42f, 0.42f), D2D1::ColorF(0.2f, 0.0f, 0.0f), 3.0f);
+    const wchar_t* t = L"クリックでタイトルへ";
+    const float ph = 36.0f, pw = m_textRenderer->Measure(t, 20.0f, FontRole::Heading).width + 48.0f;
+    const float px = cx - pw / 2.0f, py = m_screenHeight - 74.0f;
+    m_spriteRenderer->End(); m_spriteRenderer->Begin();
+    DrawWindow(px, py, pw, ph);
+    m_textRenderer->DrawOutlinedTextInRect(t, px, py, pw, ph, 20.0f,
+        D2D1::ColorF(1, 1, 1), D2D1::ColorF(0.1f, 0.1f, 0.1f), 2.0f);
+    m_spriteRenderer->End();
+    m_textRenderer->End();     // 文字はここでまとめて描かれる（板の上に出る）
 }
 
 void BattleUI::DrawDropTooltipTop()

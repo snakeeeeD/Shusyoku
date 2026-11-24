@@ -324,7 +324,7 @@ namespace
             if (!cond.empty() && !EnumNames::Contains(EnumNames::Conditions, cond)) err.push_back(w + ": unknown condition " + cond);
             if (cond.empty()) uncondChance += sel.value("chance", 100);
 
-            for (const char* key : { "vfx", "selfVfx", "windupVfx", "areaVfx", "impactVfx", "hitVfx" })
+            for (const char* key : { "vfx", "selfVfx", "originVfx", "aroundVfx", "allyVfx", "windupVfx", "areaVfx", "impactVfx", "hitVfx" })
             {
                 std::string v = act.value(key, std::string());
                 if (!v.empty() && std::find(fx.begin(), fx.end(), v) == fx.end())
@@ -670,6 +670,9 @@ namespace
                 ImGui::SeparatorText("vfx");
                 if (VfxRow(act, a, "vfx", "", u8"命中した時、プレイヤーの位置（未指定なら smash）")) s.dirty = true;
                 if (VfxRow(act, a, "selfVfx", "", u8"行動した時、敵自身の位置（バフ・構えなど）")) s.dirty = true;
+                if (VfxRow(act, a, "originVfx", "", u8"行動した時、敵の口から攻撃の向きへ（ブレス・吐く攻撃）")) s.dirty = true;
+                if (VfxRow(act, a, "aroundVfx", "", u8"周り全体の攻撃で、衝撃波の代わりに1つ（なぎ払いなど）")) s.dirty = true;
+                if (VfxRow(act, a, "allyVfx", "", u8"行動した時、自分から味方の1体ずつへ飛ばす（楔を強化する）")) s.dirty = true;
                 if (VfxRow(act, a, "impactVfx", "", u8"着弾点（当たり外れに関係なし）")) s.dirty = true;
                 if (VfxRow(act, a, "hitVfx", "", u8"1発当たるたび、プレイヤーの位置（当たったら vfx・範囲の演出の代わり）")) s.dirty = true;
                 if (VfxRow(act, a, "areaVfx", "area_burst", u8"範囲の各マス（未指定なら area_burst）")) s.dirty = true;
@@ -810,7 +813,7 @@ namespace
                         if (Threatens(c, r, *act, s.ec, s.er, shape))
                             SpawnFx(g_fxReqId, center(c, r), 0.04f * (abs(c - s.ec) + abs(r - s.er)));
             }
-            else if (g_fxReqKey == "selfVfx") SpawnFx(g_fxReqId, center(s.ec, s.er), 0.0f);
+            else if (g_fxReqKey == "selfVfx" || g_fxReqKey == "originVfx" || g_fxReqKey == "aroundVfx" || g_fxReqKey == "allyVfx") SpawnFx(g_fxReqId, center(s.ec, s.er), 0.0f);
             else SpawnFx(g_fxReqId, center(s.pc, s.pr), 0.0f);
             g_fxReqId.clear(); g_fxReqAct = -1;
         }

@@ -26,6 +26,8 @@ struct BurstDef : EffectPartDef
     float cone = 30.0f;    // "spread": "forward" の広がり（度）。出す向き（Play の rot）から左右へ、上へ、この角度まで
     float sway = 0.0f;     // 左右にゆらゆらする幅（ワールド。火の粉など。0＝ゆれない）
     float flicker = 0.0f;  // 明るさのちらつき（0～1。0＝ちらつかない）
+    float emitTime = 0.0f; // 0より大きいと、粒を一度に出さず、この秒数のあいだに少しずつ出す（ブレス・噴射など）
+    float coneUp = -1.0f;  // "forward" の上へ持ち上げる角度（度）。マイナス＝cone と同じ（今まで通り）
 
     static std::unique_ptr<EffectPartDef> Load(const nlohmann::json& j);   // 種類の表から呼ばれる
     std::unique_ptr<EffectPart> Spawn(const SpawnAt& at) const override;
@@ -45,6 +47,7 @@ private:
         XMFLOAT3 pos, vel, origin;   // origin＝出た位置（伸ばす粒の尾を、ここより後ろへ伸ばさない）
         float life, lifeMax;
         float seed;                  // 粒ごとの乱数（ノイズの模様をずらす）
+        float wait = 0.0f;           // 出るまでの待ち（emitTime）。待っている間は動かさず描かない
     };
     const BurstDef& m_def;           // 色・重力などは全部の粒で同じなので、データを見に行く（データは起動中ずっと残る）
     ID3D11ShaderResourceView* m_tex = nullptr;

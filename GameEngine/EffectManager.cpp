@@ -20,6 +20,11 @@ int EffectManager::Play(const std::string& id, float x, float y, float z, float 
     return handle;
 }
 
+int EffectManager::PlayAround(const std::string& id, float x, float y, float z, float radiusCells, float rot, float delay, XMFLOAT4 tint)
+{
+    return Play(id, x, y, z, rot, delay, tint, radiusCells / AROUND_BASE_CELLS);
+}
+
 int EffectManager::PlayFrom(const std::string& id, const XMFLOAT3& from, const XMFLOAT3& to)
 {
     int handle = s_nextHandle++;
@@ -90,6 +95,7 @@ void EffectManager::Draw(Renderer3D* r, EffectLayer layer)
     XMStoreFloat3(&s_cam.camFwd, inv.r[2]);
     XMStoreFloat3(&s_cam.camPos, inv.r[3]);
     s_cam.hasCam = true;
+    r->SetDepthEnabled(false);   // 演出は奥行きで隠し合わない（前後は描く順番と層で決める）。種類ごとに切り替えない
     for (auto& p : s_parts) p->Draw(r, layer);   // どの順番で何を描くかは、種類が決める
 }
 

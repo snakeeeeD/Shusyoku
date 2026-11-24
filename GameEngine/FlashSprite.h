@@ -26,6 +26,7 @@ struct FlashSpriteDef : EffectPartDef
     float glitch = 0.0f;               // 0より大きいと、水色と赤紫のコピーを左右にぶらして重ねる（グリッチ。ずらす幅＝ワールド）
     float offsetX = 0.0f, offsetY = 0.0f;   // 出す所を、画面の右・上へずらす（ワールド。プレイヤーの横に裂け目を開く時など）
     float spin = 0.0f;                 // 出ている間、画面の中で回し続ける速さ（度/秒。渦など。0＝回さない）
+    bool atFrom = false;               // true なら飛び始め（PlayFrom の from）に出す（列の端の裂け目など）
 
     static std::unique_ptr<EffectPartDef> Load(const nlohmann::json& j);   // 種類の表から呼ばれる
     std::unique_ptr<EffectPart> Spawn(const SpawnAt& at) const override;

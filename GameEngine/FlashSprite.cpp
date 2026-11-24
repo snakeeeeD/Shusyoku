@@ -26,6 +26,7 @@ std::unique_ptr<EffectPartDef> FlashSpriteDef::Load(const nlohmann::json& j)
     d->offsetX = j.value("offsetX", d->offsetX);
     d->offsetY = j.value("offsetY", d->offsetY);
     d->spin = j.value("spin", d->spin);
+    d->atFrom = j.value("atFrom", d->atFrom);
     if (d->openTime > 0.0f) d->life = (std::max)(0.01f, d->openTime + d->holdTime + d->closeTime);   // 開閉の動きは、その合計が寿命
     if (j.contains("color"))
     {
@@ -44,7 +45,7 @@ std::unique_ptr<EffectPart> FlashSpriteDef::Spawn(const SpawnAt& at) const
 FlashSprite::FlashSprite(const FlashSpriteDef& def, const SpawnAt& at) : m_def(def)
 {
     m_tex = TextureManager::Get(def.texture);
-    m_pos = XMFLOAT3(at.x, at.y, at.z);
+    m_pos = (def.atFrom && at.hasFrom) ? at.from : XMFLOAT3(at.x, at.y, at.z);   // 飛び始めに出す（裂け目など）か、着く所に出すか
     m_color = XMFLOAT4(def.color.x * at.tint.x, def.color.y * at.tint.y, def.color.z * at.tint.z, def.color.w * at.tint.w);
     m_scale = at.scale;
     m_elapsed = -def.delay;
@@ -114,7 +115,6 @@ void FlashSprite::Draw(Renderer3D* r, EffectLayer layer)
     }
     if (w <= 0.0f) return;
     if (m_def.additive) r->SetAdditive(true);
-    r->SetDepthEnabled(false);   // 体に食い込んでも隠れないように（前後は描く順番で決める）
     if (m_def.glitch > 0.0f)     // グリッチ：水色と赤紫のコピーを左右にずらして重ね、1フレームごとに逆へぶらす
     {
         float j = m_def.glitch * m_scale * (((int)(m_elapsed * 60.0f) % 2) ? 1.0f : -0.7f);
@@ -122,7 +122,6 @@ void FlashSprite::Draw(Renderer3D* r, EffectLayer layer)
         DrawQuadAt(r, j, w, h, XMFLOAT4(c.x, c.y * 0.2f, c.z * 0.9f, c.w * 0.45f));
     }
     DrawQuadAt(r, 0.0f, w, h, c);
-    r->SetDepthEnabled(true);
     if (m_def.additive) r->SetAdditive(false);
 }
 

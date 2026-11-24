@@ -42,6 +42,7 @@ void Enemy::Init(const std::string& id)
 	m_textureName = data->textureName;
     m_gridShape = data->gridShape;
     m_drawZ = data->drawZ;
+    m_mouthX = data->mouthX; m_mouthY = data->mouthY;
     m_isSnake = data->snake;
     m_feel.SetStyle(MoveFeel::StyleFromName(data->moveStyle));
 }
@@ -127,6 +128,19 @@ bool Enemy::RemoveOverlay(const std::string& t)
 }
 
 // プレイヤーの方を向く。画像は左向きが基準なので、右にいる時だけ反転する
+// 絵の中の点のワールド座標。絵の板は足元が基準で、上方向は (0, cos, sin)（カメラの方へ傾けてある）
+XMFLOAT3 Enemy::SpritePoint(float lx, float ly) const
+{
+    const float pitch = XMConvertToRadians(Renderer3D::GetBillboardPitch());
+    return XMFLOAT3(worldX + lx * width, worldY + ly * height * cosf(pitch), worldZ + m_drawZ + ly * height * sinf(pitch));
+}
+
+// 口の位置。絵は左向き（-x）が基準なので、右を向いている時は反対側
+XMFLOAT3 Enemy::MouthWorld() const
+{
+    return SpritePoint((m_faceRight ? 1.0f : -1.0f) * m_mouthX, m_mouthY);
+}
+
 void Enemy::FaceToward(float targetX)
 {
     if (m_isBoss) return;                           // ボスは向き固定
@@ -1073,15 +1087,14 @@ void Enemy::UpdateDeath(float deltaTime)
     float p = (m_deathTimer - DEATH_FLASH) / DEATH_DISSOLVE;
     if (p <= 0.0f || p >= 0.95f) return;
     m_emberTimer -= deltaTime;
-    const float pitch = XMConvertToRadians(Renderer3D::GetBillboardPitch());   // 絵の板の傾き（板の上方向＝(0, cos, sin)）
     while (m_emberTimer <= 0.0f)
     {
         m_emberTimer += EMBER_STEP;
         float lx = ((float)rand() / RAND_MAX - 0.5f) * 0.7f;                  // 絵の横幅の真ん中7割
         float ly = 1.0f - p - ((float)rand() / RAND_MAX - 0.3f) * 0.5f;       // 今溶けているあたりの高さ（1＝頭、0＝足）
         ly = (std::max)(0.0f, (std::min)(1.0f, ly));
-        EffectManager::Play("death_ember", worldX + lx * width,
-            worldY + ly * height * cosf(pitch), worldZ + m_drawZ + ly * height * sinf(pitch));
+        XMFLOAT3 p = SpritePoint(lx, ly);
+        EffectManager::Play("death_ember", p.x, p.y, p.z);
     }
 }
 
@@ -1262,14 +1275,9 @@ void Enemy::GrowCoil(GridMap* gridMap, int steps, Player* player)
     if (!m_isSnake || m_spiral.empty()) return;
     if (m_buffManager.HasBuff(BuffType::Root)) return;   // 拘束中は巻きつきも、まるのみの準備も止まる
 
-    // 中央到達後は伸ばさず、数ターン待ってからフィニッシャー解禁
-    if (m_coilReached)
-    {
-        if (++m_coilStuck >= 4) m_coilComplete = true;   // この 2 を増やすほど遅い
-    }
-
     m_hitPart = HitPart::None;                       // とぐろ移動の罠は2倍対象外
     std::vector<std::pair<float, float>> pts;
+    bool boxedIn = false;   // プレイヤーを押せなかった（周りが全部ふさがっていて、もう逃げ場がない）
     for (int s = 0; s < steps; s++)
     {
         if (m_spiralIdx + 1 >= (int)m_spiral.size()) break;
@@ -1280,7 +1288,7 @@ void Enemy::GrowCoil(GridMap* gridMap, int steps, Player* player)
         if (t == CellType::Player)
         {
             if (player) player->TakeDamage(8);              // 轢かれダメージ（攻撃とは別）
-            if (!PushPlayerToCenter(gridMap, player)) break;
+            if (!PushPlayerToCenter(gridMap, player)) { boxedIn = true; break; }   // 押せない＝プレイヤーは周りを全部ふさがれていて動けない
         }
         // 以降、頭を nx へ進める（既存のまま）
         QueueSnakeOp(true, nx);
@@ -1297,6 +1305,11 @@ void Enemy::GrowCoil(GridMap* gridMap, int steps, Player* player)
     }
     if (!pts.empty())                          // 首を戻す歩きの続きにつなぐ（合わせた距離で速さを決める）
         AppendWalk(pts, SnakeStepDur((int)(m_walkPoints.size() + pts.size()), 0.1f));
+
+    // もう進めない（渦の最後のマスまで来た／次のマスが壁／プレイヤーが囲まれて押せない）と分かったら、次のターンにまるのみ（フィニッシャー解禁）
+    bool atEnd = (m_spiralIdx + 1 >= (int)m_spiral.size());
+    bool walled = !atEnd && gridMap->GetCell(m_spiral[m_spiralIdx + 1].first, m_spiral[m_spiralIdx + 1].second).type == CellType::Wall;
+    if (atEnd || walled || boxedIn) m_coilComplete = true;
 }
 
 // 頭からプレイヤーのマスまでの経路（空きマスだけを通る、最大8マス）

@@ -126,6 +126,7 @@
         },
         {
           "description": "薙ぎ払い、{0}ダメージ、攻撃力↑付与",
+          "aroundVfx": "sweep",
           "areaVfx": "atk_slash",
           "vfx": "slash",
           "target": {
@@ -458,6 +459,7 @@
       "id": "dragon",
       "moveStyle": "float",
       "texture": "enemy_dragon_red",
+      "mouth": [ 0.22, 0.55 ],
       "gridShape": [
         [
           0,
@@ -482,7 +484,7 @@
       "isBoss": true,
       "actions": [
         {
-          "description": "噛みつき、{0}ダメージ",
+          "description": "噛みつき、{0}ダメージ、弱体{1}付与",
           "areaVfx": "atk_smash",
           "hitVfx": "bite",
           "target": {
@@ -493,6 +495,12 @@
             {
               "kind": "Damage",
               "value": 18
+            },
+            {
+              "kind": "Debuff",
+              "buff": "Vulnerable",
+              "value": 2,
+              "duration": 2
             }
           ],
           "select": {
@@ -501,6 +509,7 @@
         },
         {
           "description": "炎ブレス、{0}ダメージ、火傷{1}付与",
+          "originVfx": "breath_fire",
           "areaVfx": "atk_fire",
           "target": {
             "rangeType": "Cone",
@@ -525,6 +534,7 @@
         },
         {
           "description": "尾なぎ払い、{0}ダメージ、ノックバック",
+          "aroundVfx": "sweep",
           "areaVfx": "atk_slash",
           "target": {
             "rangeType": "Area",
@@ -546,6 +556,7 @@
         },
         {
           "description": "灼熱のブレス、{0}ダメージ、火傷{1}付与、床設置",
+          "originVfx": "breath_fire",
           "areaVfx": "atk_fire",
           "target": {
             "rangeType": "Cone",
@@ -623,13 +634,19 @@
           }
         },
         {
-          "description": "滅びの息吹、{0}ダメージ、弱体{1}付与",
+          "description": "滅びの息吹、{0}ダメージ、火傷{1}付与",
+          "originVfx": "breath_nova",
+          "windupVfx": "charge_fire",
+          "windup": 1.0,
+          "windupAt": "mouth",
+          "aroundVfx": "nova_fire",
+          "waveTime": 0.6,
+          "hitVfx": "explosion",
           "areaVfx": "atk_fire",
           "target": {
             "rangeType": "Area",
             "range": 3
           },
-          "vfx": "explosion",
           "effects": [
             {
               "kind": "Damage",
@@ -637,8 +654,8 @@
             },
             {
               "kind": "Debuff",
-              "buff": "Vulnerable",
-              "value": 2,
+              "buff": "Burn",
+              "value": 3,
               "duration": 2
             }
           ],
@@ -689,6 +706,7 @@
         },
         {
           "description": "薙ぎ払い、{0}ダメージ",
+          "aroundVfx": "sweep",
           "areaVfx": "atk_slash",
           "target": {
             "rangeType": "Area",
@@ -920,6 +938,7 @@
         },
         {
           "description": "薙ぎ払い、{0}ダメージ",
+          "aroundVfx": "sweep",
           "areaVfx": "atk_slash",
           "target": {
             "rangeType": "Area",
@@ -934,6 +953,7 @@
         },
         {
           "description": "咆哮、攻撃力↑付与",
+          "selfVfx": "roar",
           "target": {
             "rangeType": "None"
           },
@@ -1774,6 +1794,7 @@
         },
         {
           "description": "遠吠え、捨て札にノイズ",
+          "selfVfx": "roar",
           "target": {
             "rangeType": "None",
             "range": 1
@@ -1792,6 +1813,7 @@
         },
         {
           "description": "唸る、攻撃力↑付与",
+          "selfVfx": "roar",
           "target": {
             "rangeType": "None"
           },
@@ -1862,6 +1884,7 @@
         },
         {
           "description": "甲高い声、手札に過負荷",
+          "selfVfx": "shriek",
           "target": {
             "rangeType": "None",
             "range": 1
@@ -1919,6 +1942,7 @@
         },
         {
           "description": "酸を吐く、{0}ダメージ、弱体{1}付与",
+          "originVfx": "spit_acid",
           "areaVfx": "atk_poison",
           "target": {
             "rangeType": "Cross",
@@ -2080,6 +2104,7 @@
         },
         {
           "description": "糸を吐く、{0}ダメージ、脱力{1}付与",
+          "originVfx": "spit_web",
           "areaVfx": "atk_web",
           "target": {
             "rangeType": "Cross",
@@ -2170,6 +2195,7 @@
         },
         {
           "description": "怒りの咆哮、{0}ダメージ、攻撃力↑付与",
+          "selfVfx": "shriek",
           "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Area",
@@ -3007,6 +3033,7 @@
     {
       "id": "orochi",
       "texture": "snake_head",
+      "mouth": [ 0.0, 0.1 ],
       "isBoss": true,
       "hp": 450,
       "width": 1.4,
@@ -3020,6 +3047,7 @@
       "actions": [
         {
           "description": "薙ぎ払い、{0}ダメージ、ノックバック",
+          "aroundVfx": "sweep",
           "areaVfx": "atk_slash",
           "target": {
             "rangeType": "Area",
@@ -3047,12 +3075,15 @@
         },
         {
           "description": "毒噴き、{0}ダメージ、毒{1}付与",
+          "originVfx": "breath_poison",
+          "aroundVfx": "nova_poison",
+          "waveTime": 0.5,
+          "hitVfx": "poison",
           "areaVfx": "atk_poison",
           "target": {
             "rangeType": "Area",
             "range": 2
           },
-          "vfx": "poison",
           "effects": [
             {
               "kind": "Damage",
@@ -3077,7 +3108,7 @@
         },
         {
           "description": "ウロコ飛ばし、{0}ダメージ、毒{1}付与",
-          "areaVfx": "atk_poison",
+          "areaVfx": "scale_stab",
           "target": {
             "rangeType": "Column",
             "anchor": "player"
@@ -3105,7 +3136,7 @@
         },
         {
           "description": "ウロコ飛ばし、{0}ダメージ、毒{1}付与",
-          "areaVfx": "atk_poison",
+          "areaVfx": "scale_stab",
           "target": {
             "rangeType": "Row",
             "anchor": "player"
@@ -3133,6 +3164,7 @@
         },
         {
           "description": "絞め上げ、{0}ダメージ×3",
+          "hitVfx": "squeeze",
           "areaVfx": "atk_smash",
           "target": {
             "rangeType": "Square",
@@ -3151,11 +3183,16 @@
             }
           ],
           "select": {
-            "chance": 30
+            "condition": "near",
+            "conditionValue": 1,
+            "chance": 50
           }
         },
         {
           "description": "まるのみ、{0}ダメージ",
+          "windupVfx": "devour",
+          "windup": 0.9,
+          "hitVfx": "devour_snap",
           "target": {
             "rangeType": "Area",
             "range": 6,
@@ -3260,6 +3297,7 @@
         },
         {
           "description": "威嚇、反射付与",
+          "selfVfx": "roar",
           "target": {
             "rangeType": "None",
             "range": 1
@@ -3750,6 +3788,7 @@
         },
         {
           "description": "遠吠え、攻撃力↑付与",
+          "selfVfx": "roar",
           "target": {
             "rangeType": "None",
             "range": 1
@@ -3899,6 +3938,7 @@
         },
         {
           "description": "咆哮弾、{0}ダメージ、弱体{1}付与",
+          "selfVfx": "roar",
           "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Area",
@@ -4363,6 +4403,7 @@
       "actions": [
         {
           "description": "楔を強化する",
+          "allyVfx": "orb_ally",
           "target": {
             "rangeType": "None"
           },
@@ -4382,6 +4423,7 @@
         },
         {
           "description": "めまい、山札にノイズ",
+          "selfVfx": "glitch_ring",
           "target": {
             "rangeType": "None"
           },
@@ -4400,7 +4442,12 @@
         },
         {
           "description": "次元崩し、{0}ダメージ",
-          "areaVfx": "atk_magic",
+          "windupVfx": "void_implode",
+          "windup": 0.35,
+          "windupAt": "self",
+          "aroundVfx": "nova_void",
+          "waveTime": 0.5,
+          "areaVfx": "void_pop",
           "target": {
             "rangeType": "Area",
             "range": 3
@@ -4442,8 +4489,8 @@
           }
         },
         {
-          "description": "領域崩落",
-          "areaVfx": "atk_magic",
+          "description": "領域崩落、{0}ダメージ",
+          "areaVfx": "void_pillar",
           "target": {
             "rangeType": "Grid",
             "range": 3,
@@ -4462,7 +4509,11 @@
         },
         {
           "description": "次元十字、{0}ダメージ",
-          "areaVfx": "atk_magic",
+          "windupVfx": "dim_beam",
+          "windup": 0.35,
+          "windupAt": "line",
+          "waveTime": 0.35,
+          "areaVfx": "explosion",
           "target": {
             "rangeType": "Column",
             "anchor": "player"
@@ -4486,6 +4537,7 @@
         },
         {
           "description": "次元圧壊、{0}ダメージ×3",
+          "hitVfx": "void_crush",
           "areaVfx": "atk_magic",
           "target": {
             "rangeType": "Square",
@@ -4506,7 +4558,7 @@
         },
         {
           "description": "双柱、{0}ダメージ",
-          "areaVfx": "atk_magic",
+          "areaVfx": "void_pillar",
           "target": {
             "rangeType": "Column",
             "anchor": "fixed",

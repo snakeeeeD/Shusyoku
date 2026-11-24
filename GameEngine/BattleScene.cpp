@@ -882,6 +882,17 @@ void BattleScene::Update(float deltaTime)
                 (c - m_gridMap->GetCols() / 2.0f) * 1.1f + ox, 0.05f,
                 (r - m_gridMap->GetRows() / 2.0f) * 1.1f + oz);
         }
+    // 背景テーマの空気に舞う粒（ドラゴンのステージの火の粉など）。盤面より少し広い範囲の地面から、1秒に ambientRate 個くらい
+    {
+        const BattleTheme th = CurrentTheme();
+        if (th.ambientFx && (float)rand() / RAND_MAX < deltaTime * th.ambientRate)
+        {
+            float hx = m_gridMap->GetCols() * 1.1f * 0.5f + 1.5f, hz = m_gridMap->GetRows() * 1.1f * 0.5f + 1.0f;
+            float x = ((float)rand() / RAND_MAX * 2.0f - 1.0f) * hx;
+            float z = ((float)rand() / RAND_MAX * 2.0f - 1.0f) * hz;
+            EffectManager::Play(th.ambientFx, x, 0.05f, z);
+        }
+    }
     UpdateBossGimmick();   // 3層ボス：楔の生存で無敵/覚醒を制御
     if (m_awakenCinematic > 0.0f)
     {
@@ -1499,7 +1510,22 @@ void BattleScene::Update(float deltaTime)
                     float wz = (ar - m_gridMap->GetRows() / 2.0f) * 1.1f;
                     // 飛び道具は敵の体の真ん中から飛ばす（飛び始めを使わない演出は、今までどおり wx,0.5,wz に出る）
                     XMFLOAT3 from(enemy->worldX, enemy->worldY + enemy->height * 0.5f, enemy->worldZ);
-                    m_windupHandle = EffectManager::PlayFrom(wa->windupVfx, from, XMFLOAT3(wx, 0.5f, wz));
+                    XMFLOAT3 mouth, ln, lf; float mrot;
+                    if (wa->windupAt == WindupAt::Mouth && EnemyMouth(enemy, *wa, tC, tR, mouth, mrot))   // 口に集める（滅びの息吹のタメ）
+                        m_windupHandle = EffectManager::Play(wa->windupVfx, mouth.x, mouth.y, mouth.z, mrot);
+                    else if (wa->windupAt == WindupAt::Line)   // 列の端から端へ（次元十字の裂け目とビーム）。縦・横の列ごとに1本
+                    {
+                        auto playLine = [&](const TargetSpec& tg) {
+                            if (LineEnds(enemy, tg, tC, tR, enemy->gridCol, enemy->gridRow, ln, lf))
+                                m_windupHandle = EffectManager::PlayFrom(wa->windupVfx, ln, lf);
+                        };
+                        playLine(wa->target);
+                        for (auto& tg : wa->extraTargets) playLine(tg);
+                    }
+                    else if (wa->windupAt == WindupAt::Self)   // 敵自身（次元崩しの吸い込み）
+                        m_windupHandle = EffectManager::Play(wa->windupVfx, from.x, from.y, from.z);
+                    else
+                        m_windupHandle = EffectManager::PlayFrom(wa->windupVfx, from, XMFLOAT3(wx, 0.5f, wz));
                     m_windupPlayed = true;
                     m_windupTimer = wa->windup;
                     break;
@@ -1554,8 +1580,13 @@ void BattleScene::Update(float deltaTime)
                     ScreenShake::Add(0.35f);
                 }
 
+                if (wa && !wa->originVfx.empty()) PlayEnemyOriginFx(enemy, *wa, tC, tR);   // 口から吐く（当たり外れに関係なし）
+                if (wa && !wa->allyVfx.empty())   // 味方に向けて飛ばす（楔を強化する）。体の真ん中から体の真ん中へ
+                    for (auto* o : m_enemies)
+                        if (o != enemy && o->GetHp() > 0 && !o->IsDying())
+                            EffectManager::PlayFrom(wa->allyVfx, enemy->SpritePoint(0.0f, 0.5f), o->SpritePoint(0.0f, 0.5f));
                 // 攻撃範囲に演出（当たり外れに関わらず出す）。hitVfx がある攻撃は、当たったら命中の演出（1発ごと）に任せる
-                if (wa && !(damage > 0 && !wa->hitVfx.empty())) PlayEnemyAreaFx(enemy, *wa, tC, tR, preCol, preRow, preCells);
+                if (wa && (!wa->aroundVfx.empty() || !(damage > 0 && !wa->hitVfx.empty()))) PlayEnemyAreaFx(enemy, *wa, tC, tR, preCol, preRow, preCells);
 
                 for (auto& pc : enemy->PendingCurses())
                 {
@@ -1589,12 +1620,15 @@ void BattleScene::Update(float deltaTime)
                 bool multiHit = false;   // この攻撃が多段か（多段は Update の順番待ちで1発ずつ）
                 if (damage > 0)
                 {
-                    if (enemy->GetLastHitCount() > 1)
+                    float waveDelay = (wa && wa->waveTime > 0.0f) ? WaveArrival(enemy, *wa, tC, tR, preCol, preRow, CellWX(m_playerCol), CellWZ(m_playerRow)) : 0.0f;
+                    if (enemy->GetLastHitCount() > 1 || waveDelay > 0.0f)
                     {
-                        // 多段：1発ずつ時間差で適用（状態異常は最後の1発の後）
-                        std::vector<EnemyHit> hits(enemy->GetLastHitCount(), EnemyHit{ enemy, enemy->GetLastHitDamage(), false, wa ? wa->hitVfx : std::string() });
+                        // 多段：1発ずつ時間差で適用／広がる波：波がプレイヤーに届いた時に（状態異常は最後の1発の後）
+                        int n = (std::max)(1, enemy->GetLastHitCount());
+                        int each = (n > 1) ? enemy->GetLastHitDamage() : damage;
+                        std::vector<EnemyHit> hits(n, EnemyHit{ enemy, each, false, wa ? wa->hitVfx : std::string() });
                         hits.back().last = true;
-                        m_enemyHits.Start(std::move(hits));
+                        m_enemyHits.Start(std::move(hits), waveDelay);
                         multiHit = true;
                     }
                     else
@@ -1700,7 +1734,7 @@ void BattleScene::Update(float deltaTime)
                 for (auto enemy : m_enemies)
                     if (enemy->IsMoving() || enemy->IsLunging() || enemy->IsJumping()) anyMoving = true;
 
-                if (m_enemyActionDelay <= 0 && !anyMoving && m_coilTraps.Empty())
+                if (m_enemyActionDelay <= 0 && !anyMoving && m_coilTraps.Empty() && m_enemyHits.Empty())   // 連撃・波のダメージが全部入ってから次へ
                 {
                     Enemy* enemy = (m_currentEnemyIdx < (int)m_enemies.size())
                         ? m_enemies[m_currentEnemyIdx] : nullptr;
@@ -1848,24 +1882,20 @@ void BattleScene::PlayEnemyAreaFx(Enemy* enemy, const EnemyAction& a, int tC, in
     bool radial = (rt == RangeType::Area || rt == RangeType::Square || rt == RangeType::Diamond);
     if (radial && range >= SHOCK_MIN_RANGE && !isDash && a.impactVfx.empty())   // 着弾の演出（隕石の爆発など）がある攻撃は、そちらに任せる
     {
-        const float SHOCK_BASE_CELLS = 1.5f;   // effects.json の enemy_shock は、中心から1.5マス（周り1マス）の大きさで作ってある
-        float cx, cz, body = 0.0f;
-        if (a.target.anchor != AnchorType::Self)   // 範囲の中心が、狙ったマスや決まったマス
+        float cx, cz, body;
+        AroundCenter(enemy, a, tC, tR, preCol, preRow, cx, cz, body);
+        if (!a.aroundVfx.empty())              // なぎ払いなど：衝撃波の代わりに、範囲の外の縁まで届く大きさで1つ（回り始めはランダム）
         {
-            int ac, ar; enemy->GetAnchorCell(a, tC, tR, ac, ar);
-            cx = CellWX(ac); cz = CellWZ(ar);
-        }
-        else                                       // 範囲の中心が、敵自身（2*2 なら体の中心。体の幅のぶん範囲も広い）
-        {
-            enemy->CenterWorld(preCol, preRow, m_gridMap, cx, cz);   // 動く前の位置（予告の範囲の中心）
-            int lo = 0, hi = 0;
-            for (auto& [dc, dr] : enemy->GetGridShape()) { lo = (std::min)(lo, dc); hi = (std::max)(hi, dc); }
-            body = (hi - lo) * 0.5f;
+            EffectManager::PlayAround(a.aroundVfx, cx, 0.5f, cz, range + 0.5f + body, (float)rand() / RAND_MAX * XM_2PI);
+            if (a.waveTime > 0.0f && !a.areaVfx.empty())   // 広がる波：範囲のマスが、波の届いた順に（滅びの息吹の炎）
+                for (auto& [c, r] : preCells)
+                    EffectManager::Play(a.areaVfx, CellWX(c), 0.15f, CellWZ(r), 0.0f,
+                        WaveArrival(enemy, a, tC, tR, preCol, preRow, CellWX(c), CellWZ(r)));
+            return;
         }
         const float WAVE_GAP = 0.12f;          // 波と波の間の秒数
         for (int k = 1; k <= range; k++)       // 範囲1マスごとに波を1つ。k マス目まで届く大きさで、少しずつ遅らせて外へ重ねる
-            EffectManager::Play("enemy_shock", cx, 0.5f, cz, 0.0f, WAVE_GAP * (k - 1), enemy->hueColor,
-                (k + 0.5f + body) / SHOCK_BASE_CELLS);
+            EffectManager::PlayAround("enemy_shock", cx, 0.5f, cz, k + 0.5f + body, 0.0f, WAVE_GAP * (k - 1), enemy->hueColor);
         return;
     }
 
@@ -1878,8 +1908,101 @@ void BattleScene::PlayEnemyAreaFx(Enemy* enemy, const EnemyAction& a, int tC, in
         int c = cells[k].first, r = cells[k].second;
         int d = isDash ? k                                     // 走った順に尾を引く
             : abs(c - preCol) + abs(r - preRow);
-        EffectManager::Play(afx, CellWX(c), 0.15f, CellWZ(r), 0.0f, step * d);
+        float delay = (a.waveTime > 0.0f && !isDash) ? WaveArrival(enemy, a, tC, tR, preCol, preRow, CellWX(c), CellWZ(r))   // 波：ダメージと同じ時間
+                                                      : step * d;
+        EffectManager::Play(afx, CellWX(c), 0.15f, CellWZ(r), 0.0f, delay);
     }
+}
+
+// 敵の口の位置と向き。位置は絵の口（enemies.json の mouth）、向きは扇なら扇の向き、ほかは口から狙ったマスの方。向きが無ければ false
+bool BattleScene::EnemyMouth(Enemy* enemy, const EnemyAction& a, int tC, int tR, XMFLOAT3& pos, float& rot)
+{
+    pos = enemy->MouthWorld();
+    float ux, uz;
+    if (a.target.rangeType == RangeType::Cone) { ux = (float)enemy->GetAimDx(); uz = (float)enemy->GetAimDy(); }
+    else { ux = CellWX(tC) - pos.x; uz = CellWZ(tR) - pos.z; }
+    if (ux * ux + uz * uz < 0.000001f) return false;   // 向きが無い
+    rot = atan2f(ux, uz);
+    return true;
+}
+
+// 敵の口から攻撃の向きへ出す演出（originVfx）
+void BattleScene::PlayEnemyOriginFx(Enemy* enemy, const EnemyAction& a, int tC, int tR)
+{
+    XMFLOAT3 p; float rot;
+    if (EnemyMouth(enemy, a, tC, tR, p, rot)) EffectManager::Play(a.originVfx, p.x, p.y, p.z, rot);
+}
+
+// 周り全体の攻撃の中心と、体の大きさ（マス数の半分）。範囲の外の縁＝中心から (範囲 + 0.5 + body) マス
+void BattleScene::AroundCenter(Enemy* enemy, const EnemyAction& a, int tC, int tR, int preCol, int preRow,
+    float& cx, float& cz, float& body)
+{
+    body = 0.0f;
+    if (a.target.anchor != AnchorType::Self)   // 範囲の中心が、狙ったマスや決まったマス
+    {
+        int ac, ar; enemy->GetAnchorCell(a, tC, tR, ac, ar);
+        cx = CellWX(ac); cz = CellWZ(ar);
+    }
+    else                                       // 範囲の中心が、敵自身（2*2 なら体の中心。体の幅のぶん範囲も広い）
+    {
+        enemy->CenterWorld(preCol, preRow, m_gridMap, cx, cz);   // 動く前の位置（予告の範囲の中心）
+        int lo = 0, hi = 0;
+        for (auto& [dc, dr] : enemy->GetGridShape()) { lo = (std::min)(lo, dc); hi = (std::max)(hi, dc); }
+        body = (hi - lo) * 0.5f;
+    }
+}
+
+// 縦・横1列の攻撃の、敵に近い端と遠い端（ワールド。盤の外へ少しはみ出す）。列の攻撃でなければ false
+bool BattleScene::LineEnds(Enemy* enemy, const TargetSpec& tg, int tC, int tR, int preCol, int preRow, XMFLOAT3& nearEnd, XMFLOAT3& farEnd)
+{
+    RangeType rt = tg.rangeType;
+    if (rt != RangeType::Column && rt != RangeType::Row) return false;
+    int ac, ar; enemy->GetAnchorCell(tg, tC, tR, ac, ar);
+    if (tg.anchor == AnchorType::Self) { ac = preCol; ar = preRow; }   // 敵自身の列
+    float cx, cz; enemy->CenterWorld(preCol, preRow, m_gridMap, cx, cz);
+    const float EDGE_OUT = 0.6f * 1.1f;   // 盤の端から外へ（裂け目を盤の外に開く）。OUT は Windows のマクロなので使わない
+    XMFLOAT3 e0, e1;
+    if (rt == RangeType::Column)
+    {
+        e0 = XMFLOAT3(CellWX(ac), 0.5f, CellWZ(0) - EDGE_OUT);
+        e1 = XMFLOAT3(CellWX(ac), 0.5f, CellWZ(m_gridMap->GetRows() - 1) + EDGE_OUT);
+    }
+    else
+    {
+        e0 = XMFLOAT3(CellWX(0) - EDGE_OUT, 0.5f, CellWZ(ar));
+        e1 = XMFLOAT3(CellWX(m_gridMap->GetCols() - 1) + EDGE_OUT, 0.5f, CellWZ(ar));
+    }
+    float d0 = (e0.x - cx) * (e0.x - cx) + (e0.z - cz) * (e0.z - cz);
+    float d1 = (e1.x - cx) * (e1.x - cx) + (e1.z - cz) * (e1.z - cz);
+    nearEnd = (d0 <= d1) ? e0 : e1;
+    farEnd = (d0 <= d1) ? e1 : e0;
+    return true;
+}
+
+// 周りに広がる波（aroundVfx）が (x, z) に届くまでの秒数（プレイヤーへのダメージ・マスの炎で共通）。波は waveTime 秒で、範囲の外の縁まで一定の速さで広がる
+float BattleScene::WaveArrival(Enemy* enemy, const EnemyAction& a, int tC, int tR, int preCol, int preRow, float x, float z)
+{
+    // 列の攻撃：(x, z) を通る列ごとに、敵に近い端からの割合×waveTime。いちばん早く届く列の時間（十字の交わる所は早い方）
+    float onLine = -1.0f, nearest = -1.0f;
+    auto lineT = [&](const TargetSpec& tg) {
+        XMFLOAT3 ne, fe;
+        if (!LineEnds(enemy, tg, tC, tR, preCol, preRow, ne, fe)) return;
+        float lx = fe.x - ne.x, lz = fe.z - ne.z;
+        float u = ((x - ne.x) * lx + (z - ne.z) * lz) / (lx * lx + lz * lz);
+        float d = a.waveTime * (std::max)(0.0f, (std::min)(1.0f, u));
+        float off = (tg.rangeType == RangeType::Column) ? fabsf(x - ne.x) : fabsf(z - ne.z);   // 列からの横のずれ
+        if (off < 0.55f && (onLine < 0.0f || d < onLine)) onLine = d;
+        if (nearest < 0.0f || d < nearest) nearest = d;
+    };
+    lineT(a.target);
+    for (auto& tg : a.extraTargets) lineT(tg);
+    if (nearest >= 0.0f) return (onLine >= 0.0f) ? onLine : nearest;
+    float cx, cz, body;
+    AroundCenter(enemy, a, tC, tR, preCol, preRow, cx, cz, body);
+    int range = a.target.range + enemy->GetBuffManager().GetBuffValue(BuffType::RangeUp);
+    float radius = (range + 0.5f + body) * 1.1f;
+    float dx = x - cx, dz = z - cz;
+    return a.waveTime * (std::min)(1.0f, sqrtf(dx * dx + dz * dz) / radius);
 }
 
 // 敵の攻撃が1発当たるたびの演出（hitVfx）。同じ所に重ならないよう、横の位置と傾きを少しずつ変える

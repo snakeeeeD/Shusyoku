@@ -212,27 +212,268 @@
     },
     {
       "id": "roar",
+      "parts": [
+        { "type": "flash", "texture": "fx_ring", "life": 0.42, "sizeStart": 0.3, "sizeEnd": 2.2, "ease": 3.0, "fadeFrom": 0.25,
+          "color": [ 1.0, 0.86, 0.7, 0.9 ], "additive": true },
+        { "type": "flash", "texture": "fx_ring", "delay": 0.1, "life": 0.42, "sizeStart": 0.3, "sizeEnd": 2.2, "ease": 3.0, "fadeFrom": 0.25,
+          "color": [ 1.0, 0.86, 0.7, 0.9 ], "additive": true },
+        { "type": "flash", "texture": "fx_ring", "delay": 0.2, "life": 0.42, "sizeStart": 0.3, "sizeEnd": 2.2, "ease": 3.0, "fadeFrom": 0.25,
+          "color": [ 1.0, 0.86, 0.7, 0.9 ], "additive": true }
+      ],
       "bursts": [
-        {
-          "count": 70,
-          "speed": 9.0,
-          "life": 0.7,
-          "scale": 0.32,
-          "gravity": 0.0,
-          "drag": 0.015,
-          "colorStart": [ 1.0, 0.35, 0.2, 1.0 ],
-          "colorEnd": [ 0.8, 0.1, 0.0, 0.0 ]
-        },
-        {
-          "count": 40,
-          "speed": 5.0,
-          "life": 0.9,
-          "scale": 0.5,
-          "gravity": 0.0,
-          "drag": 0.03,
-          "colorStart": [ 1.0, 0.7, 0.3, 0.8 ],
-          "colorEnd": [ 0.6, 0.1, 0.0, 0.0 ]
-        }
+        { "count": 10, "speed": 4.0, "life": 0.25, "scale": 0.05, "gravity": 0.0, "drag": 0.0,
+          "colorStart": [ 1.0, 0.9, 0.75, 1.0 ], "colorEnd": [ 1.0, 0.9, 0.75, 0.0 ],
+          "texture": "fx_streak", "stretch": 0.06, "spread": "screen", "center": true }
+      ]
+    },
+    {
+      "id": "shriek",
+      "parts": [
+        { "type": "flash", "texture": "fx_ring", "life": 0.3, "sizeStart": 0.2, "sizeEnd": 1.6, "ease": 2.0, "fadeFrom": 0.2,
+          "color": [ 0.75, 0.95, 1.0, 0.8 ], "additive": true },
+        { "type": "flash", "texture": "fx_ring", "delay": 0.06, "life": 0.3, "sizeStart": 0.2, "sizeEnd": 1.6, "ease": 2.0, "fadeFrom": 0.2,
+          "color": [ 0.75, 0.95, 1.0, 0.8 ], "additive": true },
+        { "type": "flash", "texture": "fx_ring", "delay": 0.12, "life": 0.3, "sizeStart": 0.2, "sizeEnd": 1.6, "ease": 2.0, "fadeFrom": 0.2,
+          "color": [ 0.75, 0.95, 1.0, 0.8 ], "additive": true },
+        { "type": "flash", "texture": "fx_ring", "delay": 0.18, "life": 0.3, "sizeStart": 0.2, "sizeEnd": 1.6, "ease": 2.0, "fadeFrom": 0.2,
+          "color": [ 0.75, 0.95, 1.0, 0.8 ], "additive": true },
+        { "type": "flash", "texture": "fx_ring", "delay": 0.24, "life": 0.3, "sizeStart": 0.2, "sizeEnd": 1.6, "ease": 2.0, "fadeFrom": 0.2,
+          "color": [ 0.75, 0.95, 1.0, 0.8 ], "additive": true }
+      ],
+      "bursts": [
+        { "count": 14, "speed": 5.5, "life": 0.18, "scale": 0.04, "gravity": 0.0, "drag": 0.0,
+          "colorStart": [ 0.85, 1.0, 1.0, 1.0 ], "colorEnd": [ 0.85, 1.0, 1.0, 0.0 ],
+          "texture": "fx_streak", "stretch": 0.05, "spread": "screen", "center": true }
+      ]
+    },
+    {
+      "id": "breath_fire",
+      "parts": [
+        { "type": "flash", "texture": "fx_muzzle", "life": 0.45, "sizeStart": 0.5, "sizeEnd": 0.7, "ease": 3.0, "fadeFrom": 0.65,
+          "color": [ 1.0, 0.6, 0.2, 1.0 ], "additive": true }
+      ],
+      "bursts": [
+        { "count": 34, "speed": 9.0, "life": 0.5, "scale": 0.7, "gravity": -1.5, "drag": 0.0,
+          "colorStart": [ 1.0, 0.6, 0.2, 1.0 ], "colorEnd": [ 0.6, 0.1, 0.0, 0.0 ],
+          "texture": "fire", "center": true, "spread": "forward", "cone": 38, "coneUp": 4, "emitTime": 0.35 },
+        { "count": 22, "speed": 9.0, "life": 0.5, "scale": 0.03, "gravity": -1.0, "drag": 0.0, "flicker": 0.5,
+          "colorStart": [ 1.0, 0.85, 0.3, 1.0 ], "colorEnd": [ 1.0, 0.35, 0.05, 0.0 ],
+          "texture": "particle", "center": true, "spread": "forward", "cone": 40, "coneUp": 6, "emitTime": 0.35 }
+      ]
+    },
+    {
+      "id": "spit_acid",
+      "bursts": [
+        { "count": 7, "speed": 9.0, "life": 0.45, "scale": 0.08, "gravity": 6.0, "drag": 0.0,
+          "colorStart": [ 0.8, 0.92, 0.25, 1.0 ], "colorEnd": [ 0.6, 0.8, 0.1, 0.6 ],
+          "texture": "particle", "center": true, "spread": "forward", "cone": 6, "coneUp": 12, "emitTime": 0.1 }
+      ]
+    },
+    {
+      "id": "spit_web",
+      "bursts": [
+        { "count": 8, "speed": 11.0, "life": 0.35, "scale": 0.05, "gravity": 0.0, "drag": 0.0,
+          "colorStart": [ 1.0, 1.0, 1.0, 0.95 ], "colorEnd": [ 0.9, 0.9, 0.95, 0.0 ],
+          "texture": "fx_streak", "stretch": 0.06, "center": true, "spread": "forward", "cone": 5, "coneUp": 3, "emitTime": 0.12 }
+      ]
+    },
+    {
+      "id": "sweep",
+      "parts": [
+        { "type": "ring", "texture": "fx_sweep", "life": 0.35, "sizeStart": 3.05, "sizeEnd": 3.3, "ease": 3.0, "fadeFrom": 0.5, "spin": 1000, "y": 0.3,
+          "color": [ 1.0, 0.97, 0.9, 1.0 ], "additive": true },
+        { "type": "ring", "texture": "fx_ring", "life": 0.35, "sizeStart": 0.7, "sizeEnd": 3.3, "ease": 3.0,
+          "color": [ 1.0, 1.0, 1.0, 0.35 ], "additive": true }
+      ]
+    },
+    {
+      "id": "devour",
+      "parts": [
+        { "type": "screenImage", "overUI": true, "texture": "fx_vignette", "fadeIn": 0.5, "life": 2.6, "fadeOut": 0.4, "color": [ 0.0, 0.0, 0.0, 1.0 ] },
+        { "type": "screenImage", "overUI": true, "texture": "fx_devour_top", "rect": [ 0.0, -0.02, 1.0, 0.56 ], "from": [ 0.0, -0.62 ],
+          "delay": 0.1, "moveTime": 0.8, "ease": 3.0, "life": 2.3, "fadeOut": 0.3 },
+        { "type": "screenImage", "overUI": true, "texture": "fx_devour_bottom", "rect": [ 0.0, 0.44, 1.0, 1.02 ], "from": [ 0.0, 0.62 ],
+          "delay": 0.1, "moveTime": 0.8, "ease": 3.0, "life": 2.3, "fadeOut": 0.3 }
+      ]
+    },
+    {
+      "id": "devour_snap",
+      "shake": 0.9,
+      "parts": [
+        { "type": "screenImage", "overUI": true, "texture": "white", "life": 0.25, "fadeOut": 0.25, "color": [ 1.0, 1.0, 1.0, 0.9 ] }
+      ]
+    },
+    {
+      "id": "breath_poison",
+      "bursts": [
+        { "count": 40, "speed": 6.0, "life": 0.6, "scale": 0.6, "gravity": -0.5, "drag": 0.0,
+          "colorStart": [ 0.75, 0.45, 1.0, 0.8 ], "colorEnd": [ 0.45, 0.15, 0.7, 0.0 ],
+          "texture": "smoke", "center": true, "spread": "forward", "cone": 180, "coneUp": 6, "emitTime": 0.4 }
+      ]
+    },
+    {
+      "id": "nova_poison",
+      "parts": [
+        { "type": "ring", "texture": "fx_ring", "life": 0.5, "sizeStart": 0.3, "sizeEnd": 3.3, "ease": 1.0,
+          "color": [ 0.75, 0.45, 1.0, 0.8 ], "additive": true },
+        { "type": "ring", "texture": "fx_ring", "delay": 0.4, "life": 1.0, "sizeStart": 3.0, "sizeEnd": 3.3, "ease": 2.0, "fadeFrom": 0.4, "y": 0.015,
+          "color": [ 0.35, 0.1, 0.5, 0.5 ], "additive": false }
+      ]
+    },
+    {
+      "id": "scale_stab",
+      "then": "scale_stuck", "thenDelay": 0.15,
+      "sheets": [
+        { "texture": "fx_scale", "cols": 1, "rows": 1, "frames": 1, "fps": 6.67, "scale": 0.5, "aspect": 1.5, "yOffset": 0.3,
+          "offset": [ 0.0, 2.4, 0.0 ], "vel": [ 0.0, -16.0, 0.0 ] }
+      ]
+    },
+    {
+      "id": "scale_stuck",
+      "parts": [
+        { "type": "flash", "texture": "fx_scale", "life": 0.6, "sizeStart": 0.5, "sizeEnd": 0.5, "aspect": 1.5, "offsetY": 0.3, "fadeFrom": 0.5 },
+        { "type": "ring", "texture": "fx_ring", "life": 0.3, "sizeStart": 0.2, "sizeEnd": 0.8, "ease": 3.0,
+          "color": [ 0.75, 0.45, 1.0, 0.8 ] }
+      ],
+      "bursts": [
+        { "count": 5, "speed": 1.6, "life": 0.35, "scale": 0.035, "gravity": 6.0, "drag": 0.0,
+          "colorStart": [ 0.75, 0.45, 1.0, 1.0 ], "colorEnd": [ 0.45, 0.15, 0.7, 0.0 ], "texture": "particle", "center": true }
+      ]
+    },
+    {
+      "id": "squeeze",
+      "parts": [
+        { "type": "flash", "texture": "fx_ring", "life": 0.3, "sizeStart": 3.3, "sizeEnd": 1.1, "ease": 3.0, "fadeFrom": 0.3,
+          "color": [ 0.35, 0.75, 0.3, 0.9 ], "additive": true },
+        { "type": "flash", "texture": "particle", "life": 0.12, "sizeStart": 0.6, "sizeEnd": 0.8, "ease": 3.0, "fadeFrom": 0.0,
+          "color": [ 1.0, 1.0, 0.85, 0.9 ], "additive": true }
+      ]
+    },
+    {
+      "id": "void_pillar",
+      "parts": [
+        { "type": "helix", "texture": "fx_trail", "coreTexture": "fx_pillar", "strands": 3, "radius": 0.32, "height": 2.6, "turns": 2.0, "spin": 300,
+          "width": 0.1, "backWidth": 0.55, "backBright": 0.4, "outline": 0.06, "outlineColor": [ 0.1, 0.0, 0.16, 0.9 ],
+          "coreWidth": 0.4, "life": 0.6, "growTime": 0.15, "fadeFrom": 0.4,
+          "color": [ 0.85, 0.55, 1.0, 1.0 ], "coreColor": [ 0.8, 0.5, 1.0, 1.0 ] },
+        { "type": "ring", "texture": "fx_ring", "life": 0.25, "sizeStart": 0.3, "sizeEnd": 1.2, "ease": 3.0, "color": [ 0.7, 0.4, 1.0, 0.9 ], "additive": true }
+      ]
+    },
+    {
+      "id": "dim_beam",
+      "parts": [
+        { "type": "flash", "texture": "deco_rift", "atFrom": true, "openTime": 0.12, "holdTime": 0.65, "closeTime": 0.3,
+          "sizeStart": 1.4, "aspect": 0.6, "color": [ 0.75, 0.45, 1.0, 1.0 ], "additive": true },
+        { "type": "tether", "texture": "fx_trail", "extendTime": 0.35, "maxHold": 0.45, "tileLen": 0.4, "widthBase": 0.55, "widthTip": 0.5, "wave": 0.03,
+          "color": [ 0.7, 0.4, 1.0, 0.9 ], "additive": true },
+        { "type": "tether", "texture": "fx_trail", "extendTime": 0.35, "maxHold": 0.45, "tileLen": 0.4, "widthBase": 0.18, "widthTip": 0.16,
+          "color": [ 1.0, 0.95, 1.0, 1.0 ], "additive": true }
+      ]
+    },
+    {
+      "id": "void_implode",
+      "parts": [
+        { "type": "ring", "texture": "fx_ring", "life": 0.35, "sizeStart": 9.0, "sizeEnd": 1.0, "ease": 2.0, "color": [ 0.15, 0.05, 0.25, 0.9 ], "additive": false },
+        { "type": "flash", "texture": "particle", "life": 0.35, "sizeStart": 0.3, "sizeEnd": 1.6, "ease": 1.0, "fadeFrom": 0.9, "color": [ 0.7, 0.4, 1.0, 1.0 ], "additive": true }
+      ]
+    },
+    {
+      "id": "nova_void",
+      "shake": 1.0,
+      "parts": [
+        { "type": "flash", "texture": "particle", "life": 0.2, "sizeStart": 0.8, "sizeEnd": 1.2, "ease": 3.0, "fadeFrom": 0.0, "color": [ 1.0, 0.85, 1.0, 1.0 ], "additive": true },
+        { "type": "ring", "texture": "fx_ring", "life": 0.5, "sizeStart": 0.3, "sizeEnd": 3.3, "ease": 1.0, "color": [ 0.7, 0.4, 1.0, 1.0 ], "additive": true },
+        { "type": "ring", "texture": "fx_ring", "delay": 0.08, "life": 0.5, "sizeStart": 0.3, "sizeEnd": 3.3, "ease": 1.0, "color": [ 0.3, 0.1, 0.5, 0.8 ], "additive": false }
+      ]
+    },
+    {
+      "id": "void_pop",
+      "parts": [
+        { "type": "flash", "texture": "fx_glitch", "offsetY": 0.3, "life": 0.3, "sizeStart": 0.6, "sizeEnd": 0.8, "ease": 3.0, "fadeFrom": 0.3, "glitch": 0.05,
+          "color": [ 0.7, 0.4, 1.0, 1.0 ], "additive": true }
+      ]
+    },
+    {
+      "id": "void_crush",
+      "parts": [
+        { "type": "flash", "texture": "fx_ring", "life": 0.3, "sizeStart": 3.3, "sizeEnd": 1.1, "ease": 3.0, "fadeFrom": 0.3, "color": [ 0.1, 0.0, 0.18, 0.85 ] },
+        { "type": "flash", "texture": "fx_ring", "life": 0.3, "sizeStart": 3.1, "sizeEnd": 1.0, "ease": 3.0, "fadeFrom": 0.3, "color": [ 0.7, 0.4, 1.0, 0.8 ], "additive": true },
+        { "type": "flash", "texture": "fx_glitch", "life": 0.1, "sizeStart": 1.0, "sizeEnd": 1.1, "fadeFrom": 0.3, "glitch": 0.08, "color": [ 1.0, 1.0, 1.0, 0.9 ], "additive": true }
+      ]
+    },
+    {
+      "id": "orb_ally",
+      "then": "orb_ally_hit", "thenDelay": 0.35,
+      "parts": [
+        { "type": "projectile", "texture": "particle", "life": 0.35, "size": 0.35, "arc": 0.25, "trailWidth": 0.12, "trailLen": 0.5,
+          "color": [ 0.8, 0.55, 1.0, 1.0 ], "trailColor": [ 0.7, 0.4, 1.0, 0.8 ] }
+      ]
+    },
+    {
+      "id": "orb_ally_hit",
+      "parts": [
+        { "type": "flash", "texture": "fx_ring", "life": 0.35, "sizeStart": 0.3, "sizeEnd": 1.2, "ease": 3.0, "fadeFrom": 0.3, "color": [ 0.7, 0.4, 1.0, 1.0 ], "additive": true },
+        { "type": "flash", "texture": "particle", "life": 0.3, "sizeStart": 0.8, "sizeEnd": 0.9, "fadeFrom": 0.0, "color": [ 1.0, 0.8, 1.0, 0.9 ], "additive": true }
+      ]
+    },
+    {
+      "id": "glitch_ring",
+      "parts": [
+        { "type": "flash", "texture": "fx_ring", "life": 0.4, "sizeStart": 1.0, "sizeEnd": 4.5, "ease": 2.0, "fadeFrom": 0.2, "glitch": 0.12,
+          "color": [ 1.0, 1.0, 1.0, 0.7 ], "additive": true },
+        { "type": "flash", "texture": "fx_ring", "delay": 0.12, "life": 0.4, "sizeStart": 1.0, "sizeEnd": 4.5, "ease": 2.0, "fadeFrom": 0.2, "glitch": 0.12,
+          "color": [ 1.0, 1.0, 1.0, 0.7 ], "additive": true },
+        { "type": "flash", "texture": "fx_ring", "delay": 0.24, "life": 0.4, "sizeStart": 1.0, "sizeEnd": 4.5, "ease": 2.0, "fadeFrom": 0.2, "glitch": 0.12,
+          "color": [ 1.0, 1.0, 1.0, 0.7 ], "additive": true }
+      ]
+    },
+    {
+      "id": "charge_fire",
+      "parts": [
+        { "type": "flash", "texture": "fx_ring", "life": 0.45, "sizeStart": 3.0, "sizeEnd": 0.2, "ease": 2.0, "fadeFrom": 0.6,
+          "color": [ 1.0, 0.55, 0.18, 0.9 ], "additive": true },
+        { "type": "flash", "texture": "fx_ring", "delay": 0.25, "life": 0.45, "sizeStart": 3.0, "sizeEnd": 0.2, "ease": 2.0, "fadeFrom": 0.6,
+          "color": [ 1.0, 0.55, 0.18, 0.9 ], "additive": true },
+        { "type": "flash", "texture": "fx_ring", "delay": 0.5, "life": 0.45, "sizeStart": 3.0, "sizeEnd": 0.2, "ease": 2.0, "fadeFrom": 0.6,
+          "color": [ 1.0, 0.55, 0.18, 0.9 ], "additive": true },
+        { "type": "flash", "texture": "fx_twirl_a", "life": 1.0, "sizeStart": 0.6, "sizeEnd": 1.5, "ease": 1.0, "fadeFrom": 0.85, "spin": -360,
+          "color": [ 1.0, 0.55, 0.18, 0.8 ], "additive": true },
+        { "type": "flash", "texture": "particle", "life": 1.0, "sizeStart": 0.2, "sizeEnd": 1.2, "ease": 1.0, "fadeFrom": 0.9,
+          "color": [ 1.0, 0.75, 0.35, 1.0 ], "additive": true }
+      ]
+    },
+    {
+      "id": "nova_fire",
+      "shake": 1.2,
+      "parts": [
+        { "type": "screenImage", "texture": "white", "life": 0.35, "fadeOut": 0.35, "color": [ 1.0, 0.6, 0.25, 0.55 ] },
+        { "type": "ring", "texture": "fx_ring", "life": 0.6, "sizeStart": 0.3, "sizeEnd": 3.3, "ease": 1.0,
+          "color": [ 1.0, 0.6, 0.2, 1.0 ], "additive": true },
+        { "type": "ring", "texture": "fx_ring", "delay": 0.1, "life": 0.6, "sizeStart": 0.3, "sizeEnd": 3.3, "ease": 1.0,
+          "color": [ 1.0, 0.3, 0.1, 0.8 ], "additive": true },
+        { "type": "ring", "texture": "fx_ring", "delay": 0.5, "life": 1.2, "sizeStart": 3.0, "sizeEnd": 3.3, "ease": 2.0, "fadeFrom": 0.4, "y": 0.015,
+          "color": [ 0.2, 0.08, 0.04, 0.6 ], "additive": false }
+      ],
+      "bursts": [
+        { "count": 14, "speed": 3.0, "life": 0.9, "scale": 1.0, "gravity": -2.0, "drag": 0.0,
+          "colorStart": [ 1.0, 0.55, 0.15, 1.0 ], "colorEnd": [ 0.6, 0.1, 0.0, 0.0 ], "texture": "fire" },
+        { "count": 40, "speed": 7.0, "life": 1.2, "scale": 0.035, "gravity": -1.0, "drag": 0.0, "sway": 0.1, "flicker": 0.5,
+          "colorStart": [ 1.0, 0.85, 0.3, 1.0 ], "colorEnd": [ 1.0, 0.35, 0.05, 0.0 ], "texture": "particle", "center": true }
+      ]
+    },
+    {
+      "id": "breath_nova",
+      "bursts": [
+        { "count": 46, "speed": 9.0, "life": 0.6, "scale": 0.8, "gravity": -1.0, "drag": 0.0,
+          "colorStart": [ 1.0, 0.6, 0.2, 1.0 ], "colorEnd": [ 0.6, 0.1, 0.0, 0.0 ],
+          "texture": "fire", "center": true, "spread": "forward", "cone": 180, "coneUp": 8, "emitTime": 0.5 }
+      ]
+    },
+    {
+      "id": "ambient_ember",
+      "bursts": [
+        { "count": 1, "speed": 0.25, "life": 3.0, "scale": 0.03, "gravity": -0.35, "drag": 0.0, "sway": 0.2, "flicker": 0.6,
+          "colorStart": [ 1.0, 0.75, 0.3, 1.0 ], "colorEnd": [ 1.0, 0.3, 0.05, 0.0 ], "texture": "particle", "center": true }
       ]
     },
     {

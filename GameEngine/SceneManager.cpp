@@ -315,6 +315,7 @@ void SceneManager::Draw()
 	if (m_deck.IsOpen() || m_map.IsOpen() || m_items.IsInventory() || m_rest.IsShown() || m_items.IsCraft()) DrawBackButton();
 	if (m_craftFxTimer > 0.0f) DrawCraftFx();  
 	if (HasTopBar() && !fading) { DrawRelicBar(); DrawBarTips(); }
+	if (auto b = dynamic_cast<BattleScene*>(m_currentScene)) b->DrawTopEffects();   // UI・帯より上の演出（まるのみの顎）と、その上の GAME OVER
 	if (BossRelicPickOpen() && !fading) m_bossRelic.Draw(ui);
 	if (!m_tutorial.Active() && !fading && !CamDemoActive()) GuideBox::DrawHint(ui);
 	if (auto b = dynamic_cast<BattleScene*>(m_currentScene))   // カメラ操作のデモの説明

@@ -67,6 +67,15 @@ void BattleScene::Draw()
     m_battleUI->DrawAddedCardsTop(ctx);
 }
 
+// UI・帯より上の演出（まるのみの顎）。その上に GAME OVER（顎で画面が覆われても見えるように）
+void BattleScene::DrawTopEffects()
+{
+    m_renderer3D->Begin();
+    EffectManager::Draw(m_renderer3D, EffectLayer::Top);
+    m_renderer3D->End();
+    if (m_battleResult == BattleResult::Lose) m_battleUI->DrawLoseBanner();
+}
+
 // マウスカーソル：手札のカード／今離したら使えるマスの上なら指差し（ボタン類は UiHover・HoverLift 側で出る）
 void BattleScene::RequestCellCursor()
 {
@@ -265,7 +274,7 @@ BattleScene::BattleTheme BattleScene::CurrentTheme() const
                "cell_stone", 4, { 0.50f, 0.56f, 0.44f, 0.92f } };
     else if (m_category == EncCategory::Boss)
         th = { "ground_scorched", { "deco_deadtree","deco_ember","deco_darkrock" }, { 2.8f,3.3f,3.1f }, { 3.8f,2.1f,2.1f },   // dragon(1層)
-               "cell_stone", 4, { 0.55f, 0.47f, 0.43f, 0.92f } };
+               "cell_stone", 4, { 0.55f, 0.47f, 0.43f, 0.92f }, 1.0f, "ambient_ember", 10.0f };   // 火の粉が舞う
     else if (themeLayer <= 1)
         th = { "ground_grass",    { "deco_tree","deco_bush","deco_rock" },          { 3.2f,2.5f,3.3f }, { 3.8f,1.8f,2.1f },
                "cell_stone", 4, { 0.80f, 0.76f, 0.66f, 0.92f } };

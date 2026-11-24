@@ -489,6 +489,18 @@ void Renderer3D::DrawQuad(ID3D11ShaderResourceView* texture,
     m_context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
 }
 
+// a→b の帯1枚（カメラの方を向く。太さは a 側 wa、b 側 wb）。つなぐ物・らせんで共通
+void Renderer3D::DrawBand(ID3D11ShaderResourceView* tex, const XMFLOAT3& a, const XMFLOAT3& b, float wa, float wb,
+    const XMFLOAT3& camFwd, const XMFLOAT4& color)
+{
+    XMVECTOR d = XMVectorSubtract(XMLoadFloat3(&b), XMLoadFloat3(&a));
+    XMFLOAT3 s; XMStoreFloat3(&s, XMVector3Normalize(XMVector3Cross(d, XMLoadFloat3(&camFwd))));
+    wa *= 0.5f; wb *= 0.5f;
+    XMFLOAT3 tl(b.x - s.x * wb, b.y - s.y * wb, b.z - s.z * wb), tr(b.x + s.x * wb, b.y + s.y * wb, b.z + s.z * wb);
+    XMFLOAT3 bl(a.x - s.x * wa, a.y - s.y * wa, a.z - s.z * wa), br(a.x + s.x * wa, a.y + s.y * wa, a.z + s.z * wa);
+    DrawQuad(tex, tl, tr, bl, br, XMFLOAT4(0, 0, 1, 1), color);
+}
+
 bool Renderer3D::InitPostProcess()
 {
     D3D11_TEXTURE2D_DESC td = {};
@@ -780,4 +792,35 @@ void Renderer3D::DrawFxScreen(ID3D11ShaderResourceView* shape, ID3D11ShaderResou
     m_context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
     m_context->PSSetShader(m_pixelShader.Get(), nullptr, 0);   // いつものシェーダーに戻す
     SetDepthEnabled(true);
+}
+
+void Renderer3D::DrawScreenImage(ID3D11ShaderResourceView* texture, float x0, float y0, float x1, float y1, const XMFLOAT4& color)
+{
+    // 画面の割合（左上0,0）を、画面の座標（左下 -1,-1 ～ 右上 1,1）に直して板を置く。ビュー・射影は掛けない（DrawFxScreen と同じ）
+    float l = x0 * 2.0f - 1.0f, r = x1 * 2.0f - 1.0f;
+    float t = 1.0f - y0 * 2.0f, b = 1.0f - y1 * 2.0f;
+    D3D11_MAPPED_SUBRESOURCE ms;
+    if (FAILED(m_context->Map(m_quadVertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &ms))) return;
+    Vertex3D* v = (Vertex3D*)ms.pData;   // 並びは床・板と同じ（左上・右上・左下・右下）
+    v[0] = { XMFLOAT3(l, t, 0.0f), XMFLOAT2(0.0f, 0.0f) };
+    v[1] = { XMFLOAT3(r, t, 0.0f), XMFLOAT2(1.0f, 0.0f) };
+    v[2] = { XMFLOAT3(l, b, 0.0f), XMFLOAT2(0.0f, 1.0f) };
+    v[3] = { XMFLOAT3(r, b, 0.0f), XMFLOAT2(1.0f, 1.0f) };
+    m_context->Unmap(m_quadVertexBuffer.Get(), 0);
+
+    ConstantBuffer3D cb;
+    cb.World = XMMatrixIdentity();
+    cb.View = XMMatrixIdentity();
+    cb.Projection = XMMatrixIdentity();
+    cb.Color = color;
+    m_context->UpdateSubresource(m_constantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+    m_context->VSSetConstantBuffers(0, 1, m_constantBuffer.GetAddressOf());
+    m_context->PSSetConstantBuffers(0, 1, m_constantBuffer.GetAddressOf());
+    m_context->PSSetShaderResources(0, 1, &texture);
+
+    UINT stride = sizeof(Vertex3D);
+    UINT offset = 0;
+    m_context->IASetVertexBuffers(0, 1, m_quadVertexBuffer.GetAddressOf(), &stride, &offset);
+    m_context->DrawIndexed(6, 0, 0);
+    m_context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
 }

@@ -108,6 +108,9 @@ public:
     void DrawQuad(ID3D11ShaderResourceView* texture,
         const XMFLOAT3& tl, const XMFLOAT3& tr, const XMFLOAT3& bl, const XMFLOAT3& br,
         const XMFLOAT4& uv, const XMFLOAT4& color);
+    // a→b の帯1枚（カメラの方を向く。太さは a 側 wa、b 側 wb）。つなぐ物・らせんで共通
+    void DrawBand(ID3D11ShaderResourceView* tex, const XMFLOAT3& a, const XMFLOAT3& b, float wa, float wb,
+        const XMFLOAT3& camFwd, const XMFLOAT4& color);
 
     // エフェクト用シェーダーで板を描く（t0=形 t1=ノイズ t2=色の帯）。位置の基準と傾きは DrawBillboard と同じ
     void DrawFxBillboard(ID3D11ShaderResourceView* shape, ID3D11ShaderResourceView* noise, ID3D11ShaderResourceView* ramp,
@@ -126,6 +129,8 @@ public:
     // エフェクト用シェーダーで、画面いっぱいに1枚描く（Begin～End の間で呼ぶ。奥行きは見ない）
     void DrawFxScreen(ID3D11ShaderResourceView* shape, ID3D11ShaderResourceView* noise, ID3D11ShaderResourceView* ramp,
         const FxParams& fx, const XMFLOAT4& color);
+    // 画面に絵を1枚貼る（x0,y0～x1,y1＝画面の割合。左上が0,0、右下が1,1。はみ出してもよい）。いつものシェーダーで描く。奥行きの設定は変えない
+    void DrawScreenImage(ID3D11ShaderResourceView* texture, float x0, float y0, float x1, float y1, const XMFLOAT4& color);
 
     // HPバー用
     static constexpr float BILLBOARD_PITCH = -60.0f;        // ビルボードの傾き角度

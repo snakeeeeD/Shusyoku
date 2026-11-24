@@ -47,6 +47,8 @@ std::unique_ptr<EffectPartDef> BurstDef::Load(const nlohmann::json& b)
     d->cone = b.value("cone", d->cone);
     d->sway = b.value("sway", d->sway);
     d->flicker = b.value("flicker", d->flicker);
+    d->emitTime = b.value("emitTime", d->emitTime);
+    d->coneUp = b.value("coneUp", d->coneUp);
     return d;
 }
 
@@ -87,7 +89,7 @@ ParticleBurst::ParticleBurst(const BurstDef& def, const SpawnAt& at) : m_def(def
         else if (def.spread == Spread::Forward)
         {
             float yaw = at.rot + XMConvertToRadians(def.cone) * (Rand01() * 2.0f - 1.0f);   // 左右にずらす
-            float el = XMConvertToRadians(def.cone) * Rand01();                             // 上へ持ち上げる
+            float el = XMConvertToRadians(def.coneUp >= 0.0f ? def.coneUp : def.cone) * Rand01();   // 上へ持ち上げる（coneUp があればその角度まで）
             p.vel = XMFLOAT3(sinf(yaw) * cosf(el) * s, sinf(el) * s, cosf(yaw) * cosf(el) * s);
         }
         else
@@ -103,6 +105,7 @@ ParticleBurst::ParticleBurst(const BurstDef& def, const SpawnAt& at) : m_def(def
         p.lifeMax = def.life * (0.7f + Rand01() * 0.6f);
         p.life = p.lifeMax;
         p.seed = Rand01();
+        p.wait = def.emitTime * Rand01();   // 少しずつ出す：粒ごとに出る時刻をずらす
         m_particles.push_back(p);
     }
 }
@@ -114,6 +117,7 @@ void ParticleBurst::Update(float dt)
     float d = 1.0f - m_def.drag;
     for (auto& p : m_particles)
     {
+        if (p.wait > 0.0f) { p.wait -= dt; continue; }   // まだ出ていない粒は、年を取らない
         p.life -= dt;
         p.vel.y -= m_def.gravity * dt;
         p.vel.x *= d; p.vel.z *= d;          // 空気の抵抗（横）
@@ -135,6 +139,7 @@ void ParticleBurst::Draw(Renderer3D* r, EffectLayer layer)
     if (m_mat) r->SetAdditive(m_mat->additive);
     for (auto& p : m_particles)
     {
+        if (p.wait > 0.0f) continue;   // まだ出ていない
         float t = 1.0f - p.life / p.lifeMax;   // 寿命の進み具合（0→1）
         XMFLOAT4 c = Lerp(m_def.colorStart, m_def.colorEnd, t);
         float px = p.pos.x, py = p.pos.y, pz = p.pos.z;

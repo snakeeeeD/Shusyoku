@@ -214,6 +214,7 @@ public:
         const HPBarInfo& bar, BuffManager& bm);
 
     void DrawDropTooltipTop();
+    void DrawLoseBanner();   // 負けた時の GAME OVER（UI より上の演出の、さらに上）
 
     bool GetHitmarkRect(Enemy* enemy, Renderer3D* renderer3D, float& x, float& y, float& w, float& h) const;
 

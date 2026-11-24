@@ -4,6 +4,8 @@
 #include "GroundRing.h"
 #include "ShockWall.h"
 #include "ScreenOverlay.h"
+#include "ScreenImage.h"
+#include "Helix.h"
 #include "FlashSprite.h"
 #include "Projectile.h"
 #include "Tether.h"
@@ -19,6 +21,8 @@ std::unique_ptr<EffectPartDef> EffectKinds::Load(const std::string& type, const 
         { "ring",  &GroundRingDef::Load },   // 地面に広がる輪（GroundRing.cpp）
         { "wall",  &ShockWallDef::Load },    // 輪から立ち上がる衝撃波の壁（ShockWall.cpp）
         { "screen", &ScreenOverlayDef::Load },   // 画面いっぱいの演出（ScreenOverlay.cpp）
+        { "screenImage", &ScreenImageDef::Load },   // 画面に貼った絵を動かして止める（ScreenImage.cpp）
+        { "helix", &HelixDef::Load },              // らせんが回りながら昇る柱（Helix.cpp）
         { "flash", &FlashSpriteDef::Load },      // カメラに向いた絵1枚（FlashSprite.cpp）
         { "projectile", &ProjectileDef::Load },  // 飛び道具（Projectile.cpp）
         { "tether", &TetherDef::Load },          // 敵とプレイヤーをつなぐ物（Tether.cpp）

@@ -66,6 +66,7 @@ public:
     }
 
     void DrawDropTooltipTop() { if (m_battleUI) m_battleUI->DrawDropTooltipTop(); }
+    void DrawTopEffects();   // UI・帯より上の演出（まるのみの顎）と、その上の GAME OVER。SceneManager が帯の後に呼ぶ
 
     void GridToWorld(int col, int row, float& outX, float& outZ)
     {
@@ -249,6 +250,12 @@ private:
     void PlayEnemyAreaFx(Enemy* enemy, const EnemyAction& a, int tC, int tR, int preCol, int preRow,
         const std::vector<std::pair<int, int>>& preCells);   // 敵の攻撃が当たった範囲の演出
     void PlayEnemyHitFx(const std::string& id);           // 敵の攻撃が1発当たるたびの演出（hitVfx）。位置と傾きを少しずつ変える
+    void PlayEnemyOriginFx(Enemy* enemy, const EnemyAction& a, int tC, int tR);   // 敵の口から攻撃の向きへ出す演出（originVfx）
+    bool EnemyMouth(Enemy* enemy, const EnemyAction& a, int tC, int tR, XMFLOAT3& pos, float& rot);   // 敵の口の位置と向き（ブレス・タメ）
+    void AroundCenter(Enemy* enemy, const EnemyAction& a, int tC, int tR, int preCol, int preRow,
+        float& cx, float& cz, float& body);   // 周り全体の攻撃の中心と、体の大きさ（マス数の半分。衝撃波・なぎ払い・波の届く時間で共通）
+    bool LineEnds(Enemy* enemy, const TargetSpec& tg, int tC, int tR, int preCol, int preRow, XMFLOAT3& nearEnd, XMFLOAT3& farEnd);   // 縦・横1列の攻撃の、敵に近い端と遠い端
+    float WaveArrival(Enemy* enemy, const EnemyAction& a, int tC, int tR, int preCol, int preRow, float x, float z);   // 広がる波がプレイヤーに届くまでの秒数
     void UpdateTrapsAtTurnStart();   // 自分の罠が育つ／敵が隣にいる間だけ導火線が進み、たまったら自分で起爆
     void  MaybeStartCamDemo();   // カメラ操作の自動デモを始めるか（条件はシーンの事情なので、ここで決める）
 
@@ -267,7 +274,8 @@ private:
     // 描画（BattleSceneDraw.cpp）。Draw は描く順番を並べるだけ
     struct BattleTheme { const char* ground; const char* tex[3]; float w[3]; float h[3];
                          const char* cellTex; int cellVariants; XMFLOAT4 cellCol;
-                         float bright = 1.0f; };   // 地面・装飾3種(絵/幅/高さ)・マスの絵(variants>1 なら _0.._n-1)・空マスの色・地面と装飾の明るさ
+                         float bright = 1.0f;
+                         const char* ambientFx = nullptr; float ambientRate = 0.0f; };   // 地面・装飾3種(絵/幅/高さ)・マスの絵(variants>1 なら _0.._n-1)・空マスの色・地面と装飾の明るさ・空気に舞う粒（effects.json の id と、1秒あたりの数）
     BattleTheme CurrentTheme() const;   // 層＋ボスで決まる背景テーマ
     void RequestCellCursor();
     void DrawBackground2D();

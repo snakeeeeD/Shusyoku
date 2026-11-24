@@ -379,6 +379,12 @@
     <Filter Include="ソース ファイル\01-描画関連\20-Effect\10-種類\05-ScreenOverlay">
       <UniqueIdentifier>{6919a5f3-d902-4d45-8e1c-cad3ce11233d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\20-Effect\10-種類\09-ScreenImage">
+      <UniqueIdentifier>{35f37265-e9d6-4ce4-9bb7-d8c2dbfa7b33}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\01-描画関連\20-Effect\10-種類\10-Helix">
+      <UniqueIdentifier>{68afc199-fcde-4df0-bdb8-6c068bc02ad6}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ソース ファイル\01-描画関連\20-Effect\10-種類\04-ShockWall">
       <UniqueIdentifier>{8c6a10c7-f08a-48e6-a3bd-f577a5fd2b66}</UniqueIdentifier>
     </Filter>
@@ -774,6 +780,12 @@
     <ClInclude Include="ScreenOverlay.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\05-ScreenOverlay</Filter>
     </ClInclude>
+    <ClInclude Include="ScreenImage.h">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\09-ScreenImage</Filter>
+    </ClInclude>
+    <ClInclude Include="Helix.h">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\10-Helix</Filter>
+    </ClInclude>
     <ClInclude Include="TileDropFx.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\50-TileDrop</Filter>
     </ClInclude>
@@ -1039,6 +1051,12 @@
     </ClCompile>
     <ClCompile Include="ScreenOverlay.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\05-ScreenOverlay</Filter>
+    </ClCompile>
+    <ClCompile Include="ScreenImage.cpp">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\09-ScreenImage</Filter>
+    </ClCompile>
+    <ClCompile Include="Helix.cpp">
+      <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\10-Helix</Filter>
     </ClCompile>
     <ClCompile Include="TileDropFx.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\50-TileDrop</Filter>

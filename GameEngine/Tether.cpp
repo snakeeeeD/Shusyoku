@@ -96,7 +96,6 @@ void Tether::Draw(Renderer3D* r, EffectLayer layer)
     auto widthAt = [&](float f) { return (m_def.widthBase + (m_def.widthTip - m_def.widthBase) * f) * m_scale; };
 
     if (m_def.additive) r->SetAdditive(true);
-    r->SetDepthEnabled(false);   // 体に食い込んでも隠れないように（flash と同じ）
     XMFLOAT3 p0 = pointAt(0.0f), prev = p0, p1 = p0;
     for (int i = 1; i <= n; i++)
     {
@@ -113,17 +112,11 @@ void Tether::Draw(Renderer3D* r, EffectLayer layer)
         XMStoreFloat3(&e, XMVectorAdd(XMLoadFloat3(&s), XMVectorScale(d, h)));
         DrawSegment(r, m_tipTex, s, e, w, w);
     }
-    r->SetDepthEnabled(true);
     if (m_def.additive) r->SetAdditive(false);
 }
 
 // a から b へ、太さ wa → wb の帯を1枚（絵の上が b の側）
 void Tether::DrawSegment(Renderer3D* r, ID3D11ShaderResourceView* tex, const XMFLOAT3& a, const XMFLOAT3& b, float wa, float wb)
 {
-    XMVECTOR d = XMVectorSubtract(XMLoadFloat3(&b), XMLoadFloat3(&a));
-    XMFLOAT3 s; XMStoreFloat3(&s, XMVector3Normalize(XMVector3Cross(d, XMLoadFloat3(&m_fwd))));
-    wa *= 0.5f; wb *= 0.5f;
-    XMFLOAT3 tl(b.x - s.x * wb, b.y - s.y * wb, b.z - s.z * wb), tr(b.x + s.x * wb, b.y + s.y * wb, b.z + s.z * wb);
-    XMFLOAT3 bl(a.x - s.x * wa, a.y - s.y * wa, a.z - s.z * wa), br(a.x + s.x * wa, a.y + s.y * wa, a.z + s.z * wa);
-    r->DrawQuad(tex, tl, tr, bl, br, XMFLOAT4(0, 0, 1, 1), m_color);
+    r->DrawBand(tex, a, b, wa, wb, m_fwd, m_color);   // 帯の作り方は Renderer3D に1つ（らせんと共通）
 }

@@ -16,6 +16,8 @@ std::unique_ptr<EffectPartDef> GroundRingDef::Load(const nlohmann::json& j)
     d->delay = j.value("delay", d->delay);
     d->y = j.value("y", d->y);
     d->additive = j.value("additive", d->additive);
+    d->spin = j.value("spin", d->spin);
+    d->fadeFrom = j.value("fadeFrom", d->fadeFrom);
     if (j.contains("color"))
     {
         auto& c = j["color"];
@@ -36,6 +38,7 @@ GroundRing::GroundRing(const GroundRingDef& def, const SpawnAt& at) : m_def(def)
     m_x = at.x; m_z = at.z;   // 高さは使わず、出した所の真下の地面に置く
     m_color = XMFLOAT4(def.color.x * at.tint.x, def.color.y * at.tint.y, def.color.z * at.tint.z, def.color.w * at.tint.w);
     m_scale = at.scale;
+    m_rot = at.rot;
     m_elapsed = -def.delay;
 }
 
@@ -48,8 +51,10 @@ void GroundRing::Draw(Renderer3D* r, EffectLayer layer)
     float grow = 1.0f - powf(1.0f - t, m_def.ease);       // 最初に一気に広がって、だんだんゆっくり（イーズアウト）
     float size = (m_def.sizeStart + (m_def.sizeEnd - m_def.sizeStart) * grow) * m_scale;
     XMFLOAT4 c = m_color;
-    c.w *= 1.0f - t;                                       // 広がりながら薄くなって消える
+    if (t > m_def.fadeFrom)                                // fadeFrom から薄くなって消える（0なら最初から＝今まで通り）
+        c.w *= 1.0f - (t - m_def.fadeFrom) / (std::max)(1.0f - m_def.fadeFrom, 0.01f);
+    float rot = m_rot + XMConvertToRadians(m_def.spin) * m_elapsed;   // 回る輪（なぎ払いの弧）
     if (m_def.additive) r->SetAdditive(true);
-    r->DrawTileEx(m_tex, m_x, m_z, size, size, 0.0f, c, m_def.y);
+    r->DrawTileEx(m_tex, m_x, m_z, size, size, rot, c, m_def.y);
     if (m_def.additive) r->SetAdditive(false);
 }

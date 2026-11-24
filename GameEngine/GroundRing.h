@@ -16,6 +16,8 @@ struct GroundRingDef : EffectPartDef
     float delay = 0.0f;                // この輪だけの遅延（輪を重ねるとき用）
     float y = 0.02f;                   // 地面からの高さ
     bool additive = true;              // 加算合成で光らせる（土ぼこりのような輪は false）
+    float spin = 0.0f;                 // 回る速さ（度/秒）。回り始めは Play の rot（なぎ払いの弧など。0＝回さない）
+    float fadeFrom = 0.0f;             // 寿命のどこから薄くなり始めるか（0～1。0＝最初から少しずつ＝今まで通り）
 
     static std::unique_ptr<EffectPartDef> Load(const nlohmann::json& j);   // 種類の表から呼ばれる
     std::unique_ptr<EffectPart> Spawn(const SpawnAt& at) const override;
@@ -35,5 +37,6 @@ private:
     float m_x = 0.0f, m_z = 0.0f;
     XMFLOAT4 m_color = { 1, 1, 1, 1 };   // データの色×呼んだ側の色
     float m_scale = 1.0f;                // 呼んだ側の大きさの倍率（直径に掛ける）
+    float m_rot = 0.0f;                  // 回り始めの角度（ラジアン。Play の rot）
     float m_elapsed = 0.0f;              // マイナスの間は待ち（遅延）
 };

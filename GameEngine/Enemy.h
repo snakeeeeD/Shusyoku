@@ -23,6 +23,9 @@ public:
 	int GetBlock() const { return m_block; }
 	int GetAimDx() const { return m_aimDx; }
 	int GetAimDy() const { return m_aimDy; }
+	float GetDrawZ() const { return m_drawZ; }   // 絵を手前にずらしている量（演出を絵に合わせる）
+	XMFLOAT3 SpritePoint(float lx, float ly) const;   // 絵の中の点のワールド座標（lx＝真ん中から +x へ絵の幅の何割、ly＝足元から絵の高さの何割。板の傾きも入れる）
+	XMFLOAT3 MouthWorld() const;                       // 口の位置（enemies.json の mouth。顔の向きに合わせて左右を反転）
 	int GetActionIndex() const { return m_actionIndex; }
 	int GetLastHitDamage() const { return m_lastHitDamage; }
 	int GetLastHitCount()  const { return m_lastHitCount; }
@@ -155,9 +158,9 @@ public:
 	std::vector<Buff>& PendingPlayerBuffs() { return m_pendingPlayerBuffs; }
 
 	// 範囲の中心マス（演出の着弾点に使う）。Self の時は渡した既定値を返す
-	void GetAnchorCell(const EnemyAction& a, int defC, int defR, int& outC, int& outR) const
+	void GetAnchorCell(const EnemyAction& a, int defC, int defR, int& outC, int& outR) const { GetAnchorCell(a.target, defC, defR, outC, outR); }
+	void GetAnchorCell(const TargetSpec& tg, int defC, int defR, int& outC, int& outR) const   // 範囲1つ分（追加の範囲にも使う）
 	{
-		const TargetSpec& tg = a.target;
 		if (tg.anchor == AnchorType::Player) { outC = m_lockC;      outR = m_lockR; }
 		else if (tg.anchor == AnchorType::Fixed) { outC = tg.anchorCol; outR = tg.anchorRow; }
 		else { outC = defC;         outR = defR; }
@@ -175,6 +178,7 @@ private:
 	bool m_isBoss;
 
 	float m_drawZ = 0.4f;
+	float m_mouthX = 0.3f, m_mouthY = 0.5f;
 
 	int m_aimDx = 0, m_aimDy = 0;
 
@@ -252,7 +256,6 @@ private:
 	HitPart m_hitPart = HitPart::None;
 	HitPart m_lastPart = HitPart::None;
 	bool m_coilReached = false;   // 中央（距離1以内）に到達したか
-	int  m_coilStuck = 0;       // 到達後の経過ターン（フィニッシャー遅延）
 
 	std::vector<PendingCurse> m_pendingCurses;
 	std::vector<Buff> m_pendingPlayerBuffs;   // ダメージ適用後に付与する状態異常
