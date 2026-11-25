@@ -64,6 +64,30 @@
     <Filter Include="ソース ファイル\03-Object関連\20-Enemy\00-Enemy">
       <UniqueIdentifier>{2d2ab87c-0a06-4d2e-8490-e5992234c2bf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\00-Enemy\01-体力・倒れる">
+      <UniqueIdentifier>{5a6fd25d-89a7-44e0-b48e-5a0bd753b5f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\00-Enemy\02-行動を決める">
+      <UniqueIdentifier>{7e681e8d-ad21-4517-94dd-f917520df781}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\00-Enemy\03-攻撃範囲">
+      <UniqueIdentifier>{d81c9c2d-d1f1-4122-9b1d-1a85cfb9a924}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\00-Enemy\04-移動">
+      <UniqueIdentifier>{23cf15b3-aab6-4668-886c-4f11605041c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\00-Enemy\05-プレイヤーを動かす">
+      <UniqueIdentifier>{dd53274b-eb5c-4d76-bf3f-a4496f15a2f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\00-Enemy\06-大蛇">
+      <UniqueIdentifier>{b69e8db0-4fc4-4113-9e90-32e7ec55b67b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\00-Enemy\07-行動の実行">
+      <UniqueIdentifier>{06e23a75-606d-4444-b435-18029b021e06}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\00-Enemy\08-効果">
+      <UniqueIdentifier>{a38276fd-b844-4449-a102-c329228d054c}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ソース ファイル\03-Object関連\20-Enemy\01-EnemyData">
       <UniqueIdentifier>{b82e2446-c963-45e1-9dc7-0625b5df0a9f}</UniqueIdentifier>
     </Filter>
@@ -193,6 +217,36 @@
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\11-BattleUI">
       <UniqueIdentifier>{434ce89c-361e-402c-995f-dc1aa0b969ec}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\11-BattleUI\01-狙い">
+      <UniqueIdentifier>{407078f4-0741-40ef-8823-b974662f21f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\11-BattleUI\02-頭の上">
+      <UniqueIdentifier>{a475881b-0eaa-425d-8623-265eb01a0246}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\11-BattleUI\03-自分の状態・ボタン">
+      <UniqueIdentifier>{af8688a9-59ae-403d-875e-d941439537cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\11-BattleUI\04-手札">
+      <UniqueIdentifier>{d0d136e7-9d93-4e3c-b29c-f72528ad7a1f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\11-BattleUI\05-山札の一覧">
+      <UniqueIdentifier>{ac84b649-f548-4db8-962c-7790d2ec2e28}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\11-BattleUI\06-敵の一覧">
+      <UniqueIdentifier>{84e0ef72-f086-4183-bdcb-48e0efdf3cfd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\11-BattleUI\07-説明の窓">
+      <UniqueIdentifier>{88b43efa-7496-45db-8e72-88a03eec9600}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\11-BattleUI\08-勝ち負け">
+      <UniqueIdentifier>{be7f6ea5-a044-429b-93d0-11f238bfa417}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\11-BattleUI\09-引く・加わる演出">
+      <UniqueIdentifier>{d59ad52f-7cb3-44da-a3af-6696dd0702fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\11-BattleUI\10-使う・捨てる演出">
+      <UniqueIdentifier>{bfea10cc-0bc5-4eaf-bb31-6ac2e7f236ae}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\12-PileFx">
       <UniqueIdentifier>{22591d74-b6ad-4bc9-a6ca-be772f816ca0}</UniqueIdentifier>
     </Filter>
@@ -207,6 +261,30 @@
     </Filter>
     <Filter Include="ソース ファイル\03-Object関連\30-Card\06-CardExecutor">
       <UniqueIdentifier>{e558de08-1903-4f83-a1fe-2300134a9059}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\06-CardExecutor\01-攻撃">
+      <UniqueIdentifier>{ee6f2eed-d21d-4599-8228-f2c294465e2e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\06-CardExecutor\02-移動">
+      <UniqueIdentifier>{e363dadd-cadd-4ae8-b685-6d0cb3e1c933}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\06-CardExecutor\03-スキル">
+      <UniqueIdentifier>{879d971e-d190-49f5-8f03-6459cf4bbe8c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\06-CardExecutor\04-罠">
+      <UniqueIdentifier>{15c5d929-f675-4b07-b69d-06556ab980ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\06-CardExecutor\05-信仰">
+      <UniqueIdentifier>{eed32486-b152-4a21-8a39-ad4034b96ae5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\06-CardExecutor\06-パワー・後片付け">
+      <UniqueIdentifier>{02202ebe-d9e7-4e0f-b156-17df6eae6057}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\06-CardExecutor\07-演出">
+      <UniqueIdentifier>{c8417776-211c-4a9e-8ca3-d89f514d3672}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\30-Card\06-CardExecutor\08-ノックバック・引き寄せ">
+      <UniqueIdentifier>{e4d74791-60a7-40e5-8ba1-ad17ab8fd88a}</UniqueIdentifier>
     </Filter>
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\20-EncounterData">
       <UniqueIdentifier>{69296338-09c9-4909-ae3a-c2195de116c6}</UniqueIdentifier>
@@ -914,6 +992,42 @@
     <ClCompile Include="Src\Object\Enemy\Enemy.cpp">
       <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Object\Enemy\EnemyHealth.cpp">
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\01-体力・倒れる</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Object\Enemy\EnemyAI.cpp">
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\02-行動を決める</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Object\Enemy\EnemyThreat.cpp">
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\03-攻撃範囲</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Object\Enemy\EnemyMove.cpp">
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\04-移動</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Object\Enemy\EnemyPushPlayer.cpp">
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\05-プレイヤーを動かす</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Object\Enemy\EnemySnake.cpp">
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\06-大蛇</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Object\Enemy\EnemyAction.cpp">
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\07-行動の実行</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Object\Enemy\EnemyEffectAttack.cpp">
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\08-効果</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Object\Enemy\EnemyEffectGuard.cpp">
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\08-効果</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Object\Enemy\EnemyEffectMove.cpp">
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\08-効果</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Object\Enemy\EnemyEffectPlayer.cpp">
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\08-効果</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Object\Enemy\EnemyEffectField.cpp">
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\08-効果</Filter>
+    </ClCompile>
     <ClCompile Include="Src\Object\Enemy\EnemyDataBase.cpp">
       <Filter>ソース ファイル\03-Object関連\20-Enemy\02-EnemyDataBase</Filter>
     </ClCompile>
@@ -1013,6 +1127,30 @@
     <ClCompile Include="Src\Card\CardExecutor.cpp">
       <Filter>ソース ファイル\03-Object関連\30-Card\06-CardExecutor</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Card\CardExecutorAttack.cpp">
+      <Filter>ソース ファイル\03-Object関連\30-Card\06-CardExecutor\01-攻撃</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Card\CardExecutorMove.cpp">
+      <Filter>ソース ファイル\03-Object関連\30-Card\06-CardExecutor\02-移動</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Card\CardExecutorSkill.cpp">
+      <Filter>ソース ファイル\03-Object関連\30-Card\06-CardExecutor\03-スキル</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Card\CardExecutorTrap.cpp">
+      <Filter>ソース ファイル\03-Object関連\30-Card\06-CardExecutor\04-罠</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Card\CardExecutorFaith.cpp">
+      <Filter>ソース ファイル\03-Object関連\30-Card\06-CardExecutor\05-信仰</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Card\CardExecutorFinish.cpp">
+      <Filter>ソース ファイル\03-Object関連\30-Card\06-CardExecutor\06-パワー・後片付け</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Card\CardExecutorVfx.cpp">
+      <Filter>ソース ファイル\03-Object関連\30-Card\06-CardExecutor\07-演出</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Card\CardExecutorPush.cpp">
+      <Filter>ソース ファイル\03-Object関連\30-Card\06-CardExecutor\08-ノックバック・引き寄せ</Filter>
+    </ClCompile>
     <ClCompile Include="Src\Scene\Field\FieldScene.cpp">
       <Filter>ソース ファイル\02-Scene\40-FieldScene\00-FieldScene</Filter>
     </ClCompile>
@@ -1021,6 +1159,36 @@
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleUI.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\11-BattleUI</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleUITarget.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\11-BattleUI\01-狙い</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleUIUnitStatus.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\11-BattleUI\02-頭の上</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleUIHud.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\11-BattleUI\03-自分の状態・ボタン</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleUIResult.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\11-BattleUI\08-勝ち負け</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleUITooltip.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\11-BattleUI\07-説明の窓</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleUIEnemyPanel.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\11-BattleUI\06-敵の一覧</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleUIHand.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\11-BattleUI\04-手札</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleUIPile.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\11-BattleUI\05-山札の一覧</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleUIDrawFx.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\11-BattleUI\09-引く・加わる演出</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleUICardFx.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\11-BattleUI\10-使う・捨てる演出</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\EncounterDataBase.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\20-EncounterData\01-EncounterDataBase</Filter>

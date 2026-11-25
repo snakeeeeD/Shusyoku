@@ -89,16 +89,75 @@ public:
         bool fullPower = false, bool chain = false);
 
 private:
-    std::vector<Enemy*> GetEnemiesInRange(
+    // どのファイルからも使う小さな関数（CardExecutor.cpp）
+    static int  EffectiveHits(const CardData& data, const Player* player);                 // 連撃の回数（聖域・レリック込み）
+    static void PlayOnHitVfx(const CardEffectData& e, Enemy* enemy, GridMap* gridMap);     // 命中時のデバフの演出
+    static void ApplyOnHitFaith(const CardEffectData& e, Enemy* enemy, GridMap* gridMap);  // 命中時の「刻む」
+    static void ApplyAllEnemyEffect(const CardData& data, std::vector<Enemy*>& enemies, GridMap* gridMap);   // 全体効果
+
+    // 1回のカード使用（Execute の引数と、途中の値）。使い方ごとの処理はこのメンバー関数で、機能ごとのファイルにある
+    // 戻り値が bool の関数：true＝使えたので後片付けへ、false＝ここで終わり（使えなかった／その場で使い切った）
+    struct Play
+    {
+        const CardData& data;
+        const std::string& cardId;
+        int targetCol, targetRow;
+        Player* player;
+        std::vector<Enemy*>& enemies;
+        GridMap* gridMap;
+        int playerCol, playerRow;
+        Hand& hand;
+        int cardIndex;
+        Deck& deck;
+        int& outNewPlayerCol;
+        int& outNewPlayerRow;
+        const std::vector<std::pair<int, int>>* explicitPath;
+        int payCost = 0;
+        int pendingDiscard = 0;
+        ExecuteResult result{ false, false };
+
+        // 攻撃（CardExecutorAttack.cpp）
+        bool Attack();
+        bool AnyEnemyInRange() const;
+        bool AttackAllOnly();
+        bool AttackArea();
+        bool AttackPierce();
+        bool DashToEmptyCell();
+        bool AttackSingle(Enemy* target);
+        void DashToTarget(Enemy* target, int range);
+        int  ApplySpecialAttack(Enemy* target);
+        void ApplyHitEffects(Enemy* target);
+        // 移動（CardExecutorMove.cpp）
+        bool Move();
+        bool FindMovePath(std::vector<std::pair<int, int>>& path);
+        void ApplyMoveExtras();
+        // スキル（CardExecutorSkill.cpp）
+        bool Skill();
+        bool CanUseSkill() const;
+        bool InRange(int c, int r) const;
+        bool ApplySkillEffect();
+        void ApplySub(const CardEffectData& sub);
+        // 罠（CardExecutorTrap.cpp）
+        void SkillPlaceTrap();  void SkillPlaceTrapArea();  void SkillDetonate();  void SkillRecallTraps();
+        void SkillClearFloors();  void SkillDetonateAt();  void SkillDetonateChain();
+        // 信仰（CardExecutorFaith.cpp）
+        void SkillEngrave();  void SkillEngraveArea();  void SkillJudgement();  void SkillMiracle();  void SkillPurify();
+        // パワー・後片付け（CardExecutorFinish.cpp）・演出（CardExecutorVfx.cpp）
+        bool Power();
+        void Finish();
+        void ApplySelfDamage();
+        void PlayCardVfx();
+    };
+    static std::vector<Enemy*> GetEnemiesInRange(
         const CardData& data,
         int playerCol, int playerRow,
         std::vector<Enemy*>& enemies, int aimDx, int aimDy);
 
     static Enemy* GetEnemyAt(int col, int row, std::vector<Enemy*>& enemies);
 
-    void ApplyKnockback(Enemy* target, int playerCol, int playerRow,
+    static void ApplyKnockback(Enemy* target, int playerCol, int playerRow,
         int distance, GridMap* gridMap, std::vector<Enemy*>& enemies);
-    void ApplyPull(Enemy* target, int playerCol, int playerRow,
+    static void ApplyPull(Enemy* target, int playerCol, int playerRow,
         int distance, GridMap* gridMap, std::vector<Enemy*>& enemies,
         int& outNewPlayerCol, int& outNewPlayerRow);
 };

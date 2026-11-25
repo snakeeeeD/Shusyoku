@@ -261,5 +261,45 @@ private:
 	std::vector<Buff> m_pendingPlayerBuffs;   // ダメージ適用後に付与する状態異常
 
 	bool m_faceRight = false;                       // true＝右向き（左向きの画像を左右反転）
+
+	// ---- 行動の実行（EnemyAction.cpp）。1回の行動の状態を ActionRun にまとめて、効果の関数（EnemyEffect*.cpp）に渡す ----
+	struct ActionRun
+	{
+		const EnemyAction& act;
+		const TargetSpec& tg;
+		int playerCol, playerRow;   // プレイヤーの位置
+		int mtC, mtR;               // 動いて狙う先（デコイがあればデコイ）
+		GridMap* gridMap;
+		Player* player;
+		std::vector<Enemy*>& enemies;
+		bool* didAttack;
+		int moveTargetCol;          // 呼ぶ側が渡した狙う先（-1＝プレイヤー）
+		bool hitPlayer = false;     // プレイヤーに当たるか（動く前に決める）
+		bool hitTarget = false;     // 狙う先に当たるか
+		bool isAttack = false;      // ダメージのある行動か
+		int damage = 0;             // 与えるダメージの合計
+	};
+	void DecideHit(ActionRun& r);
+	void ApproachTarget(ActionRun& r);                          // EnemyMove.cpp
+	void ApplyEffect(ActionRun& r, const Effect& e);            // 効果の呼び分け
+	void PlayActionFx(ActionRun& r);
+	void RecordAttackResult(ActionRun& r);
+	void NudgeIfNotMoved(ActionRun& r);
+	// 効果（EnemyEffect*.cpp）
+	void EffectDamage(ActionRun& r, const Effect& e);      // Attack
+	void EffectHeal(ActionRun& r, const Effect& e);        // Attack
+	void EffectAddCard(ActionRun& r, const Effect& e);     // Attack
+	void EffectBlock(ActionRun& r, const Effect& e);       // Guard
+	void EffectBuff(ActionRun& r, const Effect& e);        // Guard（バフ・デバフ）
+	void EffectMoveToward(ActionRun& r, const Effect& e);  // Move
+	void EffectMoveAway(ActionRun& r, const Effect& e);    // Move
+	void EffectCoil(ActionRun& r, const Effect& e);        // Move（大蛇）
+	void EffectLunge(ActionRun& r, const Effect& e);       // Move（大蛇）
+	void EffectRetract(ActionRun& r, const Effect& e);     // Move（大蛇）
+	void EffectPull(ActionRun& r, const Effect& e);        // Player
+	void EffectKnockback(ActionRun& r, const Effect& e);   // Player
+	void EffectSummon(ActionRun& r, const Effect& e);      // Field
+	void EffectHazard(ActionRun& r, const Effect& e);      // Field
+	static bool HasLunge(const EnemyAction& a);            // EnemyThreat.cpp：首を伸ばす行動か（AI・範囲・経路で使う）
 };
 

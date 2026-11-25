@@ -261,6 +261,25 @@ private:
         float minH, float& height) const;
     void DrawPlayerHud(const BattleUIContext& ctx);
     void DrawTargetIndicators(const BattleUIContext& ctx);
+    // ---- 描く順番の部品（Draw から呼ぶ。// の後ろ＝置いてあるファイル） ----
+    void DrawEnemyMoveArrows(const BattleUIContext& ctx);    // Target：敵の移動予定
+    void DrawAttackTargets(const BattleUIContext& ctx, const CardData* data);   // Target
+    void DrawDashPreview(const BattleUIContext& ctx, const CardData* data);     // Target
+    void DrawPiercePreview(const BattleUIContext& ctx, const CardData* data);   // Target
+    void DrawAttackArrows(const BattleUIContext& ctx, const CardData* data);    // Target
+    void DrawSkillTargets(const BattleUIContext& ctx, const CardData* data);    // Target
+    void DrawMoveTargets(const BattleUIContext& ctx, const CardData* data);     // Target
+    void DrawUnitStatuses(const BattleUIContext& ctx);       // UnitStatus：頭の上
+    void DrawPilesAndHud(const BattleUIContext& ctx);        // Hud：左下の自分の状態・山札類
+    void DrawHandArea(const BattleUIContext& ctx);           // Hand：手札まわり
+    void DrawPlayerBuffList(const BattleUIContext& ctx);     // Hud：バフの一覧
+    void DrawTurnEndButton(const BattleUIContext& ctx);      // Hud：ターン終了ボタン
+    void DrawTurnBanner();                                   // Hud：ターンのバナー
+    void DrawVictory(const BattleUIContext& ctx);            // Result：勝利画面
+    void DrawBuffTooltip(const BattleUIContext& ctx);        // Tooltip
+    void DrawIntentTooltip(const BattleUIContext& ctx);      // Tooltip
+    void DrawCellTooltips(const BattleUIContext& ctx);       // Tooltip
+    static inline std::string s_hoverKey;                    // ホバー中のボタン（山札・捨てる画面・ターン終了。音を1回だけ鳴らす）
     void DrawArrowIndicator(float sx, float sy, const DirectX::XMFLOAT4& color, float highlightTimer);
     void DrawPileViewer(const BattleUIContext& ctx);
     void DrawCardEffects();
