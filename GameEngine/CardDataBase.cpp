@@ -80,6 +80,8 @@ static void ParseCard(const json& c, CardData& data, CardData& up, bool& hasUp)
     data.mainEffect.cardId = c["mainEffect"].value("cardId", "");
     data.mainEffect.trapType = c["mainEffect"].value("trapType", "");
     data.mainEffect.random = c["mainEffect"].value("random", false);
+    data.mainEffect.pool = c["mainEffect"].value("pool", "");
+    data.mainEffect.costThisTurn = c["mainEffect"].value("costThisTurn", -1);
 
 
     if (c.contains("onHitEffect"))
@@ -146,6 +148,8 @@ static void ParseCard(const json& c, CardData& data, CardData& up, bool& hasUp)
         data.subEffect.buffType = c["subEffect"].value("buffType", "");
         data.subEffect.cardId = c["subEffect"].value("cardId", "");
         data.subEffect.random = c["subEffect"].value("random", false);
+        data.subEffect.pool = c["subEffect"].value("pool", "");
+        data.subEffect.costThisTurn = c["subEffect"].value("costThisTurn", -1);
     }
     else
     {
@@ -451,8 +455,9 @@ std::vector<std::string> CardDataBase::RewardPool()
     return v;
 }
 
-// 変容：報酬に出るカードからランダムに1枚（種類も問わない。exclude と同じカード・状態異常・呪い・初期カードは除く）
-std::string CardDataBase::RandomTransformCard(const std::string& exclude)
+// 報酬に出るカードからランダムに1枚。type＝"Attack" など（空なら種類を問わない）。exclude と同じカード・状態異常・呪い・初期カードは除く
+// 変容・閃きの刃・閃きの術で共通
+std::string CardDataBase::RandomPoolCard(const std::string& exclude, const std::string& type)
 {
     std::string ex = exclude;
     if (!ex.empty() && ex.back() == '+') ex.pop_back();
@@ -463,6 +468,7 @@ std::string CardDataBase::RandomTransformCard(const std::string& exclude)
         if (!c || id == ex) continue;                                                  // 元と同じカードは出さない
         if (c->type == CardType::Status || c->type == CardType::Curse) continue;      // 状態異常・呪いは出さない
         if (c->starter) continue;                                                      // 初期カード（基本の移動など）は出さない
+        if (!type.empty() && c->type != StringToCardType(type)) continue;             // 種類で絞る
         v.push_back(id);
     }
     if (v.empty()) return "";

@@ -32,7 +32,7 @@ public:
 
     static std::vector<std::string> RewardPool();
     static std::string RandomCard();
-    static std::string RandomTransformCard(const std::string& exclude);   // 変容：ランダムな1枚（種類も問わない）
+    static std::string RandomPoolCard(const std::string& exclude, const std::string& type = "");   // ランダムな1枚（type＝種類。空なら問わない）。変容・閃きの刃／術
 
     // デッキのタグ構成に寄せて count 枚を重複なし抽選（報酬/ショップ共通）
     static std::vector<std::string> PickRewardCards(int count, bool rareBias,

@@ -2698,6 +2698,52 @@
       }
     },
     {
+      "id": "SKL_spark_blade",
+      "name": "閃きの刃",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "tags": [
+        "Incinerate"
+      ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "exhaust": true,
+      "description": "ランダムなアタックを1枚手札に\nこのターンコスト0",
+      "upgrade": {
+        "cost": -1
+      },
+      "mainEffect": {
+        "type": "CreateRandom",
+        "value": 1,
+        "pool": "Attack",
+        "costThisTurn": 0
+      }
+    },
+    {
+      "id": "SKL_spark_art",
+      "name": "閃きの術",
+      "type": "Skill",
+      "rarity": "Uncommon",
+      "tags": [
+        "Incinerate"
+      ],
+      "cost": 1,
+      "range": 0,
+      "rangeType": "None",
+      "exhaust": true,
+      "description": "ランダムなスキルを1枚手札に\nこのターンコスト0",
+      "upgrade": {
+        "cost": -1
+      },
+      "mainEffect": {
+        "type": "CreateRandom",
+        "value": 1,
+        "pool": "Skill",
+        "costThisTurn": 0
+      }
+    },
+    {
       "id": "status_junk",
       "name": "ガラクタ",
       "type": "Status",

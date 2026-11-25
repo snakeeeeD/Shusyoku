@@ -76,6 +76,7 @@ inline CardEffectType StringToCardEffectType(const std::string& str)
     if (str == "ByCardType")  return CardEffectType::ByCardType;
     if (str == "Reclaim")     return CardEffectType::Reclaim;
     if (str == "Transform")   return CardEffectType::Transform;
+    if (str == "CreateRandom") return CardEffectType::CreateRandom;
     if (str == "Catalyst") return CardEffectType::Catalyst;
     if (str == "DrainPoison") return CardEffectType::DrainPoison;
     if (str == "PoisonBurst") return CardEffectType::PoisonBurst;

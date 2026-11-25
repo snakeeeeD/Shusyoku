@@ -44,6 +44,7 @@ enum class CardEffectType
     ByCardType,   // 燃やしたカードの種類で分かれる（焼き直し。burnEffect 用。value＝攻撃・スキルの数字）
     Reclaim,      // 廃棄札から1枚選んで手札に戻す。このターンコスト0（灰からの再生）
     Transform,    // ランダムなカード（種類も問わない）を手札に（変容。burnEffect 用。value>0 なら強化済み）
+    CreateRandom, // ランダムなカードを value 枚手札に（pool＝種類、costThisTurn＝このターンのコスト）。閃きの刃・閃きの術
 };
 
 // カードレアリティ
@@ -64,6 +65,8 @@ struct CardEffectData
     std::string    cardId = "";       // CreateCard用
     std::string trapType = "";  // "Explosion", "Root", "Poison"
     bool           random = false;    // Incinerate：true ならランダムに燃やす（false なら選ぶ）
+    std::string    pool = "";         // CreateRandom：出すカードの種類（"Attack" など。空なら種類を問わない）
+    int            costThisTurn = -1; // 手札に加えたカードの、このターンだけのコスト（-1＝いつものコスト）
     bool           hasEffect = false;
 };
 

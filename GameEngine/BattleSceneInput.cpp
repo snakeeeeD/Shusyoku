@@ -645,6 +645,8 @@ bool BattleScene::PlayCard(int targetCol, int targetRow, const std::vector<std::
         if (execResult.purgeHandCurses) PurgeHandCurses();   // 浄化：使ったカードのアニメを外してから（先にやると選択が-1になり、アニメの並びがずれる）
         OnCardPlayed(dataPtr);
         if (dataCopy.exhaust) OnCardBurned(dataPtr);   // 使って廃棄も「廃棄」として数える（炉心・レリックが発動）
+        for (int k = 0; k < (int)execResult.addToHand.size(); k++)   // ランダムに出したカード：使ったカードが真ん中で燃えてから、1枚ずつ見せて手札へ
+            AddToHand(execResult.addToHand[k], execResult.addCost, BattleUI::BurnShowTime() + 0.15f + k * 0.25f);
 
         if (execResult.pendingDiscard > 0)
             OpenDiscardSelect(execResult.pendingDiscard);

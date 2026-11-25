@@ -36,6 +36,8 @@ public:
         int  pendingBurn = 0;           // 手札を燃やす枚数（燃やす演出・選ぶ画面はシーン側）
         bool burnRandom = false;        // true ならランダムに燃やす（false なら選ぶ画面を開く）
         Enemy* hitTarget = nullptr;     // 単体攻撃で狙った敵（燃やした後の追撃に使う）
+        std::vector<std::string> addToHand;   // ランダムに出したカード（手札へ入れるのは、真ん中で見せる演出があるシーン側）
+        int  addCost = -1;                    // そのカードのこのターンのコスト（-1＝いつも）
     };
 
     struct MovePreview 

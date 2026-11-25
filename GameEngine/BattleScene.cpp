@@ -827,7 +827,7 @@ void BattleScene::ApplyBurnEffect(const CardData* src, const std::vector<const C
         }
         else if (e.type == CardEffectType::Transform)    // 変容：ランダムなカード（種類も問わない）に入れ替える（value>0 なら強化済み）
         {
-            std::string id = CardDataBase::RandomTransformCard(b->id);
+            std::string id = CardDataBase::RandomPoolCard(b->id);
             if (!id.empty() && e.value > 0 && CardDataBase::Get(id + "+")) id += "+";
             if (!id.empty()) AddToHand(id, -1, BattleUI::BurnShowTime() + 0.15f);   // 廃棄したカードが燃え上がってから見せる
         }

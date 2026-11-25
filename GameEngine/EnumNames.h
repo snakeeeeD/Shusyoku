@@ -172,6 +172,7 @@ namespace EnumNames
         { CardEffectType::ByCardType,    "ByCardType" },     // 燃やしたカードの種類で分かれる（burnEffect）
         { CardEffectType::Reclaim,       "Reclaim" },        // 廃棄札から手札へ（このターンコスト0）
         { CardEffectType::Transform,     "Transform" },      // ランダムなカード（種類も問わない）を手札に（burnEffect）
+        { CardEffectType::CreateRandom,  "CreateRandom" },   // ランダムなカードを手札に（pool＝種類、costThisTurn）
     };
 
     // ---- カード：種類 ----

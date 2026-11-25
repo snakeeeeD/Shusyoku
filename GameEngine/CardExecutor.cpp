@@ -5,6 +5,7 @@
 #include "BattleHighlighter.h"
 #include "TerrainDataBase.h"
 #include "RelicManager.h"
+#include "CardDataBase.h"
 #include "RangeShape.h"
 #include "ScreenShake.h"
 #include "HitStop.h"
@@ -838,6 +839,14 @@ CardExecutor::ExecuteResult CardExecutor::Execute(
                 hand.AddCard(data.mainEffect.cardId);
                 result.drawnCards.push_back(data.mainEffect.cardId);
             }
+            break;
+        case CardEffectType::CreateRandom:   // ランダムなカードを value 枚（自分は出さない）。手札へ入れるのはシーン側
+            for (int i = 0; i < data.mainEffect.value; i++)
+            {
+                std::string id = CardDataBase::RandomPoolCard(cardId, data.mainEffect.pool);
+                if (!id.empty()) result.addToHand.push_back(id);
+            }
+            result.addCost = data.mainEffect.costThisTurn;
             break;
         case CardEffectType::Discard:
             pendingDiscard += data.mainEffect.value;
