@@ -1286,7 +1286,28 @@
     <ClCompile Include="Src\Scene\Battle\BattleSceneDraw.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleSceneDrawBoard.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleSceneDrawMarks.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleSceneDrawUnits.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleSceneDrawOverlay.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画</Filter>
+    </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneInput.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\07-入力</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleSceneInputSelect.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\07-入力</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleSceneInputMove.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\07-入力</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleSceneInputPlay.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\07-入力</Filter>
     </ClCompile>
     <ClCompile Include="Src\Render\Effect\EffectManager.cpp">

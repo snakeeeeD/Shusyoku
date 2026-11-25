@@ -112,6 +112,41 @@ public:
     Enemy* RandomAliveEnemy();                      // 生きている敵からランダムに1体（いなければ nullptr）
     void TickCountRelics(const char* kind);         // カウント系レリックを1つ進める（attack/skill/move/card/burn）
 
+    // ---- 入力の部品（// の後ろ＝置いてあるファイル） ----
+    void HandleDiscardViewMode(POINT mp, bool click);       // InputSelect：「盤面を見る」の間
+    void ConfirmDiscardSelect();                            // InputSelect：選んだカードを確定
+    void ToggleDiscardSelect(int idx);                      // InputSelect：選ぶ／外す
+    void HandlePilePick(POINT mousePos);                    // InputSelect：一覧から選ぶ
+    int  SelectedMoveRange();                               // InputMove：移動カードの移動範囲（違えば -1）
+    void EditMovePath(int moveRangeSel);                    // InputMove：経路を伸ばす・戻す
+    bool IceSlideDirection(const Cell& movedCell, int oldCol, int oldRow, const std::vector<std::pair<int, int>>* usePath, int& slideDx, int& slideDy);   // InputMove
+    void SlideOnIce(int slideDx, int slideDy, float px, float pz, const std::vector<std::pair<int, int>>* usePath);   // InputMove
+    bool ReleaseMovePath(const std::vector<std::pair<int, int>>*& usePath);   // InputPlay：移動の経路を使わないなら true
+    bool FindReleaseTarget(const CardData& dataCopy, POINT releasePos, bool hasPath, int& targetCol, int& targetRow);   // InputPlay
+    int  ApplyFirstAttackBonus(const CardData* dataPtr);    // InputPlay：最初の攻撃の上乗せ
+    void RemoveFirstAttackBonus(int faBonus, bool used);    // InputPlay
+    void AfterCardUsed(const CardExecutor::ExecuteResult& execResult, const CardData* dataPtr, const CardData& dataCopy,
+        int newPlayerCol, int newPlayerRow, const std::vector<std::pair<int, int>>* usePath);   // InputPlay：使えた後
+    void OpenPendingSelection(CardEffectType type);         // InputPlay：一覧から選ぶ画面を開く
+    void OpenHandChoices(const CardExecutor::ExecuteResult& execResult, const CardData* dataPtr);   // InputPlay：捨てる／廃棄する
+    // ---- 描画の部品（// の後ろ＝置いてあるファイル） ----
+    std::set<std::pair<int, int>> CollectRaisedCells();     // DrawBoard：狙っているマス
+    void SyncUnitHeights();                                 // DrawBoard：キャラの高さを床に合わせる
+    void DrawFaithBase();                                   // DrawMarks：信仰の下地
+    void DrawThreatStripes();                               // DrawMarks：敵の範囲のしましま
+    void DrawThreatOutlines();                              // DrawMarks：敵の範囲の外周線
+    void DrawFaithSigils();                                 // DrawMarks：信仰の紋章
+    void DrawReachMarkers();                                // DrawMarks：自分の攻撃範囲
+    void DrawDecoy();                                       // DrawUnits
+    void DrawBlockedCells();                                // DrawUnits：移動できないマスの×
+    void DrawFocusCorners();                                // DrawUnits：注目中の敵の枠
+    void DrawLowHpAura();                                   // DrawUnits：背水
+    void DrawThreatGlow();                                  // DrawUnits：狙われている敵の光
+    void DrawCharacters(const std::vector<Enemy*>& drawOrder);   // DrawUnits：本体（奥から）
+    void DrawHolyGlow(const std::vector<Enemy*>& drawOrder);     // DrawUnits：聖地に立つ敵の光
+    void DrawUnavoidableCrosshair();                        // DrawOverlay：必中のクロスヘア
+    void DrawPathGhost();                                   // DrawOverlay：移動先のゴースト
+    void DrawRaisedCellCorners();                           // DrawOverlay：狙ったマスの四隅の枠
     // ---- 毎フレームの更新（Update から順に呼ぶ。// の後ろ＝置いてあるファイル） ----
     void UpdateIntentVisibility();                  // Fx：目隠しが手札にある間は敵の予告を隠す
     void SpawnAmbientParticles(float deltaTime);    // Fx：信仰の光の粒・背景の火の粉

@@ -291,7 +291,14 @@
     <ClCompile Include="Src\Scene\Battle\BattleCamera.cpp" />
     <ClCompile Include="Src\Scene\Battle\BattleScene.cpp" />
     <ClCompile Include="Src\Scene\Battle\BattleSceneDraw.cpp" />
+    <ClCompile Include="Src\Scene\Battle\BattleSceneDrawBoard.cpp" />
+    <ClCompile Include="Src\Scene\Battle\BattleSceneDrawMarks.cpp" />
+    <ClCompile Include="Src\Scene\Battle\BattleSceneDrawUnits.cpp" />
+    <ClCompile Include="Src\Scene\Battle\BattleSceneDrawOverlay.cpp" />
     <ClCompile Include="Src\Scene\Battle\BattleSceneInput.cpp" />
+    <ClCompile Include="Src\Scene\Battle\BattleSceneInputSelect.cpp" />
+    <ClCompile Include="Src\Scene\Battle\BattleSceneInputMove.cpp" />
+    <ClCompile Include="Src\Scene\Battle\BattleSceneInputPlay.cpp" />
     <ClCompile Include="Src\Scene\Battle\BattleSceneEnemyFx.cpp" />
     <ClCompile Include="Src\Scene\Battle\BattleSceneEnemies.cpp" />
     <ClCompile Include="Src\Scene\Battle\BattleSceneResult.cpp" />
