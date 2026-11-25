@@ -192,3 +192,80 @@ void BattleScene::ProcessDeadEnemies()
             if (m_enemies[i] == selected) { m_selectedEnemyRange = i; break; }
     }
 }
+
+// エンカウントの敵を並べる（指名戦があればそれ）。3層ボスの楔の四隅を覚え、あふれた分だけ強さを上げる
+void BattleScene::SpawnEncounter()
+{
+    int layer = PlayerDataManager::GetData().layer;
+    const EncounterData* encounter = EncounterDataBase::GetById(m_battleEnemyId);   // 指名戦（あれば）
+    if (!encounter)
+        encounter = EncounterDataBase::GetEncounter(layer, m_category, m_battleTier, m_battleSeed);
+    if (encounter)
+    {
+        for (auto& ee : encounter->enemies)
+            AddEnemy(ee.col, ee.row, ee.id);
+
+        // 3層ボス：楔の四隅スロットを記録
+        for (auto e : m_enemies)
+            if (e->GetId().rfind("wedge_", 0) == 0)
+                m_wedgeCorners.push_back({ e->gridCol, e->gridRow });
+
+        const auto& ladder = encounter->escalation.empty()
+            ? EncounterDataBase::DefaultEscalation()
+            : encounter->escalation;
+
+        float hpMul = 1.0f, dmgMul = 1.0f;
+        int bonusActions = 0;
+        int level = m_overflow;
+        for (int i = 0; i < level; i++)
+        {
+            if (i < (int)ladder.size())
+            {
+                const EscalationTier& t = ladder[i];
+                switch (t.kind)
+                {
+                case EscalationKind::HpUp:      hpMul += t.value / 100.0f;   break;
+                case EscalationKind::AtkUp:     dmgMul += t.value / 100.0f;   break;
+                case EscalationKind::AddAction: bonusActions += 1;            break;
+                case EscalationKind::AddEnemy:  AddEnemy(t.col, t.row, t.id); break;
+                }
+            }
+            else   // 梯子超過分は緩やかに
+            {
+                hpMul += 0.10f;
+                dmgMul += 0.10f;
+            }
+        }
+        for (auto enemy : m_enemies)
+            enemy->ApplyDifficulty(hpMul, dmgMul, bonusActions);
+    }
+}
+
+// 全部の敵の次の行動を決める（デコイがあればそちらを狙う。味方の数も渡す）。戦闘開始とターン開始で共通
+void BattleScene::DecideEnemyActions()
+{
+    for (auto enemy : m_enemies)
+    {
+        int tC = (m_decoyCol >= 0) ? m_decoyCol : m_playerCol;
+        int tR = (m_decoyCol >= 0) ? m_decoyRow : m_playerRow;
+        int allies = 0; for (auto o : m_enemies) if (o != enemy && o->GetHp() > 0) allies++;
+        enemy->SetAllyCount(allies);
+        enemy->DecideNextAction(tC, tR, m_turnCount);
+    }
+}
+
+// HP0の敵を「塵化」させ、アニメが終わったら消す
+void BattleScene::UpdateDyingEnemies(float deltaTime)
+{
+    for (auto enemy : m_enemies)
+    {
+        if (enemy->GetHp() <= 0 && !enemy->IsDying())
+        {
+            for (auto& [dc, dr] : enemy->GetGridShape())      // マスを即解放
+                m_gridMap->SetCellType(enemy->gridCol + dc, enemy->gridRow + dr, CellType::Empty);
+            enemy->StartDeath();
+        }
+        enemy->UpdateDeath(deltaTime);
+    }
+    ProcessDeadEnemies();
+}

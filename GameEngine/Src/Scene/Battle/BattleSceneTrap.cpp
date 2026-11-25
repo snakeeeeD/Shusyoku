@@ -90,3 +90,50 @@ void BattleScene::UpdateTrapsAtTurnStart()
         m_fuseBeep.next = ceilf(m_highlightTimer / m_fuseBeep.period) * m_fuseBeep.period;   // 次に光る瞬間にそろえる
     }
 }
+
+// 導火線の「ピッ」：光る瞬間に1回ずつ
+void BattleScene::UpdateFuseBeep()
+{
+    if (m_fuseBeep.left <= 0 || m_highlightTimer < m_fuseBeep.next) return;
+    Se::Play(Se::FuseBeep, 0.03f, 0.7f);
+    m_fuseBeep.left--;
+    m_fuseBeep.next += m_fuseBeep.period;
+}
+
+// 敵が通過した各マスの罠（大蛇のとぐろは順番待ちへ）
+void BattleScene::TriggerTrapsOnPath(Enemy* enemy)
+{
+    if (enemy->IsSnake())
+    {
+        // とぐろ：経路の罠を段階発火キューへ（実際の発火はUpdateのシーケンサ）
+        for (auto& mp : enemy->GetMovePath())
+            if (m_gridMap->GetCell(mp.first, mp.second).tileEffect.active)
+                m_coilTraps.Push({ mp.first, mp.second, enemy });
+        if (!m_coilTraps.Empty()) m_coilTraps.Delay(0.0f);   // すぐ1つ目
+    }
+    else
+    {
+        for (auto& mp : enemy->GetMovePath())   // 通ったマスごとに、体の下の罠を全部踏む
+        {
+            TriggerTrapsUnder(enemy, mp.first, mp.second);
+            if (enemy->GetHp() <= 0) break;
+        }
+        if (enemy->GetHp() > 0)
+            TriggerTrapsUnder(enemy, enemy->gridCol, enemy->gridRow);
+    }
+}
+
+// 敵が (col,row) に立った時、体の下の罠を全部踏む（大きい敵は形の全マス）
+void BattleScene::TriggerTrapsUnder(Enemy* e, int col, int row)
+{
+    GridMap* g = m_gridMap;
+    std::vector<Enemy*>& enemies = m_enemies;
+    for (auto& [dc, dr] : e->GetGridShape())
+    {
+        int c = col + dc, r = row + dr;
+        if (c < 0 || r < 0 || c >= g->GetCols() || r >= g->GetRows()) continue;
+        auto& cell = g->GetCell(c, r);
+        if (cell.tileEffect.active) CardExecutor::TriggerTrap(cell, e, c, r, g, enemies);
+        if (e->GetHp() <= 0) return;
+    }
+}

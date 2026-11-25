@@ -949,3 +949,29 @@ void BattleScene::HandleTurnEndAndPanel()
         }
     }
 }
+
+// 右クリック（ボタン1）：経路キャンセル → カード選択キャンセル の二段階
+void BattleScene::HandleRightClickCancel()
+{
+    if (m_input.GetMouseButtonTrigger(1)
+        && m_selectedCardIndex >= 0
+        && m_selectedCardIndex < (int)m_hand.GetCards().size())
+    {
+        bool isMove = (m_hand.GetCards()[m_selectedCardIndex]->GetData()->type == CardType::Move);
+
+        if (isMove && !m_movePath.empty())
+        {
+            // 経路がある → 経路だけキャンセル（カードは維持）
+            m_movePath.clear();
+            m_moveReleaseSuppress = true;
+            m_suppressCell = m_hoveredCell;
+        }
+        else
+        {
+            // 経路が無い or 移動以外のカード → カード選択解除
+            m_selectedCardIndex = -1;
+            m_movePath.clear();
+            m_moveReleaseSuppress = false;
+        }
+    }
+}

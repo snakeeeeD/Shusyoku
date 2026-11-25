@@ -245,3 +245,26 @@ void BattleScene::UpdateFloorStepFx()
     if (def && !def->vfx.empty() && !RelicManager::HasKind("floorImmune"))
         EffectManager::Play(def->vfx, cx, 0.05f, cz);
 }
+
+// 敵の行動の演出（着弾点・口から・味方へ・攻撃範囲）。当たり外れに関わらず出す
+void BattleScene::PlayEnemyActionFx(Enemy* enemy, const EnemyAction* wa, int tC, int tR, int preCol, int preRow,
+    const std::vector<std::pair<int, int>>& preCells, int damage)
+{
+    // 着弾点の演出（避けられても出す）
+    if (wa && !wa->impactVfx.empty())
+    {
+        int ac, ar; enemy->GetAnchorCell(*wa, tC, tR, ac, ar);
+        float ix = (ac - m_gridMap->GetCols() / 2.0f) * 1.1f;
+        float iz = (ar - m_gridMap->GetRows() / 2.0f) * 1.1f;
+        EffectManager::Play(wa->impactVfx, ix, 0.5f, iz);
+        ScreenShake::Add(0.35f);
+    }
+
+    if (wa && !wa->originVfx.empty()) PlayEnemyOriginFx(enemy, *wa, tC, tR);   // 口から吐く（当たり外れに関係なし）
+    if (wa && !wa->allyVfx.empty())   // 味方に向けて飛ばす（楔を強化する）。体の真ん中から体の真ん中へ
+        for (auto* o : m_enemies)
+            if (o != enemy && o->GetHp() > 0 && !o->IsDying())
+                EffectManager::PlayFrom(wa->allyVfx, enemy->SpritePoint(0.0f, 0.5f), o->SpritePoint(0.0f, 0.5f));
+    // 攻撃範囲に演出（当たり外れに関わらず出す）。hitVfx がある攻撃は、当たったら命中の演出（1発ごと）に任せる
+    if (wa && (!wa->aroundVfx.empty() || !(damage > 0 && !wa->hitVfx.empty()))) PlayEnemyAreaFx(enemy, *wa, tC, tR, preCol, preRow, preCells);
+}

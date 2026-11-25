@@ -157,3 +157,75 @@ void BattleScene::BossInvulnAction(Enemy* boss)
         m_battleUI->StartAddedCardEffect(CardDataBase::Get(junk), "deck", 0, 1);
     }
 }
+
+// 覚醒ターンのボスは、予告を「覚醒」に差し替える
+void BattleScene::MarkBossAwakenIntent()
+{
+    if (m_bossAwakenAtTurn >= 0 && m_turnCount >= m_bossAwakenAtTurn && !m_bossAwakened)
+        for (auto enemy : m_enemies)
+            if (enemy->GetId() == "l3_sovereign") enemy->SetAwakenIntent();
+}
+
+// 3層ボスの覚醒演出：演出だけ更新する（操作・ターン遷移・時間経過は止める）。演出中なら true（Update はそこで終わる）
+bool BattleScene::UpdateAwakenCinematic(float deltaTime)
+{
+    if (m_awakenCinematic <= 0.0f) return false;
+    m_awakenCinematic -= deltaTime;
+
+    // 画面全体の円を一定間隔で追加し、経過時間を進める
+    m_awakenRingTimer -= deltaTime;
+    if (m_awakenRingTimer <= 0.0f) { m_awakenRings.push_back(0.0f); m_awakenRingTimer = 0.32f; }
+    for (auto& a : m_awakenRings) a += deltaTime;
+    m_awakenRings.erase(
+        std::remove_if(m_awakenRings.begin(), m_awakenRings.end(),
+            [](float a) { return a > 1.1f; }),   // 寿命1.1秒
+        m_awakenRings.end());
+
+    ScreenShake::Add(0.6f);              // ずっと揺らす（グワングワン）
+
+    // 演出だけ更新（操作・ターン遷移・時間経過は止める）
+    ScreenShake::Update(deltaTime);
+    EffectManager::Update(deltaTime);
+    FloatingTextManager::Update(deltaTime);
+    BuffPopupManager::Update(deltaTime);
+    // 演出中：ボス付近にズームイン（揺れも乗せる。通常のカメラ更新はこの下でreturnされて通らない）
+    if (m_awakenBoss)   // ズーム0.4（小さいほど寄る）
+        BattleCamera::ApplyAt(m_renderer3D, m_awakenBoss->worldX, m_awakenBoss->worldZ - 1.5f, 0.4f);
+    return true;
+}
+
+// オロチの脱皮：ターンは使わず、その瞬間に演出だけ出す
+void BattleScene::UpdateSnakeMolt()
+{
+    for (auto enemy : m_enemies)
+        if (enemy->IsSnake() && enemy->ConsumeShed())
+        {
+            auto [hc, hr] = enemy->HitCell();                              // 殴った場所に出す
+            float wx = (hc - m_gridMap->GetCols() / 2.0f) * 1.1f;
+            float wz = (hr - m_gridMap->GetRows() / 2.0f) * 1.1f;
+            EffectManager::Play("chain_break_venom", wx, 0.6f, wz);        // 緑の破片
+            ScreenShake::Add(0.5f);
+            FloatingTextManager::Spawn(wx, 1.0f, wz, L"脱皮！ 巻きつき・攻撃力アップ",
+                XMFLOAT4(0.5f, 1.0f, 0.4f, 1.0f), 40.0f);
+        }
+}
+
+// 3層ボスの覚醒ターンか（この行動の代わりに覚醒する）
+bool BattleScene::IsBossAwakenTurn(const Enemy* enemy) const
+{
+    return enemy->GetId() == "l3_sovereign" && !m_bossAwakened && m_bossAwakenAtTurn >= 0 && m_turnCount >= m_bossAwakenAtTurn;
+}
+
+// 覚醒ターン：何もせず演出＋無敵解除
+void BattleScene::BeginBossAwaken(Enemy* enemy)
+{
+    m_bossAwakened = true;
+    m_bossAwakenAtTurn = -1;
+    enemy->SetInvulnerable(false);
+    enemy->SetTexture("darkload_awaken");
+    m_awakenCinematic = 2.5f;
+    m_awakenRingTimer = 0.0f;
+    m_awakenRings.clear();
+    m_awakenBoss = enemy;
+    ScreenShake::Add(1.0f);
+}

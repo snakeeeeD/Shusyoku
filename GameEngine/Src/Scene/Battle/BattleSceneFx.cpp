@@ -145,3 +145,102 @@ void BattleScene::SyncFaithBuffs()
     if (def && def->effect == "WhileOn" && !RelicManager::HasKind("floorImmune"))
         add(StringToBuffType(def->buffType), tile.value);
 }
+
+// 前の戦闘の文字・数字・山札の光・お知らせ・演出・画面の揺れを消す
+void BattleScene::ClearBattleEffects()
+{
+    FloatingTextManager::Clear();
+    BuffPopupManager::Clear();
+    PileFx::Clear();
+    UiNotice::Clear();
+    EffectManager::Clear();
+    ScreenShake::Clear();   // 前の戦闘の揺れを持ち越さない
+}
+
+// 背景の飾り（盤面の外側・後方と左右だけに少数。手前には置かずグリッドに被らせない）
+void BattleScene::PlaceDecos()
+{
+    m_decos.clear();
+    unsigned s = 20240820u;
+    auto rnd = [&s]() { s = s * 1103515245u + 12345u; return (int)((s >> 16) & 0x7fff); };
+    float gw = m_gridMap->GetCols() * 1.1f * 0.5f;   // 盤面半幅 ~6.6
+    float gh = m_gridMap->GetRows() * 1.1f * 0.5f;   // 盤面半奥 ~3.85
+    int placed = 0;
+    for (int i = 0; i < 200 && placed < 14; i++)     // 最大14個まで（新しい絵は細かく目立つので控えめに）
+    {
+        float ang = ((rnd() % 1000) / 1000.0f) * 6.2832f;
+        float m = 2.0f + ((rnd() % 1000) / 1000.0f) * 4.0f;   // フチから 2..6 外側
+        float x = cosf(ang) * (gw + m);
+        float z = sinf(ang) * (gh + m);
+        if (z > gh - 0.5f) continue;                 // ★手前(カメラ側)には置かない＝グリッドに被らない
+        Deco d; d.x = x; d.z = z;
+        int r = rnd() % 100;
+        d.type = (r < 45) ? 0 : (r < 75) ? 1 : 2;
+        d.scale = 0.8f + (rnd() % 100) / 100.0f * 0.6f;
+        m_decos.push_back(d); placed++;
+    }
+    // 描く順：奥（z が小さい＝画面の上）から手前へ。足元が画面の下にある物ほど後に描いて、手前に見せる
+    std::sort(m_decos.begin(), m_decos.end(), [](const Deco& a, const Deco& b) { return a.z < b.z; });
+}
+
+// 呪い・目隠しが手札にある間は、敵の予告を隠す（配っている途中は、山札・捨て札に目隠しがあれば伏せておく）
+void BattleScene::UpdateIntentVisibility()
+{
+        auto isBlind = [](const std::string& id) { const CardData* d = CardDataBase::Get(id); return d && d->hideIntent; };
+    bool blind = false;
+    for (auto* c : m_hand.GetCards())
+        if (isBlind(c->GetId())) { blind = true; break; }
+    // 配っている途中（ターン開始〜配り終わり）は、目隠しを引く可能性があれば伏せておく
+    // （敵の次の行動はターン開始時に決まるので、引く前の一瞬に新しい予告が見えてしまうのを防ぐ）
+    if (!blind && (m_drawSeqRemaining > 0 || m_reshuffleFxTimer > 0.0f))
+    {
+        for (auto& id : m_deck.GetDrawPile())    if (isBlind(id)) { blind = true; break; }
+        if (!blind)
+            for (auto& id : m_deck.GetDiscardPile()) if (isBlind(id)) { blind = true; break; }
+    }
+    EnemyIntentVisual::SetHidden(blind);
+}
+
+// 盤面の空気：信仰のマスの光の粒と、背景テーマの粒（ドラゴンのステージの火の粉など）
+void BattleScene::SpawnAmbientParticles(float deltaTime)
+{
+    // 信仰のマスから、ときどき光の粒が昇る（信仰が多いほど多い。見た目は effects.json の faith_mote）
+    for (int r = 0; r < m_gridMap->GetRows(); r++)
+        for (int c = 0; c < m_gridMap->GetCols(); c++)
+        {
+            int f = m_gridMap->GetCell(c, r).faith;
+            if (f <= 0) continue;
+            float chance = deltaTime * (0.4f + 0.12f * f);            // 1秒あたり 信仰1→約0.5回、10→約1.6回
+            if ((float)rand() / RAND_MAX >= chance) continue;
+            float ox = ((float)rand() / RAND_MAX - 0.5f) * 0.8f;      // マスの中のどこか
+            float oz = ((float)rand() / RAND_MAX - 0.5f) * 0.8f;
+            EffectManager::Play("faith_mote",
+                (c - m_gridMap->GetCols() / 2.0f) * 1.1f + ox, 0.05f,
+                (r - m_gridMap->GetRows() / 2.0f) * 1.1f + oz);
+        }
+    // 背景テーマの空気に舞う粒（ドラゴンのステージの火の粉など）。盤面より少し広い範囲の地面から、1秒に ambientRate 個くらい
+    {
+        const BattleTheme th = CurrentTheme();
+        if (th.ambientFx && (float)rand() / RAND_MAX < deltaTime * th.ambientRate)
+        {
+            float hx = m_gridMap->GetCols() * 1.1f * 0.5f + 1.5f, hz = m_gridMap->GetRows() * 1.1f * 0.5f + 1.0f;
+            float x = ((float)rand() / RAND_MAX * 2.0f - 1.0f) * hx;
+            float z = ((float)rand() / RAND_MAX * 2.0f - 1.0f) * hz;
+            EffectManager::Play(th.ambientFx, x, 0.05f, z);
+        }
+    }
+}
+
+// 演出の更新（お知らせ・画面の揺れ・ターンのバナー・エフェクト・引き寄せの線・床の演出・床の落下）
+void BattleScene::UpdatePresentation(float deltaTime)
+{
+    UiNotice::Update(deltaTime);
+    if (UiNotice::ConsumeTriggered())
+        m_battleUI->StartOverflowDiscardEffect();
+    ScreenShake::Update(deltaTime);
+    TurnBanner::Update(deltaTime);
+    EffectManager::Update(deltaTime);
+    UpdatePullTether();   // 引き寄せの「つなぐ物」をプレイヤーに付いていかせる
+    UpdateFloorStepFx();  // 敵の床を踏んだら、足が着いた瞬間に床の演出
+    m_tileDrop.Update(deltaTime, m_gridMap);   // 床・罠が新しく置かれたら、上から落とす
+}

@@ -305,6 +305,10 @@
     <ClCompile Include="Src\Scene\Battle\BattleSceneFx.cpp" />
     <ClCompile Include="Src\Scene\Battle\BattleSceneQuery.cpp" />
     <ClCompile Include="Src\Scene\Battle\BattleSceneTurn.cpp" />
+    <ClCompile Include="Src\Scene\Battle\BattleScenePowers.cpp" />
+    <ClCompile Include="Src\Scene\Battle\BattleSceneEnemyTurn.cpp" />
+    <ClCompile Include="Src\Scene\Battle\BattleSceneAim.cpp" />
+    <ClCompile Include="Src\Scene\Battle\BattleSceneHint.cpp" />
     <ClCompile Include="Src\Scene\Battle\BattleSceneDebug.cpp" />
     <ClCompile Include="Src\Scene\Battle\BattleUI.cpp" />
     <ClCompile Include="Src\Scene\Battle\PileFx.cpp" />

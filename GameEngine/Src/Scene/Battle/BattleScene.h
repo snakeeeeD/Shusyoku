@@ -111,6 +111,84 @@ public:
     void FireBolt(Enemy* target, int dmg, float extraDelay);   // 燃えたカードの火の玉を敵へ飛ばし、着いたら dmg の追撃（生贄の刃・炉心）
     Enemy* RandomAliveEnemy();                      // 生きている敵からランダムに1体（いなければ nullptr）
     void TickCountRelics(const char* kind);         // カウント系レリックを1つ進める（attack/skill/move/card/burn）
+
+    // ---- 毎フレームの更新（Update から順に呼ぶ。// の後ろ＝置いてあるファイル） ----
+    void UpdateIntentVisibility();                  // Fx：目隠しが手札にある間は敵の予告を隠す
+    void SpawnAmbientParticles(float deltaTime);    // Fx：信仰の光の粒・背景の火の粉
+    bool UpdateAwakenCinematic(float deltaTime);    // Boss：覚醒演出（演出中なら true）
+    void UpdateSequences(float deltaTime);          // Sequence：順番待ち
+    void UpdatePresentation(float deltaTime);       // Fx：お知らせ・揺れ・バナー・エフェクトなど
+    void UpdateFuseBeep();                          // Trap：導火線のピッ
+    void UpdateSnakeMolt();                         // Boss：オロチの脱皮
+    void UpdateDyingEnemies(float deltaTime);       // Enemies：HP0の敵の塵化と片付け
+    void UpdateUnits(float deltaTime);              // BattleScene：プレイヤーと敵の動き・HP表示
+    void HandleRightClickCancel();                  // Input：右クリックで取り消す
+    void HandleCameraInput();                       // CameraLink：カメラの手での操作
+    void UpdateAimCamera(float deltaTime);          // CameraLink：狙いカメラ・デモ・カメラ更新
+    void UpdateCardHighlight(float handTopOffset);  // Aim：選んでいるカードの範囲
+    void UpdateEnemyHighlight();                    // Aim：敵の攻撃範囲
+    void UpdateReadyPose();                         // Aim：攻撃の構え
+    void UpdateHints();                             // Hint：その場ヒント
+    void UpdateDrawSequence(float deltaTime);       // Hand：山札を戻す演出・時間差のドロー
+    void UpdateOverloadHits(float deltaTime);       // Hand：過負荷のダメージ
+    void UpdateHandAnimations(float deltaTime);     // Hand：手札のアニメ
+    void UpdateAfterBattleEnd(float deltaTime);     // Result：勝敗が決まった後
+    bool CheckBattleEnd();                          // Result：勝ち負けの判定
+    void OnVictory();                               // Result：勝った
+    void OnDefeat();                                // Result：負けた
+    void LogBattleEnd(const char* result, int hpLeft);   // Result：テレメトリ
+    void HealOnVictory();                           // Result：勝った時の回復
+    void OfferBossRelics();                         // Result：ボスのレリックの候補
+    int  DropMaterials();                           // Result：素材のドロップ（落とした数）
+    void RollRewardRare();                          // Result：カード報酬のレア
+    void GiveEliteRewards(int matDrops);            // Result：エリートの報酬
+    // ---- 敵のターン（EnemyTurn） ----
+    void UpdateEnemyTurn(float deltaTime);
+    void EnemyPhaseWaitStart(float deltaTime);
+    void EnemyPhasePoison(float deltaTime);
+    void EnemyPhaseAct(float deltaTime);            // 敵1体の行動
+    void EnemyPhaseWaitAction(float deltaTime);
+    void EnemyPhaseNext(float deltaTime);
+    void EnemyPhaseEnd();
+    void EnemyPhaseDash();
+    Enemy* NextActingEnemy();
+    void ChooseEnemyTarget(Enemy* enemy, int ai, int& tC, int& tR) const;
+    bool StartEnemyWindup(Enemy* enemy, const EnemyAction* wa, int tC, int tR);
+    std::vector<std::pair<int, int>> ThreatCellsBeforeAct(Enemy* enemy, const EnemyAction* wa);
+    bool ApplyEnemyDamage(Enemy* enemy, const EnemyAction* wa, int damage, int tC, int tR, int preCol, int preRow, bool& fullyBlocked);
+    void BreakDecoy();
+    bool StartEnemyDash(Enemy* enemy);
+    bool IsBossAwakenTurn(const Enemy* enemy) const;   // Boss
+    void BeginBossAwaken(Enemy* enemy);                // Boss
+    void PlayEnemyActionFx(Enemy* enemy, const EnemyAction* wa, int tC, int tR, int preCol, int preRow,
+        const std::vector<std::pair<int, int>>& preCells, int damage);   // EnemyFx
+    void InsertEnemyCards(Enemy* enemy);               // Hand：敵が入れるカード
+    void ApplyCounterDamage(Enemy* enemy, int blocked);   // Powers：トゲ・受け返し
+    void TriggerTrapsUnder(Enemy* e, int col, int row);   // Trap：体の下の罠を全部踏む
+    void TriggerTrapsOnPath(Enemy* enemy);             // Trap：通過したマスの罠
+    // ---- 初期化（Init から順に呼ぶ。// の後ろ＝置いてあるファイル） ----
+    bool InitRenderers(ID3D11Device* device, ID3D11DeviceContext* context, int screenWidth, int screenHeight, IDXGISwapChain* swapChain);   // BattleScene
+    void InitBoardAndPlayer();          // BattleScene：盤面・プレイヤーの位置とHP・カメラ
+    void InitDeckAndHand();             // Hand：デッキ・最初の手札
+    void ApplyStartRelics();            // Relic：戦闘開始時のレリック
+    void ResetPerTurnRelicCounters();   // Relic：1ターン用のカウント系レリックを0に
+    void SpawnEncounter();              // Enemies：エンカウントの敵を並べ、強さを上げる
+    void DecideEnemyActions();          // Enemies：全部の敵の次の行動を決める
+    void ClearBattleEffects();          // Fx：前の戦闘の文字・揺れ・演出を消す
+    void PlaceDecos();                  // Fx：背景の飾り
+    void LogBattleStart();              // Result：テレメトリ（戦闘開始）
+    // ---- ターンの節目 ----
+    void OnPlayerTurnStart();           // Turn：プレイヤーのターン開始
+    void OnEnemyTurnStart();            // Turn：敵のターン開始＝プレイヤーのターンの終わり
+    void ResetTurnState();              // Turn：このターンの数を戻す
+    void CarryOverBlock();              // Turn：ブロックの持ち越し
+    void TickPlayerPoison();            // Turn：プレイヤーの毒
+    void TickTurnEndDurations();        // Turn：残りターンを減らす（デバフ・敵のバフ・時限床）
+    void ApplyTurnStartPowers();        // Powers：ターン開始に発動するバフ
+    void ApplyTurnEndPowers();          // Powers：ターンの終わりに発動するバフ
+    void MarkBossAwakenIntent();        // Boss：覚醒ターンの予告
+    void DrawTurnHand();                // Hand：このターンの手札を引く
+    float DiscardHandAtTurnEnd();       // Hand：ターンの終わりに手札を片付ける（過負荷の演出が終わる秒数を返す）
     Card* AddToHand(const std::string& id, int costThisTurn = -1, float delay = 0.0f);   // 手札に加える（真ん中で見せてから右端へ）。costThisTurn>=0 ならこのターンだけそのコスト
     bool TryPhoenixRevive();                        // 不死鳥の尾羽：HPが0なら1度だけ復活（したら true）
 

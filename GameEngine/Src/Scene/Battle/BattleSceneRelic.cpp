@@ -111,3 +111,47 @@ bool BattleScene::IsRelicSpent(const std::string& id) const
     }
     return false;
 }
+
+// 戦闘開始時のレリック（1ターン目のエナジー・ブロック・回復・攻撃UP・追加ドロー・種火の灯・猛毒の小瓶の予約）
+void BattleScene::ApplyStartRelics()
+{
+    m_player->AddEnergy(RelicManager::SumValue("turnEnergy"));   // レリック
+
+    // レリック：戦闘開始時
+    if (int blk = RelicManager::SumValue("startBlock")) m_player->AddBlock(blk);
+    if (int h = RelicManager::SumValue("startHeal")) m_player->Heal(h);
+    if (int atk = RelicManager::SumValue("startBuffAtk"))
+    {
+        Buff b; b.type = BuffType::AttackUp; b.value = atk; b.duration = -1;
+        b.name = L""; b.description = L"";
+        m_player->GetBuffManager().AddBuff(b);
+    }
+    if (int atk = RelicManager::SumValue("startBuffAtkTurn"))   // 最初のターンだけ攻撃UP（鍛錬の鉢巻）
+    {
+        Buff b; b.type = BuffType::AttackUpTurn; b.value = atk; b.duration = 1;
+        b.name = L""; b.description = L"";
+        m_player->GetBuffManager().AddBuff(b);
+    }
+    for (int i = 0; i < RelicManager::SumValue("startDraw"); i++)
+    {
+        std::string id = m_deck.DrawCard();
+        if (!id.empty()) m_hand.AddCard(id);
+    }
+    for (auto* r : RelicManager::OwnedByKind("startCard"))   // 種火の灯：戦闘開始時、決まったカードを手札に
+        for (int i = 0; i < r->value; i++) m_hand.AddCard(r->param);
+
+    // 1ターン用(perTurn)のカウントレリックを0に（ターン開始の処理は2ターン目からなので、前の戦闘の値が1ターン目に残らないように）
+    ResetPerTurnRelicCounters();
+
+    // 猛毒の小瓶：少し経ってから全敵に毒（Updateで発火）
+    if (int sp = RelicManager::SumValue("startPoison"); sp > 0)
+        m_startPoison.Start({ sp }, 0.6f);   // 少し遅らせて全敵へ毒
+}
+
+// 1ターン用(perTurn)のカウントレリックを0に（戦闘開始とターン開始で共通）
+void BattleScene::ResetPerTurnRelicCounters()
+{
+    for (auto& id : PlayerDataManager::GetData().relics)
+        if (auto def = RelicManager::Get(id); def && def->perTurn)
+            PlayerDataManager::GetData().relicCounters[id] = 0;
+}

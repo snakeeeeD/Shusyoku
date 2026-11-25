@@ -162,3 +162,14 @@ float BattleScene::StepDetonate(TrapFire& f)
     }
     return 0.08f;   // 1個ずつの間隔（大きいほどゆっくり）
 }
+
+// 時間を置いて1つずつ進める処理（どれも同じ形：1件処理して、返した秒数だけ待つ。中身は Step〜）
+void BattleScene::UpdateSequences(float deltaTime)
+{
+    m_playerHits.Update(deltaTime,  [&](PlayerHit& h) { return StepPlayerHit(h); });
+    m_enemyHits.Update(deltaTime,   [&](EnemyHit& h)  { return StepEnemyHit(h); });
+    m_coilTraps.Update(deltaTime,   [&](CoilTrap& c)  { return StepCoilTrap(c); });
+    m_startPoison.Update(deltaTime, [&](int& amount)  { return StepStartPoison(amount); });
+    m_chain.Update(deltaTime,       [&](ChainWave& w) { return StepChainWave(w); });
+    m_detonate.Update(deltaTime,    [&](TrapFire& f)  { return StepDetonate(f); });
+}

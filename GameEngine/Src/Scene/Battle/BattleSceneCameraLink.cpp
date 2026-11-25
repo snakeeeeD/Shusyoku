@@ -143,3 +143,78 @@ void BattleScene::FreeLookStep(Input& in, float deltaTime)
         m_playerCol, m_playerRow, m_highlightTimer, m_decoyCol, m_decoyRow);
     if (m_forceHitmark && !m_enemies.empty()) m_enemies[0]->hitsPlayer = true;   // 学習用に強制表示
 }
+
+// カメラの手での操作（ホイール・右ドラッグ・ホイールクリック）。操作のデモ中は動かせない
+void BattleScene::HandleCameraInput()
+{
+    if (!m_camera.DemoActive()
+        && m_camera.HandleInput(m_input, m_gridMap->GetCols(), m_gridMap->GetRows(), m_player->worldX, m_player->worldZ))
+    {
+        // ドラッグせずに離した＝単押し→カード選択解除（Moveカードは除く）
+        if (m_selectedCardIndex >= 0
+            && m_selectedCardIndex < (int)m_hand.GetCards().size()
+            && m_hand.GetCards()[m_selectedCardIndex]->GetData()->type != CardType::Move)
+            m_selectedCardIndex = -1;
+    }
+}
+
+// 狙いカメラ・操作のデモ・カメラの更新（ゴーストを中央へ寄せている間は、カーソルも一緒に動かす）
+void BattleScene::UpdateAimCamera(float deltaTime)
+{
+    // ===== 狙いカメラ =====
+    // ・マスを選ぶカードを選んでいる間、狙えるマスが手札に隠れていたら、隠れなくなるまで奥へ寄せる
+    // ・移動カードで経路を引いている間は、移動予定のマス（ゴースト）を画面の中央へ寄せる（カーソルも一緒に動かす）
+    // ・選択が終わったら：移動カードで移動した → そのまま／キャンセルなど → 寄せる前の位置へ戻す
+    // シーンは「どこへ寄せたいか」を決めるだけ。寄せ方・戻し方は BattleCamera
+    if (m_camera.UserPanning())
+    {
+        m_camera.AimCancel();
+        Cursor::Request(CursorKind::Camera);   // 右ドラッグ中＝カメラ操作のカーソル
+    }
+
+    bool carryCursor = false;                 // このフレーム、カーソルをゴーストと一緒に動かすか
+    std::pair<int, int> carryCell = { -1, -1 };
+    float carryBX = 0.0f, carryBY = 0.0f;     // カメラを動かす前のゴーストの画面位置
+
+    m_camera.BeginAimFrame();
+    if (SelectedNeedsTarget() && Settings::Get().aimCamera)
+    {
+        if (!m_camera.Dragging())
+        {
+            const CardData* sd = m_hand.GetCards()[m_selectedCardIndex]->GetData();
+            bool moved;
+            if (sd->type == CardType::Move && !m_movePath.empty())
+            {
+                // 移動予定のマス（ゴースト）を中央へ。カメラの注視点を少し奥に置くと中央に映る（初期カメラと同じ -0.7）
+                std::pair<int, int> tip = m_movePath.back();
+                float goalX = (tip.first - m_gridMap->GetCols() / 2.0f) * 1.1f;
+                float goalZ = (tip.second - m_gridMap->GetRows() / 2.0f) * 1.1f - 0.7f;
+
+                // カーソルは「カーソルの下のマス」と一緒に動かす（ゴーストではない）
+                if (m_hoveredCell.first >= 0)
+                {
+                    carryCell = m_hoveredCell;
+                    carryCursor = CellToScreen(carryCell.first, carryCell.second, carryBX, carryBY);
+                }
+                moved = m_camera.AimFollow(goalX, goalZ, deltaTime);
+            }
+            else
+                moved = m_camera.AimPan(0.0f, HiddenTargetsPanZ(*sd), 8.0f, deltaTime);   // 経路がまだ無い：手札に隠れるマスを出す
+            if (!moved) carryCursor = false;
+        }
+    }
+    else m_camera.AimEnd();
+
+    MaybeStartCamDemo();   // カメラ操作の自動デモ（初回の1ターン目から。どのヒントよりも先）
+    m_camera.Update(deltaTime, m_gridMap->GetCols(), m_gridMap->GetRows(), m_player->worldX, m_player->worldZ);
+
+    m_camera.Apply(m_renderer3D);
+
+    // ゴーストを中央へ寄せている間は、カーソルの下のマスがずれた分だけカーソルもずらす（指している場所を変えない）
+    if (carryCursor)
+    {
+        float ax, ay;
+        if (CellToScreen(carryCell.first, carryCell.second, ax, ay))   // 新しいカメラでの位置
+            m_input.MoveMouseBy(ax - carryBX, ay - carryBY);
+    }
+}
