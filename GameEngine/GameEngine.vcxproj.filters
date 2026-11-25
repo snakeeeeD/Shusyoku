@@ -379,8 +379,29 @@
     <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\01-EncounterEditor">
       <UniqueIdentifier>{b7b11a1b-2013-4f1e-8b82-e4935e0bf38e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\01-EncounterEditor\01-読み書き・検証">
+      <UniqueIdentifier>{708eb4cc-8c39-42c0-93ea-04fe9ea22498}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\01-EncounterEditor\02-一覧">
+      <UniqueIdentifier>{52efcae8-4ff3-4d36-9c2e-706c5c6031ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\01-EncounterEditor\04-盤面">
+      <UniqueIdentifier>{6baaa269-80c9-4bfe-a2ed-9e381649bca7}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor">
       <UniqueIdentifier>{b9a4cc20-7fc2-4da1-9e5f-b1554f6e458f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor\01-読み書き・検証">
+      <UniqueIdentifier>{76d19e6e-8c81-4156-9f82-0ea087130911}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor\02-一覧">
+      <UniqueIdentifier>{9450f9f2-0ee9-42b9-a9d8-7c6cf8f324f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor\03-編集">
+      <UniqueIdentifier>{b779795d-9990-4636-b699-cfa1c67b0923}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor\04-プレビュー">
+      <UniqueIdentifier>{cbebcde9-de82-4ada-ab8b-6fe7dc4d98ec}</UniqueIdentifier>
     </Filter>
     <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\00-EditorCommon">
       <UniqueIdentifier>{957a4c30-9ba3-44e5-b1db-2b89f54952df}</UniqueIdentifier>
@@ -394,8 +415,32 @@
     <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\03-CardEditor">
       <UniqueIdentifier>{d8168ea8-cec3-44ff-bf93-3bb315f3c1ab}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\03-CardEditor\01-読み書き・検証">
+      <UniqueIdentifier>{15afcf74-e4ec-4374-a2e8-a7d3cddf8835}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\03-CardEditor\02-一覧">
+      <UniqueIdentifier>{5975be28-5297-46c5-b3d2-589ead756142}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\03-CardEditor\03-編集">
+      <UniqueIdentifier>{dab73908-8d31-4722-a20b-3fd6e9ac1b12}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\03-CardEditor\04-プレビュー">
+      <UniqueIdentifier>{89693c0d-0ff5-4f9b-987b-26739a68b8a8}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\04-EventEditor">
       <UniqueIdentifier>{9940c295-b9eb-4722-a6e5-134246f1b0c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\04-EventEditor\01-読み書き・検証">
+      <UniqueIdentifier>{e5fad24d-0872-47fb-97c1-7577ceaba8f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\04-EventEditor\02-一覧">
+      <UniqueIdentifier>{7d1e1ae9-3a99-46e9-9f03-c5baf1b8a5dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\04-EventEditor\03-編集">
+      <UniqueIdentifier>{0b7780d1-08ac-4f4a-9981-0f6a6e674907}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\04-EventEditor\04-プレビュー">
+      <UniqueIdentifier>{f854598c-6cf9-491f-96e7-e6110b2bb987}</UniqueIdentifier>
     </Filter>
     <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\30-RefCheck">
       <UniqueIdentifier>{b8276e07-61c7-40c2-97bd-a2bfe50aa2ea}</UniqueIdentifier>
@@ -403,11 +448,32 @@
     <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\05-CraftEditor">
       <UniqueIdentifier>{02376687-bfda-44c6-9e7a-5361443f153c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\05-CraftEditor\01-読み書き・検証">
+      <UniqueIdentifier>{88236bf3-34b5-438a-8b2a-92e03507b3b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\05-CraftEditor\02-一覧">
+      <UniqueIdentifier>{093d3625-3424-4150-bc16-22247dd4ebce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\05-CraftEditor\03-編集">
+      <UniqueIdentifier>{3f598a8d-a016-4a07-8015-02d0a6723684}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\05-CraftEditor\04-プレビュー">
+      <UniqueIdentifier>{aaffe8fc-abcb-4d3b-b543-fbfd6c454e30}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\40-EditorCardOverlay">
       <UniqueIdentifier>{c29b4424-fab6-42f9-817a-f2b302e05ff8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\05-RericEditor">
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\06-RelicEditor">
       <UniqueIdentifier>{74587e77-9287-4826-8132-b6b01cb77608}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\06-RelicEditor\01-読み書き・検証">
+      <UniqueIdentifier>{6fc9245b-e84e-468a-bf6c-dc8f7add6d02}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\06-RelicEditor\02-一覧">
+      <UniqueIdentifier>{556bdf59-0107-44e5-b7f1-4f5132131cd6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\06-RelicEditor\03-編集">
+      <UniqueIdentifier>{bd8dbdf7-0e33-4271-88c7-3eb8b7809453}</UniqueIdentifier>
     </Filter>
     <Filter Include="ソース ファイル\04-Game内関連\05-RunSetup">
       <UniqueIdentifier>{84da6d07-9658-4b71-8660-71f8bd577220}</UniqueIdentifier>
@@ -825,10 +891,16 @@
     <ClInclude Include="Src\Debug\Editor\EncounterEditor.h">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\01-EncounterEditor</Filter>
     </ClInclude>
+    <ClInclude Include="Src\Debug\Editor\EncounterEditorInternal.h">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\01-EncounterEditor</Filter>
+    </ClInclude>
     <ClInclude Include="Src\Debug\Telemetry.h">
       <Filter>ソース ファイル\07-デバッグ用\01-Telemetry</Filter>
     </ClInclude>
     <ClInclude Include="Src\Debug\Editor\EnemyEditor.h">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Debug\Editor\EnemyEditorInternal.h">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor</Filter>
     </ClInclude>
     <ClInclude Include="Src\Debug\Editor\EditorCommon.h">
@@ -843,7 +915,13 @@
     <ClInclude Include="Src\Debug\Editor\CardEditor.h">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\03-CardEditor</Filter>
     </ClInclude>
+    <ClInclude Include="Src\Debug\Editor\CardEditorInternal.h">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\03-CardEditor</Filter>
+    </ClInclude>
     <ClInclude Include="Src\Debug\Editor\EventEditor.h">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\04-EventEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Debug\Editor\EventEditorInternal.h">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\04-EventEditor</Filter>
     </ClInclude>
     <ClInclude Include="Src\Debug\Editor\RefCheck.h">
@@ -852,11 +930,17 @@
     <ClInclude Include="Src\Debug\Editor\CraftEditor.h">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\05-CraftEditor</Filter>
     </ClInclude>
+    <ClInclude Include="Src\Debug\Editor\CraftEditorInternal.h">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\05-CraftEditor</Filter>
+    </ClInclude>
     <ClInclude Include="Src\Debug\Editor\EditorCardOverlay.h">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\40-EditorCardOverlay</Filter>
     </ClInclude>
     <ClInclude Include="Src\Debug\Editor\RelicEditor.h">
-      <Filter>ソース ファイル\07-デバッグ用\02-Editor\05-RericEditor</Filter>
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\06-RelicEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Debug\Editor\RelicEditorInternal.h">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\06-RelicEditor</Filter>
     </ClInclude>
     <ClInclude Include="Src\Render\Hint.h">
       <Filter>ヘッダー ファイル</Filter>
@@ -1244,8 +1328,35 @@
     <ClCompile Include="Src\Debug\Editor\EncounterEditor.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\01-EncounterEditor</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\EncounterEditorData.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\01-EncounterEditor\01-読み書き・検証</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\EncounterEditorList.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\01-EncounterEditor\02-一覧</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\EncounterEditorGrid.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\01-EncounterEditor\04-盤面</Filter>
+    </ClCompile>
     <ClCompile Include="Src\Debug\Editor\EnemyEditor.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\EnemyEditorFx.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor\04-プレビュー</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\EnemyEditorRange.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor\04-プレビュー</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\EnemyEditorValidate.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor\01-読み書き・検証</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\EnemyEditorList.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor\02-一覧</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\EnemyEditorActions.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor\03-編集</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\EnemyEditorPreview.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor\04-プレビュー</Filter>
     </ClCompile>
     <ClCompile Include="Src\Debug\Editor\EditorCommon.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\00-EditorCommon</Filter>
@@ -1256,8 +1367,32 @@
     <ClCompile Include="Src\Debug\Editor\CardEditor.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\03-CardEditor</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\CardEditorData.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\03-CardEditor\01-読み書き・検証</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\CardEditorList.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\03-CardEditor\02-一覧</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\CardEditorEdit.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\03-CardEditor\03-編集</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\CardEditorPreview.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\03-CardEditor\04-プレビュー</Filter>
+    </ClCompile>
     <ClCompile Include="Src\Debug\Editor\EventEditor.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\04-EventEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\EventEditorData.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\04-EventEditor\01-読み書き・検証</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\EventEditorList.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\04-EventEditor\02-一覧</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\EventEditorEdit.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\04-EventEditor\03-編集</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\EventEditorPreview.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\04-EventEditor\04-プレビュー</Filter>
     </ClCompile>
     <ClCompile Include="Src\Debug\Editor\RefCheck.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\30-RefCheck</Filter>
@@ -1265,11 +1400,32 @@
     <ClCompile Include="Src\Debug\Editor\CraftEditor.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\05-CraftEditor</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\CraftEditorData.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\05-CraftEditor\01-読み書き・検証</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\CraftEditorPreview.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\05-CraftEditor\04-プレビュー</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\CraftEditorList.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\05-CraftEditor\02-一覧</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\CraftEditorEdit.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\05-CraftEditor\03-編集</Filter>
+    </ClCompile>
     <ClCompile Include="Src\Debug\Editor\EditorCardOverlay.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\40-EditorCardOverlay</Filter>
     </ClCompile>
     <ClCompile Include="Src\Debug\Editor\RelicEditor.cpp">
-      <Filter>ソース ファイル\07-デバッグ用\02-Editor\05-RericEditor</Filter>
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\06-RelicEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\RelicEditorData.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\06-RelicEditor\01-読み書き・検証</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\RelicEditorList.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\06-RelicEditor\02-一覧</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Debug\Editor\RelicEditorEdit.cpp">
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\06-RelicEditor\03-編集</Filter>
     </ClCompile>
     <ClCompile Include="Src\Game\RunSetup.cpp">
       <Filter>ソース ファイル\04-Game内関連\05-RunSetup</Filter>
