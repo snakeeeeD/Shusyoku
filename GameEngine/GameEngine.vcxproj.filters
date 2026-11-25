@@ -941,6 +941,45 @@
     <ClCompile Include="Src\Scene\Battle\BattleScene.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleSceneEnemyFx.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleSceneEnemies.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleSceneResult.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleSceneHand.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleSceneBurn.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleSceneRelic.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleSceneSequence.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleSceneTrap.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleSceneBoss.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleSceneCameraLink.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleSceneFx.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleSceneQuery.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleSceneTurn.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
+    </ClCompile>
     <ClCompile Include="Src\Scene\Battle\Battlehighlighter.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\10-BattleHighlighter</Filter>
     </ClCompile>

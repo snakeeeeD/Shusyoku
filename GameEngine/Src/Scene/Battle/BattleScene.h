@@ -41,6 +41,15 @@ enum class EnemyTurnPhase
     EndTurn 
 };
 
+// 3層ボスの鎖：柱（楔）ごとの鎖の絵と、外れた時の破片（AddEnemy と UpdateBossGimmick で使う）
+struct BossChainDef { const char* wedge; const char* chain; const char* fx; };
+inline constexpr BossChainDef BOSS_CHAINS[] = {
+    { "wedge_sword",  "boss_chain_sword",  "chain_break_sword"  },
+    { "wedge_venom",  "boss_chain_venom",  "chain_break_venom"  },
+    { "wedge_shield", "boss_chain_shield", "chain_break_shield" },
+    { "wedge_hex",    "boss_chain_hex",    "chain_break_hex"    },
+};
+
 class BattleScene : public Scene
 {
 public:
