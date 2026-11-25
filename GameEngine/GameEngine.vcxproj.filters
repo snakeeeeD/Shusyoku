@@ -414,8 +414,32 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="framework.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <ClInclude Include="Src\Render\Cursor.h">
+      <Filter>ソース ファイル\01-描画関連</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Render\ScrollList.h">
+      <Filter>ソース ファイル\01-描画関連</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Render\VideoClip.h">
+      <Filter>ソース ファイル\01-描画関連</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Scene\Panels\CardConfirm.h">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Scene\Panels\Glossary.h">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Scene\Panels\GlossaryLink.h">
+      <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Scene\Battle\TimedQueue.h">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Object\Enemy\EnemyActionType.h">
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\03-EnemyAction</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Debug\ClipRecorder.h">
+      <Filter>ソース ファイル\07-デバッグ用</Filter>
     </ClInclude>
     <ClInclude Include="targetver.h">
       <Filter>ヘッダー ファイル</Filter>
@@ -423,190 +447,187 @@
     <ClInclude Include="Resource.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="GameEngine.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="SpriteRenderer.h">
+    <ClInclude Include="Src\Render\SpriteRenderer.h">
       <Filter>ソース ファイル\01-描画関連\01-SpriteRenderer</Filter>
     </ClInclude>
-    <ClInclude Include="TextureLoader.h">
+    <ClInclude Include="Src\Render\TextureLoader.h">
       <Filter>ソース ファイル\01-描画関連\04-TextureLoader</Filter>
     </ClInclude>
-    <ClInclude Include="input.h">
+    <ClInclude Include="Src\Input\input.h">
       <Filter>ソース ファイル\05-Input</Filter>
     </ClInclude>
-    <ClInclude Include="GridMap.h">
+    <ClInclude Include="Src\Game\GridMap.h">
       <Filter>ソース ファイル\04-Game内関連\20-GridMap</Filter>
     </ClInclude>
-    <ClInclude Include="Faith.h">
+    <ClInclude Include="Src\Game\Faith.h">
       <Filter>ソース ファイル\04-Game内関連\20-GridMap</Filter>
     </ClInclude>
-    <ClInclude Include="HoverLift.h">
+    <ClInclude Include="Src\Render\HoverLift.h">
       <Filter>ソース ファイル\01-描画関連\06-UIWindow</Filter>
     </ClInclude>
-    <ClInclude Include="GameObject.h">
+    <ClInclude Include="Src\Object\GameObject.h">
       <Filter>ソース ファイル\03-Object関連\01-GameObject</Filter>
     </ClInclude>
-    <ClInclude Include="Scene.h">
+    <ClInclude Include="Src\Scene\Scene.h">
       <Filter>ソース ファイル\02-Scene\00-Scene</Filter>
     </ClInclude>
-    <ClInclude Include="GlossaryPanel.h">
+    <ClInclude Include="Src\Scene\Panels\GlossaryPanel.h">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClInclude>
-    <ClInclude Include="UiContext.h">
+    <ClInclude Include="Src\Scene\Panels\UiContext.h">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClInclude>
-    <ClInclude Include="EventPanel.h">
+    <ClInclude Include="Src\Scene\Panels\EventPanel.h">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClInclude>
-    <ClInclude Include="ItemPanel.h">
+    <ClInclude Include="Src\Scene\Panels\ItemPanel.h">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClInclude>
-    <ClInclude Include="DeckPanel.h">
+    <ClInclude Include="Src\Scene\Panels\DeckPanel.h">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClInclude>
-    <ClInclude Include="BossRelicPanel.h">
+    <ClInclude Include="Src\Scene\Panels\BossRelicPanel.h">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClInclude>
-    <ClInclude Include="MapPanel.h">
+    <ClInclude Include="Src\Scene\Panels\MapPanel.h">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClInclude>
-    <ClInclude Include="RestPanel.h">
+    <ClInclude Include="Src\Scene\Panels\RestPanel.h">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClInclude>
-    <ClInclude Include="GuideBox.h">
+    <ClInclude Include="Src\Scene\Panels\GuideBox.h">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClInclude>
-    <ClInclude Include="TutorialPanel.h">
+    <ClInclude Include="Src\Scene\Panels\TutorialPanel.h">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClInclude>
-    <ClInclude Include="Tutorials.h">
+    <ClInclude Include="Src\Scene\Panels\Tutorials.h">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClInclude>
-    <ClInclude Include="SceneManager.h">
+    <ClInclude Include="Src\Scene\SceneManager.h">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClInclude>
-    <ClInclude Include="SettingsPanel.h">
+    <ClInclude Include="Src\Scene\Panels\SettingsPanel.h">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClInclude>
-    <ClInclude Include="TitleScene.h">
+    <ClInclude Include="Src\Scene\TitleScene.h">
       <Filter>ソース ファイル\02-Scene\10-TitleScene</Filter>
     </ClInclude>
-    <ClInclude Include="Scenetype.h">
+    <ClInclude Include="Src\Scene\Scenetype.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer3D.h">
+    <ClInclude Include="Src\Render\Renderer3D.h">
       <Filter>ソース ファイル\01-描画関連\02-Renderer3D</Filter>
     </ClInclude>
-    <ClInclude Include="TextureManager.h">
+    <ClInclude Include="Src\Render\TextureManager.h">
       <Filter>ソース ファイル\01-描画関連\03-TextureManager</Filter>
     </ClInclude>
-    <ClInclude Include="Enemy.h">
+    <ClInclude Include="Src\Object\Enemy\Enemy.h">
       <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy</Filter>
     </ClInclude>
-    <ClInclude Include="EnemyDataBase.h">
+    <ClInclude Include="Src\Object\Enemy\EnemyDataBase.h">
       <Filter>ソース ファイル\03-Object関連\20-Enemy\02-EnemyDataBase</Filter>
     </ClInclude>
-    <ClInclude Include="Enemydata.h">
+    <ClInclude Include="Src\Object\Enemy\Enemydata.h">
       <Filter>ソース ファイル\03-Object関連\20-Enemy\01-EnemyData</Filter>
     </ClInclude>
-    <ClInclude Include="TextRenderer.h">
+    <ClInclude Include="Src\Render\TextRenderer.h">
       <Filter>ソース ファイル\01-描画関連\05-TextRenderer</Filter>
     </ClInclude>
-    <ClInclude Include="Game.h">
+    <ClInclude Include="Src\Game\Game.h">
       <Filter>ソース ファイル\04-Game内関連\01-Game</Filter>
     </ClInclude>
-    <ClInclude Include="TurnManager.h">
+    <ClInclude Include="Src\Game\TurnManager.h">
       <Filter>ソース ファイル\04-Game内関連\10-TurnManager</Filter>
     </ClInclude>
-    <ClInclude Include="Card.h">
+    <ClInclude Include="Src\Card\Card.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\00-Card</Filter>
     </ClInclude>
-    <ClInclude Include="CardData.h">
+    <ClInclude Include="Src\Card\CardData.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\01-CardData</Filter>
     </ClInclude>
-    <ClInclude Include="CardType.h">
+    <ClInclude Include="Src\Card\CardType.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\03-CardType</Filter>
     </ClInclude>
-    <ClInclude Include="CardDataBase.h">
+    <ClInclude Include="Src\Card\CardDataBase.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\02-CardDataBase</Filter>
     </ClInclude>
-    <ClInclude Include="Hand.h">
+    <ClInclude Include="Src\Card\Hand.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\10-Hand</Filter>
     </ClInclude>
-    <ClInclude Include="Deck.h">
+    <ClInclude Include="Src\Card\Deck.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\20-Deck</Filter>
     </ClInclude>
-    <ClInclude Include="EnemyAction.h">
+    <ClInclude Include="Src\Object\Enemy\EnemyAction.h">
       <Filter>ソース ファイル\03-Object関連\20-Enemy\03-EnemyAction</Filter>
     </ClInclude>
     <ClInclude Include="External\nlohmann\json.hpp">
       <Filter>ヘッダー ファイル\Json</Filter>
     </ClInclude>
-    <ClInclude Include="Player.h">
+    <ClInclude Include="Src\Object\Player\Player.h">
       <Filter>ソース ファイル\03-Object関連\10-Player\00-Player</Filter>
     </ClInclude>
-    <ClInclude Include="PlayerData.h">
+    <ClInclude Include="Src\Object\Player\PlayerData.h">
       <Filter>ソース ファイル\03-Object関連\10-Player\10-PlayerData</Filter>
     </ClInclude>
-    <ClInclude Include="PlayerDataManager.h">
+    <ClInclude Include="Src\Object\Player\PlayerDataManager.h">
       <Filter>ソース ファイル\03-Object関連\10-Player\20-PlayerDataManager</Filter>
     </ClInclude>
-    <ClInclude Include="CardSelectScene.h">
+    <ClInclude Include="Src\Scene\CardSelectScene.h">
       <Filter>ソース ファイル\02-Scene\30-CardSelectScene</Filter>
     </ClInclude>
-    <ClInclude Include="BuffType.h">
+    <ClInclude Include="Src\Card\Buff\BuffType.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\30-Buff\01-BuffType</Filter>
     </ClInclude>
-    <ClInclude Include="Buff.h">
+    <ClInclude Include="Src\Card\Buff\Buff.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\30-Buff\00-Buff</Filter>
     </ClInclude>
-    <ClInclude Include="BuffManager.h">
+    <ClInclude Include="Src\Card\Buff\BuffManager.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\30-Buff\10-BuffManager</Filter>
     </ClInclude>
-    <ClInclude Include="CardDamage.h">
+    <ClInclude Include="Src\Card\CardDamage.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\07-CardDamage</Filter>
     </ClInclude>
-    <ClInclude Include="CardVisual.h">
+    <ClInclude Include="Src\Card\CardVisual.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\04-CardVisual</Filter>
     </ClInclude>
-    <ClInclude Include="GameUtils.h">
+    <ClInclude Include="Src\Game\GameUtils.h">
       <Filter>ソース ファイル\04-Game内関連\02-GameUtils</Filter>
     </ClInclude>
-    <ClInclude Include="CardEffect.h">
+    <ClInclude Include="Src\Card\CardEffect.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\05-CardEffect</Filter>
     </ClInclude>
-    <ClInclude Include="BattleScene.h">
+    <ClInclude Include="Src\Scene\Battle\BattleScene.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
     </ClInclude>
-    <ClInclude Include="BattleHighlighter.h">
+    <ClInclude Include="Src\Scene\Battle\BattleHighlighter.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\10-BattleHighlighter</Filter>
     </ClInclude>
-    <ClInclude Include="CardExecutor.h">
+    <ClInclude Include="Src\Card\CardExecutor.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\06-CardExecutor</Filter>
     </ClInclude>
-    <ClInclude Include="FieldNode.h">
+    <ClInclude Include="Src\Scene\Field\FieldNode.h">
       <Filter>ソース ファイル\02-Scene\40-FieldScene\01-FieldNode</Filter>
     </ClInclude>
-    <ClInclude Include="FieldNodeType.h">
+    <ClInclude Include="Src\Scene\Field\FieldNodeType.h">
       <Filter>ソース ファイル\02-Scene\40-FieldScene\02-FieldNodeType</Filter>
     </ClInclude>
-    <ClInclude Include="FieldScene.h">
+    <ClInclude Include="Src\Scene\Field\FieldScene.h">
       <Filter>ソース ファイル\02-Scene\40-FieldScene\00-FieldScene</Filter>
     </ClInclude>
-    <ClInclude Include="FieldMapConfig.h">
+    <ClInclude Include="Src\Scene\Field\FieldMapConfig.h">
       <Filter>ソース ファイル\02-Scene\40-FieldScene\03-FieldMapConfig</Filter>
     </ClInclude>
-    <ClInclude Include="PileFx.h">
+    <ClInclude Include="Src\Scene\Battle\PileFx.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\12-PileFx</Filter>
     </ClInclude>
-    <ClInclude Include="BattleUI.h">
+    <ClInclude Include="Src\Scene\Battle\BattleUI.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\11-BattleUI</Filter>
     </ClInclude>
-    <ClInclude Include="EncounterData.h">
+    <ClInclude Include="Src\Scene\Battle\EncounterData.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\20-EncounterData\00-EncounterData</Filter>
     </ClInclude>
-    <ClInclude Include="EncounterDataBase.h">
+    <ClInclude Include="Src\Scene\Battle\EncounterDataBase.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\20-EncounterData\01-EncounterDataBase</Filter>
     </ClInclude>
     <ClInclude Include="External\imgui\imgui.h">
@@ -618,327 +639,327 @@
     <ClInclude Include="External\imgui\backends\imgui_impl_win32.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="BuffInfo.h">
+    <ClInclude Include="Src\Card\Buff\BuffInfo.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\30-Buff\20-BuffInfo</Filter>
     </ClInclude>
-    <ClInclude Include="TerrainDataBase.h">
+    <ClInclude Include="Src\Scene\Battle\TerrainDataBase.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\30-terrains</Filter>
     </ClInclude>
-    <ClInclude Include="RangeShape.h">
+    <ClInclude Include="Src\Game\RangeShape.h">
       <Filter>ソース ファイル\04-Game内関連\30-RangeShape</Filter>
     </ClInclude>
-    <ClInclude Include="EnemyIntentVisual.h">
+    <ClInclude Include="Src\Object\Enemy\EnemyIntentVisual.h">
       <Filter>ソース ファイル\03-Object関連\20-Enemy\04-EnemyIntentVisual</Filter>
     </ClInclude>
-    <ClInclude Include="HighlightPalette.h">
+    <ClInclude Include="Src\Scene\Battle\HighlightPalette.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="FloatingText.h">
+    <ClInclude Include="Src\Scene\Battle\FloatingText.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\40-FloatingText</Filter>
     </ClInclude>
-    <ClInclude Include="BuffPopup.h">
+    <ClInclude Include="Src\Scene\Battle\BuffPopup.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\40-FloatingText</Filter>
     </ClInclude>
-    <ClInclude Include="ScreenShake.h">
+    <ClInclude Include="Src\Scene\Battle\ScreenShake.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\50-ScreenShake</Filter>
     </ClInclude>
-    <ClInclude Include="DamageFeedBack.h">
+    <ClInclude Include="Src\Scene\Battle\DamageFeedBack.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="ShopScene.h">
+    <ClInclude Include="Src\Scene\ShopScene.h">
       <Filter>ソース ファイル\02-Scene\50-ShopScene\00-ShopScene</Filter>
     </ClInclude>
-    <ClInclude Include="UiNotice.h">
+    <ClInclude Include="Src\Scene\Battle\UiNotice.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MaterialData.h">
+    <ClInclude Include="Src\Card\Material\MaterialData.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\40-Material\01-MaterialData</Filter>
     </ClInclude>
-    <ClInclude Include="MaterialDataBase.h">
+    <ClInclude Include="Src\Card\Material\MaterialDataBase.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\40-Material\02-MaterialDataBace</Filter>
     </ClInclude>
-    <ClInclude Include="ResultScene.h">
+    <ClInclude Include="Src\Scene\ResultScene.h">
       <Filter>ソース ファイル\02-Scene\60-ResultScene\00-ResultScene</Filter>
     </ClInclude>
-    <ClInclude Include="RelicData.h">
+    <ClInclude Include="Src\Relic\RelicData.h">
       <Filter>ソース ファイル\03-Object関連\40-Relic\01-RelicData</Filter>
     </ClInclude>
-    <ClInclude Include="RelicManager.h">
+    <ClInclude Include="Src\Relic\RelicManager.h">
       <Filter>ソース ファイル\03-Object関連\40-Relic\02-RelicManager</Filter>
     </ClInclude>
-    <ClInclude Include="EventData.h">
+    <ClInclude Include="Src\Scene\Field\EventData.h">
       <Filter>ソース ファイル\02-Scene\40-FieldScene\10-Event\01-EventData</Filter>
     </ClInclude>
-    <ClInclude Include="EffectDataBase.h">
+    <ClInclude Include="Src\Render\Effect\EffectDataBase.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\02-EffectDataBase</Filter>
     </ClInclude>
-    <ClInclude Include="EventDataBase.h">
+    <ClInclude Include="Src\Scene\Field\EventDataBase.h">
       <Filter>ソース ファイル\02-Scene\40-FieldScene\10-Event\02-EventDataBase</Filter>
     </ClInclude>
-    <ClInclude Include="Se.h">
+    <ClInclude Include="Src\Game\Se.h">
       <Filter>ソース ファイル\04-Game内関連\03-Audio</Filter>
     </ClInclude>
-    <ClInclude Include="Audio.h">
+    <ClInclude Include="Src\Game\Audio.h">
       <Filter>ソース ファイル\04-Game内関連\03-Audio</Filter>
     </ClInclude>
-    <ClInclude Include="HitStop.h">
+    <ClInclude Include="Src\Scene\Battle\HitStop.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\50-ScreenShake\60-HitStop</Filter>
     </ClInclude>
-    <ClInclude Include="TurnBanner.h">
+    <ClInclude Include="Src\Scene\Battle\TurnBanner.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\70-TurnBanner</Filter>
     </ClInclude>
-    <ClInclude Include="UIwindow.h">
+    <ClInclude Include="Src\Render\UIwindow.h">
       <Filter>ソース ファイル\01-描画関連\06-UIWindow</Filter>
     </ClInclude>
-    <ClInclude Include="Settings.h">
+    <ClInclude Include="Src\Game\Settings.h">
       <Filter>ソース ファイル\04-Game内関連\04-Setting</Filter>
     </ClInclude>
-    <ClInclude Include="RenderConfig.h">
+    <ClInclude Include="Src\Render\RenderConfig.h">
       <Filter>ソース ファイル\01-描画関連\07-RenderConfig</Filter>
     </ClInclude>
-    <ClInclude Include="CardTooltip.h">
+    <ClInclude Include="Src\Card\CardTooltip.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\07-CardTooltip</Filter>
     </ClInclude>
-    <ClInclude Include="ItemTooltip.h">
+    <ClInclude Include="Src\Card\ItemTooltip.h">
       <Filter>ソース ファイル\03-Object関連\30-Card\50-ItemTooltip</Filter>
     </ClInclude>
-    <ClInclude Include="AnimTune.h">
+    <ClInclude Include="Src\Render\AnimTune.h">
       <Filter>ソース ファイル\01-描画関連\08-AnimTune</Filter>
     </ClInclude>
-    <ClInclude Include="URect.h">
+    <ClInclude Include="Src\Render\URect.h">
       <Filter>ソース ファイル\01-描画関連\09-URect</Filter>
     </ClInclude>
-    <ClInclude Include="EncounterEditor.h">
+    <ClInclude Include="Src\Debug\Editor\EncounterEditor.h">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\01-EncounterEditor</Filter>
     </ClInclude>
-    <ClInclude Include="Telemetry.h">
+    <ClInclude Include="Src\Debug\Telemetry.h">
       <Filter>ソース ファイル\07-デバッグ用\01-Telemetry</Filter>
     </ClInclude>
-    <ClInclude Include="EnemyEditor.h">
+    <ClInclude Include="Src\Debug\Editor\EnemyEditor.h">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor</Filter>
     </ClInclude>
-    <ClInclude Include="EditorCommon.h">
+    <ClInclude Include="Src\Debug\Editor\EditorCommon.h">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\00-EditorCommon</Filter>
     </ClInclude>
-    <ClInclude Include="EnumNames.h">
+    <ClInclude Include="Src\Debug\Editor\EnumNames.h">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\10-EnumNames</Filter>
     </ClInclude>
-    <ClInclude Include="EditorHub.h">
+    <ClInclude Include="Src\Debug\Editor\EditorHub.h">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\20-EditorHub</Filter>
     </ClInclude>
-    <ClInclude Include="CardEditor.h">
+    <ClInclude Include="Src\Debug\Editor\CardEditor.h">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\03-CardEditor</Filter>
     </ClInclude>
-    <ClInclude Include="EventEditor.h">
+    <ClInclude Include="Src\Debug\Editor\EventEditor.h">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\04-EventEditor</Filter>
     </ClInclude>
-    <ClInclude Include="RefCheck.h">
+    <ClInclude Include="Src\Debug\Editor\RefCheck.h">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\30-RefCheck</Filter>
     </ClInclude>
-    <ClInclude Include="CraftEditor.h">
+    <ClInclude Include="Src\Debug\Editor\CraftEditor.h">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\05-CraftEditor</Filter>
     </ClInclude>
-    <ClInclude Include="EditorCardOverlay.h">
+    <ClInclude Include="Src\Debug\Editor\EditorCardOverlay.h">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\40-EditorCardOverlay</Filter>
     </ClInclude>
-    <ClInclude Include="RelicEditor.h">
+    <ClInclude Include="Src\Debug\Editor\RelicEditor.h">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\05-RericEditor</Filter>
     </ClInclude>
-    <ClInclude Include="Hint.h">
+    <ClInclude Include="Src\Render\Hint.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="RunSetup.h">
+    <ClInclude Include="Src\Game\RunSetup.h">
       <Filter>ソース ファイル\04-Game内関連\05-RunSetup</Filter>
     </ClInclude>
-    <ClInclude Include="QuickPlay.h">
+    <ClInclude Include="Src\Scene\QuickPlay\QuickPlay.h">
       <Filter>ソース ファイル\02-Scene\70-QuickPlay\00-QuickPlay</Filter>
     </ClInclude>
-    <ClInclude Include="QuickSelectScene.h">
+    <ClInclude Include="Src\Scene\QuickPlay\QuickSelectScene.h">
       <Filter>ソース ファイル\02-Scene\70-QuickPlay\01-QuickSelectScene</Filter>
     </ClInclude>
-    <ClInclude Include="HpBar.h">
+    <ClInclude Include="Src\Render\HpBar.h">
       <Filter>ソース ファイル\01-描画関連\10-HpBar</Filter>
     </ClInclude>
-    <ClInclude Include="BattleCamera.h">
+    <ClInclude Include="Src\Scene\Battle\BattleCamera.h">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\04-BattleCamera</Filter>
     </ClInclude>
-    <ClInclude Include="EffectManager.h">
+    <ClInclude Include="Src\Render\Effect\EffectManager.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\01-EffectManager</Filter>
     </ClInclude>
-    <ClInclude Include="CardBurn.h">
+    <ClInclude Include="Src\Render\Effect\CardBurn.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\40-CardBurn</Filter>
     </ClInclude>
-    <ClInclude Include="FlashSprite.h">
+    <ClInclude Include="Src\Render\Effect\Kinds\FlashSprite.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\06-FlashSprite</Filter>
     </ClInclude>
-    <ClInclude Include="Projectile.h">
+    <ClInclude Include="Src\Render\Effect\Kinds\Projectile.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\07-Projectile</Filter>
     </ClInclude>
-    <ClInclude Include="Tether.h">
+    <ClInclude Include="Src\Render\Effect\Kinds\Tether.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\08-Tether</Filter>
     </ClInclude>
-    <ClInclude Include="ScreenOverlay.h">
+    <ClInclude Include="Src\Render\Effect\Kinds\ScreenOverlay.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\05-ScreenOverlay</Filter>
     </ClInclude>
-    <ClInclude Include="ScreenImage.h">
+    <ClInclude Include="Src\Render\Effect\Kinds\ScreenImage.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\09-ScreenImage</Filter>
     </ClInclude>
-    <ClInclude Include="Helix.h">
+    <ClInclude Include="Src\Render\Effect\Kinds\Helix.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\10-Helix</Filter>
     </ClInclude>
-    <ClInclude Include="TileDropFx.h">
+    <ClInclude Include="Src\Render\Effect\TileDropFx.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\50-TileDrop</Filter>
     </ClInclude>
-    <ClInclude Include="ScreenStatusFx.h">
+    <ClInclude Include="Src\Render\Effect\ScreenStatusFx.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\30-ScreenFx</Filter>
     </ClInclude>
-    <ClInclude Include="MoveFeel.h">
+    <ClInclude Include="Src\Render\Effect\MoveFeel.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\20-MoveFeel</Filter>
     </ClInclude>
-    <ClInclude Include="ParticleBurst.h">
+    <ClInclude Include="Src\Render\Effect\Kinds\ParticleBurst.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\01-ParticleBrust</Filter>
     </ClInclude>
-    <ClInclude Include="SpriteSheet.h">
+    <ClInclude Include="Src\Render\Effect\Kinds\SpriteSheet.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\02-SpriteSheet</Filter>
     </ClInclude>
-    <ClInclude Include="GroundRing.h">
+    <ClInclude Include="Src\Render\Effect\Kinds\GroundRing.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\03-GroundRing</Filter>
     </ClInclude>
-    <ClInclude Include="ShockWall.h">
+    <ClInclude Include="Src\Render\Effect\Kinds\ShockWall.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\04-ShockWall</Filter>
     </ClInclude>
-    <ClInclude Include="EffectKinds.h">
+    <ClInclude Include="Src\Render\Effect\Kinds\EffectKinds.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\00-EffectKinds</Filter>
     </ClInclude>
-    <ClInclude Include="EffectPart.h">
+    <ClInclude Include="Src\Render\Effect\EffectPart.h">
       <Filter>ソース ファイル\01-描画関連\20-Effect\00-EffectPath</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="SpriteRenderer.cpp">
+    <ClCompile Include="Src\Render\SpriteRenderer.cpp">
       <Filter>ソース ファイル\01-描画関連\01-SpriteRenderer</Filter>
     </ClCompile>
-    <ClCompile Include="TextureLoader.cpp">
+    <ClCompile Include="Src\Render\TextureLoader.cpp">
       <Filter>ソース ファイル\01-描画関連\04-TextureLoader</Filter>
     </ClCompile>
-    <ClCompile Include="input.cpp">
+    <ClCompile Include="Src\Input\input.cpp">
       <Filter>ソース ファイル\05-Input</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="Src\Main\main.cpp">
       <Filter>ソース ファイル\00-Main</Filter>
     </ClCompile>
-    <ClCompile Include="GridMap.cpp">
+    <ClCompile Include="Src\Game\GridMap.cpp">
       <Filter>ソース ファイル\04-Game内関連\20-GridMap</Filter>
     </ClCompile>
-    <ClCompile Include="GameObject.cpp">
+    <ClCompile Include="Src\Object\GameObject.cpp">
       <Filter>ソース ファイル\03-Object関連\01-GameObject</Filter>
     </ClCompile>
-    <ClCompile Include="GlossaryPanel.cpp">
+    <ClCompile Include="Src\Scene\Panels\GlossaryPanel.cpp">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClCompile>
-    <ClCompile Include="EventPanel.cpp">
+    <ClCompile Include="Src\Scene\Panels\EventPanel.cpp">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClCompile>
-    <ClCompile Include="ItemPanel.cpp">
+    <ClCompile Include="Src\Scene\Panels\ItemPanel.cpp">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClCompile>
-    <ClCompile Include="DeckPanel.cpp">
+    <ClCompile Include="Src\Scene\Panels\DeckPanel.cpp">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClCompile>
-    <ClCompile Include="BossRelicPanel.cpp">
+    <ClCompile Include="Src\Scene\Panels\BossRelicPanel.cpp">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClCompile>
-    <ClCompile Include="MapPanel.cpp">
+    <ClCompile Include="Src\Scene\Panels\MapPanel.cpp">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClCompile>
-    <ClCompile Include="RestPanel.cpp">
+    <ClCompile Include="Src\Scene\Panels\RestPanel.cpp">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClCompile>
-    <ClCompile Include="GuideBox.cpp">
+    <ClCompile Include="Src\Scene\Panels\GuideBox.cpp">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClCompile>
-    <ClCompile Include="TutorialPanel.cpp">
+    <ClCompile Include="Src\Scene\Panels\TutorialPanel.cpp">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClCompile>
-    <ClCompile Include="SceneManager.cpp">
+    <ClCompile Include="Src\Scene\SceneManager.cpp">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClCompile>
-    <ClCompile Include="SettingsPanel.cpp">
+    <ClCompile Include="Src\Scene\Panels\SettingsPanel.cpp">
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClCompile>
-    <ClCompile Include="TitleScene.cpp">
+    <ClCompile Include="Src\Scene\TitleScene.cpp">
       <Filter>ソース ファイル\02-Scene\10-TitleScene</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer3D.cpp">
+    <ClCompile Include="Src\Render\Renderer3D.cpp">
       <Filter>ソース ファイル\01-描画関連\02-Renderer3D</Filter>
     </ClCompile>
-    <ClCompile Include="TextureManager.cpp">
+    <ClCompile Include="Src\Render\TextureManager.cpp">
       <Filter>ソース ファイル\01-描画関連\03-TextureManager</Filter>
     </ClCompile>
-    <ClCompile Include="Enemy.cpp">
+    <ClCompile Include="Src\Object\Enemy\Enemy.cpp">
       <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy</Filter>
     </ClCompile>
-    <ClCompile Include="EnemyDataBase.cpp">
+    <ClCompile Include="Src\Object\Enemy\EnemyDataBase.cpp">
       <Filter>ソース ファイル\03-Object関連\20-Enemy\02-EnemyDataBase</Filter>
     </ClCompile>
-    <ClCompile Include="TextRenderer.cpp">
+    <ClCompile Include="Src\Render\TextRenderer.cpp">
       <Filter>ソース ファイル\01-描画関連\05-TextRenderer</Filter>
     </ClCompile>
-    <ClCompile Include="Game.cpp">
+    <ClCompile Include="Src\Game\Game.cpp">
       <Filter>ソース ファイル\04-Game内関連\01-Game</Filter>
     </ClCompile>
-    <ClCompile Include="TurnManager.cpp">
+    <ClCompile Include="Src\Game\TurnManager.cpp">
       <Filter>ソース ファイル\04-Game内関連\10-TurnManager</Filter>
     </ClCompile>
-    <ClCompile Include="Card.cpp">
+    <ClCompile Include="Src\Card\Card.cpp">
       <Filter>ソース ファイル\03-Object関連\30-Card\00-Card</Filter>
     </ClCompile>
-    <ClCompile Include="CardDataBase.cpp">
+    <ClCompile Include="Src\Card\CardDataBase.cpp">
       <Filter>ソース ファイル\03-Object関連\30-Card\02-CardDataBase</Filter>
     </ClCompile>
-    <ClCompile Include="Hand.cpp">
+    <ClCompile Include="Src\Card\Hand.cpp">
       <Filter>ソース ファイル\03-Object関連\30-Card\10-Hand</Filter>
     </ClCompile>
-    <ClCompile Include="Deck.cpp">
+    <ClCompile Include="Src\Card\Deck.cpp">
       <Filter>ソース ファイル\03-Object関連\30-Card\20-Deck</Filter>
     </ClCompile>
-    <ClCompile Include="Player.cpp">
+    <ClCompile Include="Src\Object\Player\Player.cpp">
       <Filter>ソース ファイル\03-Object関連\10-Player\00-Player</Filter>
     </ClCompile>
-    <ClCompile Include="PlayerDataManager.cpp">
+    <ClCompile Include="Src\Object\Player\PlayerDataManager.cpp">
       <Filter>ソース ファイル\03-Object関連\10-Player\20-PlayerDataManager</Filter>
     </ClCompile>
-    <ClCompile Include="CardSelectScene.cpp">
+    <ClCompile Include="Src\Scene\CardSelectScene.cpp">
       <Filter>ソース ファイル\02-Scene\30-CardSelectScene</Filter>
     </ClCompile>
-    <ClCompile Include="BuffManager.cpp">
+    <ClCompile Include="Src\Card\Buff\BuffManager.cpp">
       <Filter>ソース ファイル\03-Object関連\30-Card\30-Buff\10-BuffManager</Filter>
     </ClCompile>
-    <ClCompile Include="BattleCamera.cpp">
+    <ClCompile Include="Src\Scene\Battle\BattleCamera.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
     </ClCompile>
-    <ClCompile Include="BattleScene.cpp">
+    <ClCompile Include="Src\Scene\Battle\BattleScene.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
     </ClCompile>
-    <ClCompile Include="Battlehighlighter.cpp">
+    <ClCompile Include="Src\Scene\Battle\Battlehighlighter.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\10-BattleHighlighter</Filter>
     </ClCompile>
-    <ClCompile Include="CardExecutor.cpp">
+    <ClCompile Include="Src\Card\CardExecutor.cpp">
       <Filter>ソース ファイル\03-Object関連\30-Card\06-CardExecutor</Filter>
     </ClCompile>
-    <ClCompile Include="FieldScene.cpp">
+    <ClCompile Include="Src\Scene\Field\FieldScene.cpp">
       <Filter>ソース ファイル\02-Scene\40-FieldScene\00-FieldScene</Filter>
     </ClCompile>
-    <ClCompile Include="PileFx.cpp">
+    <ClCompile Include="Src\Scene\Battle\PileFx.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\12-PileFx</Filter>
     </ClCompile>
-    <ClCompile Include="BattleUI.cpp">
+    <ClCompile Include="Src\Scene\Battle\BattleUI.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\11-BattleUI</Filter>
     </ClCompile>
-    <ClCompile Include="EncounterDataBase.cpp">
+    <ClCompile Include="Src\Scene\Battle\EncounterDataBase.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\20-EncounterData\01-EncounterDataBase</Filter>
     </ClCompile>
-    <ClCompile Include="BattleSceneDebug.cpp">
+    <ClCompile Include="Src\Scene\Battle\BattleSceneDebug.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\01-BattleSceneDebug</Filter>
     </ClCompile>
     <ClCompile Include="External\imgui\imgui.cpp">
@@ -959,127 +980,127 @@
     <ClCompile Include="External\imgui\backends\imgui_impl_win32.cpp">
       <Filter>ソース ファイル\06-ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="TerrainDataBase.cpp">
+    <ClCompile Include="Src\Scene\Battle\TerrainDataBase.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\30-terrains</Filter>
     </ClCompile>
-    <ClCompile Include="ShopScene.cpp">
+    <ClCompile Include="Src\Scene\ShopScene.cpp">
       <Filter>ソース ファイル\02-Scene\50-ShopScene\00-ShopScene</Filter>
     </ClCompile>
-    <ClCompile Include="MaterialDataBase.cpp">
+    <ClCompile Include="Src\Card\Material\MaterialDataBase.cpp">
       <Filter>ソース ファイル\03-Object関連\30-Card\40-Material\02-MaterialDataBace</Filter>
     </ClCompile>
-    <ClCompile Include="ResultScene.cpp">
+    <ClCompile Include="Src\Scene\ResultScene.cpp">
       <Filter>ソース ファイル\02-Scene\60-ResultScene\00-ResultScene</Filter>
     </ClCompile>
-    <ClCompile Include="RelicManager.cpp">
+    <ClCompile Include="Src\Relic\RelicManager.cpp">
       <Filter>ソース ファイル\03-Object関連\40-Relic\02-RelicManager</Filter>
     </ClCompile>
-    <ClCompile Include="EventDataBase.cpp">
+    <ClCompile Include="Src\Scene\Field\EventDataBase.cpp">
       <Filter>ソース ファイル\02-Scene\40-FieldScene\10-Event\02-EventDataBase</Filter>
     </ClCompile>
-    <ClCompile Include="EffectDataBase.cpp">
+    <ClCompile Include="Src\Render\Effect\EffectDataBase.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\02-EffectDataBase</Filter>
     </ClCompile>
-    <ClCompile Include="Audio.cpp">
+    <ClCompile Include="Src\Game\Audio.cpp">
       <Filter>ソース ファイル\04-Game内関連\03-Audio</Filter>
     </ClCompile>
-    <ClCompile Include="Settings.cpp">
+    <ClCompile Include="Src\Game\Settings.cpp">
       <Filter>ソース ファイル\04-Game内関連\04-Setting</Filter>
     </ClCompile>
-    <ClCompile Include="EncounterEditor.cpp">
+    <ClCompile Include="Src\Debug\Editor\EncounterEditor.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\01-EncounterEditor</Filter>
     </ClCompile>
-    <ClCompile Include="EnemyEditor.cpp">
+    <ClCompile Include="Src\Debug\Editor\EnemyEditor.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor</Filter>
     </ClCompile>
-    <ClCompile Include="EditorCommon.cpp">
+    <ClCompile Include="Src\Debug\Editor\EditorCommon.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\00-EditorCommon</Filter>
     </ClCompile>
-    <ClCompile Include="EditorHub.cpp">
+    <ClCompile Include="Src\Debug\Editor\EditorHub.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\20-EditorHub</Filter>
     </ClCompile>
-    <ClCompile Include="CardEditor.cpp">
+    <ClCompile Include="Src\Debug\Editor\CardEditor.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\03-CardEditor</Filter>
     </ClCompile>
-    <ClCompile Include="EventEditor.cpp">
+    <ClCompile Include="Src\Debug\Editor\EventEditor.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\04-EventEditor</Filter>
     </ClCompile>
-    <ClCompile Include="RefCheck.cpp">
+    <ClCompile Include="Src\Debug\Editor\RefCheck.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\30-RefCheck</Filter>
     </ClCompile>
-    <ClCompile Include="CraftEditor.cpp">
+    <ClCompile Include="Src\Debug\Editor\CraftEditor.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\05-CraftEditor</Filter>
     </ClCompile>
-    <ClCompile Include="EditorCardOverlay.cpp">
+    <ClCompile Include="Src\Debug\Editor\EditorCardOverlay.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\40-EditorCardOverlay</Filter>
     </ClCompile>
-    <ClCompile Include="RelicEditor.cpp">
+    <ClCompile Include="Src\Debug\Editor\RelicEditor.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\05-RericEditor</Filter>
     </ClCompile>
-    <ClCompile Include="RunSetup.cpp">
+    <ClCompile Include="Src\Game\RunSetup.cpp">
       <Filter>ソース ファイル\04-Game内関連\05-RunSetup</Filter>
     </ClCompile>
-    <ClCompile Include="QuickPlay.cpp">
+    <ClCompile Include="Src\Scene\QuickPlay\QuickPlay.cpp">
       <Filter>ソース ファイル\02-Scene\70-QuickPlay\00-QuickPlay</Filter>
     </ClCompile>
-    <ClCompile Include="QuickSelectScene.cpp">
+    <ClCompile Include="Src\Scene\QuickPlay\QuickSelectScene.cpp">
       <Filter>ソース ファイル\02-Scene\70-QuickPlay\01-QuickSelectScene</Filter>
     </ClCompile>
-    <ClCompile Include="Hint.cpp">
+    <ClCompile Include="Src\Render\Hint.cpp">
       <Filter>ソース ファイル\01-描画関連\11-Hint</Filter>
     </ClCompile>
-    <ClCompile Include="BattleSceneDraw.cpp">
+    <ClCompile Include="Src\Scene\Battle\BattleSceneDraw.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\02-BattleSceneDraw</Filter>
     </ClCompile>
-    <ClCompile Include="BattleSceneInput.cpp">
+    <ClCompile Include="Src\Scene\Battle\BattleSceneInput.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\03-BattleSceneInput</Filter>
     </ClCompile>
-    <ClCompile Include="EffectManager.cpp">
+    <ClCompile Include="Src\Render\Effect\EffectManager.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\01-EffectManager</Filter>
     </ClCompile>
-    <ClCompile Include="CardBurn.cpp">
+    <ClCompile Include="Src\Render\Effect\CardBurn.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\40-CardBurn</Filter>
     </ClCompile>
-    <ClCompile Include="FlashSprite.cpp">
+    <ClCompile Include="Src\Render\Effect\Kinds\FlashSprite.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\06-FlashSprite</Filter>
     </ClCompile>
-    <ClCompile Include="Projectile.cpp">
+    <ClCompile Include="Src\Render\Effect\Kinds\Projectile.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\07-Projectile</Filter>
     </ClCompile>
-    <ClCompile Include="Tether.cpp">
+    <ClCompile Include="Src\Render\Effect\Kinds\Tether.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\08-Tether</Filter>
     </ClCompile>
-    <ClCompile Include="ScreenOverlay.cpp">
+    <ClCompile Include="Src\Render\Effect\Kinds\ScreenOverlay.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\05-ScreenOverlay</Filter>
     </ClCompile>
-    <ClCompile Include="ScreenImage.cpp">
+    <ClCompile Include="Src\Render\Effect\Kinds\ScreenImage.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\09-ScreenImage</Filter>
     </ClCompile>
-    <ClCompile Include="Helix.cpp">
+    <ClCompile Include="Src\Render\Effect\Kinds\Helix.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\10-Helix</Filter>
     </ClCompile>
-    <ClCompile Include="TileDropFx.cpp">
+    <ClCompile Include="Src\Render\Effect\TileDropFx.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\50-TileDrop</Filter>
     </ClCompile>
-    <ClCompile Include="ScreenStatusFx.cpp">
+    <ClCompile Include="Src\Render\Effect\ScreenStatusFx.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\30-ScreenFx</Filter>
     </ClCompile>
-    <ClCompile Include="MoveFeel.cpp">
+    <ClCompile Include="Src\Render\Effect\MoveFeel.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\20-MoveFeel</Filter>
     </ClCompile>
-    <ClCompile Include="ParticleBurst.cpp">
+    <ClCompile Include="Src\Render\Effect\Kinds\ParticleBurst.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\01-ParticleBrust</Filter>
     </ClCompile>
-    <ClCompile Include="SpriteSheet.cpp">
+    <ClCompile Include="Src\Render\Effect\Kinds\SpriteSheet.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\02-SpriteSheet</Filter>
     </ClCompile>
-    <ClCompile Include="GroundRing.cpp">
+    <ClCompile Include="Src\Render\Effect\Kinds\GroundRing.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\03-GroundRing</Filter>
     </ClCompile>
-    <ClCompile Include="ShockWall.cpp">
+    <ClCompile Include="Src\Render\Effect\Kinds\ShockWall.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\04-ShockWall</Filter>
     </ClCompile>
-    <ClCompile Include="EffectKinds.cpp">
+    <ClCompile Include="Src\Render\Effect\Kinds\EffectKinds.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\10-種類\00-EffectKinds</Filter>
     </ClCompile>
   </ItemGroup>
