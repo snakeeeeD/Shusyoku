@@ -26,7 +26,6 @@
 using namespace DirectX;
 
 // 左下の自分の状態・山札類のアイコン・バフの一覧・ターン終了ボタン・ターンのバナー
-// （BattleUI のメンバー。BattleUI.cpp から機能ごとに分けたファイル）
 
 BattleUI::PlayerHudRects BattleUI::PlayerHud() const
 {

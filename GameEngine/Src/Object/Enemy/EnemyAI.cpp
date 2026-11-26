@@ -19,7 +19,6 @@
 #include <queue>
 
 // 次の行動を決める（条件・順番・覚醒の予告・弱点のマス・召喚の予定）
-// （Enemy のメンバー。Enemy.cpp から機能ごとに分けたファイル）
 
 // 行動に移動が含まれるか（接近・離脱・引き寄せ）。含むなら棒立ち防止の「＋移動」を足さない
 static bool ActionAlreadyMoves(const EnemyAction& act)

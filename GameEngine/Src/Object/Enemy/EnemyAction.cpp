@@ -19,7 +19,6 @@
 #include <queue>
 
 // 行動の実行（流れと、効果の呼び分け）
-// （Enemy のメンバー。Enemy.cpp から機能ごとに分けたファイル）
 
 int Enemy::ExecuteAction(int actionIdx, int playerCol, int playerRow,
     GridMap* gridMap, Player* player, std::vector<Enemy*>& enemies,

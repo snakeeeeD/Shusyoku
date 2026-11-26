@@ -19,7 +19,6 @@
 #include <queue>
 
 // 移動（近づく・離れる・突進・並ぶ・中央へ・予告どおり・移動予定の経路・軌跡の床）
-// （Enemy のメンバー。Enemy.cpp から機能ごとに分けたファイル）
 
 bool Enemy::CanOccupy(GridMap* gridMap, int nc, int nr) const
 {

@@ -19,7 +19,6 @@
 #include <queue>
 
 // 効果：ブロック・バフ／デバフ
-// （Enemy のメンバー。Enemy.cpp から機能ごとに分けたファイル）
 
 // ブロック（自分か、味方全員）
 void Enemy::EffectBlock(ActionRun& r, const Effect& e)

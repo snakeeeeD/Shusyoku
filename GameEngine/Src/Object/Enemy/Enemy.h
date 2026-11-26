@@ -15,6 +15,7 @@ public:
 	void Init(const std::string& id);
 	void Update(float deltaTime) override;
 	void Draw3D(class Renderer3D* renderer) override;
+	void DrawShadowCaster(class Renderer3D* renderer);   // —‚¿‰eF—§‚Ä‚½”Â‚Å[‚³‚ÌŠG‚É•`‚­
 
 	
 	// ƒQƒbƒ^[

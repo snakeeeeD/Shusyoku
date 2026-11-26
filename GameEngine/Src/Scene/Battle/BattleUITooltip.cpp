@@ -26,7 +26,6 @@
 using namespace DirectX;
 
 // 説明の窓（バフ・予告・罠・聖地・光るウロコ）
-// （BattleUI のメンバー。BattleUI.cpp から機能ごとに分けたファイル）
 
 // 文字列の幅（実際のフォントで測る）
 static float TextWidth(TextRenderer* tr, const std::wstring& s, float size)

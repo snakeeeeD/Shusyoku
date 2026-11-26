@@ -19,7 +19,6 @@
 #include <queue>
 
 // 効果：召喚・床を置く
-// （Enemy のメンバー。Enemy.cpp から機能ごとに分けたファイル）
 
 // 召喚（実際に呼ぶのは BattleScene）
 void Enemy::EffectSummon(ActionRun& r, const Effect& e)

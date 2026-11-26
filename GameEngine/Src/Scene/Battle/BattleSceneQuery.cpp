@@ -36,7 +36,6 @@
 #endif
 
 // 調べるだけの関数（射程・敵の場所・狙っている敵・窓の位置）
-// （BattleScene のメンバー。BattleScene.cpp から機能ごとに分けたファイル）
 
 bool BattleScene::CellInCardRange(const CardData& d, int c, int r) const
 {

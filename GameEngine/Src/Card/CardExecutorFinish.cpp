@@ -16,7 +16,6 @@
 #include <map>
 
 // パワーカードと、使った後の後片付け・自傷
-// （CardExecutor を機能ごとに分けたファイル。Play＝1回のカード使用。CardExecutor.h）
 
 // パワーカード：自分にかける。サブ効果・全体効果・演出も。捨て札には入れない
 bool CardExecutor::Play::Power()

@@ -26,7 +26,6 @@
 using namespace DirectX;
 
 // カードを引く・山札を戻す・カードが加わる 演出
-// （BattleUI のメンバー。BattleUI.cpp から機能ごとに分けたファイル）
 
 void BattleUI::StartDrawCardEffect(const std::string& cardId)
 {

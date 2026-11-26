@@ -26,7 +26,6 @@
 using namespace DirectX;
 
 // 右の敵の一覧の窓（位置・中身・クリック）
-// （BattleUI のメンバー。BattleUI.cpp から機能ごとに分けたファイル）
 
 // 敵の窓の寸法（ここ1か所で決める）
 static const int   INTENT_CH = 11;      // 予告の1行の文字数（13px・幅170）

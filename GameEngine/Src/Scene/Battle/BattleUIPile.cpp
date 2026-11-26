@@ -26,7 +26,6 @@
 using namespace DirectX;
 
 // 山札・捨て札・廃棄札の一覧の窓
-// （BattleUI のメンバー。BattleUI.cpp から機能ごとに分けたファイル）
 
 // 矩形rに収まるように置く時の CardVisual の基準座標と倍率（GetRectの逆）
 static void CardBaseOf(const URect& r, float& bx, float& by, float& s)

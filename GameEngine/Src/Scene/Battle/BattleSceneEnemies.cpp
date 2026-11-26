@@ -36,7 +36,6 @@
 #endif
 
 // 敵の出入り（出す・呼ぶ・倒れた敵の片付け）
-// （BattleScene のメンバー。BattleScene.cpp から機能ごとに分けたファイル）
 
 void BattleScene::AddEnemy(int col, int row, const std::string& id)
 {

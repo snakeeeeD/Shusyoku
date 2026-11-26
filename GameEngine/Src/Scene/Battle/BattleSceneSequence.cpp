@@ -36,7 +36,6 @@
 #endif
 
 // 時間を置いて1つずつ進める処理（連撃の追撃・敵の多段・罠の連鎖など）
-// （BattleScene のメンバー。BattleScene.cpp から機能ごとに分けたファイル）
 
 // カードを使った後の順番待ちを始める（カードを使う経路が2つあるので共通に）
 void BattleScene::StartCardSequences(const CardExecutor::ExecuteResult& r)

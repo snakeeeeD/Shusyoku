@@ -16,7 +16,6 @@
 #include <map>
 
 // 移動カード（経路・地形・付随効果）
-// （CardExecutor を機能ごとに分けたファイル。Play＝1回のカード使用。CardExecutor.h）
 
 // 移動カード：経路を決めて動き、通ったマスの地形・やけど・付随効果
 bool CardExecutor::Play::Move()

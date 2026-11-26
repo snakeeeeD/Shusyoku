@@ -36,7 +36,6 @@
 #endif
 
 // 敵のターン（段階ごとの関数。敵1体の行動は EnemyPhaseAct）
-// （BattleScene のメンバー。BattleScene.cpp から機能ごとに分けたファイル）
 
 // 敵のターン：段階ごとに呼び分ける
 void BattleScene::UpdateEnemyTurn(float deltaTime)

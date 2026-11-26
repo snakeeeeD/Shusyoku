@@ -33,7 +33,6 @@
 #endif
 
 // 地面に貼る印（信仰・敵の範囲・自分の範囲・罠）
-// （BattleScene のメンバー。BattleSceneDraw.cpp から機能ごとに分けたファイル）
 
 // 地面に貼る印（信仰・敵の範囲・自分の範囲）。描く順番と、深度・加算の切り替えだけ
 void BattleScene::DrawFloorMarks()

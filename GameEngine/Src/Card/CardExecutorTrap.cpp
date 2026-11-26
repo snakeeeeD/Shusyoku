@@ -16,7 +16,6 @@
 #include <map>
 
 // 罠（罠のスキル・踏んだ時・起爆・地形）
-// （CardExecutor を機能ごとに分けたファイル。Play＝1回のカード使用。CardExecutor.h）
 
 // 罠を1マスに置く（置き直しは育ち・導火線も0から）。罠の手引き書なら引く
 void CardExecutor::Play::SkillPlaceTrap()

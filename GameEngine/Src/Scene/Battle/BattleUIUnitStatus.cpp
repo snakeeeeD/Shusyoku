@@ -26,7 +26,6 @@
 using namespace DirectX;
 
 // 頭の上の表示（HP・バフ・予告・ヒットマーク・浮かぶ数字・バフのポップ）
-// （BattleUI のメンバー。BattleUI.cpp から機能ごとに分けたファイル）
 
 static bool StatusAboveHead(Enemy* enemy, Player* player, const std::vector<Enemy*>& enemies, int depth = 0);   // 下の GetStatusFoot の上で定義
 

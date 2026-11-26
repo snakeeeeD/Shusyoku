@@ -36,7 +36,6 @@
 #endif
 
 // 勝ち負け（不死鳥の尾羽の復活）
-// （BattleScene のメンバー。BattleScene.cpp から機能ごとに分けたファイル）
 
 // 不死鳥の尾羽：HPが0になったら1度だけ復活（HP＝廃棄札1枚につき value、最大HPの半分まで。最低1）。使ったかは relicCounters に1（セーブされる）
 bool BattleScene::TryPhoenixRevive()

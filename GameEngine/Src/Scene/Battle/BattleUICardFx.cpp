@@ -26,7 +26,6 @@
 using namespace DirectX;
 
 // カードを使う・捨てる・燃える 演出（燃えカス・溶ける絵も）
-// （BattleUI のメンバー。BattleUI.cpp から機能ごとに分けたファイル）
 
 // 光の帯の色：カードの種類の色を、少し白に寄せて明るく
 static XMFLOAT4 StreakColor(CardType t)

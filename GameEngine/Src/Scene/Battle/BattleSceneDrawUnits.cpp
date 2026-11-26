@@ -33,7 +33,6 @@
 #endif
 
 // キャラまわりの描画（デコイ・注目の枠・背水・本体・聖地の光・大蛇）
-// （BattleScene のメンバー。BattleSceneDraw.cpp から機能ごとに分けたファイル）
 
 // 大蛇の体（尾〜頭をつないで描く）と光るウロコ
 void BattleScene::DrawSnakes()

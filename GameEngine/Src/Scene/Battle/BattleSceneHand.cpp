@@ -36,7 +36,6 @@
 #endif
 
 // 手札（選んで捨てる・捨てた時の効果・手札に加える・呪いの浄化）
-// （BattleScene のメンバー。BattleScene.cpp から機能ごとに分けたファイル）
 
 void BattleScene::OpenDiscardSelect(int n)
 {

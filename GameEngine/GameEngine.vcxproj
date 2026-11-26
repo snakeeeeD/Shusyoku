@@ -103,6 +103,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -122,6 +123,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -301,6 +303,7 @@
     <ClCompile Include="Src\Scene\Battle\BattleSceneDrawMarks.cpp" />
     <ClCompile Include="Src\Scene\Battle\BattleSceneDrawUnits.cpp" />
     <ClCompile Include="Src\Scene\Battle\BattleSceneDrawOverlay.cpp" />
+    <ClCompile Include="Src\Scene\Battle\BattleSceneDrawShadow.cpp" />
     <ClCompile Include="Src\Scene\Battle\BattleSceneInput.cpp" />
     <ClCompile Include="Src\Scene\Battle\BattleSceneInputSelect.cpp" />
     <ClCompile Include="Src\Scene\Battle\BattleSceneInputMove.cpp" />
@@ -491,6 +494,21 @@
     <FxCompile Include="Shaders\Dissolve_PS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shaders\Shadow_WriteDepth_PS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel>5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Shaders\Shadow_Receive_VS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel>5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Shaders\Shadow_Receive_PS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel>5.0</ShaderModel>
     </FxCompile>
     <FxCompile Include="Shaders\MotionBlur_PS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>

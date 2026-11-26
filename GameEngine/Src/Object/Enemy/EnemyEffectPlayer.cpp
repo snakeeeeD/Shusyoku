@@ -19,7 +19,6 @@
 #include <queue>
 
 // 効果：プレイヤーを引き寄せる・吹き飛ばす
-// （Enemy のメンバー。Enemy.cpp から機能ごとに分けたファイル）
 
 // プレイヤーを引き寄せる（当たった時だけ）
 void Enemy::EffectPull(ActionRun& r, const Effect& e)

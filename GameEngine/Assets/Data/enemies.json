@@ -459,7 +459,10 @@
       "id": "dragon",
       "moveStyle": "float",
       "texture": "enemy_dragon_red",
-      "mouth": [ 0.22, 0.55 ],
+      "mouth": [
+        0.22,
+        0.55
+      ],
       "gridShape": [
         [
           0,
@@ -3033,7 +3036,10 @@
     {
       "id": "orochi",
       "texture": "snake_head",
-      "mouth": [ 0.0, 0.1 ],
+      "mouth": [
+        0.0,
+        0.1
+      ],
       "isBoss": true,
       "hp": 450,
       "width": 1.4,

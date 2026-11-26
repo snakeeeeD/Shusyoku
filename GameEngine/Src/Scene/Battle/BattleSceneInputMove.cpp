@@ -34,7 +34,6 @@
 #endif
 
 // 移動の入力（経路づくり・最短経路・カードで動いた後の歩き／氷）
-// （BattleScene のメンバー。BattleSceneInput.cpp から機能ごとに分けたファイル）
 
 // 移動カードの経路づくり（カメラが自動で動いただけの時は経路を変えない）
 void BattleScene::UpdateMovePath()

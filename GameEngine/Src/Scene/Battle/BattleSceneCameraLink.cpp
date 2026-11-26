@@ -36,7 +36,6 @@
 #endif
 
 // シーン側のカメラ（隠れた狙い先・マス→画面・自由に見る・操作のデモ）
-// （BattleScene のメンバー。BattleScene.cpp から機能ごとに分けたファイル）
 
 // カメラ操作の自動デモ（初回の2ターン目に1回）を始めるか。手順・動きは BattleCamera
 void BattleScene::MaybeStartCamDemo()

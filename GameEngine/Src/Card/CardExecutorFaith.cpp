@@ -16,7 +16,6 @@
 #include <map>
 
 // 信仰のスキル（刻む・審判・奇跡・浄化）
-// （CardExecutor を機能ごとに分けたファイル。Play＝1回のカード使用。CardExecutor.h）
 
 // 刻む：射程0なら自分のマス、射程があれば選んだマス
 void CardExecutor::Play::SkillEngrave()

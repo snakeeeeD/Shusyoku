@@ -36,7 +36,6 @@
 #endif
 
 // 敵の攻撃の演出（範囲・口・当たり・引き寄せの線・床を踏んだ時）
-// （BattleScene のメンバー。BattleScene.cpp から機能ごとに分けたファイル）
 
 // ダメージの無い、プレイヤーへのデバフだけの行動：範囲のマスに出す「しみこむ」演出（色は画面のふちのデバフと同じ）
 static const struct { BuffType type; const char* fx; } DEBUFF_AREA_FX[] = {

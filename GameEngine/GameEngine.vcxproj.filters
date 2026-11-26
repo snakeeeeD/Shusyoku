@@ -88,6 +88,21 @@
     <Filter Include="ソース ファイル\03-Object関連\20-Enemy\00-Enemy\08-効果">
       <UniqueIdentifier>{a38276fd-b844-4449-a102-c329228d054c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\00-Enemy\08-効果\00-EnemyEffectAttack">
+      <UniqueIdentifier>{4784a3bc-c36b-46be-a5da-aebdd5e66265}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\00-Enemy\08-効果\01-EnemyEffectGuard">
+      <UniqueIdentifier>{3bf4e7ec-29ef-48b7-adad-e452a3712cb1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\00-Enemy\08-効果\02-EnemyEffectMove">
+      <UniqueIdentifier>{51c1abca-c4e5-4f25-9795-ed0a4ea42bae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\00-Enemy\08-効果\03-EnemyEffectPlayer">
+      <UniqueIdentifier>{d79ce97d-919d-4121-b481-a1bf3a9715a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\03-Object関連\20-Enemy\00-Enemy\08-効果\04-EnemyEffectField">
+      <UniqueIdentifier>{1491d45e-fa0c-4edb-ac64-5f6399dd2b9a}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ソース ファイル\03-Object関連\20-Enemy\01-EnemyData">
       <UniqueIdentifier>{b82e2446-c963-45e1-9dc7-0625b5df0a9f}</UniqueIdentifier>
     </Filter>
@@ -172,23 +187,107 @@
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\01-ターン">
       <UniqueIdentifier>{5554cd93-a72e-4023-a128-e8fdadd49f76}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\01-ターン\00-BattleSceneTurn">
+      <UniqueIdentifier>{5f883a35-ac8e-46ce-adf2-bab28e59be1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\01-ターン\01-BattleSceneEnemyTurn">
+      <UniqueIdentifier>{f088b076-2051-49e6-87eb-6100f8bd0f34}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\01-ターン\02-BattleScenePowers">
+      <UniqueIdentifier>{b0cf64cb-755f-4dea-9afb-311a46b36083}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\01-ターン\03-BattleSceneSequence">
+      <UniqueIdentifier>{352c9164-c740-458f-a72f-d0f38d9c0526}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\01-ターン\04-TimedQueue">
+      <UniqueIdentifier>{637b483f-7ed6-46b5-aeec-db4d3e259174}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\02-カード">
       <UniqueIdentifier>{a9d3302a-0979-4f8b-aa9a-7ef217dde690}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\02-カード\00-BattleSceneHand">
+      <UniqueIdentifier>{a307bbfa-7ae8-429b-b8fe-3553ace53843}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\02-カード\01-BattleSceneBurn">
+      <UniqueIdentifier>{977a6e0c-23cf-469e-af13-9bb406e02e31}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\02-カード\02-BattleSceneAim">
+      <UniqueIdentifier>{6cb490a3-c56e-4bf6-b635-e255dd967175}</UniqueIdentifier>
     </Filter>
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\03-敵">
       <UniqueIdentifier>{f477948a-ae71-4011-8099-b73eb6579ffd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\03-敵\00-BattleSceneEnemies">
+      <UniqueIdentifier>{19002d56-685a-43c0-a6ab-79e44911c06b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\03-敵\01-BattleSceneEnemyFx">
+      <UniqueIdentifier>{94ea731c-923e-4f2d-954f-2585c5ea4ceb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\03-敵\02-BattleSceneBoss">
+      <UniqueIdentifier>{19604b0c-4e05-4304-96e0-c5ee12643aa1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\03-敵\03-BattleSceneTrap">
+      <UniqueIdentifier>{0b50e3e1-d298-48f5-9a72-ea16743ecfb1}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\04-勝ち負け・レリック">
       <UniqueIdentifier>{167b1ddd-3289-482a-83d0-0f13dfe62e87}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\04-勝ち負け・レリック\00-BattleSceneResult">
+      <UniqueIdentifier>{1d48b7d2-b8a7-4a4f-8f2c-fc34cfef7546}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\04-勝ち負け・レリック\01-BattleSceneRelic">
+      <UniqueIdentifier>{cd9d8142-63f8-4090-bff5-6daddf5a7cb5}</UniqueIdentifier>
     </Filter>
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\05-表示・補助">
       <UniqueIdentifier>{8c5cee94-44b1-46c7-b0b5-c1669aa1f4b9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\05-表示・補助\00-BattleSceneFx">
+      <UniqueIdentifier>{eb8fada7-8337-4491-81f0-99887e8ae4f5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\05-表示・補助\01-BattleSceneCameraLink">
+      <UniqueIdentifier>{750592e5-c25f-438b-b80e-f504d481f554}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\05-表示・補助\02-BattleSceneHint">
+      <UniqueIdentifier>{aa97ba16-eed3-48bf-9c31-4b08a1de9efd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\05-表示・補助\03-BattleSceneQuery">
+      <UniqueIdentifier>{2e540b56-560b-4453-88b8-611450ec7fd8}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画">
       <UniqueIdentifier>{6d29b419-347e-4f96-bccf-1aca8f98ca25}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画\00-BattleSceneDraw">
+      <UniqueIdentifier>{850be594-6228-4f4d-a157-fd9c073cccbe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画\01-BattleSceneDrawBoard">
+      <UniqueIdentifier>{9d40f28f-07f2-48f3-93bb-804d059ac89f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画\02-BattleSceneDrawMarks">
+      <UniqueIdentifier>{92ac7dd6-7fdc-4df9-8a48-0392c64e8c94}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画\03-BattleSceneDrawUnits">
+      <UniqueIdentifier>{fae77b9c-15a9-4ea3-8445-8eba93158ebf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画\04-BattleSceneDrawOverlay">
+      <UniqueIdentifier>{b4b9c731-dd49-4ea4-97fa-59129dad286f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画\05-BattleSceneDrawShadow">
+      <UniqueIdentifier>{951c51e8-c3db-4396-b7ab-57bd748e695c}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\07-入力">
       <UniqueIdentifier>{339b64cb-b345-4773-b193-2c62b3f6d087}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\07-入力\00-BattleSceneInput">
+      <UniqueIdentifier>{816e81d6-5fa0-4568-9042-795874e25273}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\07-入力\01-BattleSceneInputSelect">
+      <UniqueIdentifier>{4c5ebda4-1672-4adf-8841-3d91351bb8d5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\07-入力\02-BattleSceneInputMove">
+      <UniqueIdentifier>{06301d4e-df2b-4441-8a65-4926300a25ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\07-入力\03-BattleSceneInputPlay">
+      <UniqueIdentifier>{470044c3-868d-4361-9372-36faa6fedf52}</UniqueIdentifier>
     </Filter>
     <Filter Include="ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\08-デバッグ">
       <UniqueIdentifier>{82b63d4a-fd05-493f-a209-913245294431}</UniqueIdentifier>
@@ -403,6 +502,15 @@
     <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor\04-プレビュー">
       <UniqueIdentifier>{cbebcde9-de82-4ada-ab8b-6fe7dc4d98ec}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor\04-プレビュー\00-EnemyEditorPreview">
+      <UniqueIdentifier>{b6394b7f-21a2-4a3f-8ea0-c0ae9b5dffc9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor\04-プレビュー\01-EnemyEditorFx">
+      <UniqueIdentifier>{8ef587e0-177f-4625-8695-d7e9f8df8950}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor\04-プレビュー\02-EnemyEditorRange">
+      <UniqueIdentifier>{6466bef8-7ae7-46e9-97f2-9160f5707f8a}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ソース ファイル\07-デバッグ用\02-Editor\00-EditorCommon">
       <UniqueIdentifier>{957a4c30-9ba3-44e5-b1db-2b89f54952df}</UniqueIdentifier>
     </Filter>
@@ -592,7 +700,7 @@
       <Filter>ソース ファイル\02-Scene\01-SceneManager</Filter>
     </ClInclude>
     <ClInclude Include="Src\Scene\Battle\TimedQueue.h">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\01-ターン</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\01-ターン\04-TimedQueue</Filter>
     </ClInclude>
     <ClInclude Include="Src\Object\Enemy\EnemyActionType.h">
       <Filter>ソース ファイル\03-Object関連\20-Enemy\03-EnemyAction</Filter>
@@ -1098,19 +1206,19 @@
       <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\07-行動の実行</Filter>
     </ClCompile>
     <ClCompile Include="Src\Object\Enemy\EnemyEffectAttack.cpp">
-      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\08-効果</Filter>
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\08-効果\00-EnemyEffectAttack</Filter>
     </ClCompile>
     <ClCompile Include="Src\Object\Enemy\EnemyEffectGuard.cpp">
-      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\08-効果</Filter>
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\08-効果\01-EnemyEffectGuard</Filter>
     </ClCompile>
     <ClCompile Include="Src\Object\Enemy\EnemyEffectMove.cpp">
-      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\08-効果</Filter>
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\08-効果\02-EnemyEffectMove</Filter>
     </ClCompile>
     <ClCompile Include="Src\Object\Enemy\EnemyEffectPlayer.cpp">
-      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\08-効果</Filter>
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\08-効果\03-EnemyEffectPlayer</Filter>
     </ClCompile>
     <ClCompile Include="Src\Object\Enemy\EnemyEffectField.cpp">
-      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\08-効果</Filter>
+      <Filter>ソース ファイル\03-Object関連\20-Enemy\00-Enemy\08-効果\04-EnemyEffectField</Filter>
     </ClCompile>
     <ClCompile Include="Src\Object\Enemy\EnemyDataBase.cpp">
       <Filter>ソース ファイル\03-Object関連\20-Enemy\02-EnemyDataBase</Filter>
@@ -1155,55 +1263,55 @@
       <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneEnemyFx.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\03-敵</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\03-敵\01-BattleSceneEnemyFx</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneEnemies.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\03-敵</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\03-敵\00-BattleSceneEnemies</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneResult.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\04-勝ち負け・レリック</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\04-勝ち負け・レリック\00-BattleSceneResult</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneHand.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\02-カード</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\02-カード\00-BattleSceneHand</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneBurn.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\02-カード</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\02-カード\01-BattleSceneBurn</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneRelic.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\04-勝ち負け・レリック</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\04-勝ち負け・レリック\01-BattleSceneRelic</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneSequence.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\01-ターン</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\01-ターン\03-BattleSceneSequence</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneTrap.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\03-敵</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\03-敵\03-BattleSceneTrap</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneBoss.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\03-敵</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\03-敵\02-BattleSceneBoss</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneCameraLink.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\05-表示・補助</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\05-表示・補助\01-BattleSceneCameraLink</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneFx.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\05-表示・補助</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\05-表示・補助\00-BattleSceneFx</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneQuery.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\05-表示・補助</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\05-表示・補助\03-BattleSceneQuery</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneTurn.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\01-ターン</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\01-ターン\00-BattleSceneTurn</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleScenePowers.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\01-ターン</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\01-ターン\02-BattleScenePowers</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneEnemyTurn.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\01-ターン</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\01-ターン\01-BattleSceneEnemyTurn</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneAim.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\02-カード</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\02-カード\02-BattleSceneAim</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneHint.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\05-表示・補助</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\05-表示・補助\02-BattleSceneHint</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\Battlehighlighter.cpp">
       <Filter>ソース ファイル\02-Scene\20-BattleScene\10-BattleHighlighter</Filter>
@@ -1341,10 +1449,10 @@
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor</Filter>
     </ClCompile>
     <ClCompile Include="Src\Debug\Editor\EnemyEditorFx.cpp">
-      <Filter>ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor\04-プレビュー</Filter>
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor\04-プレビュー\01-EnemyEditorFx</Filter>
     </ClCompile>
     <ClCompile Include="Src\Debug\Editor\EnemyEditorRange.cpp">
-      <Filter>ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor\04-プレビュー</Filter>
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor\04-プレビュー\02-EnemyEditorRange</Filter>
     </ClCompile>
     <ClCompile Include="Src\Debug\Editor\EnemyEditorValidate.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor\01-読み書き・検証</Filter>
@@ -1356,7 +1464,7 @@
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor\03-編集</Filter>
     </ClCompile>
     <ClCompile Include="Src\Debug\Editor\EnemyEditorPreview.cpp">
-      <Filter>ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor\04-プレビュー</Filter>
+      <Filter>ソース ファイル\07-デバッグ用\02-Editor\02-EnemyEditor\04-プレビュー\00-EnemyEditorPreview</Filter>
     </ClCompile>
     <ClCompile Include="Src\Debug\Editor\EditorCommon.cpp">
       <Filter>ソース ファイル\07-デバッグ用\02-Editor\00-EditorCommon</Filter>
@@ -1440,31 +1548,34 @@
       <Filter>ソース ファイル\01-描画関連\11-Hint</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneDraw.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画\00-BattleSceneDraw</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneDrawBoard.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画\01-BattleSceneDrawBoard</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneDrawMarks.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画\02-BattleSceneDrawMarks</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneDrawUnits.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画\03-BattleSceneDrawUnits</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneDrawOverlay.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画\04-BattleSceneDrawOverlay</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Battle\BattleSceneDrawShadow.cpp">
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\06-描画\05-BattleSceneDrawShadow</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneInput.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\07-入力</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\07-入力\00-BattleSceneInput</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneInputSelect.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\07-入力</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\07-入力\01-BattleSceneInputSelect</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneInputMove.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\07-入力</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\07-入力\02-BattleSceneInputMove</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\Battle\BattleSceneInputPlay.cpp">
-      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\07-入力</Filter>
+      <Filter>ソース ファイル\02-Scene\20-BattleScene\00-BattleScene\07-入力\03-BattleSceneInputPlay</Filter>
     </ClCompile>
     <ClCompile Include="Src\Render\Effect\EffectManager.cpp">
       <Filter>ソース ファイル\01-描画関連\20-Effect\01-EffectManager</Filter>
@@ -1554,6 +1665,15 @@
       <Filter>シェーダーファイル</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\MotionBlur_PS.hlsl">
+      <Filter>シェーダーファイル</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Shadow_WriteDepth_PS.hlsl">
+      <Filter>シェーダーファイル</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Shadow_Receive_VS.hlsl">
+      <Filter>シェーダーファイル</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Shadow_Receive_PS.hlsl">
       <Filter>シェーダーファイル</Filter>
     </FxCompile>
   </ItemGroup>

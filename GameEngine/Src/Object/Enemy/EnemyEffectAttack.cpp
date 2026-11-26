@@ -19,7 +19,6 @@
 #include <queue>
 
 // 効果：ダメージ・吸血・カードを入れる
-// （Enemy のメンバー。Enemy.cpp から機能ごとに分けたファイル）
 
 // ダメージ（当たった時だけ。連撃は回数も覚える）。跳ねる動きもここ
 void Enemy::EffectDamage(ActionRun& r, const Effect& e)

@@ -34,7 +34,6 @@
 #endif
 
 // 選ぶ画面の入力（捨てる／廃棄するカード・山札などの一覧から選ぶ）
-// （BattleScene のメンバー。BattleSceneInput.cpp から機能ごとに分けたファイル）
 
 // 捨てる／廃棄するカードを選ぶ画面
 void BattleScene::HandleDiscardSelectInput()

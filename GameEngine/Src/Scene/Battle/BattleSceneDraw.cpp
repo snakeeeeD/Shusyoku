@@ -46,6 +46,7 @@ void BattleScene::Draw()
     m_renderer3D->Begin();
     UpdateCellHeights();                 // 狙うマスを浮かせる＋その上に立つキャラの高さ（描く前に）
     const BattleTheme th = CurrentTheme();
+    DrawShadowPass(th);                  // 落ち影：光から見た深さの絵（地面より先に）
     DrawGround(th);                      // 地面のタイル・装飾と影
     DrawCells(th);                       // マス
     DrawFloorMarks();                    // 信仰・敵の範囲と外周線・自分の範囲

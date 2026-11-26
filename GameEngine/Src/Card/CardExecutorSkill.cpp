@@ -16,7 +16,6 @@
 #include <map>
 
 // スキルカード（使えるかの確認・効果・サブ効果）
-// （CardExecutor を機能ごとに分けたファイル。Play＝1回のカード使用。CardExecutor.h）
 
 // スキルカード（状態異常・呪いも同じ。効果なし＝廃棄/捨て札へ）
 bool CardExecutor::Play::Skill()

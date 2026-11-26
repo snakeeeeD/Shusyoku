@@ -33,7 +33,6 @@
 #endif
 
 // 盤面の描画（狙ったマスを浮かせる・地面・マス・地面の演出）
-// （BattleScene のメンバー。BattleSceneDraw.cpp から機能ごとに分けたファイル）
 
 static constexpr float RAISE_H = 0.12f;   // 狙ったマスが浮く高さ（上げすぎると奥のマスに食い込んで見える）
 
@@ -197,6 +196,7 @@ void BattleScene::SyncUnitHeights()
 void BattleScene::DrawGround(const BattleTheme& th)
 {
     // === 接地用の地面（見下ろし草地をタイル状に敷く） ===
+    m_renderer3D->SetShadowReceive(m_useShadowMap);   // 地面のタイルは落ち影を受ける
     {
         const float TILE = 6.0f;   // 1枚のワールドサイズ（テクスチャ1回分）
         const int   N = 6;         // 中心から±N枚（(2N+1)^2枚）
@@ -205,12 +205,14 @@ void BattleScene::DrawGround(const BattleTheme& th)
                 m_renderer3D->DrawTile(TextureManager::Get(th.ground),
                     gx * TILE, gz * TILE, TILE * 1.02f, XMFLOAT4(th.bright, th.bright, th.bright, 1), -0.06f);
     }
+    m_renderer3D->SetShadowReceive(false);
 
     // 背景装飾（透明quadがdepthを書いて四角化するのを防ぐため depth-write OFF）
     m_renderer3D->SetDepthWrite(false);
     // 影を先に全部（後から描くと、奥の装飾の本体に手前の影が乗るため）
     for (auto& dc : m_decos)
     {
+        if (m_useShadowMap && m_renderer3D->HasShadowMap()) break;   // 落ち影を使う時は、にせ影は描かない
         const char* tex = th.tex[dc.type];
         float w = th.w[dc.type] * dc.scale;
         float h = th.h[dc.type] * dc.scale;
@@ -251,6 +253,7 @@ void BattleScene::DrawCells(const BattleTheme& th)
             if (p.first >= 0 && p.first < cols && p.second >= 0 && p.second < rows)
                 shown[p.second * cols + p.first] = 1;
 
+        m_renderer3D->SetShadowReceive(m_useShadowMap);   // マスも落ち影を受ける（キャラの影はほぼマスの上に落ちる）
         for (int row = 0; row < rows; row++)
             for (int col = 0; col < cols; col++)
             {
@@ -271,6 +274,7 @@ void BattleScene::DrawCells(const BattleTheme& th)
                         XMFLOAT4(cc.x * 0.4f, cc.y * 0.4f, cc.z * 0.4f, 1.0f), 0.005f);
                 m_renderer3D->DrawTile(TextureManager::Get(ctex), x, z, size, cc, cell.gameObject.worldY);
             }
+        m_renderer3D->SetShadowReceive(false);
     }
 }
 

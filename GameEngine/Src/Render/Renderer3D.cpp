@@ -600,6 +600,163 @@ void Renderer3D::EndOffscreenBlur(float radius)
     if (m_savedRTV) { m_savedRTV->Release(); m_savedRTV = nullptr; }
 }
 
+// ======================================================================
+// 落ち影（シャドウマップ）
+// 1) BeginShadowPass～EndShadowPass：影を落とす物を光のカメラから描いて、「光から見た深さ」を影用の絵に書く
+// 2) SetShadowReceive(true) の間に地面を描く：地面の各点の「光から見た深さ」を絵と比べ、奥なら暗くする
+// ======================================================================
+static ComPtr<ID3DBlob> CompileShaderFile(const wchar_t* path, const char* target)
+{
+    ComPtr<ID3DBlob> blob, err;
+    if (FAILED(D3DCompileFromFile(path, nullptr, nullptr, "main", target, 0, 0, blob.GetAddressOf(), err.GetAddressOf())))
+    {
+        if (err) OutputDebugStringA((char*)err->GetBufferPointer());
+        return nullptr;
+    }
+    return blob;
+}
+
+bool Renderer3D::InitShadowMap(int size)
+{
+    m_shadowSize = size;
+    // 光から見た深さを書く絵（細かく残すため、8bit×4 ではなく 32bit の R だけ）
+    D3D11_TEXTURE2D_DESC td = {};
+    td.Width = size; td.Height = size; td.MipLevels = 1; td.ArraySize = 1;
+    td.Format = DXGI_FORMAT_R32_FLOAT;
+    td.SampleDesc.Count = 1; td.Usage = D3D11_USAGE_DEFAULT;
+    td.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    if (FAILED(m_device->CreateTexture2D(&td, nullptr, m_shadowTex.GetAddressOf()))) return false;
+    if (FAILED(m_device->CreateRenderTargetView(m_shadowTex.Get(), nullptr, m_shadowRTV.GetAddressOf()))) return false;
+    if (FAILED(m_device->CreateShaderResourceView(m_shadowTex.Get(), nullptr, m_shadowSRV.GetAddressOf()))) return false;
+
+    // 影のパスの深度
+    td.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    td.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    if (FAILED(m_device->CreateTexture2D(&td, nullptr, m_shadowDepthTex.GetAddressOf()))) return false;
+    if (FAILED(m_device->CreateDepthStencilView(m_shadowDepthTex.Get(), nullptr, m_shadowDSV.GetAddressOf()))) return false;
+
+    // 深さを「比べてから」混ぜる（深さそのものを混ぜると境目がおかしくなるので、比べた 0/1 を混ぜる）。絵の外は 1.0＝一番奥＝影なし
+    D3D11_SAMPLER_DESC sd = {};
+    sd.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+    sd.AddressU = sd.AddressV = sd.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+    sd.BorderColor[0] = sd.BorderColor[1] = sd.BorderColor[2] = sd.BorderColor[3] = 1.0f;
+    sd.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;   // この点の深さ <= 絵の深さ なら日なた
+    sd.MaxLOD = D3D11_FLOAT32_MAX;
+    if (FAILED(m_device->CreateSamplerState(&sd, m_shadowSampler.GetAddressOf()))) return false;
+
+    auto ps1 = CompileShaderFile(L"Shaders/Shadow_WriteDepth_PS.hlsl", "ps_5_0");
+    auto vs  = CompileShaderFile(L"Shaders/Shadow_Receive_VS.hlsl", "vs_5_0");
+    auto ps2 = CompileShaderFile(L"Shaders/Shadow_Receive_PS.hlsl", "ps_5_0");
+    if (!ps1 || !vs || !ps2) return false;
+    m_device->CreatePixelShader(ps1->GetBufferPointer(), ps1->GetBufferSize(), nullptr, m_shadowWritePS.GetAddressOf());
+    m_device->CreateVertexShader(vs->GetBufferPointer(), vs->GetBufferSize(), nullptr, m_shadowRecvVS.GetAddressOf());
+    m_device->CreatePixelShader(ps2->GetBufferPointer(), ps2->GetBufferSize(), nullptr, m_shadowRecvPS.GetAddressOf());
+
+    D3D11_BUFFER_DESC bd = {};
+    bd.ByteWidth = sizeof(ShadowCB); bd.Usage = D3D11_USAGE_DEFAULT; bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    if (FAILED(m_device->CreateBuffer(&bd, nullptr, m_shadowCB.GetAddressOf()))) return false;
+    m_shadowParams.z = 1.0f / size;
+    return true;
+}
+
+void Renderer3D::BeginShadowPass(const XMFLOAT3& lightDir, const XMFLOAT3& center, float viewSize)
+{
+    if (!m_shadowRTV) return;
+    // 光のカメラ：太陽＝平行光源なので平行投影。center を真ん中に、viewSize 四方を写す
+    XMVECTOR dir = XMVector3Normalize(XMLoadFloat3(&lightDir));
+    XMStoreFloat3(&m_lightDir, dir);
+    XMVECTOR at = XMLoadFloat3(&center);
+    XMVECTOR eye = XMVectorSubtract(at, XMVectorScale(dir, 40.0f));   // 光の来る方へ下がった所から見る
+    m_lightView = XMMatrixLookAtLH(eye, at, XMVectorSet(0, 1, 0, 0));
+    m_lightProj = XMMatrixOrthographicLH(viewSize, viewSize, 0.1f, 100.0f);
+
+    // 元に戻すために覚えておく
+    m_context->OMGetRenderTargets(1, &m_shadowSavedRTV, &m_shadowSavedDSV);
+    UINT n = 1; m_context->RSGetViewports(&n, &m_shadowSavedVP);
+    m_shadowSavedView = m_viewMatrix; m_shadowSavedProj = m_projectionMatrix;
+
+    // 影用の絵へ。影にならない所は一番奥（1.0）で消しておく
+    ID3D11ShaderResourceView* nullSRV = nullptr;
+    m_context->PSSetShaderResources(1, 1, &nullSRV);   // 読む側から外す（書く絵と同じなので）
+    float clr[4] = { 1, 1, 1, 1 };
+    m_context->ClearRenderTargetView(m_shadowRTV.Get(), clr);
+    m_context->ClearDepthStencilView(m_shadowDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+    m_context->OMSetRenderTargets(1, m_shadowRTV.GetAddressOf(), m_shadowDSV.Get());
+    D3D11_VIEWPORT vp = { 0.0f, 0.0f, (float)m_shadowSize, (float)m_shadowSize, 0.0f, 1.0f };
+    m_context->RSSetViewports(1, &vp);
+
+    // 以降の描画は光のカメラ＋深さを書くシェーダー。混ぜずに上書き、近い物が残る
+    m_viewMatrix = m_lightView; m_projectionMatrix = m_lightProj;
+    m_context->PSSetShader(m_shadowWritePS.Get(), nullptr, 0);
+    float bf[4] = {};
+    m_context->OMSetBlendState(nullptr, bf, 0xffffffff);
+    m_context->OMSetDepthStencilState(m_depthStencilState.Get(), 0);
+}
+
+void Renderer3D::EndShadowPass()
+{
+    if (!m_shadowRTV) return;
+    m_context->OMSetRenderTargets(1, &m_shadowSavedRTV, m_shadowSavedDSV);
+    m_context->RSSetViewports(1, &m_shadowSavedVP);
+    if (m_shadowSavedRTV) { m_shadowSavedRTV->Release(); m_shadowSavedRTV = nullptr; }
+    if (m_shadowSavedDSV) { m_shadowSavedDSV->Release(); m_shadowSavedDSV = nullptr; }
+    m_viewMatrix = m_shadowSavedView; m_projectionMatrix = m_shadowSavedProj;
+    m_context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
+    float bf[4] = {};
+    m_context->OMSetBlendState(m_blendState.Get(), bf, 0xffffffff);
+}
+
+// 影を落とす板。ふだんの板はカメラの方へ寝かせてあるが、影を描く時は地面にまっすぐ立てる
+// （寝かせたままだと、光から見て細く潰れて影も潰れる）。向きは正面のままなので、影の足元は横にまっすぐ・頭だけ光の向きへ倒れる
+// 足元（y）が基準なのは DrawBillboard と同じ
+void Renderer3D::DrawShadowCaster(ID3D11ShaderResourceView* texture, float x, float y, float z,
+    float width, float height, const XMFLOAT4& uvRect)
+{
+    XMMATRIX world = XMMatrixScaling(width, height, 1.0f) * XMMatrixTranslation(x, y, z);
+
+    ConstantBuffer3D cb;
+    cb.World = XMMatrixTranspose(world);
+    cb.View = XMMatrixTranspose(m_viewMatrix);
+    cb.Projection = XMMatrixTranspose(m_projectionMatrix);
+    cb.Color = XMFLOAT4(1, 1, 1, 1);
+    cb.UvRect = uvRect;
+    m_context->UpdateSubresource(m_constantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+    m_context->VSSetConstantBuffers(0, 1, m_constantBuffer.GetAddressOf());
+    m_context->PSSetConstantBuffers(0, 1, m_constantBuffer.GetAddressOf());
+    m_context->PSSetShaderResources(0, 1, &texture);
+
+    UINT stride = sizeof(Vertex3D), offset = 0;
+    m_context->IASetVertexBuffers(0, 1, m_billboardVertexBuffer.GetAddressOf(), &stride, &offset);
+    m_context->DrawIndexed(6, 0, 0);
+    m_context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
+}
+
+void Renderer3D::SetShadowReceive(bool on)
+{
+    if (!m_shadowSRV) return;
+    if (on)
+    {
+        ShadowCB cb;
+        cb.LightView = XMMatrixTranspose(m_lightView);
+        cb.LightProj = XMMatrixTranspose(m_lightProj);
+        cb.Params = m_shadowParams;
+        m_context->UpdateSubresource(m_shadowCB.Get(), 0, nullptr, &cb, 0, 0);
+        m_context->VSSetConstantBuffers(1, 1, m_shadowCB.GetAddressOf());
+        m_context->PSSetConstantBuffers(1, 1, m_shadowCB.GetAddressOf());
+        m_context->PSSetShaderResources(1, 1, m_shadowSRV.GetAddressOf());   // t1＝光から見た深さ
+        m_context->PSSetSamplers(1, 1, m_shadowSampler.GetAddressOf());      // s1
+        m_context->VSSetShader(m_shadowRecvVS.Get(), nullptr, 0);
+        m_context->PSSetShader(m_shadowRecvPS.Get(), nullptr, 0);
+    }
+    else
+    {
+        ID3D11ShaderResourceView* nullSRV = nullptr;
+        m_context->PSSetShaderResources(1, 1, &nullSRV);
+        m_context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
+        m_context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
+    }
+}
+
 // エフェクト用シェーダー・その定数バッファ・くり返しのサンプラーを作る
 bool Renderer3D::InitFx()
 {

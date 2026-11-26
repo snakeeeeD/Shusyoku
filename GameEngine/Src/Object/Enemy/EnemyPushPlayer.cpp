@@ -19,7 +19,6 @@
 #include <queue>
 
 // プレイヤーを動かす（引き寄せ・吹き飛ばし。氷で滑る・引きずる）
-// （Enemy のメンバー。Enemy.cpp から機能ごとに分けたファイル）
 
 // 敵に動かされたプレイヤーを (nc,nr) へ1マス進める。床の効果もかける（カードで動いた時と同じ TriggerTerrain）。進めなければ false
 static bool DragPlayerStep(int nc, int nr, int& pc, int& pr, GridMap* g, Player* player, std::vector<std::pair<float, float>>& pts)

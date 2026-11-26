@@ -151,6 +151,7 @@ bool BattleScene::InitRenderers(ID3D11Device* device, ID3D11DeviceContext* conte
         return false;
 
     m_renderer3D->InitPostProcess();
+    m_renderer3D->InitShadowMap();   // 落ち影。作れなければ前のにせ影のまま
 
     m_spriteRenderer = new SpriteRenderer();
     m_spriteRenderer->Init(device, context, screenWidth, screenHeight);

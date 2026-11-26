@@ -12,6 +12,7 @@ public:
     Player();
     void Update(float deltaTime) override;
     void Draw3D(class Renderer3D* renderer) override;
+    void DrawShadowCaster(class Renderer3D* renderer);   // 落ち影：今のコマを立てた板で深さの絵に描く
     struct SpriteFrame { ID3D11ShaderResourceView* tex; float x, y, z, w, h, rot; XMFLOAT4 uv; };
     SpriteFrame GetSprite(float scale = 1.0f) const;   // 今の向き・アニメのコマ（本体・残像・オーラで共通）
 

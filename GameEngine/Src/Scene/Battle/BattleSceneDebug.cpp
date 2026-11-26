@@ -45,6 +45,7 @@ void BattleScene::DrawImGui()
     ImGui::SameLine();
     ImGui::Text("Up:%d", Faith::At(m_gridMap, m_playerCol, m_playerRow - 1));
 
+    ImGui::Checkbox("Shadow map", &m_useShadowMap);   // —Ž‚¿‰e Ì ‘O‚Ì‚É‚¹‰ei‰Û‘è‚Ì“®‰æ‚ÅŒ©”ä‚×‚é—pj
     if (ImGui::Button("Instant Win"))
         for (auto enemy : m_enemies)
             enemy->SetHp(0);

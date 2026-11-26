@@ -26,7 +26,6 @@
 using namespace DirectX;
 
 // 狙いの表示（カードの狙い・敵の移動予定・画面の外のプレイヤーの印）
-// （BattleUI のメンバー。BattleUI.cpp から機能ごとに分けたファイル）
 
 void BattleUI::DrawArrowIndicator(float sx, float sy, const XMFLOAT4& color, float highlightTimer)
 {

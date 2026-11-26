@@ -19,7 +19,6 @@
 #include <queue>
 
 // 体力（ダメージ・ブロック・無敵）と、倒れる演出（塵化）
-// （Enemy のメンバー。Enemy.cpp から機能ごとに分けたファイル）
 
 // 倒れていく途中：とどめの瞬間は白く光って少し大きく、その後ノイズに沿って焼けるように溶ける（Dissolve_PS）
 void Enemy::DrawDeath(Renderer3D* renderer)

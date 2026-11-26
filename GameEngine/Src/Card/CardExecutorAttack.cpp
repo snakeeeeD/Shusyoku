@@ -16,7 +16,6 @@
 #include <map>
 
 // 攻撃カード（全体効果だけ／範囲・扇／貫通／空マスへ突進／単体）
-// （CardExecutor を機能ごとに分けたファイル。Play＝1回のカード使用。CardExecutor.h）
 
 // 攻撃カード：全体効果だけ／範囲・扇／貫通／空マスへ突進／単体 に振り分ける
 bool CardExecutor::Play::Attack()

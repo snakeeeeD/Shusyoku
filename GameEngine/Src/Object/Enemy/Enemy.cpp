@@ -96,6 +96,15 @@ void Enemy::Draw3D(Renderer3D* renderer)
     for (auto& o : m_overlays) drawBody(o);   // 重ねる絵は本体とまったく同じ位置・大きさ（絵の中で配置済み）
 }
 
+// 落ち影：本体と同じ大きさ・跳ねた高さで、地面に立てた板を描く（跳ねると影が足元から離れる）
+void Enemy::DrawShadowCaster(Renderer3D* renderer)
+{
+    if (!isActive || m_isSnake || m_dying) return;
+    float s = GetJumpScale();
+    renderer->DrawShadowCaster(TextureManager::Get(m_textureName), worldX, worldY + m_feel.Lift(height), worldZ + m_drawZ,
+        width * s * m_feel.ScaleX(), height * s * m_feel.ScaleY(), FacingUV());
+}
+
 bool Enemy::RemoveOverlay(const std::string& t)
 {
     auto it = std::find(m_overlays.begin(), m_overlays.end(), t);

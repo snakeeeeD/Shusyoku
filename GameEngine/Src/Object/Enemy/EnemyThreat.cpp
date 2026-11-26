@@ -19,7 +19,6 @@
 #include <queue>
 
 // 攻撃範囲と、当たるかの判定
-// （Enemy のメンバー。Enemy.cpp から機能ごとに分けたファイル）
 
 bool Enemy::IsAdjacentTo(int playerCol, int playerRow)
 {

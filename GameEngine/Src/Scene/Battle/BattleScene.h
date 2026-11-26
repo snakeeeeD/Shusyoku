@@ -419,6 +419,7 @@ private:
     void RequestCellCursor();
     void DrawBackground2D();
     void UpdateCellHeights();           // 狙うマスを浮かせる＋キャラの高さ（描く前に）
+    void DrawShadowPass(const BattleTheme& th);   // 落ち影：光から見た深さの絵（DrawShadow.cpp）
     void DrawGround(const BattleTheme& th);
     void DrawCells(const BattleTheme& th);
     void DrawFloorMarks();
@@ -484,6 +485,7 @@ private:
 
     struct Deco { float x, z, scale; int type; };   // type: 0=木 1=茂み 2=岩
     std::vector<Deco> m_decos;
+    bool m_useShadowMap = true;   // 落ち影（シャドウマップ）。切ると前のにせ影に戻る（見比べ用）
 
     struct BurnHit { float atTime; int dmg; bool curse = false; };
     std::vector<BurnHit> m_burnHits;

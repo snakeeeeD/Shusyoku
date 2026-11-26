@@ -113,6 +113,15 @@ void Player::Draw3D(Renderer3D* renderer)
         renderer->DrawBillboard(f.tex, f.x, f.y, f.z, f.w, f.h, f.rot, GetDrawColor(), f.uv);
 }
 
+// 落ち影：今のコマの絵を、地面に立てて光の方へ向けた板で描く
+void Player::DrawShadowCaster(Renderer3D* renderer)
+{
+    if (!isActive) return;
+    SpriteFrame f = GetSprite();
+    float pad = (f.uv.w < 1.0f) ? height * 1.5f / 6.0f : 0.0f;   // シートのコマは下に余白（1/6）がある → 足元を地面に合わせる
+    renderer->DrawShadowCaster(f.tex, worldX, worldY - pad, worldZ + 0.4f, f.w, f.h, f.uv);
+}
+
 // 今の向き・アニメのコマの絵と置き場所。scale は残像などで大きくする時（足元の位置は合わせたまま）
 Player::SpriteFrame Player::GetSprite(float scale) const
 {

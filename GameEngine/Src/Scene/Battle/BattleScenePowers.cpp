@@ -36,7 +36,6 @@
 #endif
 
 // ターンの節目に発動するバフ・レリック（ターン開始／プレイヤーのターンの終わり）
-// （BattleScene のメンバー。BattleScene.cpp から機能ごとに分けたファイル）
 
 // ターン開始に発動するバフ・レリック（闘気・巨人の篭手・毒の瘴気・大聖堂）
 void BattleScene::ApplyTurnStartPowers()

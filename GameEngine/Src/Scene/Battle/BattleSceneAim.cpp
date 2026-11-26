@@ -36,7 +36,6 @@
 #endif
 
 // 狙い（選んでいるカードの範囲・敵の攻撃範囲のハイライト・攻撃の構え）
-// （BattleScene のメンバー。BattleScene.cpp から機能ごとに分けたファイル）
 
 // 選んでいる（なければ指している）カードの範囲のハイライト。handTopOffset＝手札の範囲の上端（画面の下からの距離）
 void BattleScene::UpdateCardHighlight(float handTopOffset)

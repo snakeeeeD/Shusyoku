@@ -36,7 +36,6 @@
 #endif
 
 // ボスの仕掛け（3層ボスの楔・鎖・無敵）
-// （BattleScene のメンバー。BattleScene.cpp から機能ごとに分けたファイル）
 
 void BattleScene::UpdateBossGimmick()
 {

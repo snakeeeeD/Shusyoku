@@ -26,7 +26,6 @@
 using namespace DirectX;
 
 // 勝ち負けの画面（勝利画面・負けのバナー・ドロップの説明）
-// （BattleUI のメンバー。BattleUI.cpp から機能ごとに分けたファイル）
 
 // 負けた時の「GAME OVER」と「クリックでタイトルへ」。UI より上の演出（まるのみの顎）の、さらに上に出すため、Draw とは別に呼ぶ
 void BattleUI::DrawLoseBanner()

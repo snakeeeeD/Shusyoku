@@ -36,7 +36,6 @@
 #endif
 
 // レリックの呼び出し口（移動・カード使用・カウント系・使用済みの表示）
-// （BattleScene のメンバー。BattleScene.cpp から機能ごとに分けたファイル）
 
 void BattleScene::OnPlayerMoved(int fromCol, int fromRow, int moveDist)
 {

@@ -34,7 +34,6 @@
 #endif
 
 // カードを使う入力（離して使う・狙う先・使った後）
-// （BattleScene のメンバー。BattleSceneInput.cpp から機能ごとに分けたファイル）
 
 // 左ボタンを離したら使う（使用ラインより上で離した時）。離したら移動の経路は消す
 void BattleScene::HandleReleaseToPlay()

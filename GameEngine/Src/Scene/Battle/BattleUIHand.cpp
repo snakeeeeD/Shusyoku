@@ -26,7 +26,6 @@
 using namespace DirectX;
 
 // 手札（描画・並び／ホバーのアニメ・入る／抜ける・キーワード・捨てる画面のボタン）
-// （BattleUI のメンバー。BattleUI.cpp から機能ごとに分けたファイル）
 
 void BattleUI::UpdateCardAnimations(float deltaTime, int handSize, int hoveredIndex,
     int selectedIndex, POINT mousePos, bool selectedNeedsTarget,

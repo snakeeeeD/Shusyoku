@@ -36,7 +36,6 @@
 #endif
 
 // ターンの流れ（配り終わり・ターン開始の追加ドロー・説明を閉じた時）
-// （BattleScene のメンバー。BattleScene.cpp から機能ごとに分けたファイル）
 
 void BattleScene::RunTurnCycle()
 {

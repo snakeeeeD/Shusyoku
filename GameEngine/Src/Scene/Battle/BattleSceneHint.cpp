@@ -36,7 +36,6 @@
 #endif
 
 // その場ヒント（初めてその状況になった時だけ出す）
-// （BattleScene のメンバー。BattleScene.cpp から機能ごとに分けたファイル）
 
 // その場ヒント（初めてその状況になった時だけ）
 void BattleScene::UpdateHints()

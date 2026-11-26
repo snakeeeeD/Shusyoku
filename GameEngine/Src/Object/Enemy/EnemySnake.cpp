@@ -19,7 +19,6 @@
 #include <queue>
 
 // 大蛇（巻きつき・首を伸ばす／戻す・体のつながり・中央へ押す）
-// （Enemy のメンバー。Enemy.cpp から機能ごとに分けたファイル）
 
 void Enemy::InitSnake(GridMap* gridMap)
 {

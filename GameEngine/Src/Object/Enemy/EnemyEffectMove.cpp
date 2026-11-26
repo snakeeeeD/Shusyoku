@@ -19,7 +19,6 @@
 #include <queue>
 
 // 効果：移動（近づく・離れる・大蛇の巻きつき／首）
-// （Enemy のメンバー。Enemy.cpp から機能ごとに分けたファイル）
 
 // 近づく（ボスの「＋移動」など）。予告の矢印があれば、その通りに動く（矢印と動き先をそろえる）
 void Enemy::EffectMoveToward(ActionRun& r, const Effect& e)

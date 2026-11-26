@@ -36,7 +36,6 @@
 #endif
 
 // 廃棄の軸（手札を廃棄する・廃棄した時に発動するもの）
-// （BattleScene のメンバー。BattleScene.cpp から機能ごとに分けたファイル）
 
 // 手札を燃やす（index は何個でも、順番は問わない）。燃える演出で消して廃棄置き場へ。全部燃やしてから効果を発動（途中で引くと index がずれる）
 std::vector<const CardData*> BattleScene::BurnHandCards(std::vector<int> idx)

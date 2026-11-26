@@ -60,6 +60,14 @@ struct MotionBlurParams
     XMFLOAT4 rect = { 0, 0, 1, 1 };   // 本来の絵の uv の範囲（xy＝小さい方、zw＝大きい方）
 };
 
+// 落ち影の定数バッファ（b1）。影を受けるシェーダー（Shadow_Receive_VS / PS）で使う
+struct ShadowCB
+{
+    XMMATRIX LightView;
+    XMMATRIX LightProj;
+    XMFLOAT4 Params;   // x=影の濃さ（0～1） y=ずれ止め（bias） z=1/影の絵の大きさ（ぼかす時に使う） w=未使用
+};
+
 class Renderer3D
 {
 public:
@@ -145,6 +153,16 @@ public:
     void BeginOffscreen();               // 以降の描画をオフスクリーンへ
     void EndOffscreenBlur(float radius); // ぼかしてバックバッファへ合成
 
+    // ---- 落ち影（シャドウマップ）：光から見た深さを影用の絵に書き、地面を描く時に比べる ----
+    bool InitShadowMap(int size = 4096);   // 影用の絵（R32_FLOAT）・その深度・シェーダーを作る
+    void BeginShadowPass(const XMFLOAT3& lightDir, const XMFLOAT3& center, float viewSize);   // 以降は光のカメラで深さを書く
+    void EndShadowPass();                  // 元の画面・カメラへ戻す
+    void DrawShadowCaster(ID3D11ShaderResourceView* texture, float x, float y, float z,
+        float width, float height, const XMFLOAT4& uvRect = XMFLOAT4(0, 0, 1, 1));   // 影を落とす板（光の方へ立てて描く）
+    void SetShadowReceive(bool on);        // on の間の DrawTile / DrawTileEx は影を受ける
+    void SetShadowStrength(float s) { m_shadowParams.x = s; }
+    bool HasShadowMap() const { return m_shadowSRV != nullptr; }
+
 private:
     bool CreateShaders();
     bool CreateBuffers();
@@ -191,6 +209,26 @@ private:
     ComPtr<ID3D11Buffer>       m_blurVB;
     ComPtr<ID3D11InputLayout>  m_blurLayout;
     D3D11_VIEWPORT m_savedVP = {};
+
+    // 落ち影
+    ComPtr<ID3D11Texture2D>          m_shadowTex;       // 光から見た深さ（R32_FLOAT）
+    ComPtr<ID3D11RenderTargetView>   m_shadowRTV;
+    ComPtr<ID3D11ShaderResourceView> m_shadowSRV;
+    ComPtr<ID3D11Texture2D>          m_shadowDepthTex;  // 影のパスの深度（板が重なったら光に近い方が残る）
+    ComPtr<ID3D11DepthStencilView>   m_shadowDSV;
+    ComPtr<ID3D11SamplerState>       m_shadowSampler;   // 点で読む・絵の外は 1.0（＝影なし）
+    ComPtr<ID3D11PixelShader>        m_shadowWritePS;   // Shaders/Shadow_WriteDepth_PS.hlsl
+    ComPtr<ID3D11VertexShader>       m_shadowRecvVS;    // Shaders/Shadow_Receive_VS.hlsl
+    ComPtr<ID3D11PixelShader>        m_shadowRecvPS;    // Shaders/Shadow_Receive_PS.hlsl
+    ComPtr<ID3D11Buffer>             m_shadowCB;
+    int      m_shadowSize = 0;
+    XMFLOAT4 m_shadowParams = { 0.45f, 0.001f, 0.0f, 0.0f };
+    XMMATRIX m_lightView = XMMatrixIdentity(), m_lightProj = XMMatrixIdentity();
+    XMFLOAT3 m_lightDir = { 0.0f, -1.0f, 0.0f };
+    ID3D11RenderTargetView* m_shadowSavedRTV = nullptr;   // 影のパスの間、元に戻すために覚えておく
+    ID3D11DepthStencilView* m_shadowSavedDSV = nullptr;
+    D3D11_VIEWPORT m_shadowSavedVP = {};
+    XMMATRIX m_shadowSavedView = XMMatrixIdentity(), m_shadowSavedProj = XMMatrixIdentity();
 
     XMMATRIX m_viewMatrix;
     XMMATRIX m_projectionMatrix;

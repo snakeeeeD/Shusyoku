@@ -16,7 +16,6 @@
 #include <map>
 
 // ノックバック・引き寄せ（実際の動きと予告）
-// （CardExecutor を機能ごとに分けたファイル。Play＝1回のカード使用。CardExecutor.h）
 
 // target を (nc, nr) へ動かせるか（形全体で見る）
 static bool CanPush(Enemy* target, int nc, int nr, int playerCol, int playerRow,

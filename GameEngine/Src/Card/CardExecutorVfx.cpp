@@ -16,7 +16,6 @@
 #include <map>
 
 // カードの演出
-// （CardExecutor を機能ごとに分けたファイル。Play＝1回のカード使用。CardExecutor.h）
 
 // カードの演出（回転切り・扇・全体の爆発・隕石・単発は敵寄りに当たる数だけ）
 void CardExecutor::Play::PlayCardVfx()

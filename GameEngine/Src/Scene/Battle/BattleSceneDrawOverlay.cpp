@@ -33,7 +33,6 @@
 #endif
 
 // 上に重ねる描画（エフェクト・必中のクロスヘア・移動先・狙ったマスの枠・覚醒演出）
-// （BattleScene のメンバー。BattleSceneDraw.cpp から機能ごとに分けたファイル）
 
 // 上に重ねるもの（エフェクト・必中のクロスヘア・移動先のゴースト・狙ったマスの枠）
 void BattleScene::DrawOverlays()
