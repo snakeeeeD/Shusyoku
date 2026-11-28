@@ -1,8 +1,10 @@
 #include "Audio.h"
 #include <unordered_map>
 
+#pragma warning(push, 0)   // 外部ライブラリの警告は出さない（中身は触らない）
 #define MINIAUDIO_IMPLEMENTATION
 #include "External/miniaudio/miniaudio.h"
+#pragma warning(pop)
 
 static const int SE_VOICES = 10;   // 同じSEを同時に何個まで重ねるか
 struct SeVoicePool { std::vector<ma_sound*> voices; int next = 0; };

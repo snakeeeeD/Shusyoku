@@ -78,8 +78,9 @@ void BattleScene::AddEnemy(int col, int row, const std::string& id)
     m_enemies.push_back(enemy);
 }
 
-void BattleScene::SummonNear(Enemy* src, const std::string& id, int count)
+void BattleScene::SummonNear(Enemy* src, const std::string& id, int count, const std::string& vfx)
 {
+    const std::string fx = vfx.empty() ? "summon" : vfx;   // 行動ごとの召喚の演出（産卵なら卵がはじける）
     if (!src->SummonPlan().empty())                                        // 予告した場所に出す
     {
         for (auto& [c, r] : src->SummonPlan())
@@ -87,7 +88,7 @@ void BattleScene::SummonNear(Enemy* src, const std::string& id, int count)
             if (m_gridMap->GetCell(c, r).type != CellType::Empty) continue;   // 塞がれたら出ない
             AddEnemy(c, r, id);
             m_enemies.back()->MarkJustSummoned();
-            EffectManager::Play("summon", m_enemies.back()->worldX, 0.4f, m_enemies.back()->worldZ);
+            EffectManager::Play(fx, m_enemies.back()->worldX, 0.4f, m_enemies.back()->worldZ);
         }
         src->ClearSummonPlan();
         return;
@@ -106,9 +107,27 @@ void BattleScene::SummonNear(Enemy* src, const std::string& id, int count)
                 if (c == m_player->gridCol && rr == m_player->gridRow) continue;    // プレイヤーの現在地も避ける
                 AddEnemy(c, rr, id);
                 m_enemies.back()->MarkJustSummoned();                              // 同ターンは動かない
-                EffectManager::Play("summon", m_enemies.back()->worldX, 0.4f, m_enemies.back()->worldZ);  // 召喚エフェクト
+                EffectManager::Play(fx, m_enemies.back()->worldX, 0.4f, m_enemies.back()->worldZ);  // 召喚エフェクト
                 placed++;
             }
+}
+
+// 卵がかえる：同じマス・同じ並びの場所で、別の敵と入れ替える（倒した扱いにしない＝撃破のレリック・勝敗に入らない）
+void BattleScene::HatchInPlace(Enemy* egg, const std::string& id, const std::string& vfx)
+{
+    auto it = std::find(m_enemies.begin(), m_enemies.end(), egg);
+    if (it == m_enemies.end()) return;
+    int col = egg->gridCol, row = egg->gridRow;
+    egg->ClearFootprint(m_gridMap);
+    AddEnemy(col, row, id);                       // 後ろに足される
+    Enemy* baby = m_enemies.back();
+    m_enemies.pop_back();
+    it = std::find(m_enemies.begin(), m_enemies.end(), egg);   // 足した時に並びが作り直されていても大丈夫なように探し直す
+    baby->colorIndex = egg->colorIndex;           // 識別色は卵のまま（どの卵がかえったか分かるように）
+    baby->hueColor = egg->hueColor;
+    *it = baby;                                   // 卵のいた並びに入れる（この番の行動順を崩さない。行動はまだ決めていないので、この番は動かない）
+    EffectManager::Play(vfx.empty() ? "summon" : vfx, baby->worldX, 0.4f, baby->worldZ);
+    delete egg;
 }
 
 void BattleScene::ProcessDeadEnemies()

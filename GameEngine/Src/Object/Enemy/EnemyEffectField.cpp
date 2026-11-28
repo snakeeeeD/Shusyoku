@@ -26,6 +26,12 @@ void Enemy::EffectSummon(ActionRun& r, const Effect& e)
     m_pendingSummons.push_back({ e.summonId, e.value });
 }
 
+// 卵がかえる（その場で summonId の敵と入れ替えるのは BattleScene。倒した扱いにしない）
+void Enemy::EffectHatch(ActionRun& r, const Effect& e)
+{
+    m_pendingHatch = e.summonId;
+}
+
 // 床を置く（狙った場所／敵の周り。敵の足元と、すでにある床は避ける）
 void Enemy::EffectHazard(ActionRun& r, const Effect& e)
 {

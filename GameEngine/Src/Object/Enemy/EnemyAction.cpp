@@ -62,6 +62,7 @@ void Enemy::ApplyEffect(ActionRun& r, const Effect& e)
     case EffectKind::PullPlayer:        EffectPull(r, e); break;
     case EffectKind::KnockbackPlayer:   EffectKnockback(r, e); break;
     case EffectKind::Summon:            EffectSummon(r, e); break;
+    case EffectKind::Hatch:             EffectHatch(r, e); break;
     case EffectKind::Hazard:            EffectHazard(r, e); break;
     case EffectKind::Heal:              EffectHeal(r, e); break;
     case EffectKind::AddCard:           EffectAddCard(r, e); break;

@@ -297,7 +297,8 @@ private:
     std::vector<std::string> m_defeatedEnemyIds;
 
     void AddEnemy(int col, int row, const std::string& id);
-    void SummonNear(Enemy* src, const std::string& id, int count);
+    void SummonNear(Enemy* src, const std::string& id, int count, const std::string& vfx = "");   // vfx：出た所の演出（空なら summon）
+    void HatchInPlace(Enemy* egg, const std::string& id, const std::string& vfx);   // 卵がかえる：同じマス・同じ並びで別の敵と入れ替える
 
     Hand m_hand;
     int m_selectedCardIndex;

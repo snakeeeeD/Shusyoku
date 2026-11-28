@@ -4,7 +4,9 @@
 #include <string>
 #include <vector>
 #include <cstdint>
+#pragma warning(push, 0)   // 外部ライブラリの警告は出さない（中身は触らない）
 #include "External/pl_mpeg/pl_mpeg.h"   // 実装は SceneManager.cpp で1回だけ（PL_MPEG_IMPLEMENTATION）
+#pragma warning(pop)
 
 // 短い動画（MPEG-1）をループ再生して、テクスチャとして描けるようにする（用語集の説明用）
 class VideoClip

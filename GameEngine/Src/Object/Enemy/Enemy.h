@@ -118,6 +118,10 @@ public:
 	{
 		auto s = m_pendingSummons; m_pendingSummons.clear(); return s;
 	}
+	std::string TakePendingHatch() { auto s = m_pendingHatch; m_pendingHatch.clear(); return s; }   // 卵がかえる先（入れ替えは BattleScene）
+	void StartShake(float sec, float amp);   // タメの間ぶるぶる震える（sec 秒かけてだんだん強く）
+	void UpdateShake(float deltaTime);
+	float ShakeOffset() const;               // 今の横の揺れ（ワールド）
 
 	bool IsSnake() const { return m_isSnake; }
 	const std::vector<std::pair<int, int>>& GetBodyCells() const { return m_bodyCells; }
@@ -228,6 +232,8 @@ private:
 	std::vector<int> m_actionUses;   // 行動ごとの使用回数（select.maxUses の判定用）
 	bool m_justSummoned = false;
 	std::vector<std::pair<std::string, int>> m_pendingSummons;
+	std::string m_pendingHatch;
+	float m_shakeTime = 0.0f, m_shakeDur = 0.0f, m_shakeAmp = 0.0f;   // ぶるぶる（経過・長さ・幅）
 
 
 
@@ -300,6 +306,7 @@ private:
 	void EffectPull(ActionRun& r, const Effect& e);        // Player
 	void EffectKnockback(ActionRun& r, const Effect& e);   // Player
 	void EffectSummon(ActionRun& r, const Effect& e);      // Field
+	void EffectHatch(ActionRun& r, const Effect& e);       // Field
 	void EffectHazard(ActionRun& r, const Effect& e);      // Field
 	static bool HasLunge(const EnemyAction& a);            // EnemyThreat.cpp：首を伸ばす行動か（AI・範囲・経路で使う）
 };

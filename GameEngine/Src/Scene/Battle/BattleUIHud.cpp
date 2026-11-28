@@ -154,7 +154,6 @@ void BattleUI::DrawPilesAndHud(const BattleUIContext& ctx)
         m_spriteRenderer->End();
         m_textRenderer->Begin();
 
-        wchar_t drawText[32];
         // 山札枚数（バッジ上・アウトライン）
         {
             wchar_t t[16]; swprintf_s(t, L"%d", ctx.deck->GetDrawPileCount());
@@ -162,7 +161,6 @@ void BattleUI::DrawPilesAndHud(const BattleUIContext& ctx)
                 D2D1::ColorF(1, 1, 1), D2D1::ColorF(0, 0, 0), 2.0f);
         }
 
-        wchar_t discardText[32];
         // 捨て札枚数（バッジ上・アウトライン）
         {
             wchar_t t[16]; swprintf_s(t, L"%d", ctx.deck->GetDiscardPileCount());

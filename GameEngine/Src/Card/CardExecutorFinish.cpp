@@ -87,5 +87,5 @@ void CardExecutor::Play::ApplySelfDamage()
     }
     float px = (playerCol - gridMap->GetCols() / 2.0f) * 1.1f;
     float pz = (playerRow - gridMap->GetRows() / 2.0f) * 1.1f;
-    EffectManager::Play("bleed", px + 0.5, 0.6f, pz + 0.5);
+    EffectManager::Play("bleed", px + 0.5f, 0.6f, pz + 0.5f);
 }

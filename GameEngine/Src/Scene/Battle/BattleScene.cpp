@@ -269,6 +269,7 @@ void BattleScene::UpdateUnits(float deltaTime)
         enemy->UpdateLunge(deltaTime);
         enemy->UpdateJump(deltaTime);
         enemy->UpdateHitFlash(deltaTime);
+        enemy->UpdateShake(deltaTime);
         enemy->FaceToward(m_player->worldX);
     }
 }

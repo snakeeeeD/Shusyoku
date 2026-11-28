@@ -12,7 +12,8 @@ enum class AnchorType { Self, Player, Fixed };
 enum class EffectKind {
     Damage, Block, Buff, Debuff, MoveToward,
     MoveAway, PullPlayer, KnockbackPlayer, Summon, Hazard, Heal, Coil, AddCard,
-    Lunge, Retract   // 蛇：首を伸ばして噛みつく／伸ばした首を戻す
+    Lunge, Retract,  // 蛇：首を伸ばして噛みつく／伸ばした首を戻す
+    Hatch            // 卵：その場で summonId の敵になる（倒した扱いにしない）
 };
 
 // 誰に効くか
@@ -62,6 +63,7 @@ struct EnemyAction
     SelectRule   select;
     std::string  windupVfx;               // 着弾前に飛ばす演出(メテオ落下)
     float        windup = 0.0f;           // 着弾までの秒数（この間、行動は保留）
+    float        windupShake = 0.0f;      // タメ（windup）の間、敵がぶるぶる震える幅（ワールド。0＝震えない。卵の孵化など）
     std::string  areaVfx;                 // 攻撃範囲の各マスに出す演出（空なら area_burst）
     std::string  impactVfx;               // 着弾点に出す演出（当たり外れに関わらず）
     std::string  hitVfx;                  // 1発当たるたびにプレイヤーの所に出す演出（多段は1発ごと）。当たった時は vfx と範囲の演出を出さない
@@ -69,6 +71,7 @@ struct EnemyAction
     std::string  originVfx;               // 敵の口から攻撃の向きへ出す演出（ブレス・吐く攻撃。扇は扇の向き、ほかは狙ったマスの向き）
     std::string  aroundVfx;               // 周り全体の攻撃で、衝撃波の代わりに1つだけ出す演出（なぎ払いなど。範囲の大きさに合わせて拡大）
     std::string  allyVfx;                 // 行動した時、自分から味方の1体ずつへ飛ばす演出（楔を強化する。PlayFrom）
+    std::string  summonVfx;               // 召喚した敵が出たマスに出す演出（書かなければ summon）
     WindupAt     windupAt = WindupAt::Target;   // "windupAt": "mouth" / "line" / "self"（書かなければ狙った所）
     float        waveTime = 0.0f;         // aroundVfx の波が範囲の外の縁まで届く秒数。0より大きいと、ダメージは波がプレイヤーに届いた時に入る
 

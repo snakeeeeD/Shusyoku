@@ -13,10 +13,10 @@ void GridMap::Init(int cols, int rows, float cellSize)
 {
     m_cols = cols;
     m_rows = rows;
-    m_cellSize = cellSize;
+    m_cellSize = static_cast<int>(cellSize);
 
-    m_offsetX = (1280.0f - cols * cellSize) / 2.0f;
-    m_offsetY = (720.0f - rows * cellSize) / 2.0f;
+    m_offsetX = static_cast<int>((1280.0f - cols * cellSize) / 2.0f);   // “ü‚ê•¨‚ª int ‚È‚Ì‚ÅØ‚èÌ‚Ä‚ğ–¾¦i“®‚«‚Í¡‚Æ“¯‚¶j
+    m_offsetY = static_cast<int>((720.0f - rows * cellSize) / 2.0f);
 
     m_cells.resize(rows, std::vector<Cell>(cols));
 

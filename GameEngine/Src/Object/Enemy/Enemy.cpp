@@ -56,6 +56,17 @@ void Enemy::Update(float delteTime)
 
 }
 
+// タメの間ぶるぶる震える（windupShake）。sec 秒かけて、だんだん強く
+void Enemy::StartShake(float sec, float amp) { m_shakeTime = 0.0f; m_shakeDur = sec; m_shakeAmp = amp; }
+void Enemy::UpdateShake(float deltaTime) { if (m_shakeTime < m_shakeDur) m_shakeTime += deltaTime; }
+float Enemy::ShakeOffset() const
+{
+    if (m_shakeTime >= m_shakeDur) return 0.0f;
+    const float FREQ = 22.0f;                         // 1秒に揺れる回数
+    float k = m_shakeTime / m_shakeDur;               // 0→1：だんだん強く
+    return sinf(m_shakeTime * XM_2PI * FREQ) * m_shakeAmp * (0.4f + 0.6f * k);
+}
+
 void Enemy::Draw3D(Renderer3D* renderer)
 {
     if (!isActive) return;
@@ -84,12 +95,13 @@ void Enemy::Draw3D(Renderer3D* renderer)
     const float BLUR_STRENGTH = MoveFeel::BLUR_STRENGTH;   // 数字は MoveFeel にまとめた（プレイヤーと共通）
     float bx = m_feel.BlurX(), bz = m_feel.BlurZ();
     bool blur = (bx * bx + bz * bz) > MoveFeel::BLUR_MIN * MoveFeel::BLUR_MIN;
+    float x = worldX + ShakeOffset();   // タメのぶるぶる（震えていなければ 0）
     auto drawBody = [&](const std::string& tex) {
         if (blur)
-            renderer->DrawMotionBlurBillboard(TextureManager::Get(tex), worldX, y, worldZ + m_drawZ,
+            renderer->DrawMotionBlurBillboard(TextureManager::Get(tex), x, y, worldZ + m_drawZ,
                 w, h, 0.0f, drawColor, FacingUV(), bx, bz, BLUR_STRENGTH);
         else
-            renderer->DrawBillboard(TextureManager::Get(tex), worldX, y, worldZ + m_drawZ,
+            renderer->DrawBillboard(TextureManager::Get(tex), x, y, worldZ + m_drawZ,
                 w, h, 0.0f, drawColor, FacingUV());
     };
     drawBody(m_textureName);

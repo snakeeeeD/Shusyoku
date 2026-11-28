@@ -52,6 +52,7 @@ public:
         case EffectKind::PullPlayer:      return XMFLOAT4(0.2f, 0.8f, 0.3f, 1.0f);
         case EffectKind::KnockbackPlayer: return XMFLOAT4(0.2f, 0.8f, 0.3f, 1.0f);
         case EffectKind::Summon:          return XMFLOAT4(0.4f, 0.85f, 0.4f, 1.0f);
+        case EffectKind::Hatch:           return XMFLOAT4(0.4f, 0.85f, 0.4f, 1.0f);
         case EffectKind::AddCard:         return XMFLOAT4(0.6f, 0.4f, 0.8f, 1.0f);
         default:                          return XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
         }
@@ -175,6 +176,7 @@ public:
         case EffectKind::PullPlayer:      title = L"引き寄せ"; body = L"プレイヤーを " + std::to_wstring(e.value) + L" マス引き寄せる"; break;
         case EffectKind::KnockbackPlayer: title = L"突き飛ばし"; body = L"プレイヤーを " + std::to_wstring(e.value) + L" マス突き飛ばす"; break;
         case EffectKind::Summon:          title = L"召喚"; body = L"仲間を " + std::to_wstring(e.value) + L" 体呼ぶ"; break;
+        case EffectKind::Hatch:           title = L"孵化"; body = L"次の行動で、その場で別の敵になる\n今のうちに壊せば出てこない"; break;
         case EffectKind::Coil:
             title = L"とぐろ";
             body = L"中央へ巻きつつ " + std::to_wstring(e.value) + L" マス伸びる\n体に押し込まれると轢かれる";
@@ -226,6 +228,7 @@ public:
             case EffectKind::PullPlayer:      push(L"引き寄せ", L"プレイヤーを敵の方へ引き寄せる"); break;
             case EffectKind::KnockbackPlayer: push(L"ノックバック", L"プレイヤーを突き飛ばす"); break;
             case EffectKind::Summon:          push(L"召喚", L"新たな敵を呼び出す"); break;
+            case EffectKind::Hatch:           push(L"孵化", L"その場で別の敵になる"); break;
             case EffectKind::Coil:            push(L"とぐろ", L"体が伸び、通り道のプレイヤーを押し出す"); break;
             case EffectKind::AddCard:         push(L"お邪魔", L"デッキ・手札・捨て札にお邪魔カードを加えてくる"); break;
             default: break;
@@ -280,6 +283,7 @@ public:
         case EffectKind::PullPlayer:        return "intent_pull";
         case EffectKind::KnockbackPlayer:   return "intent_knockback";
         case EffectKind::Summon:            return "intent_summon";
+        case EffectKind::Hatch:             return "intent_summon";
         case EffectKind::Coil:              return "intent_coil";
         case EffectKind::AddCard:           return "intent_curse";
         case EffectKind::Hazard:            return "intent_hazard";

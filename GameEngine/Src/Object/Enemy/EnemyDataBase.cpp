@@ -67,6 +67,7 @@ static EnemyAction ParseAction(const json& a)
     act.vfx = a.value("vfx", std::string(""));
     act.windupVfx = a.value("windupVfx", std::string(""));
     act.windup = a.value("windup", 0.0f);
+    act.windupShake = a.value("windupShake", 0.0f);
     act.areaVfx = a.value("areaVfx", std::string(""));
     act.impactVfx = a.value("impactVfx", std::string(""));
     act.hitVfx = a.value("hitVfx", std::string(""));
@@ -74,6 +75,7 @@ static EnemyAction ParseAction(const json& a)
     act.originVfx = a.value("originVfx", std::string(""));
     act.aroundVfx = a.value("aroundVfx", std::string(""));
     act.allyVfx = a.value("allyVfx", std::string(""));
+    act.summonVfx = a.value("summonVfx", std::string(""));
     std::string wat = a.value("windupAt", std::string(""));
     act.windupAt = (wat == "mouth") ? WindupAt::Mouth : (wat == "line") ? WindupAt::Line : (wat == "self") ? WindupAt::Self : WindupAt::Target;
     act.waveTime = a.value("waveTime", 0.0f);

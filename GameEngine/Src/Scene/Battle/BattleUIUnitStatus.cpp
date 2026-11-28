@@ -373,8 +373,6 @@ void BattleUI::DrawUnitStatuses(const BattleUIContext& ctx)
                 }
             }
 
-            float footX2, footY2;
-
             int trE = 1 + ctx.player->GetBuffManager().GetBuffValue(BuffType::ToxicRhythm);
             int ppE = enemy->GetBuffManager().GetBuffValue(BuffType::Poison);
             int psumE = 0; for (int i = 0; i < trE; i++) { int v = ppE - i; if (v <= 0) break; psumE += v; }

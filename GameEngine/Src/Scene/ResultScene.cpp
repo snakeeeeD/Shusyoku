@@ -97,5 +97,5 @@ void ResultScene::HandleInput()
         }
         return;
     }
-    onChangeSceneBlack(SceneType::Title, []() { PlayerDataManager::StartNewGame(); });
+    onChangeSceneBlack(SceneType::Title, []() {});   // 新しいランはタイトルの「ニューゲーム」で始める（ここで作るとセーブができてコンティニューが出てしまう）
 }

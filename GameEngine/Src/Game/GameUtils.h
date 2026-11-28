@@ -166,6 +166,7 @@ inline EffectKind StringToEffectKind(const std::string& s)
     if (s == "PullPlayer") return EffectKind::PullPlayer;
     if (s == "KnockbackPlayer") return EffectKind::KnockbackPlayer;
     if (s == "Summon")     return EffectKind::Summon;
+    if (s == "Hatch")      return EffectKind::Hatch;
     if (s == "Hazard") return EffectKind::Hazard;
     if (s == "Heal") return EffectKind::Heal;
     if (s == "Coil") return EffectKind::Coil;

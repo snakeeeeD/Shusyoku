@@ -11,6 +11,7 @@
       { "key": "magic", "path": "Assets/Particles/magic.png" },
       { "key": "smoke", "path": "Assets/Particles/smoke.png" },
       { "key": "fx_shape_blob", "path": "Assets/Particles/fx_shape_blob.png" },
+      { "key": "fx_splat", "path": "Assets/Particles/fx_splat.png" },
       { "key": "fx_noise", "path": "Assets/Particles/fx_noise.png" },
       { "key": "fx_ramp_fire", "path": "Assets/Particles/fx_ramp_fire.png" },
       { "key": "fx_shape_flame", "path": "Assets/Particles/fx_shape_flame.png" },

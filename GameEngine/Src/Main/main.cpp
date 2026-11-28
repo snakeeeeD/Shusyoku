@@ -1,4 +1,4 @@
-#include <windows.h>
+ï»¿#include <windows.h>
 #include <string>
 #include <d3d11.h>
 #include <dxgi.h>
@@ -19,7 +19,7 @@
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "ole32.lib")
 
-// ï¿½Oï¿½ï¿½ï¿½[ï¿½oï¿½ï¿½ï¿½Ïï¿½
+// ã‚°ãƒ­ãƒ¼ãƒãƒ«å¤‰æ•°
 HWND g_hWnd = nullptr;
 ID3D11Device* g_pd3dDevice = nullptr;
 ID3D11DeviceContext* g_pImmediateContext = nullptr;
@@ -34,20 +34,20 @@ Game* g_game = nullptr;
 const int SCREEN_WIDTH = 1280;
 const int SCREEN_HEIGHT = 720;
 
-// ï¿½Oï¿½ï¿½ï¿½éŒ¾
+// å‰æ–¹å®£è¨€
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 bool InitWindow(HINSTANCE hInstance, int nCmdShow);
 bool InitD3D();
 void CleanupDevice();
 void Render();
 
-// ”z‚é‚Æ‚«‚Íuexe { GameData ƒtƒHƒ‹ƒ_v‚ÌŒ`‚É‚·‚éBexe ‚Ì—×‚É GameData/Assets ‚ª‚ ‚ê‚ÎA
-// ‚»‚±‚ðì‹ÆƒtƒHƒ‹ƒ_‚É‚µ‚ÄAAssets/... ‚â Shaders/... ‚ð‚»‚±‚©‚ç“Ç‚ÞiƒƒOEÝ’è‚Ì•Û‘¶æ‚à‚»‚±‚É‚È‚éjB
-// –³‚¯‚ê‚ÎiVisual Studio ‚©‚ç‹N“®‚µ‚½‚Æ‚«‚È‚Çjì‹ÆƒtƒHƒ‹ƒ_‚Í‚»‚Ì‚Ü‚Ü
+// é…ã‚‹ã¨ãã¯ã€Œexe ï¼‹ GameData ãƒ•ã‚©ãƒ«ãƒ€ã€ã®å½¢ã«ã™ã‚‹ã€‚exe ã®éš£ã« GameData/Assets ãŒã‚ã‚Œã°ã€
+// ãã“ã‚’ä½œæ¥­ãƒ•ã‚©ãƒ«ãƒ€ã«ã—ã¦ã€Assets/... ã‚„ Shaders/... ã‚’ãã“ã‹ã‚‰èª­ã‚€ï¼ˆãƒ­ã‚°ãƒ»è¨­å®šã®ä¿å­˜å…ˆã‚‚ãã“ã«ãªã‚‹ï¼‰ã€‚
+// ç„¡ã‘ã‚Œã°ï¼ˆVisual Studio ã‹ã‚‰èµ·å‹•ã—ãŸã¨ããªã©ï¼‰ä½œæ¥­ãƒ•ã‚©ãƒ«ãƒ€ã¯ãã®ã¾ã¾
 static void UseGameDataFolder()
 {
     wchar_t path[MAX_PATH];
-    DWORD n = GetModuleFileNameW(nullptr, path, MAX_PATH);   // exe ‚ÌêŠ
+    DWORD n = GetModuleFileNameW(nullptr, path, MAX_PATH);   // exe ã®å ´æ‰€
     if (n == 0 || n >= MAX_PATH) return;
     std::wstring dir(path, n);
     dir = dir.substr(0, dir.find_last_of(L"\\/") + 1) + L"GameData";
@@ -63,7 +63,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     SetProcessDPIAware();
-    UseGameDataFolder();   // Ý’è‚âƒAƒZƒbƒg‚ð“Ç‚Þ‘O‚É
+    UseGameDataFolder();   // è¨­å®šã‚„ã‚¢ã‚»ãƒƒãƒˆã‚’èª­ã‚€å‰ã«
 
     Settings::Load();
 
@@ -296,11 +296,11 @@ bool InitD3D()
         dxgiDev->Release();
     }
 
-    // ï¿½Qï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    // ã‚²ãƒ¼ãƒ åˆæœŸåŒ–
     g_game = new Game();
     if (!g_game->Init(g_pd3dDevice, g_pImmediateContext, SCREEN_WIDTH, SCREEN_HEIGHT, g_hWnd, g_pSwapChain))
     {
-        OutputDebugStringW(L"ï¿½ï¿½ Gameï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½s\n");
+        OutputDebugStringW(L"Game ã®åˆæœŸåŒ–ã«å¤±æ•—\n");
         return false;
     }
 
@@ -323,7 +323,7 @@ void Render()
     float ClearColor[4] = { 0.1f, 0.4f, 0.2f, 1.0f };
     g_pImmediateContext->ClearRenderTargetView(g_pRenderTargetView, ClearColor);
 
-    // ï¿½Qï¿½[ï¿½ï¿½ï¿½`ï¿½ï¿½
+    // ã‚²ãƒ¼ãƒ æç”»
     if (g_game)
     {
         g_game->Draw();

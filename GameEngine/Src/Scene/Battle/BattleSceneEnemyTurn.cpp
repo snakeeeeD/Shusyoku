@@ -154,7 +154,7 @@ void BattleScene::EnemyPhaseAct(float deltaTime)
     InsertEnemyCards(enemy);
 
     for (auto& sm : enemy->TakePendingSummons())
-        SummonNear(enemy, sm.first, sm.second);
+        SummonNear(enemy, sm.first, sm.second, wa ? wa->summonVfx : std::string());
 
     m_playerCol = m_player->gridCol;
     m_playerRow = m_player->gridRow;
@@ -173,6 +173,11 @@ void BattleScene::EnemyPhaseAct(float deltaTime)
     if (targetedDecoy && atk) BreakDecoy();
     if (StartEnemyDash(enemy)) return;
     TriggerTrapsOnPath(enemy);
+    if (std::string h = enemy->TakePendingHatch(); !h.empty())   // 卵がかえる（この後 enemy は使わない）
+    {
+        std::string fx = wa ? wa->summonVfx : std::string();     // wa は卵の持ち物なので、消す前に写す
+        HatchInPlace(enemy, h, fx);
+    }
 
     m_enemyPhase = EnemyTurnPhase::WaitAction;
     m_enemyActionDelay = ENEMY_ACTION_PAUSE;
@@ -218,7 +223,7 @@ void BattleScene::ChooseEnemyTarget(Enemy* enemy, int ai, int& tC, int& tR) cons
 // 予備動作：落下・タメなどの演出を出して、着弾まで実行を待つ（口・列・自分・飛び道具）。始めたら true
 bool BattleScene::StartEnemyWindup(Enemy* enemy, const EnemyAction* wa, int tC, int tR)
 {
-    if (wa && !wa->windupVfx.empty() && wa->windup > 0.0f && !m_windupPlayed
+    if (wa && (!wa->windupVfx.empty() || wa->windupShake > 0.0f) && wa->windup > 0.0f && !m_windupPlayed   // 演出か震えがあればタメる
         && (!wa->HasEffect(EffectKind::PullPlayer) || wa->target.unavoidable
             || enemy->IsThreateningCell(m_playerCol, m_playerRow, *wa)))   // 引き寄せは、当たる時だけ伸ばす
     {
@@ -228,7 +233,8 @@ bool BattleScene::StartEnemyWindup(Enemy* enemy, const EnemyAction* wa, int tC, 
         // 飛び道具は敵の体の真ん中から飛ばす（飛び始めを使わない演出は、今までどおり wx,0.5,wz に出る）
         XMFLOAT3 from(enemy->worldX, enemy->worldY + enemy->height * 0.5f, enemy->worldZ);
         XMFLOAT3 mouth, ln, lf; float mrot;
-        if (wa->windupAt == WindupAt::Mouth && EnemyMouth(enemy, *wa, tC, tR, mouth, mrot))   // 口に集める（滅びの息吹のタメ）
+        if (wa->windupVfx.empty()) {}   // 演出なし（震えだけのタメ）
+        else if (wa->windupAt == WindupAt::Mouth && EnemyMouth(enemy, *wa, tC, tR, mouth, mrot))   // 口に集める（滅びの息吹のタメ）
             m_windupHandle = EffectManager::Play(wa->windupVfx, mouth.x, mouth.y, mouth.z, mrot);
         else if (wa->windupAt == WindupAt::Line)   // 列の端から端へ（次元十字の裂け目とビーム）。縦・横の列ごとに1本
         {
@@ -243,6 +249,7 @@ bool BattleScene::StartEnemyWindup(Enemy* enemy, const EnemyAction* wa, int tC, 
             m_windupHandle = EffectManager::Play(wa->windupVfx, from.x, from.y, from.z);
         else
             m_windupHandle = EffectManager::PlayFrom(wa->windupVfx, from, XMFLOAT3(wx, 0.5f, wz));
+        if (wa->windupShake > 0.0f) enemy->StartShake(wa->windup, wa->windupShake);   // ぶるぶる（卵の孵化など）
         m_windupPlayed = true;
         m_windupTimer = wa->windup;
         return true;

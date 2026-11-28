@@ -11,6 +11,7 @@
         {
           "description": "攻撃、{0}ダメージ",
           "areaVfx": "atk_smash",
+          "hitVfx": "slime_splat",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -30,6 +31,7 @@
         {
           "description": "攻撃、{0}ダメージ、毒{1}付与",
           "areaVfx": "atk_poison",
+          "hitVfx": "slime_splat_poison",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -1020,6 +1022,7 @@
       "actions": [
         {
           "description": "分裂、召喚",
+          "summonVfx": "slime_splat",
           "target": {
             "rangeType": "Area",
             "range": 2
@@ -1039,6 +1042,7 @@
         {
           "description": "のしかかり、{0}ダメージ、沼設置",
           "areaVfx": "atk_smash",
+          "hitVfx": "slime_splat",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -1064,6 +1068,7 @@
         {
           "description": "攻撃、{0}ダメージ、毒{1}付与",
           "areaVfx": "atk_poison",
+          "hitVfx": "slime_splat_poison",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -1089,6 +1094,7 @@
         {
           "description": "連打、{0}ダメージ×3",
           "areaVfx": "atk_smash",
+          "hitVfx": "slime_splat",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -1301,6 +1307,7 @@
         {
           "description": "石塊、{0}ダメージ",
           "areaVfx": "atk_rock",
+          "hitVfx": "rock_hit",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -1927,6 +1934,7 @@
         {
           "description": "体当たり、{0}ダメージ",
           "areaVfx": "atk_smash",
+          "hitVfx": "slime_splat_dark",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -1972,6 +1980,7 @@
         {
           "description": "粘着質、{0}ダメージ、捨て札にガラクタ、沼設置",
           "areaVfx": "atk_poison",
+          "hitVfx": "slime_splat_dark",
           "target": {
             "rangeType": "Area",
             "range": 1
@@ -2069,6 +2078,34 @@
         {
           "id": "dull_stone",
           "chance": 8
+        }
+      ]
+    },
+    {
+      "id": "spider_egg",
+      "texture": "deco_egg",
+      "hp": 20,
+      "width": 0.9,
+      "height": 0.55,
+      "immovable": true,
+      "actions": [
+        {
+          "description": "孵化、子グモになる",
+          "windup": 0.7,
+          "windupShake": 0.06,
+          "summonVfx": "egg_hatch",
+          "target": {
+            "rangeType": "None"
+          },
+          "effects": [
+            {
+              "kind": "Hatch",
+              "summonId": "spider"
+            }
+          ],
+          "select": {
+            "chance": 100
+          }
         }
       ]
     },
@@ -2290,7 +2327,9 @@
       "actions": [
         {
           "description": "胞子爆発、{0}ダメージ、毒{1}付与",
-          "areaVfx": "atk_poison",
+          "areaVfx": "spore_cell",
+          "aroundVfx": "spore_burst",
+          "waveTime": 0.3,
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -2393,6 +2432,7 @@
         {
           "description": "岩振り、{0}ダメージ、ノックバック",
           "areaVfx": "atk_rock",
+          "hitVfx": "rock_hit",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -2528,6 +2568,7 @@
         {
           "description": "過剰投与、{0}ダメージ、手札に過負荷",
           "areaVfx": "atk_poison",
+          "aroundVfx": "overdose",
           "target": {
             "rangeType": "Area",
             "range": 1
@@ -2612,7 +2653,9 @@
         },
         {
           "description": "晶の棘、{0}ダメージ、棘設置",
-          "areaVfx": "atk_magic",
+          "areaVfx": "atk_crystal",
+          "aroundVfx": "crystal_ring",
+          "waveTime": 0.25,
           "target": {
             "rangeType": "Area",
             "range": 1
@@ -2693,6 +2736,7 @@
       "actions": [
         {
           "description": "産卵、召喚",
+          "summonVfx": "egg_lay",
           "target": {
             "rangeType": "Area",
             "range": 2
@@ -2700,7 +2744,7 @@
           "effects": [
             {
               "kind": "Summon",
-              "summonId": "spider",
+              "summonId": "spider_egg",
               "value": 1
             }
           ],
@@ -2764,6 +2808,7 @@
         {
           "description": "爪連撃、{0}ダメージ×3",
           "areaVfx": "atk_smash",
+          "hitVfx": "claw",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -2854,6 +2899,7 @@
         {
           "description": "震撼、{0}ダメージ、ノックバック",
           "areaVfx": "atk_rock",
+          "aroundVfx": "quake",
           "target": {
             "rangeType": "Area",
             "range": 2,
@@ -2957,6 +3003,7 @@
         {
           "description": "乱舞、{0}ダメージ×3",
           "areaVfx": "atk_slash",
+          "hitVfx": "claw",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -3423,7 +3470,9 @@
       "actions": [
         {
           "description": "胞子砲、{0}ダメージ、床設置、毒{2}付与",
-          "areaVfx": "atk_poison",
+          "areaVfx": "spore_cell",
+          "aroundVfx": "spore_burst",
+          "waveTime": 0.3,
           "target": {
             "rangeType": "Square",
             "range": 1,
@@ -3569,7 +3618,9 @@
       "actions": [
         {
           "description": "侵蝕の霧、{0}ダメージ、毒{1}付与",
-          "areaVfx": "atk_poison",
+          "areaVfx": "spore_cell",
+          "aroundVfx": "spore_burst",
+          "waveTime": 0.3,
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -3918,6 +3969,7 @@
         {
           "description": "乱撃、{0}ダメージ×3、攻撃力↑付与",
           "areaVfx": "atk_slash",
+          "hitVfx": "claw",
           "target": {
             "rangeType": "Area",
             "range": 1,
@@ -4029,6 +4081,7 @@
         },
         {
           "description": "ドローン、召喚",
+          "summonVfx": "drone_deploy",
           "target": {
             "rangeType": "Area",
             "range": 3
